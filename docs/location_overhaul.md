@@ -98,6 +98,7 @@ Each station type defines:
 - **Role:** Fence stolen goods, buy contraband. Hostile to high-rep settlement players.
 - **Faction:** Scavenger Clans
 - **Count on map:** 2-3
+- **Notable Instance:** **The Coil** — Located in the Gravewake graveyard. It is made from four identical cargo haulers rotating around a central docking hub. A lawless hub for salvage arbitration and black-market ROM speculation.
 
 #### 11. Commune Hub
 - **Silhouette:** Circle with 4 evenly-spaced smaller circles on its perimeter (modular pod cluster)
