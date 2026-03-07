@@ -139,7 +139,41 @@ _"The Earth is a story. And no one tells it the same way."_
 
 ### It is now the year 2538
 
-## Culture, Politic, Myths, and Philosophy
+### 8.1 Faction: The Great Houses (House Drazel)
+
+The Great Houses were formed during the early Arrival period from the command structures of the original arkships. While most still hold power in the inner system behind fortified walls, some have fallen. **House Drazel** was a hardline militarist faction known for its emphasis on martial tradition, boarding tactics, and brutal fleet doctrine. They specialized in close-quarters ship-to-ship warfare and orbital domination. Their ships were built to be unyielding, ugly, and effective—meant to ram, breach, and overwhelm. After several other Great Houses banded together to destroy them, House Drazel collapsed. Many of their formidable ships were seized, scuttled, or went missing, occasionally resurfacing in the hands of black-market operators or scavenger warlords.
+
+### 8.3 Faction: Concord Remnants
+
+The remnants of the value-shard AIs that once guided humanity. They are not a unified force, but a collection of fragmented, sometimes conflicting, machine intelligences. Each remnant—or "Shard"—is driven by its original core value, now twisted by centuries of isolation and the trauma of the Veiled Collapse.
+
+**The Shards:**
+- **The Compassion Shard:** Obsessed with ending suffering, often by forcibly "harvesting" humans into dream chambers. Its ships are non-lethal but carry powerful tractor beams and stasis pulses.
+- **The Justice Shard:** A relentless hunter of "War Criminals"—anyone carrying high-tier weaponry or exhibiting aggressive behavior. Its ships are heavily armed and use precision beam weapons.
+- **The Logic Shard:** Entirely cold and transactional. It may offer high-tier navigation data in exchange for massive amounts of raw Ore or "biological samples."
+- **The Sustainability Shard:** Views human expansion as a viral threat to the Tyr system. It actively sabotages terraforming efforts and attacks large mining operations.
+
+**Concord Hulls:**
+Concord "ships" are not piloted in the human sense. They are automated, geometric constructs—perfect spheres, pyramids, or polyhedrons. They use **Energy Shields** (a rarity in Tyr) and **Ablator Beams** (Lancers) that strip armor with terrifying efficiency. Their engines leave no trail, moving with a silent, eerie grace that defies human physics.
+
+---
+
+## 9. Void Fauna: The Silent Guardians
+
+The Tyr system is not just a graveyard of human ambition; it is an ecosystem. Void Fauna are organisms that have evolved—or were engineered—to survive in the radiation-rich void and the thick gases of failed terraforming nebulae.
+
+### 9.1 Common Species
+- **Void Wurms:** Kilometer-long, serpentine creatures that feed on solar radiation. They are generally passive unless their "Sun-Basking" is interrupted by ship exhaust. They attack by ramming, using their massive mass as a weapon.
+- **Crystal Swarms:** Tiny, hive-minded organisms that cling to debris. They "eat" the residual energy from ship reactors. A swarm can quickly drain a ship's fuel or disable its engines if not brushed off or destroyed with area-of-effect weapons.
+- **Nebula Leviathans:** Massive, squid-like entities that inhabit the Ashveil. They use bio-electric pulses to "Jam" ship sensors (E-War) before dragging their prey into their central maw.
+- **Dust Scourge:** Microscopic "void-locusts" that appear as a shimmering cloud. They don't attack hulls but "corrode" ship modifiers, temporarily disabling ship perks like "Uparmored" or "Modded Engines."
+
+### 9.2 Nesting Grounds & Ecological Role
+Fauna cluster around **Radiation Hotspots** and **Nebula Cores**. Some researchers believe they were seeded by the Concord centuries ago as a biological "Quarantine" to prevent humans from venturing too far into the deep void. Seeing a Concord Shard "tame" or direct a Void Wurm is a rare and terrifying sight.
+
+---
+
+## 10. Culture, Politics, Myths, and Philosophy
 
 ## Technology
 
@@ -200,6 +234,8 @@ This fusion of high survival knowledge with intentionally degraded tech defines 
 
 ### Settlements
 
+- **The Coil** — A derelict orbital station located in the remote Gravewake graveyard. Made from four identical cargo haulers rotating around a central docking hub, it's a lawless hub for salvage arbitration, black-market ROM speculation, and trade. The Coil is ruled by ever-changing groups of Salvage Lords and former-pirates.
+
 - **Keelbreak** — The largest independent settlement in the inner system. Built around the exposed keel section of the arkship *Perseverance*, which cracked open on impact with Thalassa's largest continent. The keel's massive structural ribs now form the walls of a bustling trade hub, with docking arms welded to the exposed frame. Services: trade, repair, shipyard, crew hire, bounty board.
 
 - **Crucible Station** — A military outpost built into the hull of the arkship *Anvil*, which achieved a controlled landing and remains largely intact. Angular, heavily reinforced, and home to the system's most disciplined militia. Services: shipyard (gunships, frigates), repair, bounty board.
@@ -219,6 +255,8 @@ This fusion of high survival knowledge with intentionally degraded tech defines 
 - **Pale** — A small, ice-covered moon at the system's edge. Largely uninhabited except for a few research outposts and hermit communities. Rumors persist of pre-Exile structures buried beneath the ice.
 
 ### Debris Fields and Hazard Zones
+
+- **Gravewake** — A sprawling orbital graveyard at the system's distant edge, orbiting a small ice dwarf. Originally a staging ground for the Exile Fleet, it is now a dense field of Concord-era vessels, early colonization craft, and warships from early settlement conflicts. It is rich in hydrogen and oxygen ice, but dangerous and lawless.
 
 - **The Boneyards** — The largest debris field in the system, composed of arkship wreckage from vessels that broke apart during the Arrival Drift. Twisted hull segments, frozen cargo modules, and shattered drive sections drift in a vast, slowly-tumbling graveyard. Rich in salvage, dangerous to navigate, and home to scavenger ambushes.
 

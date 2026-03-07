@@ -39,6 +39,11 @@ The following markdown files at the project root are living documents. **Review 
 | `DEVLOG.md` | Development progress log — tracks what was built per phase | Append a summary of what was implemented, changed, or fixed this iteration. |
 | `LORE.md` | Worldbuilding — history, factions, locations, aesthetics | Update if new factions, locations, story threads, or lore-relevant content was added. **Also update when the user gives feedback about how the game world should feel, look, or be** — any guidance on tone, setting, or world identity belongs here. |
 | `UI.md` | UI aesthetic guide — color palette, component patterns, decision log | Update if new UI components were added or visual conventions changed. **Also update when the user gives feedback about visual style, ship appearance, color choices, or aesthetic direction** — log decisions and rationale in the Decision Log section. |
+| `docs/ship_overhaul.md` | Ship & Faction Overhaul Spec — classes, modifiers, captains, and locations | Reference during the phased implementation of the new ship and factional systems. |
+| `docs/location_overhaul.md` | Location Overhaul Spec — station types, new commodities, and planet landing | Reference during the phased implementation of the "Living System" system. |
+| `docs/economy_overhaul.md` | Economy Overhaul Spec — dynamic pricing, market events, and smuggling | Reference during the phased implementation of the "Living Market" system. |
+| `docs/combat_tactics.md` | Combat Tactics Spec — formations, command hotkeys, and E-War | Reference during the phased implementation of the "Fleet Command" system. |
+| `docs/narrative_events.md` | Narrative Events Spec — procedural events, dialogue, and reputation | Reference during the phased implementation of the "Living Void" system. |
 | `CLAUDE.md` | This file — project instructions for Claude Code | Update the Architecture section if new systems, entities, or patterns were introduced. |
 
 ## Architecture

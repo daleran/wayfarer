@@ -22,7 +22,18 @@ For full worldbuilding, history, and aesthetic details, see `LORE.md`.
 
 ---
 
-## 1. Game Overview
+## 0.1 Active Overhaul: Ship & Faction System
+
+The core ship and location systems are currently undergoing a major expansion as detailed in `docs/ship_overhaul.md` and `docs/location_overhaul.md`. This plan includes:
+- **Living Factions:** Dynamic trade lanes and station patrols.
+- **New Ship Classes:** The Sledge (Cart), Ox (Hauler), Argosy (Caravel), Rainmaker (Missile Frigate), Torch (Lancer), and Hive (Carrier).
+- **Procedural Ships:** Unique names, backstories, and a 15-point "Quirk" modifier system.
+- **Captains:** Hireable personnel with unique traits and backgrounds.
+- **World Expansion:** 15 distinct station types and landable planets with surface gameplay.
+
+Implementation of these systems is prioritized over the legacy placeholders currently described in this spec.
+
+---
 
 ### 1.1 Elevator Pitch
 
