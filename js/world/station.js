@@ -1,11 +1,5 @@
 import { Entity } from '../entities/entity.js';
-
-const FACTION_COLORS = {
-  neutral:     '#4af',
-  independent: '#8f4',
-  military:    '#f84',
-  pirates:     '#f84',
-};
+import { FACTION, CYAN } from '../ui/colors.js';
 
 export class Station extends Entity {
   constructor(x, y, data) {
@@ -14,6 +8,7 @@ export class Station extends Entity {
     this.faction = data.faction ?? 'neutral';
     this.services = data.services ?? [];
     this.commodities = data.commodities ?? {};
+    this.shipyard = data.shipyard ?? [];
     this.dockingRadius = 150;
     this._navPulse = 0;
   }
@@ -24,21 +19,22 @@ export class Station extends Entity {
 
   render(ctx, camera) {
     const screen = camera.worldToScreen(this.x, this.y);
-    const color = FACTION_COLORS[this.faction] ?? '#4af';
+    const color = FACTION[this.faction] ?? CYAN;
     const cx = screen.x;
     const cy = screen.y;
 
     ctx.save();
 
-    // Outer glow ring
+    // Outer glow ring — subtle
     ctx.beginPath();
     ctx.arc(cx, cy, 44, 0, Math.PI * 2);
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle = color;
-    ctx.fill();
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // Hexagonal core (6 sides, radius 28px)
+    // Hexagonal core — wireframe emphasis
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
       const angle = (i / 6) * Math.PI * 2 - Math.PI / 6;
@@ -48,13 +44,13 @@ export class Station extends Entity {
       else ctx.lineTo(hx, hy);
     }
     ctx.closePath();
-    ctx.fillStyle = '#060c14';
+    ctx.fillStyle = 'rgba(0,4,8,0.8)';
     ctx.fill();
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // 4 docking arms radiating from cardinal angles
+    // 4 docking arms
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.5;
@@ -67,7 +63,7 @@ export class Station extends Entity {
     }
     ctx.globalAlpha = 1;
 
-    // Blinking nav lights — toggle every 0.8s
+    // Blinking nav lights
     const litUp = Math.floor(this._navPulse / 0.8) % 2 === 0;
     if (litUp) {
       ctx.fillStyle = color;
@@ -80,6 +76,15 @@ export class Station extends Entity {
         ctx.fill();
       }
     }
+
+    // Station name label
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = CYAN;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(this.name, cx, cy + 50);
+    ctx.globalAlpha = 1;
 
     ctx.restore();
   }
