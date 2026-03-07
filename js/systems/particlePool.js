@@ -5,6 +5,7 @@ const POOL_SIZE = 200;
 export class ParticlePool {
   constructor() {
     this._pool = Array.from({ length: POOL_SIZE }, createParticle);
+    this._rings = []; // expanding ring effects
   }
 
   _findSlot() {
@@ -42,24 +43,29 @@ export class ParticlePool {
 
   explosion(x, y, count = 20) {
     this.emit(x, y, count, {
-      colors: ['#f84', '#fa2', '#ff6', '#f40'],
+      colors: ['#ff8844', '#ffaa22', '#ffcc66', '#ff4400'],
       minSpeed: 30,
       maxSpeed: 120,
       life: 0.5,
       r: 3,
     });
-  }
 
-  engineTrail(x, y, angle) {
-    const count = Math.random() < 0.5 ? 2 : 1;
-    this.emit(x, y, count, {
-      colors: ['#4af', '#28f', '#6cf'],
-      angle: angle + Math.PI,
-      spread: 0.4,
-      minSpeed: 20,
-      maxSpeed: 60,
-      life: 0.2 + Math.random() * 0.2,
-      r: 2,
+    // Expanding ring effect
+    this._rings.push({
+      x, y,
+      radius: 5,
+      maxRadius: 60,
+      life: 0.5,
+      maxLife: 0.5,
+      color: '#ffaa44',
+    });
+    this._rings.push({
+      x, y,
+      radius: 3,
+      maxRadius: 40,
+      life: 0.35,
+      maxLife: 0.35,
+      color: '#ff6622',
     });
   }
 
@@ -71,10 +77,36 @@ export class ParticlePool {
       p.life -= dt;
       if (p.life <= 0) p.active = false;
     }
+
+    // Update rings
+    for (let i = this._rings.length - 1; i >= 0; i--) {
+      const ring = this._rings[i];
+      ring.life -= dt;
+      if (ring.life <= 0) {
+        this._rings.splice(i, 1);
+        continue;
+      }
+      const t = 1 - ring.life / ring.maxLife;
+      ring.radius = 5 + t * (ring.maxRadius - 5);
+    }
   }
 
   render(ctx, camera) {
     ctx.save();
+
+    // Render expanding rings
+    for (const ring of this._rings) {
+      const screen = camera.worldToScreen(ring.x, ring.y);
+      const alpha = ring.life / ring.maxLife;
+      ctx.strokeStyle = ring.color;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = alpha * 0.6;
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, ring.radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Render particles
     for (const p of this._pool) {
       if (!p.active) continue;
       const screen = camera.worldToScreen(p.x, p.y);
