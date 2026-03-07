@@ -1,19 +1,16 @@
 import { Projectile } from '../entities/projectile.js';
-import { CYAN } from '../ui/colors.js';
+import { AMBER } from '../ui/colors.js';
 
-// Laser turret — rare, expensive, energy-intensive.
-// Fast projectiles that ablate armor quickly but deal reduced hull damage.
-export class LaserTurret {
+export class Autocannon {
   constructor() {
-    this.armorDamage = 15;   // high vs armor
-    this.hullDamage = 4;     // low vs hull
-    this.cooldownMax = 0.15;
+    this.damage = 12;
+    this.cooldownMax = 0.35;
     this._cooldown = 0;
-    this.projectileSpeed = 800;
-    this.maxRange = 300;
+    this.projectileSpeed = 380;
+    this.maxRange = 400;
     this.isAutoFire = true;
-    this.color = CYAN;
-    this.glowColor = '#ccffff';
+    this.color = AMBER;
+    this.glowColor = '#ffe0a0';
   }
 
   update(dt) {
@@ -33,16 +30,15 @@ export class LaserTurret {
       ship.x, ship.y,
       nx * this.projectileSpeed,
       ny * this.projectileSpeed,
-      this.armorDamage,
+      this.damage,
       ship
     );
     proj.maxRange = this.maxRange;
     proj.color = this.color;
     proj.glowColor = this.glowColor;
-    proj.hullDamage = this.hullDamage;
-    proj.length = 3; // thin, fast beam bolt
+    proj.length = 6;
     entities.push(proj);
-    // Low crew = slower reload
+    // Low crew = slower reload (cooldown inflated by inverse crew efficiency)
     this._cooldown = this.cooldownMax / crewEfficiency;
   }
 }
