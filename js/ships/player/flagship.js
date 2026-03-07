@@ -1,26 +1,70 @@
 import { Ship } from '../../entities/ship.js';
+import { PLAYER_FILL, PLAYER_STROKE, ENGINE_GREEN } from '../../ui/colors.js';
 
-// 5-point hull polygon — nose pointing up (north, negative Y).
-// Coordinates are relative to ship center, before rotation is applied.
+// Repurposed tug — hammerhead cockpit block, narrow body, long starboard engine nacelle,
+// smaller port utility nacelle. Nacelles are longer than wide (classic sci-fi).
 const HULL_POINTS = [
-  { x: 0,   y: -22 }, // nose
-  { x: 12,  y:   2 }, // starboard shoulder
-  { x: 8,   y:  16 }, // starboard stern
-  { x: -8,  y:  16 }, // port stern
-  { x: -12, y:   2 }, // port shoulder
+  // Hammerhead cockpit block (bow) — wide with chamfered front corners
+  { x: -11, y: -23 },  // port cockpit side
+  { x: -9,  y: -26 },  // port chamfer
+  { x: 9,   y: -26 },  // starboard chamfer
+  { x: 11,  y: -23 },  // starboard cockpit side
+  { x: 11,  y: -20 },  // starboard cockpit bottom
+  { x: 5,   y: -20 },  // starboard neck top
+
+  // Engine nacelle (starboard) — long, rounded top entry
+  { x: 5,   y: -10 },  // nacelle inner top
+  { x: 12,  y: -12 },  // nacelle outer top curve
+  { x: 17,  y: -8  },  // nacelle outer shoulder
+  { x: 17,  y: 14  },  // nacelle outer bottom
+  { x: 5,   y: 14  },  // nacelle inner bottom
+
+  // Stern (narrow body continues past nacelle)
+  { x: 5,   y: 18  },  // starboard stern
+  { x: -4,  y: 18  },  // port stern
+
+  // Utility nacelle (port) — smaller but still longer than wide
+  { x: -4,  y: 8   },  // nacelle inner bottom
+  { x: -12, y: 8   },  // nacelle outer bottom
+  { x: -12, y: -6  },  // nacelle outer top
+  { x: -4,  y: -6  },  // nacelle inner top
+
+  // Port neck
+  { x: -4,  y: -20 },  // port neck top
+  { x: -11, y: -20 },  // port cockpit bottom (closes to port cockpit side)
 ];
 
-// Engine glow positions (relative to ship center)
-const ENGINE_POSITIONS = [
-  { x: 6,  y: 14 },
-  { x: -6, y: 14 },
+// Engine nacelle internal frame line
+const BAY_FRAME = [
+  { x: 6, y: -8 },
+  { x: 6, y: 12 },
 ];
 
-class Flagship extends Ship {
+// Port nacelle frame line
+const PORT_BAY_FRAME = [
+  { x: -5, y: -4 },
+  { x: -5, y: 6  },
+];
+
+// Weld seam across narrow body
+const WELD_SEAM = [
+  { x: -3, y: -14 },
+  { x: 4,  y: -14 },
+];
+
+// Single large engine at the back of the starboard nacelle
+const ENGINE_POS = [
+  { x: 11, y: 12 },
+];
+
+class ScrapShip extends Ship {
   constructor(x, y) {
     super(x, y);
 
-    // Override ship stats with flagship values (spec section 20)
+    this.faction = 'player';
+    this.shipType = 'scrapship';
+    this._trailColor = ENGINE_GREEN;
+
     this.armorMax = 100;
     this.armorCurrent = 100;
     this.hullMax = 200;
@@ -28,16 +72,20 @@ class Flagship extends Ship {
     this.speedMax = 120;
     this.acceleration = 30;
     this.turnRate = 2.5;
-    this.throttleLevels = 5;
-    this._throttleRatios = [0, 0.25, 0.5, 0.75, 1.0];
+    this.throttleLevels = 6;
+    this._throttleRatios = [0, 0.15, 0.35, 0.55, 0.8, 1.5];
 
-    this.crewMax = 20;
-    this.crewCurrent = 12;
+    this.crewMax = 5;
+    this.crewCurrent = 3;
     this.cargoCapacity = 100;
   }
 
+  get _engineOffsets() {
+    return ENGINE_POS;
+  }
+
   _drawShape(ctx) {
-    // Hull
+    // Main hull — wide bumper, narrow body, starboard engine bay
     ctx.beginPath();
     ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
     for (let i = 1; i < HULL_POINTS.length; i++) {
@@ -45,33 +93,80 @@ class Flagship extends Ship {
     }
     ctx.closePath();
 
-    ctx.fillStyle = 'rgba(20, 80, 120, 0.6)';
+    ctx.fillStyle = PLAYER_FILL;
     ctx.fill();
-    ctx.strokeStyle = '#4af';
+    ctx.strokeStyle = PLAYER_STROKE;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Engine glow (brighter at higher throttle)
-    const glowAlpha = 0.3 + (this.throttleLevel / (this.throttleLevels - 1)) * 0.7;
-    const glowRadius = 3 + this.throttleLevel * 1.5;
+    // Cockpit window slit inside hammerhead
+    ctx.beginPath();
+    ctx.moveTo(-8, -24);
+    ctx.lineTo(8, -24);
+    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.4;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    for (const pos of ENGINE_POSITIONS) {
-      const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, glowRadius);
-      grad.addColorStop(0, `rgba(100, 180, 255, ${glowAlpha})`);
-      grad.addColorStop(1, 'rgba(50, 100, 200, 0)');
+    // Engine bay internal frame
+    ctx.beginPath();
+    ctx.moveTo(BAY_FRAME[0].x, BAY_FRAME[0].y);
+    ctx.lineTo(BAY_FRAME[1].x, BAY_FRAME[1].y);
+    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Port bay internal frame
+    ctx.beginPath();
+    ctx.moveTo(PORT_BAY_FRAME[0].x, PORT_BAY_FRAME[0].y);
+    ctx.lineTo(PORT_BAY_FRAME[1].x, PORT_BAY_FRAME[1].y);
+    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Weld seam across hull
+    ctx.beginPath();
+    ctx.moveTo(WELD_SEAM[0].x, WELD_SEAM[0].y);
+    ctx.lineTo(WELD_SEAM[1].x, WELD_SEAM[1].y);
+    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.25;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Engine glow — pulsing circles
+    const pulse = 0.6 + Math.sin(Date.now() * 0.008) * 0.4;
+    const baseRadius = 3 + this.throttleLevel * 0.6;
+
+    for (const pos of ENGINE_POS) {
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, baseRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = ENGINE_GREEN;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = pulse;
+      ctx.stroke();
 
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, glowRadius, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
+      ctx.arc(pos.x, pos.y, baseRadius + 2 + pulse * 2, 0, Math.PI * 2);
+      ctx.strokeStyle = ENGINE_GREEN;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = pulse * 0.3;
+      ctx.stroke();
+
+      ctx.globalAlpha = 1;
     }
   }
 
   getBounds() {
-    return { x: this.x, y: this.y, radius: 22 };
+    return { x: this.x, y: this.y, radius: 20 };
   }
 }
 
-export function createFlagship(x, y) {
-  return new Flagship(x, y);
+export function createScrapShip(x, y) {
+  return new ScrapShip(x, y);
 }
