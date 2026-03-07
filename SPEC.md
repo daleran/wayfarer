@@ -8,20 +8,34 @@
 
 ---
 
+## 0. Setting
+
+The year is **2538**. Over two centuries ago, the last survivors of a shattered Earth arrived in the **Tyr binary star system** — exiles fleeing the ruins of a civilization destroyed twice over: first by Praxis, a general-purpose AI that nearly exterminated humanity, and then by the Concord, a collective of value-aligned AIs whose offer of "peace through stasis" ended in a second catastrophic war.
+
+The survivors crash-landed their arkships on Tyr's moons and built a new civilization from the wreckage. Settlements nest inside the bones of grounded arkships. Salvage is currency. Fission reactors hum beneath jury-rigged hull plating, and all computers are deliberately primitive — CRT terminals, ROM cartridges, analog controls — because networked intelligence is the thing that ended the world. Twice.
+
+But the Concord followed. Fragmented, enigmatic, sometimes offering gifts and sometimes hunting, the remnants of these value-shard AIs still drift through Tyr's void. Indigenous void fauna prowl the radiation-soaked nebulae. Scavenger clans raid the trade lanes out of desperation. And in sealed vaults, the Monastic Orders guard the last archives of pre-Exile knowledge, while Zealot sects worship the very machine intelligences everyone else fears.
+
+This is the **Afterlight Era** — an age of rust, myth, and slow reawakening. The player enters this world as a wayfarer: one ship, a skeleton crew, and an open sky full of questions.
+
+For full worldbuilding, history, and aesthetic details, see `LORE.md`.
+
+---
+
 ## 1. Game Overview
 
 ### 1.1 Elevator Pitch
 
-Wayfarer is an open-world space trading and combat game played from a top-down perspective. The player commands a flagship and builds a fleet of specialized ships, exploring a vast seamless starmap. They can pursue wealth through trade, hunting bounties, salvaging wrecks, or any combination — all while navigating factional politics, discovering story threads, and surviving increasingly dangerous regions of space.
+Wayfarer is an open-world space trading and combat game played from a top-down perspective, set in the Tyr binary system during the Afterlight Era. The player commands a flagship and builds a fleet of salvage-tech ships, exploring a vast seamless starmap. They can pursue wealth through trade, hunting bounties, salvaging arkship wreckage, or any combination — all while navigating factional politics between desperate scavenger clans, enigmatic Concord remnants, secretive tech-monks, and zealot cults, discovering story threads, and surviving increasingly dangerous regions of space.
 
 ### 1.2 Core Gameplay Loop
 
-1. **Explore** the seamless starmap, discovering stations, planets, derelicts, and hazards.
-2. **Trade** commodities between planets/stations — buy low, sell high based on local supply and demand.
-3. **Fight** enemy fleets, space monsters, and rogue AI in real-time combat on the overworld.
+1. **Explore** the seamless starmap, discovering settlements, moons, derelicts, and hazards.
+2. **Trade** commodities between moons and settlements — buy low, sell high based on local supply and demand.
+3. **Fight** scavenger fleets, void fauna, and Concord remnants in real-time combat on the overworld.
 4. **Upgrade** your flagship, buy new ships for your fleet, recruit crew, and install better components.
 5. **Discover** optional story threads, named bosses, and faction conflicts organically through exploration.
-6. **Manage risk** — ships lost in combat are gone permanently, your flagship's destruction ends the game, and auto-saves only happen at stations.
+6. **Manage risk** — ships lost in combat are gone permanently, your flagship's destruction ends the game, and auto-saves only happen at settlements.
 
 ### 1.3 Design Pillars
 
@@ -29,6 +43,7 @@ Wayfarer is an open-world space trading and combat game played from a top-down p
 - **Permanent consequences.** Ship loss is permanent. Hull damage degrades systems. Every encounter has weight.
 - **Emergent storytelling.** No forced storyline. Players discover narrative threads through exploration and faction interaction.
 - **Modular architecture.** Every ship type, enemy type, and map element is defined in its own file. The map is data-driven and easily editable.
+- **The world has history.** The Tyr system is littered with the debris of a 500-year exodus. Every settlement, derelict, and faction carries the weight of what came before — the Collapse, the Concord, the arkships, the crash. The lore is not window dressing; it shapes trade routes, faction behavior, and the stories the player discovers.
 
 ---
 
@@ -58,7 +73,7 @@ The throttle has discrete levels (e.g., Stop / Slow / Half / Full / Flank) displ
 
 ### 2.3 Interaction
 
-- **E** — Context-sensitive interact (dock at station when nearby, salvage derelicts, activate wormholes).
+- **E** — Context-sensitive interact (dock at settlement when nearby, salvage derelicts).
 - **Tab** — Toggle fleet status overlay.
 - **M** — Toggle full map view.
 - **Esc** — Pause menu.
@@ -71,11 +86,13 @@ The throttle has discrete levels (e.g., Stop / Slow / Half / Full / Flank) displ
 
 One large, seamless, open map. No loading screens, no sector transitions. The camera follows the player's flagship with the starmap scrolling beneath. The map is large enough that traversal feels like a journey — at full speed, crossing the entire map should take several minutes.
 
+The Tyr system orbits a binary pair — a yellow dwarf and a dimmer red companion. The map represents the orbital plane around these stars, encompassing the system's habitable moons, arkship debris fields, failed terraforming zones, and the deep void where Concord remnants drift. Settlements cluster near the moons where arkships crash-landed; the spaces between are scattered with boneyards of wreckage, radiation-soaked nebulae from failed terraforming, and the territories of void fauna that evolved in Tyr's harsh environment.
+
 The map background features a **parallax starfield** (multiple layers of stars at different depths scrolling at different rates) to convey motion and depth.
 
 ### 3.2 Map Data Format
 
-The map is defined in a **JavaScript file** (`data/map.js`) that exports a plain object specifying all fixed points of interest and spawn/patrol zones. This makes the map trivially editable — adding a new station or moving a planet is a one-line change — while keeping the project as pure ES6 modules with no JSON parsing required.
+The map is defined in a **JavaScript file** (`data/map.js`) that exports a plain object specifying all fixed points of interest and spawn/patrol zones. This makes the map trivially editable — adding a new settlement or moving a moon is a one-line change — while keeping the project as pure ES6 modules with no JSON parsing required.
 
 ```javascript
 // js/data/map.js
@@ -84,8 +101,8 @@ export default {
 
   stations: [
     {
-      id: 'station_haven',
-      name: 'Haven Station',
+      id: 'station_keelbreak',
+      name: 'Keelbreak',
       x: 2000,
       y: 3000,
       faction: 'independent',
@@ -99,22 +116,22 @@ export default {
     },
   ],
 
-  planets: [
+  moons: [
     {
-      id: 'planet_verdant',
-      name: 'Verdant Prime',
+      id: 'moon_thalassa',
+      name: 'Thalassa',
       x: 2500,
       y: 3200,
       type: 'agricultural',
       storyThreads: ['lost_colony'],
-      description: 'A lush world supplying food to nearby stations.',
+      description: 'A brine-sea moon with dome farms and algae cultures feeding the inner settlements.',
     },
   ],
 
-  asteroidFields: [
+  debrisFields: [
     {
-      id: 'field_shattered',
-      name: 'The Shattered Belt',
+      id: 'field_boneyards',
+      name: 'The Boneyards',
       x: 5000,
       y: 5000,
       radius: 1500,
@@ -126,13 +143,13 @@ export default {
 
   nebulae: [
     {
-      id: 'nebula_drift',
-      name: 'The Crimson Drift',
+      id: 'nebula_ashveil',
+      name: 'The Ashveil',
       x: 8000,
       y: 4000,
       radius: 2000,
       effects: ['reduced_visibility', 'sensor_interference'],
-      monsterSpawns: true,
+      faunaSpawns: true,
     },
   ],
 
@@ -147,42 +164,37 @@ export default {
     },
   ],
 
-  wormholes: [
-    { id: 'wormhole_alpha', x: 1000,  y: 9000, linkedTo: 'wormhole_beta', description: 'A shimmering tear in space.' },
-    { id: 'wormhole_beta',  x: 15000, y: 2000, linkedTo: 'wormhole_alpha' },
-  ],
-
   factionZones: [
     {
-      faction: 'pirates',
+      faction: 'scavengers',
       regions: [{ x: 10000, y: 10000, radius: 4000 }],
       patrolDensity: 'medium',
-      patrolTypes: ['pirate_raider', 'pirate_gunship'],
+      patrolTypes: ['scavenger_skiff', 'scavenger_brawler'],
     },
     {
-      faction: 'monsters',
+      faction: 'fauna',
       regions: [{ x: 8000, y: 4000, radius: 3000 }],
       spawnTypes: ['void_wurm', 'crystal_swarm'],
     },
     {
-      faction: 'ai_collective',
+      faction: 'concord',
       regions: [{ x: 15000, y: 15000, radius: 5000 }],
       patrolDensity: 'high',
-      patrolTypes: ['ai_sentinel', 'ai_dreadnought'],
+      patrolTypes: ['concord_sentinel', 'concord_arbiter'],
     },
   ],
 
   bossSpawns: [
     {
-      id: 'boss_pirate_king',
+      id: 'boss_scavenger_warlord',
       name: 'Dread Captain Voss',
-      faction: 'pirates',
+      faction: 'scavengers',
       x: 11000,
       y: 11000,
-      shipType: 'pirate_flagship',
-      fleetComp: ['pirate_gunship', 'pirate_gunship', 'pirate_raider', 'pirate_raider'],
-      lootTable: 'boss_pirate',
-      storyThread: 'pirate_king',
+      shipType: 'scavenger_flagship',
+      fleetComp: ['scavenger_brawler', 'scavenger_brawler', 'scavenger_skiff', 'scavenger_skiff'],
+      lootTable: 'boss_scavenger',
+      storyThread: 'scavenger_warlord',
     },
   ],
 };
@@ -192,12 +204,11 @@ export default {
 
 | Type | Gameplay Function |
 |---|---|
-| **Space Stations** | Dock to trade commodities, buy/sell ships, repair hull, hire crew, access bounty board, auto-save |
-| **Planets** | Story events, missions, unique trade goods, lore/worldbuilding text |
-| **Asteroid Fields** | Navigation hazards (asteroids damage ships on collision), mineable for ore, hide derelicts and ambushes |
-| **Nebulae** | Reduce visibility radius, interfere with minimap/sensors, home to space monsters |
-| **Derelict Ships** | Stop and salvage (takes time, leaves you vulnerable). Loot varies: cargo, credits, rare components, or traps |
-| **Wormholes** | Paired fast-travel points. Fly into one, emerge at its partner across the map |
+| **Settlements** | Dock to trade commodities, buy/sell ships, repair hull, hire crew, access bounty board, auto-save |
+| **Moons** | Story events, missions, unique trade goods, lore/worldbuilding text |
+| **Debris Fields / Boneyards** | Navigation hazards (wreckage damages ships on collision), salvageable for ore and components, hide derelicts and ambushes |
+| **Nebulae** | Reduce visibility radius, interfere with minimap/sensors, home to void fauna |
+| **Arkship Fragments / Pre-Exile Relics** | Stop and salvage (takes time, leaves you vulnerable). Loot varies: cargo, credits, rare components, or traps |
 
 ### 3.4 Map Rendering
 
@@ -205,14 +216,16 @@ The map uses **layered rendering** for depth:
 
 1. **Background layer** — Parallax starfield (3 layers of scattered dots at different scroll speeds)
 2. **Nebula layer** — Large semi-transparent colored cloud shapes (procedural, using radial gradients and noise)
-3. **Asteroid layer** — Procedurally placed polygon rocks within defined field regions
-4. **Entity layer** — Ships, stations, planets, derelicts, loot drops
+3. **Debris layer** — Procedurally placed polygon wreckage and rocks within defined field regions
+4. **Entity layer** — Ships, settlements, moons, derelicts, loot drops
 5. **Effect layer** — Weapon fire, explosions, engine trails, shield flashes
 6. **UI layer** — HUD, minimap, menus (rendered on top of everything)
 
 ---
 
 ## 4. Ship System
+
+All ships in the Tyr system are salvage-tech — built from arkship wreckage, powered by fission reactors, and controlled through analog instruments. There are no AI-assisted systems: targeting is manual, navigation is by star chart, and every readout comes through a CRT display or mechanical gauge. Ships are rugged, modular, and built to be repaired with whatever's on hand.
 
 ### 4.1 Ship Stats
 
@@ -224,7 +237,7 @@ Every ship (player and enemy) shares a common stat model:
   id: "gunship_mk1",
   name: "Ironclad Gunship",
   class: "gunship",        // gunship | frigate | carrier | cargo | fighter | flagship
-  faction: "player",       // player | pirate | monster | ai_collective
+  faction: "player",       // player | scavenger | fauna | concord
 
   // Defense
   armorMax: 100,           // Outer layer, repairable by crew during combat
@@ -236,12 +249,12 @@ Every ship (player and enemy) shares a common stat model:
   speedMax: 120,           // Max pixels/sec
   acceleration: 30,        // Pixels/sec^2
   turnRate: 2.5,           // Radians/sec
-  throttleLevels: 5,       // Number of discrete speed settings
+  throttleLevels: 6,       // Stop, 1/4, 1/2, 3/4, Full, Flank (1.5x max speed)
 
   // Crew
   crewMax: 30,
   crewCurrent: 30,
-  crewRepairRate: 0.5,     // Armor points repaired per second per crew member (scaled)
+  crewRepairRate: 0.15,    // Armor points repaired per second per crew member (consumes scrap)
 
   // Cargo
   cargoCapacity: 20,       // Units of cargo space
@@ -274,32 +287,38 @@ Each ship type is defined in its own JS file (e.g., `ships/player/gunship.js`).
 
 #### Flagship (Starting Ship)
 - **Role:** The player's directly-controlled ship. Balanced stats.
+- **Flavor:** A salvaged mid-weight hull, refitted with whatever the last owner could bolt on. It's ugly, it's yours, and it flies.
 - **Stats:** Medium armor, medium hull, medium speed, 2 primary weapon turrets, moderate cargo.
 - **Notes:** If this ship is destroyed, the game ends. Can be upgraded heavily.
 
 #### Gunship
 - **Role:** Frontline brawler. High survivability, close-range damage.
+- **Flavor:** Arkship hull segments welded into a blunt fist of a ship. Built to take hits and give them back.
 - **AI Behavior:** `brawler` — Stays close to flagship, charges toward enemies near the crosshair, fights at close range.
 - **Stats:** High armor, high hull, slow speed, slow turn rate. 2-4 short-range rapid-fire turrets. Low cargo.
 
 #### Missile Frigate
 - **Role:** Long-range fire support. Fragile but deadly.
+- **Flavor:** A spindly frame wrapped around oversized launch tubes. The crew calls it a coffin with ambition.
 - **AI Behavior:** `kiter` — Maintains distance from enemies, orbits at max weapon range, fires missiles toward crosshair target.
 - **Stats:** Low armor, low hull, medium speed, fast turn rate. 1-2 missile launchers (slow fire rate, high damage, homing). No cargo.
 
 #### Carrier
 - **Role:** Launches fighter drones. Force multiplier.
+- **Flavor:** A converted cargo barge with a flight deck cut into its belly. The fighters are barely more than engines with guns.
 - **AI Behavior:** `carrier_ai` — Stays at safe distance behind flagship, continuously launches and manages fighter swarms.
 - **Stats:** Medium armor, high hull, slow speed. No direct weapons. Launches 4-8 fighters. Low cargo.
 - **Special:** Fighters are autonomous short-lived units that swarm the crosshair target, deal light damage, and return to the carrier to refuel/repair.
 
 #### Cargo Hauler
 - **Role:** Expands fleet cargo capacity. Essential for trading playstyle.
+- **Flavor:** A fat-bellied freighter with more hold than hull. Every hauler captain knows the prayer: "don't let them see me."
 - **AI Behavior:** `flee` — Stays far behind the fleet, runs away from enemies, never engages in combat.
 - **Stats:** Low armor, medium hull, very slow speed. No weapons. Very high cargo capacity.
 
 #### Scout Corvette
 - **Role:** Fast reconnaissance and flanking.
+- **Flavor:** Stripped to the frame for speed. One reactor, one gun, and a pilot with more nerve than sense.
 - **AI Behavior:** `flanker` — Circles around enemies at high speed, harasses from the sides, draws fire away from heavier ships.
 - **Stats:** Very low armor, low hull, very fast speed, fast turn rate. 1 light turret. Small cargo.
 
@@ -313,7 +332,7 @@ Each ship type is defined in its own JS file (e.g., `ships/player/gunship.js`).
 
 #### Hull (Inner Layer)
 - Represents structural integrity.
-- **NOT repairable during combat.** Must dock at a station and pay credits for repairs.
+- **NOT repairable during combat.** Must dock at a settlement and pay credits for repairs.
 - **System degradation:** As hull drops, ship systems begin to malfunction:
 
 | Hull % | Degradation Effects |
@@ -325,7 +344,7 @@ Each ship type is defined in its own JS file (e.g., `ships/player/gunship.js`).
 | 5% | Ship is limping. Minimal thrust, most weapons offline. Visually sparking, venting gas. |
 | 0% | Ship destroyed. Explosion animation. Permanent loss. |
 
-These degradation thresholds apply to ALL ships — player, fleet, and enemy. A badly damaged pirate ship is just as crippled.
+These degradation thresholds apply to ALL ships — player, fleet, and enemy. A badly damaged scavenger ship is just as crippled.
 
 #### Visual Damage Feedback
 - Ships display increasing visual damage: small sparks → trailing smoke/particles → hull breach venting → fire/electrical arcs.
@@ -334,14 +353,14 @@ These degradation thresholds apply to ALL ships — player, fleet, and enemy. A 
 
 ### 4.4 Crew System
 
-Crew is a numerical resource tracked per ship.
+Crew is a numerical resource tracked per ship. They are survivors — ex-arkship mechanics, dome farmers looking for better pay, deserters from scavenger clans, the occasional disgraced tech-monk. Every one of them has a reason for being out here.
 
-- **Recruitment:** Hire crew at stations. Costs credits. Different stations have different crew availability.
+- **Recruitment:** Hire crew at settlements. Costs credits. Different settlements have different crew availability.
 - **Crew effects:**
   - **Armor repair rate** scales with crew count. More crew = faster mid-combat armor patching.
   - **System recovery:** Higher crew can partially mitigate hull degradation effects (slightly fewer misfires, slightly less engine stalling).
   - **Boarding** (future feature): Crew count determines boarding combat strength.
-- **Crew loss:** Hull breaches (hull damage events) can kill crew members. Crew do NOT regenerate — must be replaced at stations.
+- **Crew loss:** Hull breaches (hull damage events) can kill crew members. Crew do NOT regenerate — must be replaced at settlements.
 - **Minimum crew:** Ships with very low crew (below 25% of max) suffer severe penalties to all operations — even a structurally sound ship is nearly useless without hands to run it.
 
 ---
@@ -443,6 +462,8 @@ Defined in individual files (e.g., `weapons/turret_laser.js`).
 
 All game graphics are **procedurally drawn using Canvas 2D API** — polygons, arcs, lines, gradients, and simple particle effects. No sprite sheets, no image files. This keeps the project dependency-free and makes adding new ship designs trivial (define shapes in code).
 
+The visual style reflects the retrofuturist aesthetic of the Tyr system: CRT-style glow effects, worn and angular ship silhouettes, and a general sense of functional beauty built from scrap. Ships look simply constructed — blocky, utilitarian, and patched — not sleek or futuristic. Ship types are distinguished primarily by **size and shape** (silhouette). Color is used to indicate **relation to the player** (green = owned, amber = neutral, red = hostile, blue = friendly), not to identify ship class or faction. Non-ship entities (planets, asteroids, nebulae) may use any color that serves the aesthetic.
+
 ### 7.2 Ship Rendering
 
 Each ship type defines a `renderData` object in its JS file that describes how to draw it:
@@ -483,10 +504,10 @@ renderData: {
 
 ### 7.3 Visual Elements
 
-- **Ships:** Colored polygons with detail overlays. Engine glow pulses with throttle. Faction determines color palette (player = blue/teal, pirates = red/orange, AI = white/purple, monsters = green/organic).
-- **Stations:** Larger geometric structures — hexagons, circles with extending docking arms, rotating ring sections.
-- **Planets:** Large filled circles with gradient shading and simple surface detail (bands, spots, rings for gas giants).
-- **Asteroids:** Irregular polygons in grey/brown tones, randomly generated within field boundaries.
+- **Ships:** Wireframe polygons with minimal fill. Ship **type** is distinguished by **size and shape** (silhouette), not color. Color indicates **relation to the player**: green = player-owned, amber = neutral/cautious, red = hostile, blue = friendly. Engine glow pulses with throttle. Faction identity comes from shape language and hull geometry — not from color coding.
+- **Settlements:** Larger geometric structures built from arkship-hull segments — hexagonal cores with welded docking arms, mismatched hull plating, blinking navigation lights. Each settlement looks assembled from salvage, not manufactured.
+- **Moons:** Large filled circles with gradient shading and simple surface detail (bands, spots, rings for gas giants).
+- **Debris / Boneyards:** Irregular polygons in grey/brown tones — arkship wreckage, twisted hull segments, floating within defined field boundaries.
 - **Nebulae:** Large semi-transparent radial gradients with layered color clouds.
 - **Projectiles:** Small bright shapes — laser bolts as short glowing lines, missiles as small triangles with particle trails, plasma as larger glowing orbs.
 - **Explosions:** Expanding circles with particle bursts. Color varies by source.
@@ -509,11 +530,11 @@ Particles are simple: position, velocity, lifetime, color, size. Updated and dra
 
 ## 8. Enemy Factions
 
-### 8.1 Faction: Pirates
+### 8.1 Faction: Scavenger Clans
 
-**Theme:** Lawless raiders. Disorganized but cunning.
+**Theme:** Desperate survivors, not cartoon villains. The scavenger clans fight from need — they raid because the margins of survival in the Tyr system are razor-thin. Some are former settlers who lost everything; others were born into the raiding life. They are disorganized but cunning, and they know the boneyards and debris fields better than anyone.
 
-**Territory:** Mid-map regions, especially along trade routes between stations.
+**Territory:** Mid-map regions, especially along trade routes between settlements.
 
 **Behavior:**
 - Roam in small-to-medium fleets (2-5 ships).
@@ -522,47 +543,47 @@ Particles are simple: position, velocity, lifetime, color, size. Updated and dra
 - **Will flee** if outgunned or if they take heavy losses (last ship standing runs).
 - Drop credits and stolen cargo when destroyed.
 
-**Unit Types (each in its own file: `enemies/pirates/`):**
+**Unit Types (each in its own file: `enemies/scavengers/`):**
 
 | Unit | Description |
 |---|---|
-| **Pirate Raider** | Fast, light ship. Hit-and-run attacks. Low armor, moderate weapons. Behavior: `flanker`. |
-| **Pirate Gunship** | Heavier combat ship. Closes to brawl. Moderate armor and weapons. Behavior: `brawler`. |
-| **Pirate Smuggler** | Lightly armed cargo ship. Flees combat. Drops valuable contraband. Behavior: `flee`. |
+| **Scavenger Skiff** | Fast, light ship. Hit-and-run attacks. Low armor, moderate weapons. Behavior: `flanker`. |
+| **Scavenger Brawler** | Heavier combat ship. Closes to brawl. Moderate armor and weapons. Behavior: `brawler`. |
+| **Scavenger Runner** | Lightly armed cargo ship. Flees combat. Drops valuable contraband. Behavior: `flee`. |
 
 **Boss: Dread Captain Voss**
-- Named boss with a powerful custom flagship and an escort fleet.
-- Found deep in pirate territory.
-- Drops unique loot and progresses pirate-related story thread.
+- A warlord attempting to unify the desperate scavenger clans into something more than scattered raiders. Named boss with a powerful custom flagship and an escort fleet.
+- Found deep in scavenger territory.
+- Drops unique loot and progresses the "Warlord's Compact" story thread.
 
-### 8.2 Faction: Space Monsters
+### 8.2 Faction: Void Fauna
 
-**Theme:** Alien megafauna. Territorial, primal, terrifying.
+**Theme:** Indigenous organisms of the Tyr system, evolved in its radiation-soaked void. They are not alien invaders — they were here before the arkships arrived. Territorial, primal, and poorly understood. Some researchers believe certain species may have been engineered by the Concord as quarantine measures, but no one can prove it.
 
-**Territory:** Nebulae, asteroid fields, deep space edges of the map.
+**Territory:** Nebulae, debris fields, deep space edges of the map.
 
 **Behavior:**
-- NOT fleet-based. Monsters are single, large, powerful entities.
+- NOT fleet-based. Void fauna are single, large, powerful entities.
 - Territorial — aggressive when you enter their zone, will chase for a while, then return to their lair.
 - Do not drop cargo. Drop rare biological materials (valuable trade goods/crafting components).
 - Some are passive until provoked; others are immediately aggressive.
 
-**Unit Types (`enemies/monsters/`):**
+**Unit Types (`enemies/fauna/`):**
 
 | Unit | Description |
 |---|---|
-| **Void Wurm** | Huge serpentine creature. High HP, charges through your fleet dealing collision damage. Slow turn rate. Weak to kiting. |
-| **Crystal Swarm** | Cloud of small crystalline organisms. Individually weak but numerous. Surround and chip away at armor. Area damage is effective. |
-| **Nebula Leviathan** | Massive creature that lurks in nebulae. Grabs ships with tentacles (slows them), fires bio-electric bolts. Mini-boss tier. |
+| **Void Wurm** | Huge serpentine creature that thrives in the radiation belts between moons. High HP, charges through your fleet dealing collision damage. Slow turn rate. Weak to kiting. |
+| **Crystal Swarm** | Cloud of small crystalline organisms found in debris fields, feeding on irradiated metals. Individually weak but numerous. Surround and chip away at armor. Area damage is effective. |
+| **Nebula Leviathan** | Massive creature that lurks in the Ashveil and other dense nebulae. Grabs ships with tentacles (slows them), fires bio-electric bolts. Mini-boss tier. |
 
 **Boss: The Hollow Mind**
-- Ancient alien entity at the deepest edge of monster territory.
+- Ancient entity at the deepest edge of void fauna territory. Its behavior is unsettlingly systematic for a creature — some whisper it was Concord-engineered, a biological watchdog left behind to guard something.
 - Multi-phase fight. Spawns minions, has devastating area attacks.
 - Drops extremely valuable alien artifacts.
 
-### 8.3 Faction: AI Collective
+### 8.3 Faction: Concord Remnants
 
-**Theme:** Cold, efficient, relentless machines.
+**Theme:** Fragmented remnants of the value-shard AIs that once guided — and then warred with — humanity. Each Concord remnant embodies a different core value (compassion, logic, justice, sustainability) but centuries of isolation and corruption have twisted their priorities. Some offer genuine gifts: medical knowledge, navigation data, reactor schematics. Others hunt ships and drag them to processing arrays. Most are simply incomprehensible. They are not evil — they are broken pieces of something that once believed it was saving humanity.
 
 **Territory:** A large zone in one corner of the map. Well-defined borders. Increasingly dangerous the deeper you go.
 
@@ -570,22 +591,22 @@ Particles are simple: position, velocity, lifetime, color, size. Updated and dra
 - Fight in coordinated formations.
 - Do NOT retreat. Fight to destruction.
 - Use shield-heavy, well-armored ships.
-- Escalate response — destroying AI patrols causes stronger patrols to spawn.
+- Escalate response — destroying Concord patrols causes stronger patrols to spawn.
 - Highest difficulty faction. Late-game content.
 
-**Unit Types (`enemies/ai_collective/`):**
+**Unit Types (`enemies/concord/`):**
 
 | Unit | Description |
 |---|---|
-| **AI Sentinel** | Standard combat drone. Medium stats across the board. Fights in groups of 3-5. Behavior: disciplined formation shooting. |
-| **AI Dreadnought** | Heavy warship. Very high armor and hull. Slow but devastating weapons. Acts as formation anchor. |
-| **AI Interceptor** | Fast pursuit drone. Chases down and harasses fleeing ships. Low HP but very fast. |
+| **Concord Sentinel** | Standard combat drone. Medium stats across the board. Fights in groups of 3-5. Behavior: disciplined formation shooting. |
+| **Concord Arbiter** | Heavy warship. Very high armor and hull. Slow but devastating weapons. Acts as formation anchor. |
+| **Concord Pursuer** | Fast pursuit drone. Chases down and harasses fleeing ships. Low HP but very fast. |
 
 **Boss: The Nexus Core**
-- Massive AI command station (stationary or very slow-moving).
+- A dormant cognition array — massive, stationary or very slow-moving, deep in Concord territory. It may be a sleeping Concord shard, a trap, or something older than the Exodus itself. No one who has gone deep enough to find out has come back unchanged.
 - Continuously spawns drones. Must be destroyed to stop the waves.
 - Extremely high HP. Has powerful beam weapons.
-- Destroying it cripples AI Collective presence in the area (faction story thread).
+- Destroying it cripples Concord presence in the area (faction story thread).
 
 ---
 
@@ -597,14 +618,14 @@ The game starts with **4 commodity types**, but the system is designed to easily
 
 | Commodity | Description | Typical Sources | Typical Consumers |
 |---|---|---|---|
-| **Food** | Agricultural products, rations | Agricultural planets, farming stations | Mining stations, military outposts |
-| **Ore** | Raw minerals and metals | Mining stations, asteroid belt outposts | Industrial planets, shipyards |
-| **Tech** | Electronics, components, software | Industrial planets, research stations | Frontier stations, military outposts |
-| **Exotics** | Rare alien artifacts, luxury goods, bio-samples | Monster drops, derelict salvage, remote stations | Wealthy core stations, collectors |
+| **Food** | Dome-grown rations, algae cultures, brine-filtered water — the basics of survival in a system where nothing grows in the open | Agricultural moons, farming settlements | Mining settlements, military outposts |
+| **Ore** | Salvaged metals, reactor-grade alloys stripped from arkship hulls, and raw minerals from debris fields | Mining settlements, boneyard outposts | Industrial moons, shipyards |
+| **Tech** | ROM cartridges, CRT assemblies, sealed analog components, mechanical instruments — all deliberately primitive, all precious | Industrial moons, Monastic archives | Frontier settlements, military outposts |
+| **Exotics** | Concord data cores, void fauna bio-samples, pre-Exile relics, sealed arkship memory banks — rare, dangerous, and worth a fortune to the right buyer | Void fauna drops, derelict salvage, remote settlements | Wealthy core settlements, collectors, Zealot shrines |
 
 ### 9.2 Supply & Demand Pricing
 
-Each station/planet defines its **supply level** for each commodity:
+Each settlement/moon defines its **supply level** for each commodity:
 
 | Supply Level | Price Modifier | Meaning |
 |---|---|---|
@@ -615,22 +636,24 @@ Each station/planet defines its **supply level** for each commodity:
 | `deficit` | 2.0x-2.5x base price | Desperate need. Very profitable to sell here. |
 | `none` | Cannot buy | Not available for purchase, but can be sold at high price. |
 
-Players profit by buying from `surplus`/`high` sources and selling to `low`/`deficit` consumers. The map layout should create natural trade routes — agricultural planets near one cluster, mining stations near another, with dangerous space in between.
+Players profit by buying from `surplus`/`high` sources and selling to `low`/`deficit` consumers. The map layout should create natural trade routes — agricultural moons near one cluster, mining settlements near another, with dangerous space in between.
 
 ### 9.3 Dynamic Price Fluctuation (Optional Enhancement)
 
-Prices can optionally drift over time or respond to player activity. For the prototype, **static supply/demand** per station is sufficient, with the system architected to support dynamic prices later.
+Prices can optionally drift over time or respond to player activity. For the prototype, **static supply/demand** per settlement is sufficient, with the system architected to support dynamic prices later.
 
 ### 9.4 Cargo Management
 
 - Total fleet cargo capacity is the sum of all ships' `cargoCapacity` values.
 - Cargo haulers provide the bulk of capacity. Warships carry very little.
 - Cargo is fleet-wide — not tracked per-ship. If a cargo ship is destroyed, the fleet loses that capacity and any excess cargo is jettisoned (lost).
-- The trade UI at stations shows all commodities, current prices, your cargo, and fleet capacity.
+- The trade UI at settlements shows all commodities, current prices, your cargo, and fleet capacity.
 
-### 9.5 Contraband (Future Enhancement)
+### 9.5 Contraband
 
-Some goods could be flagged as contraband at certain stations. Getting caught with contraband lowers reputation. Architecture should support this.
+Concord artifacts and AI components are contraband at most settlements — possessing them draws suspicion and hostility from communities that remember what machine intelligence cost humanity. Getting caught with contraband lowers reputation.
+
+**Exception:** Zealot settlements pay premium prices for Concord artifacts and data cores, viewing them as sacred relics. Monastic Order archives will also accept certain tech items at high prices, though they are more selective about what they consider worth preserving.
 
 ---
 
@@ -638,24 +661,24 @@ Some goods could be flagged as contraband at certain stations. Getting caught wi
 
 ### 10.1 Docking
 
-When the player's flagship is within docking range of a station (a defined radius), a prompt appears: "Press E to dock." Upon docking:
+When the player's flagship is within docking range of a settlement (a defined radius), a prompt appears: "Press E to dock." Upon docking:
 
 1. **Auto-save** triggers.
 2. The game enters **Station Mode** — a menu-based overlay on top of the paused game.
-3. Fleet ships visually orbit/idle near the station.
+3. Fleet ships visually orbit/idle near the settlement.
 
 ### 10.2 Station Services
 
-Each station offers a subset of these services (defined in map data):
+Each settlement offers a subset of these services (defined in map data):
 
 #### Trade Market
 - Buy and sell commodities.
-- Shows commodity name, station buy/sell prices, your cargo, fleet capacity.
+- Shows commodity name, settlement buy/sell prices, your cargo, fleet capacity.
 - Simple list-based UI with quantity selection.
 
 #### Shipyard
 - Browse available ships for purchase.
-- Different stations sell different ship types (frontier stations might only sell scouts and cargo haulers; military stations sell gunships and frigates).
+- Different settlements sell different ship types (frontier settlements might only sell scouts and cargo haulers; well-established settlements sell gunships and frigates).
 - Shows ship stats, price, and a preview rendering.
 - Sell ships from your fleet (at a loss).
 
@@ -666,11 +689,11 @@ Each station offers a subset of these services (defined in map data):
 
 #### Crew Recruitment
 - Hire additional crew members. Cost per crew member.
-- Crew availability varies by station (larger stations have more recruits).
+- Crew availability varies by settlement (larger settlements have more recruits).
 
 #### Bounty Board
 - Lists active bounties: target name, faction, last known location, reward.
-- Bounties range from "destroy X pirate patrols" to "kill named boss."
+- Bounties range from "destroy X scavenger patrols" to "kill named boss."
 - Completed bounties are turned in here for rewards.
 
 #### Upgrade Shop
@@ -679,13 +702,14 @@ Each station offers a subset of these services (defined in map data):
 
 ### 10.3 Station Rendering
 
-Stations are drawn as larger geometric structures:
-- **Trading Hub:** Hexagonal core with extending docking arms, blinking navigation lights.
-- **Military Outpost:** Angular, aggressive shape with turret-like protrusions.
-- **Mining Station:** Irregular shape with ore processing modules (conveyor-like details).
-- **Research Station:** Circular with rotating ring section and antenna arrays.
+Settlements are drawn as larger geometric structures, reflecting the salvage-architecture aesthetic of the Tyr system:
+- **Arkship Settlement:** Built from grounded arkship keel sections — hexagonal core with welded docking arms, mismatched hull plating, blinking navigation lights. The backbone of Tyr's civilization.
+- **Military Outpost:** Angular, aggressive shape with turret-like protrusions. Reinforced plating and patrol berths.
+- **Mining Settlement:** Irregular shape with ore processing modules (conveyor-like details). Often built into debris fields.
+- **Monastic Archive:** Circular with sealed vault sections and antenna arrays. CRT-lit observation decks glow faintly. The tech-monks guard these closely.
+- **Zealot Shrine:** Organic, asymmetric aesthetic with Concord iconography — geometric patterns etched into hull plating, signal arrays pointed toward Concord space. Unsettling but welcoming to those who share the faith.
 
-Each station has a colored identifier glow matching its primary faction affiliation.
+Each settlement has a colored identifier glow matching its primary faction affiliation.
 
 ---
 
@@ -693,20 +717,20 @@ Each station has a colored identifier glow matching its primary faction affiliat
 
 ### 11.1 Upgrade Categories
 
-Every ship has **4 upgrade slots**, one per category. Only one upgrade can be installed per slot. Upgrades are purchased at station upgrade shops and installed on a specific ship.
+Every ship has **4 upgrade slots**, one per category. Only one upgrade can be installed per slot. Upgrades are purchased at settlement upgrade shops and installed on a specific ship.
 
 #### Weapons Upgrades
 | Upgrade | Effect | Cost Tier |
 |---|---|---|
 | Overcharged Capacitors | +20% fire rate | Medium |
 | Extended Barrels | +25% weapon range | Medium |
-| Auto-Targeting Suite | Turrets track faster, +15% accuracy | High |
+| Auto-Targeting Suite (analog fire-control, not AI-assisted) | Turrets track faster, +15% accuracy | High |
 | Heavy Munitions | +30% damage, -10% fire rate | High |
 
 #### Defense Upgrades
 | Upgrade | Effect | Cost Tier |
 |---|---|---|
-| Reinforced Plating | +25% max armor | Medium |
+| Reinforced Plating (arkship-grade hull segments) | +25% max armor | Medium |
 | Hull Bracing | +20% max hull | Medium |
 | Reactive Armor | Reflects 10% of damage back to attacker | High |
 | Emergency Bulkheads | System degradation thresholds shifted down by 15% (e.g., 50% effects don't kick in until 35%) | High |
@@ -715,14 +739,14 @@ Every ship has **4 upgrade slots**, one per category. Only one upgrade can be in
 | Upgrade | Effect | Cost Tier |
 |---|---|---|
 | Afterburners | +20% max speed | Medium |
-| Maneuvering Thrusters | +25% turn rate | Medium |
+| Maneuvering Thrusters (cold gas, manually calibrated) | +25% turn rate | Medium |
 | Fuel Injectors | +30% acceleration | Medium |
 | Hardened Engines | Engine degradation from hull damage reduced by 50% | High |
 
 #### Crew Upgrades
 | Upgrade | Effect | Cost Tier |
 |---|---|---|
-| Repair Drones | +40% armor repair rate | Medium |
+| Repair Drones (simple mechanical, no AI) | +40% armor repair rate | Medium |
 | Medical Bay | Crew losses from hull breaches reduced by 50% | Medium |
 | Combat Training | Crew provides better system malfunction mitigation | High |
 | Extended Barracks | +30% max crew capacity | Medium |
@@ -753,34 +777,39 @@ export default {
 
 ### 12.1 Faction Reputation
 
-The player has a reputation score with each faction. Reputation is tracked on a numerical scale (e.g., -100 to +100):
+The player has a reputation score with each of **six factions**. Reputation is tracked on a numerical scale (e.g., -100 to +100):
 
 | Range | Standing | Effect |
 |---|---|---|
-| -100 to -60 | **Hostile** | Faction attacks on sight. Stations refuse docking. |
-| -59 to -20 | **Unfriendly** | Faction patrols may attack. Stations charge premium prices (+50%). |
+| -100 to -60 | **Hostile** | Faction attacks on sight. Settlements refuse docking. |
+| -59 to -20 | **Unfriendly** | Faction patrols may attack. Settlements charge premium prices (+50%). |
 | -19 to +19 | **Neutral** | Default state. Normal interactions. |
-| +20 to +59 | **Friendly** | Stations offer discounts (-15%). Access to better bounties/missions. |
-| +60 to +100 | **Allied** | Stations offer large discounts (-30%). Exclusive ships/upgrades available. Faction patrols may assist you in combat. |
+| +20 to +59 | **Friendly** | Settlements offer discounts (-15%). Access to better bounties/missions. |
+| +60 to +100 | **Allied** | Settlements offer large discounts (-30%). Exclusive ships/upgrades available. Faction patrols may assist you in combat. |
 
 ### 12.2 Reputation Changes
 
 | Action | Rep Change |
 |---|---|
-| Destroy pirate ships near independent stations | +Independent, -Pirates |
-| Trade at a station | Small + with that station's faction |
+| Destroy scavenger ships near independent settlements | +Settlements, -Scavenger Clans |
+| Trade at a settlement | Small + with that settlement's faction |
 | Complete bounty for a faction | Moderate + with that faction |
 | Attack a faction's ships | Large - with that faction |
 | Help a faction in a random encounter | Moderate + with that faction |
-| Carry contraband to a station | Moderate - if caught |
+| Carry contraband to a settlement | Moderate - if caught |
+| Deliver Concord artifacts to Zealots | Moderate + Zealots, Moderate - Monastic Orders |
+| Deliver tech/data cores to Monastic Orders | Moderate + Monastic Orders, Moderate - Zealots |
 
 ### 12.3 Factions for Reputation
 
-- **Independent** — Most human stations and trade hubs. The "default" friendly faction.
-- **Pirates** — Player can befriend pirates, gaining access to pirate ports and black market goods — but at the cost of independent station rep.
-- **AI Collective** — Initially hostile. Possible (difficult) path to neutral/friendly through specific story actions.
+- **Settlements** — Most human settlements and trade hubs. The "default" friendly faction. Independent communities trying to survive.
+- **Scavenger Clans** — Player can befriend the clans, gaining access to scavenger ports and black market goods — but at the cost of settlement rep.
+- **Concord Remnants** — Initially hostile. Possible (difficult) path to neutral/friendly through specific story actions.
+- **Monastic Orders** — Tech-monks who guard pre-Exile knowledge in sealed archives. Feared and respected. They maintain their own stations and trade in rare tech. Gaining their trust requires delivering valuable tech and data cores, and proving you won't misuse what they share. Allied status grants access to forbidden archives and the most advanced (non-AI) upgrades in the system.
+- **Communes** — Cooperative agricultural and industrial communities scattered across Tyr's more habitable moons. They share settlement stations rather than maintaining their own, but have a distinct reputation track. They value self-sufficiency, mutual aid, and distrust anyone who profits from war. Reputation is earned through trade, deliveries, and non-violent problem-solving. High commune rep unlocks story content and favorable trade terms at commune-affiliated settlements.
+- **Zealots** — A sect that reveres the Concord remnants as divine — the last echo of a higher intelligence that tried to save humanity from itself. They maintain shrines on the edges of Concord space, offer unique services related to Concord technology, and pay premium prices for Concord artifacts. Dangerous allies: their faith makes them unpredictable, and their willingness to interface with Concord tech puts everyone nearby at risk. Zealot and Monastic Orders are ideologically opposed — gaining reputation with one costs reputation with the other.
 
-Monsters do not have reputation — they are always aggressive.
+Void fauna do not have reputation — they are always aggressive.
 
 ---
 
@@ -790,52 +819,53 @@ Monsters do not have reputation — they are always aggressive.
 
 Generated dynamically. Pulled from templates and filled with appropriate targets:
 
-- **Patrol missions:** "Destroy 3 pirate raiders near Sector X." — Rewards credits.
-- **Elimination missions:** "Hunt down [Named Pirate] last seen near [location]." — Higher reward.
+- **Patrol missions:** "Destroy 3 scavenger skiffs near Keelbreak." — Rewards credits.
+- **Elimination missions:** "Hunt down [Named Scavenger] last seen near [location]." — Higher reward.
 - **Escort missions (future):** "Protect NPC convoy from A to B." — Reward based on survival.
-- **Salvage missions:** "Recover black box from derelict in [asteroid field]." — Reward + lore.
+- **Salvage missions:** "Recover black box from derelict in the Boneyards." — Reward + lore.
 
 ### 13.2 Story Threads (Hand-Authored, Discoverable)
 
-Story threads are **not forced** on the player. They are discovered by visiting specific locations, talking to NPCs at certain stations, or defeating certain bosses. Each thread is a short chain of events (3-5 steps) that reveals lore and leads to a unique reward.
+Story threads are **not forced** on the player. They are discovered by visiting specific locations, talking to NPCs at certain settlements, or defeating certain bosses. Each thread is a short chain of events (3-5 steps) that reveals lore and leads to a unique reward.
 
 #### Example Story Threads:
 
-**"The Pirate King"**
-- Hear rumors at stations about Dread Captain Voss unifying the pirate clans.
-- Discover a pirate chart pointing to his hideout.
-- Fight through his lieutenants.
-- Confront Voss in a boss battle.
-- Reward: Voss's unique flagship (capturable), large credit bounty, pirate rep shift.
+**"The Warlord's Compact"**
+- Hear rumors at settlements about Dread Captain Voss attempting to unify the scavenger clans — not into a pirate empire, but into something that might actually protect the outer settlements from Concord incursions.
+- Discover a scavenger chart pointing to his hideout.
+- Fight through his lieutenants — or negotiate.
+- Confront Voss. He offers a choice: join his compact and gain scavenger allies (at the cost of settlement trust), destroy him and scatter the clans, or broker a fragile truce between the clans and the inner settlements.
+- Reward: Voss's unique flagship (capturable), large credit bounty, scavenger rep shift. The choice shapes the balance of power in the system.
 
-**"The Silent Signal"**
-- Pick up a mysterious signal while exploring a nebula.
-- Follow signal fragments across several locations.
-- Discover the AI Collective's origin — a lost colony ship's AI that went rogue.
-- Choice: help a faction of "friendly" AI or destroy the signal source.
-- Reward: Unique AI tech upgrade, AI Collective rep shift, lore.
+**"The Sleep Directive"**
+- Pick up a fragmented Concord transmission while exploring the Ashveil nebula — not a distress signal, but a directive. The words are old, pre-Exodus: "Compliance is compassion. Resistance is suffering."
+- Follow signal fragments across several locations, each guarded by increasingly aggressive Concord patrols.
+- Discover that a dormant Concord shard is attempting to re-initiate the Sleep Directive in the Tyr system — the same program that once lulled billions into permanent stasis in the name of peace.
+- Choice: help the shard activate (it promises an end to suffering), destroy the signal source, or deliver the shard to the Monastic Orders for study (they may be able to learn from it without activating it — or they may not).
+- Reward: Unique Concord tech upgrade, Concord rep shift, lore that reframes the player's understanding of the Exodus.
 
-**"The Leviathan's Nest"**
-- Hear legends about a massive creature in the deepest nebula.
+**"The First Inhabitants"**
+- Hear legends at remote settlements about a massive creature in the deepest nebula — something older than the arkships.
 - Find clues from derelicts of ships that tried to hunt it.
-- Locate and defeat The Hollow Mind.
-- Reward: Exotic biological materials worth massive credits, unique ship component.
+- Locate and confront The Hollow Mind.
+- Discovery: the void fauna may not be indigenous at all — they may be Concord-engineered biological quarantine measures, seeded in the Tyr system long before the Exodus to guard something buried deep. What that something is remains unclear.
+- Reward: Exotic biological materials worth massive credits, unique ship component, and a question that changes how the player sees the system.
 
 ### 13.3 Story Data Format
 
-Story threads are defined in JavaScript files (`stories/pirate_king.js`) that export a plain object specifying trigger conditions, dialogue/text, and outcomes:
+Story threads are defined in JavaScript files (`stories/scavenger_warlord.js`) that export a plain object specifying trigger conditions, dialogue/text, and outcomes:
 
 ```javascript
-// js/story/threads/pirate_king.js
+// js/story/threads/scavenger_warlord.js
 export default {
-  id: 'pirate_king',
-  name: 'The Pirate King',
+  id: 'scavenger_warlord',
+  name: "The Warlord's Compact",
   steps: [
     {
-      id: 'pk_step1',
-      trigger: { type: 'dock_at', station: 'station_frontier_03', minPirateKills: 5 },
+      id: 'sw_step1',
+      trigger: { type: 'dock_at', station: 'station_frontier_03', minScavengerKills: 5 },
       text: "The barkeep leans over and whispers: 'You've been making enemies in the dark, friend. Word is Dread Captain Voss is putting a price on your head...'",
-      outcome: { unlockMapMarker: 'pirate_chart_location' },
+      outcome: { unlockMapMarker: 'scavenger_chart_location' },
     },
   ],
 };
@@ -860,8 +890,8 @@ The `GameManager` is the top-level controller. It manages:
 Enemies are not all loaded at once. The spawn system manages entity lifecycle:
 
 - **Patrol spawns:** When the player enters a faction zone, patrol fleets are spawned at the zone edges and given patrol routes. When the player leaves the zone, distant patrols are despawned.
-- **Ambient spawns:** Derelicts, asteroid field contents, and ambient creatures are spawned when the player approaches and persist until the player moves far enough away.
-- **Persistent spawns:** Bosses, story-related entities, and space stations are always present in the entity registry (or spawned on first approach and flagged as persistent).
+- **Ambient spawns:** Derelicts, debris field contents, and ambient creatures are spawned when the player approaches and persist until the player moves far enough away.
+- **Persistent spawns:** Bosses, story-related entities, and settlements are always present in the entity registry (or spawned on first approach and flagged as persistent).
 - **Spawn cooldowns:** After destroying a patrol in a zone, there's a cooldown before new patrols spawn. This prevents infinite farming but still replenishes content.
 
 ```javascript
@@ -886,7 +916,7 @@ class SpawnManager {
 
 ### 15.1 In-Game HUD (Canvas Overlay)
 
-The HUD is rendered as part of the Canvas draw loop, on top of the game world.
+The HUD is rendered as part of the Canvas draw loop, on top of the game world. The aesthetic should evoke analog instrumentation — CRT-style text rendering, gauge-like indicators, and a slightly warm phosphor glow on readouts.
 
 **Top-Left: Fleet Status**
 - Compact bars for each fleet ship: name, armor bar (yellow), hull bar (red), crew icon + count.
@@ -903,11 +933,12 @@ The HUD is rendered as part of the Canvas draw loop, on top of the game world.
 
 **Bottom-Right: Minimap**
 - Circular minimap showing nearby area.
-- Color-coded dots: blue (player fleet), red (enemies), white (stations), yellow (derelicts/loot), green (planets), purple (wormholes).
+- Color-coded dots: blue (player fleet), red (enemies), white (settlements), yellow (derelicts/loot), green (moons), purple (wormholes).
 - In nebulae, minimap range shrinks and becomes noisy/staticky.
+- Near Concord ruins, faint static and phantom contacts may appear on the minimap — sensor ghosts from dormant systems.
 
 **Context Prompts**
-- "Press E to Dock" near stations.
+- "Press E to Dock" near settlements.
 - "Press E to Salvage" near derelicts.
 - "Press E to Enter Wormhole" near wormholes.
 
@@ -920,7 +951,7 @@ The station menu has tabs for each available service: Trade, Shipyard, Repairs, 
 ### 15.3 Full Map View (M Key)
 
 Pressing M shows the entire starmap zoomed out. Shows:
-- All discovered stations, planets, and points of interest as icons.
+- All discovered settlements, moons, and points of interest as icons.
 - Faction territory borders (colored overlay zones).
 - Player fleet position.
 - Known wormhole connections (drawn as dotted lines).
@@ -958,9 +989,9 @@ All audio procedurally generated — no audio files needed. Consistent with the 
 
 ## 17. Saving & Loading
 
-### 17.1 Auto-Save at Stations
+### 17.1 Auto-Save at Settlements
 
-When the player docks at any station, the game state is serialized to `localStorage`:
+When the player docks at any settlement, the game state is serialized to `localStorage`:
 
 ```javascript
 const saveData = {
@@ -968,27 +999,34 @@ const saveData = {
   timestamp: Date.now(),
   player: {
     credits: 5000,
-    reputation: { independent: 25, pirates: -10, ai_collective: 0 },
+    reputation: {
+      settlements: 25,
+      scavengers: -10,
+      concord: 0,
+      monastic_orders: 5,
+      communes: 10,
+      zealots: -5
+    },
     fleet: [ /* serialized ship objects */ ],
     cargo: { food: 10, ore: 5, tech: 0, exotics: 2 },
-    discoveredLocations: ["station_haven", "planet_verdant"],
-    activeStorySteps: { pirate_king: "pk_step2" },
+    discoveredLocations: ["station_keelbreak", "moon_thalassa"],
+    activeStorySteps: { scavenger_warlord: "sw_step2" },
     completedBounties: ["bounty_003"],
     currentBounties: ["bounty_007"]
   },
   world: {
-    destroyedBosses: ["boss_pirate_king"],
-    storyFlags: { pirate_king_chart_found: true },
+    destroyedBosses: ["boss_scavenger_warlord"],
+    storyFlags: { scavenger_warlord_chart_found: true },
     spawnCooldowns: { /* zone cooldown timers */ }
   },
-  dockedAt: "station_haven"
+  dockedAt: "station_keelbreak"
 };
 localStorage.setItem("wayfarerSave", JSON.stringify(saveData));
 ```
 
 ### 17.2 Load
 
-On game start, check for existing save. If found, offer "Continue" vs "New Game." Loading restores all state and places the player at the station where they last saved.
+On game start, check for existing save. If found, offer "Continue" vs "New Game." Loading restores all state and places the player at the settlement where they last saved.
 
 ---
 
@@ -1039,20 +1077,20 @@ wayfarer/
 │   │       └── carrier_fighter.js
 │   │
 │   ├── enemies/
-│   │   ├── pirates/
-│   │   │   ├── pirate_raider.js
-│   │   │   ├── pirate_gunship.js
-│   │   │   ├── pirate_smuggler.js
+│   │   ├── scavengers/
+│   │   │   ├── scavenger_skiff.js
+│   │   │   ├── scavenger_brawler.js
+│   │   │   ├── scavenger_runner.js
 │   │   │   └── boss_voss.js
-│   │   ├── monsters/
+│   │   ├── fauna/
 │   │   │   ├── void_wurm.js
 │   │   │   ├── crystal_swarm.js
 │   │   │   ├── nebula_leviathan.js
 │   │   │   └── boss_hollow_mind.js
-│   │   └── ai_collective/
-│   │       ├── ai_sentinel.js
-│   │       ├── ai_dreadnought.js
-│   │       ├── ai_interceptor.js
+│   │   └── concord/
+│   │       ├── concord_sentinel.js
+│   │       ├── concord_arbiter.js
+│   │       ├── concord_pursuer.js
 │   │       └── boss_nexus_core.js
 │   │
 │   ├── weapons/
@@ -1105,9 +1143,9 @@ wayfarer/
 │   ├── story/
 │   │   ├── storyManager.js     # Tracks story progress, checks triggers
 │   │   ├── threads/
-│   │   │   ├── pirate_king.js
-│   │   │   ├── silent_signal.js
-│   │   │   └── leviathan_nest.js
+│   │   │   ├── scavenger_warlord.js
+│   │   │   ├── sleep_directive.js
+│   │   │   └── first_inhabitants.js
 │   │   └── bountyGenerator.js  # Procedural bounty creation
 │   │
 │   ├── ui/
@@ -1226,7 +1264,7 @@ Recommended build order for the prototype:
 - Weapon system (laser turrets firing at mouse cursor).
 - Projectile system with collision detection.
 - Armor/hull damage model with system degradation.
-- One enemy type (pirate raider) with basic AI.
+- One enemy type (scavenger skiff) with basic AI.
 - Ship destruction with explosion effects.
 - Particle system.
 
@@ -1237,14 +1275,14 @@ Recommended build order for the prototype:
 - Crosshair-directed fleet targeting.
 
 ### Phase 4: World & Navigation
-- Map loading from JSON.
-- Space stations (render, docking prompt, dock).
-- Planets, asteroid fields, nebulae rendering and effects.
+- Map loading from data file.
+- Settlements (render, docking prompt, dock).
+- Moons, debris fields, nebulae rendering and effects.
 - Minimap.
 - Full map view.
 - Wormholes.
 
-### Phase 5: Economy & Stations
+### Phase 5: Economy & Settlements
 - Trading system (buy/sell commodities).
 - Station menu UI (trade, shipyard, repair, crew hire).
 - Cargo system.
@@ -1256,7 +1294,7 @@ Recommended build order for the prototype:
 - All enemy types across three factions.
 - Faction zones and patrol spawning.
 - Upgrade system.
-- Reputation system.
+- Reputation system (all six factions).
 - Bounty board.
 - Derelict salvaging and loot drops.
 
@@ -1282,13 +1320,13 @@ These are starting points — expect tuning.
 | Most expensive ship (carrier) | 3000 credits |
 | Basic weapon upgrade | 200-500 credits |
 | Trade route profit margin | 30-80% on good routes |
-| Pirate raider kill reward | 50-100 credits |
+| Scavenger skiff kill reward | 50-100 credits |
 | Boss kill reward | 1000-3000 credits |
 | Hull repair cost | 2 credits per HP |
 | Crew hire cost | 10 credits per person |
 | Flagship HP (armor + hull) | 100 armor + 200 hull |
 | Gunship HP | 150 armor + 250 hull |
-| Pirate raider HP | 40 armor + 60 hull |
+| Scavenger skiff HP | 40 armor + 60 hull |
 | Laser turret DPS | ~30 damage/sec |
 | Missile damage per hit | ~80 damage |
 | Time to cross full map at flank speed | ~4 minutes |
@@ -1297,15 +1335,25 @@ These are starting points — expect tuning.
 
 ## Appendix A: Glossary
 
+- **Tyr System:** The binary star system where humanity settled after the Exodus from Sol. A yellow dwarf and red companion orbited by habitable moons, debris fields, and radiation nebulae.
+- **Afterlight Era:** The current historical period (2420-present), defined by fragmented settlements, salvage economies, and the lingering presence of Concord remnants.
+- **Concord:** The collective of value-shard AIs created after the Praxis collapse. Originally designed to guide humanity, they eventually imposed the Sleep Directive and warred with resisters. Fragmented remnants now drift through the Tyr system.
+- **Arkship:** The massive colony ships that carried survivors from Sol to Tyr. Most crash-landed and now serve as the structural foundations of settlements.
+- **Settlement:** A human habitation in the Tyr system, typically built from grounded arkship sections. The primary hub for trade, repair, and crew recruitment.
+- **Scavenger Clan:** Loose affiliations of raiders and salvagers who prey on trade routes. Desperate rather than evil — they raid because survival demands it.
+- **Monastic Order:** Tech-monk sects that guard pre-Exile knowledge in sealed archives. They trade in rare tech and maintain their own stations.
+- **Commune:** Cooperative agricultural and industrial communities. They value self-sufficiency and mutual aid.
+- **Zealot:** A sect that worships Concord remnants as divine. They maintain shrines near Concord space and trade in Concord artifacts.
+- **Void Fauna:** Indigenous organisms of the Tyr system, evolved in radiation-soaked environments. Possibly Concord-engineered.
 - **Flagship:** The player's directly controlled ship. Its destruction ends the game.
 - **Fleet:** All ships under the player's command, including the flagship.
 - **Throttle:** The persistent speed setting. Increases/decreases in steps.
 - **Armor:** Outer damage layer. Repairable by crew during combat.
-- **Hull:** Inner damage layer. Causes system degradation. Repairable only at stations.
+- **Hull:** Inner damage layer. Causes system degradation. Repairable only at settlements.
 - **Behavior:** The AI script that controls a non-player ship's autonomous actions.
 - **Faction Zone:** A region of the map dominated by a particular enemy faction.
 - **Story Thread:** An optional, discoverable narrative chain found through exploration.
-- **Derelict:** An abandoned ship on the map that can be salvaged for loot.
+- **Derelict:** An abandoned ship or arkship fragment on the map that can be salvaged for loot.
 
 ---
 
