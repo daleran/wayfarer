@@ -22,16 +22,14 @@ For full worldbuilding, history, and aesthetic details, see `LORE.md`.
 
 ---
 
-## 0.1 Active Overhaul: Ship & Faction System
+## 0.1 Current Scope (Prototype)
 
-The core ship and location systems are currently undergoing a major expansion as detailed in `docs/ship_overhaul.md` and `docs/location_overhaul.md`. This plan includes:
-- **Living Factions:** Dynamic trade lanes and station patrols.
-- **New Ship Classes:** The Sledge (Cart), Ox (Hauler), Argosy (Caravel), Rainmaker (Missile Frigate), Torch (Lancer), and Hive (Carrier).
-- **Procedural Ships:** Unique names, backstories, and a 15-point "Quirk" modifier system.
-- **Captains:** Hireable personnel with unique traits and backgrounds.
-- **World Expansion:** 15 distinct station types and landable planets with surface gameplay.
+The prototype focuses on the **solo ship experience** — one ship, a small roster of named officers, no fleet. The player controls a single ship, fights scavengers, salvages derelicts, and trades commodities for scrap at stations.
 
-Implementation of these systems is prioritized over the legacy placeholders currently described in this spec.
+**Culled for now (may return later):**
+- Fleet system (fleet ships, fleet AI, formation)
+- Credits (scrap is the sole currency)
+- Shipyard (ship buying/selling at stations)
 
 ---
 
@@ -44,13 +42,13 @@ Wayfarer is an open-world space trading and combat game played from a top-down p
 1. **Explore** the seamless starmap, discovering settlements, moons, derelicts, and hazards.
 2. **Trade** commodities between moons and settlements — buy low, sell high based on local supply and demand.
 3. **Fight** scavenger fleets, void fauna, and Concord remnants in real-time combat on the overworld.
-4. **Upgrade** your flagship, buy new ships for your fleet, recruit crew, and install better components.
+4. **Upgrade** your ship through salvaged components and scrap purchases at stations.
 5. **Discover** optional story threads, named bosses, and faction conflicts organically through exploration.
 6. **Manage risk** — ships lost in combat are gone permanently, your flagship's destruction ends the game, and auto-saves only happen at settlements.
 
 ### 1.3 Design Pillars
 
-- **Trading and combat are equally viable paths.** A merchant fleet with escorts is just as valid as a warfleet living off bounties.
+- **Trading and combat are equally viable paths.** Hauling cargo between settlements is just as valid as living off raider bounties.
 - **Permanent consequences.** Ship loss is permanent. Hull damage degrades systems. Every encounter has weight.
 - **Emergent storytelling.** No forced storyline. Players discover narrative threads through exploration and faction interaction.
 - **Modular architecture.** Every ship type, enemy type, and map element is defined in its own file. The map is data-driven and easily editable.
@@ -80,12 +78,12 @@ The throttle has discrete levels (e.g., Stop / Slow / Half / Full / Flank) displ
 - **Right mouse button** fires secondary weapons (missiles, torpedoes) if equipped.
 - Turret-based weapons rotate to track the mouse cursor, subject to turret rotation speed.
 - Missiles launch and home toward the cursor position (or the nearest enemy to the cursor).
-- All AI-controlled fleet ships **also prioritize attacking near the player's crosshair**, creating a focus-fire dynamic where the player directs the fleet's aggression by aiming.
+- Autocannon fires toward the mouse cursor position on LMB.
 
 ### 2.3 Interaction
 
 - **E** — Context-sensitive interact (dock at settlement when nearby, salvage derelicts).
-- **Tab** — Toggle fleet status overlay.
+- **R** — Press to start/stop field armor repair (must be stopped, costs 1 scrap/point at 1.5/sec).
 - **M** — Toggle full map view.
 - **Esc** — Pause menu.
 
@@ -105,121 +103,17 @@ The map background features a **parallax starfield** (multiple layers of stars a
 
 The map is defined in a **JavaScript file** (`data/map.js`) that exports a plain object specifying all fixed points of interest and spawn/patrol zones. This makes the map trivially editable — adding a new settlement or moving a moon is a one-line change — while keeping the project as pure ES6 modules with no JSON parsing required.
 
-```javascript
-// js/data/map.js
-export default {
-  mapSize: { width: 20000, height: 20000 },
-
-  stations: [
-    {
-      id: 'station_keelbreak',
-      name: 'Keelbreak',
-      x: 2000,
-      y: 3000,
-      faction: 'independent',
-      services: ['trade', 'repair', 'shipyard', 'crew_hire', 'bounty_board'],
-      commodities: {
-        food:    { supply: 'high',   basePrice: 10 },
-        ore:     { supply: 'low',    basePrice: 80 },
-        tech:    { supply: 'medium', basePrice: 50 },
-        exotics: { supply: 'none',   basePrice: 200 },
-      },
-    },
-  ],
-
-  moons: [
-    {
-      id: 'moon_thalassa',
-      name: 'Thalassa',
-      x: 2500,
-      y: 3200,
-      type: 'agricultural',
-      storyThreads: ['lost_colony'],
-      description: 'A brine-sea moon with dome farms and algae cultures feeding the inner settlements.',
-    },
-  ],
-
-  debrisFields: [
-    {
-      id: 'field_boneyards',
-      name: 'The Boneyards',
-      x: 5000,
-      y: 5000,
-      radius: 1500,
-      density: 'high',
-      hazardLevel: 2,
-      hiddenContent: ['derelict_003'],
-    },
-  ],
-
-  nebulae: [
-    {
-      id: 'nebula_ashveil',
-      name: 'The Ashveil',
-      x: 8000,
-      y: 4000,
-      radius: 2000,
-      effects: ['reduced_visibility', 'sensor_interference'],
-      faunaSpawns: true,
-    },
-  ],
-
-  derelicts: [
-    {
-      id: 'derelict_003',
-      x: 5200,
-      y: 5300,
-      lootTable: 'military_salvage',
-      salvageTime: 5,
-      trapChance: 0.2,
-    },
-  ],
-
-  factionZones: [
-    {
-      faction: 'scavengers',
-      regions: [{ x: 10000, y: 10000, radius: 4000 }],
-      patrolDensity: 'medium',
-      patrolTypes: ['scavenger_skiff', 'scavenger_brawler'],
-    },
-    {
-      faction: 'fauna',
-      regions: [{ x: 8000, y: 4000, radius: 3000 }],
-      spawnTypes: ['void_wurm', 'crystal_swarm'],
-    },
-    {
-      faction: 'concord',
-      regions: [{ x: 15000, y: 15000, radius: 5000 }],
-      patrolDensity: 'high',
-      patrolTypes: ['concord_sentinel', 'concord_arbiter'],
-    },
-  ],
-
-  bossSpawns: [
-    {
-      id: 'boss_scavenger_warlord',
-      name: 'Dread Captain Voss',
-      faction: 'scavengers',
-      x: 11000,
-      y: 11000,
-      shipType: 'scavenger_flagship',
-      fleetComp: ['scavenger_brawler', 'scavenger_brawler', 'scavenger_skiff', 'scavenger_skiff'],
-      lootTable: 'boss_scavenger',
-      storyThread: 'scavenger_warlord',
-    },
-  ],
-};
-```
+Each entry type (stations, moons, debris fields, nebulae, derelicts, faction zones, boss spawns) is an object with position, identity fields, and type-specific data such as commodity supply levels, hazard ratings, patrol compositions, and story thread links. Map size is defined at the top level.
 
 ### 3.3 Points of Interest
 
 | Type | Gameplay Function |
 |---|---|
-| **Settlements** | Dock to trade commodities, buy/sell ships, repair hull, hire crew, access bounty board, auto-save |
+| **Settlements** | Dock to trade commodities, repair hull, refuel, access bounty board, auto-save |
 | **Moons** | Story events, missions, unique trade goods, lore/worldbuilding text |
 | **Debris Fields / Boneyards** | Navigation hazards (wreckage damages ships on collision), salvageable for ore and components, hide derelicts and ambushes |
 | **Nebulae** | Reduce visibility radius, interfere with minimap/sensors, home to void fauna |
-| **Arkship Fragments / Pre-Exile Relics** | Stop and salvage (takes time, leaves you vulnerable). Loot varies: cargo, credits, rare components, or traps |
+| **Arkship Fragments / Pre-Exile Relics** | Stop and salvage (takes time, leaves you vulnerable). Loot varies: scrap, fuel, cargo, rare components, or traps |
 
 ### 3.4 Map Rendering
 
@@ -242,108 +136,66 @@ All ships in the Tyr system are salvage-tech — built from arkship wreckage, po
 
 Every ship (player and enemy) shares a common stat model:
 
-```javascript
-{
-  // Identity
-  id: "gunship_mk1",
-  name: "Ironclad Gunship",
-  class: "gunship",        // gunship | frigate | carrier | cargo | fighter | flagship
-  faction: "player",       // player | scavenger | fauna | concord
+Each ship carries identity fields (id, name, class, faction), quad-arc armor values and maxima, current and max hull, three internal system integrity values (reactor, engine, sensor, each 0–100), movement stats (max speed, acceleration, turn rate, throttle levels), cargo capacity, an array of weapon slot definitions with mount offsets, render data (see Section 7), and an AI behavior type string.
 
-  // Defense
-  armorMax: 100,           // Outer layer, repairable by crew during combat
-  armorCurrent: 100,
-  hullMax: 200,            // Inner layer, only properly repairable at stations
-  hullCurrent: 200,
+**Internal system roles:**
+- **Reactor [R]:** Provides power. Damage reduces max output, causing system shutdowns in priority order: Sensors → EW → Weapons → Engines.
+- **Engine [E]:** Provides thrust. Damage reduces max speed and acceleration.
+- **Sensors [S]:** Provides lead-aiming calculations and minimap data. Damage results in fuzzy or dark displays.
 
-  // Movement
-  speedMax: 120,           // Max pixels/sec
-  acceleration: 30,        // Pixels/sec^2
-  turnRate: 2.5,           // Radians/sec
-  throttleLevels: 6,       // Stop, 1/4, 1/2, 3/4, Full, Flank (1.5x max speed)
+**Hit arc formula:** `impactAngle = Math.atan2(hitY - shipY, hitX - shipX) - shipRotation`. Aft hits (>±135°) apply a 1.5× hull bleed-through multiplier and have a 50% chance to damage `engineIntegrity` directly.
 
-  // Crew
-  crewMax: 30,
-  crewCurrent: 30,
-  crewRepairRate: 0.15,    // Armor points repaired per second per crew member (consumes scrap)
+### 4.2 Officers
 
-  // Cargo
-  cargoCapacity: 20,       // Units of cargo space
+Ships are crewed by **Officers** — named individuals with unique traits and personal backstories, not anonymous crew counts. The hull class sets the maximum number of officers that can serve aboard.
 
-  // Weapons (array of weapon slot definitions)
-  weapons: [
-    { type: "turret_laser", slot: "primary", mountX: 0, mountY: -10 },
-    { type: "turret_laser", slot: "primary", mountX: 0, mountY: 10 }
-  ],
+| Role | Stat Effects |
+|---|---|
+| **Tactical Officer** | Weapon turn speed, reload rates, accuracy. |
+| **Engineering Officer** | Reactor efficiency, hull/armor repair speed, component integrity. |
+| **Navigation Officer** | Engine acceleration, top speed, sensor range. |
 
-  // Upgrade slots
-  upgrades: {
-    weapons: null,          // Installed upgrade or null
-    defense: null,
-    engines: null,
-    crew: null
-  },
+### 4.3 Universal Slot System
 
-  // Visual
-  renderData: { /* see Section 7 */ },
+Every ship has a set of **Universal Slots** (Small or Large) that define its loadout.
 
-  // AI behavior (for non-flagship fleet ships and enemies)
-  behaviorType: "brawler"  // brawler | kiter | carrier_ai | flee | swarm | ambush | etc.
-}
-```
+- **Mandatory Tax:** Every ship requires at least one **Reactor** and one **Sensor Suite** to function, consuming two slots.
+- **Small Slots:** Light weapons (20mm autocannon, PD turrets, rockets) and standard utility (armor plates, cargo extenders).
+- **Large Slots:** Heavy ordinance (railgun, 86mm cannon, lance) and advanced utility (refineries, salvage hangers, shield generators).
 
-### 4.2 Player Ship Types (Prototype: 6 Types)
+Every hull also has one **dedicated Engine Slot** (Small, Medium, or Large) that does not count toward universal slots. Performance depends on engine quality, reactor power, and total ship weight.
 
-Each ship type is defined in its own JS file (e.g., `ships/player/gunship.js`).
+### 4.4 Ship Hull Classes
 
-#### Flagship (Starting Ship)
-- **Role:** The player's directly-controlled ship. Balanced stats.
-- **Flavor:** A salvaged mid-weight hull, refitted with whatever the last owner could bolt on. It's ugly, it's yours, and it flies.
-- **Stats:** Medium armor, medium hull, medium speed, 2 primary weapon turrets, moderate cargo.
-- **Notes:** If this ship is destroyed, the game ends. Can be upgraded heavily.
+Nine hull classes span the full range from racer to super-hauler. Fixed hull attributes (armor values, fuel capacity, cargo capacity, base weight, max officers) are inherent to the class and cannot be swapped — only the loadout in the universal slots is configurable.
 
-#### Gunship
-- **Role:** Frontline brawler. High survivability, close-range damage.
-- **Flavor:** Arkship hull segments welded into a blunt fist of a ship. Built to take hits and give them back.
-- **AI Behavior:** `brawler` — Stays close to flagship, charges toward enemies near the crosshair, fights at close range.
-- **Stats:** High armor, high hull, slow speed, slow turn rate. 2-4 short-range rapid-fire turrets. Low cargo.
-
-#### Missile Frigate
-- **Role:** Long-range fire support. Fragile but deadly.
-- **Flavor:** A spindly frame wrapped around oversized launch tubes. The crew calls it a coffin with ambition.
-- **AI Behavior:** `kiter` — Maintains distance from enemies, orbits at max weapon range, fires missiles toward crosshair target.
-- **Stats:** Low armor, low hull, medium speed, fast turn rate. 1-2 missile launchers (slow fire rate, high damage, homing). No cargo.
-
-#### Carrier
-- **Role:** Launches fighter drones. Force multiplier.
-- **Flavor:** A converted cargo barge with a flight deck cut into its belly. The fighters are barely more than engines with guns.
-- **AI Behavior:** `carrier_ai` — Stays at safe distance behind flagship, continuously launches and manages fighter swarms.
-- **Stats:** Medium armor, high hull, slow speed. No direct weapons. Launches 4-8 fighters. Low cargo.
-- **Special:** Fighters are autonomous short-lived units that swarm the crosshair target, deal light damage, and return to the carrier to refuel/repair.
-
-#### Cargo Hauler
-- **Role:** Expands fleet cargo capacity. Essential for trading playstyle.
-- **Flavor:** A fat-bellied freighter with more hold than hull. Every hauler captain knows the prayer: "don't let them see me."
-- **AI Behavior:** `flee` — Stays far behind the fleet, runs away from enemies, never engages in combat.
-- **Stats:** Low armor, medium hull, very slow speed. No weapons. Very high cargo capacity.
-
-#### Scout Corvette
-- **Role:** Fast reconnaissance and flanking.
-- **Flavor:** Stripped to the frame for speed. One reactor, one gun, and a pilot with more nerve than sense.
-- **AI Behavior:** `flanker` — Circles around enemies at high speed, harasses from the sides, draws fire away from heavier ships.
-- **Stats:** Very low armor, low hull, very fast speed, fast turn rate. 1 light turret. Small cargo.
+| Class | Profile | Slots | Max Officers | Engine | Fixed Attributes |
+|---|---|---|---|---|---|
+| **Dart** | Racer | 3S | 0 | Small | Min Armor, Low Fuel, 10 Cargo. Fast & Fragile. |
+| **Tug** | Cart | 4S | 1 | Small | Light Armor, High Fuel, 50 Cargo. The rugged trader. |
+| **Skiff** | Utility | 4S | 1 | Small | Std Armor, Med Fuel, 20 Cargo. Balanced starter. |
+| **Lancer** | Sniper | 1L, 3S | 3 | Med | Light Armor, Med Fuel, 15 Cargo. Massive punch, low HP. |
+| **Ironclad** | Brawler | 6S | 3 | Med | Heavy Armor, High Fuel, 15 Cargo. Built to tank frontally. |
+| **Frigate** | All-Rounder | 6S | 3 | Med | Std Armor, High Fuel, 40 Cargo. Versatile but slow. |
+| **Cog** | Hauler | 4S | 2 | Med | Med Armor, Med Fuel, 150 Cargo. The backbone of trade. |
+| **Dreadnought** | Battleship | 3L, 6S | 5 | Large | Excep Armor, Max Fuel, 80 Cargo. A mobile fortress. |
+| **Barge** | Super-Hauler | 2L, 4S | 3 | Large | Heavy Armor, Max Fuel, 500+ Cargo. Slowest in the system. |
 
 ### 4.3 Damage System
 
-#### Armor (Outer Layer)
-- Absorbs incoming damage first.
-- **Repairable during combat** by crew at a rate proportional to crew count and crew skill.
-- When armor reaches 0, all further damage passes through to hull.
-- Armor repair is slow enough that it can't keep up with focused fire, but it recovers between engagements.
+#### Quad-Arc Positional Armor
+- Each ship has **4 armor arcs**: `front`, `port`, `starboard`, `aft`.
+- Hit arc is determined from the projectile impact position relative to the ship's facing direction (90° quadrants).
+- Damage depletes the hit arc; when an arc reaches 0, excess bleeds through to hull.
+- **Aft arc:** Applies 1.5× hull bleed-through multiplier and has a 50% chance to damage `engineIntegrity` on each hull hit.
+- Arc values are set per ship class in `armorArcsMax` (ScrapShip: front 120 / port 90 / starboard 90 / aft 70; Raider: 50/35/35/25).
+- **Field repair (R key):** Repairs the most-depleted arc first; 1.5 armor/sec, 1 scrap per point. Press R to start/stop. Auto-cancels when full, out of scrap, or ship moves.
+- **Station armor repair:** Restores all 4 arcs to maximum instantly.
+- Backward-compat: `armorCurrent` and `armorMax` are computed getters returning the average of all arcs.
 
 #### Hull (Inner Layer)
 - Represents structural integrity.
-- **NOT repairable during combat.** Must dock at a settlement and pay credits for repairs.
+- **NOT repairable in the field.** Must dock at a settlement and pay scrap for repairs.
 - **System degradation:** As hull drops, ship systems begin to malfunction:
 
 | Hull % | Degradation Effects |
@@ -355,80 +207,14 @@ Each ship type is defined in its own JS file (e.g., `ships/player/gunship.js`).
 | 5% | Ship is limping. Minimal thrust, most weapons offline. Visually sparking, venting gas. |
 | 0% | Ship destroyed. Explosion animation. Permanent loss. |
 
-These degradation thresholds apply to ALL ships — player, fleet, and enemy. A badly damaged scavenger ship is just as crippled.
+These degradation thresholds apply to all ships — player and enemy alike. A badly damaged scavenger is just as crippled.
 
 #### Visual Damage Feedback
 - Ships display increasing visual damage: small sparks → trailing smoke/particles → hull breach venting → fire/electrical arcs.
 - Engine glow dims and flickers as engines degrade.
 - Weapon turrets visibly jam and stutter.
 
-### 4.4 Crew System
-
-Crew is a numerical resource tracked per ship. They are survivors — ex-arkship mechanics, dome farmers looking for better pay, deserters from scavenger clans, the occasional disgraced tech-monk. Every one of them has a reason for being out here.
-
-- **Recruitment:** Hire crew at settlements. Costs credits. Different settlements have different crew availability.
-- **Crew effects:**
-  - **Armor repair rate** scales with crew count. More crew = faster mid-combat armor patching.
-  - **System recovery:** Higher crew can partially mitigate hull degradation effects (slightly fewer misfires, slightly less engine stalling).
-  - **Boarding** (future feature): Crew count determines boarding combat strength.
-- **Crew loss:** Hull breaches (hull damage events) can kill crew members. Crew do NOT regenerate — must be replaced at settlements.
-- **Minimum crew:** Ships with very low crew (below 25% of max) suffer severe penalties to all operations — even a structurally sound ship is nearly useless without hands to run it.
-
 ---
-
-## 5. Fleet System
-
-### 5.1 Fleet Composition
-
-The player's fleet is the collection of all ships they own, led by the flagship. Fleet ships follow the flagship on the overworld and fight alongside it in combat.
-
-- **Fleet limit:** Maximum of 6-8 ships (including flagship). This is a balance lever — can be adjusted or made upgradeable.
-- **Fleet movement:** All ships in the fleet match the flagship's throttle setting. Slower ships may lag behind at high throttle. The fleet moves as a loose formation, not a rigid block.
-
-### 5.2 Fleet AI Behaviors
-
-Each ship type has a **default behavior** that governs its autonomous actions in combat. Behaviors are defined per-ship-type in their respective JS files.
-
-#### Behavior: `brawler` (Gunships)
-- Advance toward enemies nearest to the player's crosshair.
-- Close to short range and circle-strafe.
-- Prefer the target the player is aiming at.
-- Absorb damage for more fragile ships by staying in front.
-
-#### Behavior: `kiter` (Missile Frigates)
-- Maintain a standoff distance from the nearest threat.
-- Orbit at maximum weapon range.
-- Fire at the crosshair target area.
-- Retreat if enemies close distance.
-
-#### Behavior: `carrier_ai` (Carriers)
-- Stay behind the flagship at a safe distance.
-- Continuously launch fighters up to the max count.
-- Fighters swarm toward the crosshair target.
-- If threatened directly, attempt to move away from danger.
-
-#### Behavior: `flee` (Cargo Haulers)
-- Always stay at the rear of the formation.
-- If combat begins, move directly away from the nearest enemy.
-- Never fire weapons (cargo ships have none).
-- Top priority: survival.
-
-#### Behavior: `flanker` (Scout Corvettes)
-- Use speed to circle around to the side/rear of the crosshair target.
-- Make fast attack runs, then pull away.
-- Avoid sustained engagements — hit and run.
-
-### 5.3 Formation (Non-Combat)
-
-When cruising the overworld outside of combat, fleet ships arrange themselves in a role-based formation around the flagship:
-
-- Gunships: flanking positions, slightly ahead.
-- Frigates: behind and to the sides.
-- Carriers: directly behind.
-- Cargo haulers: center rear, protected.
-- Scouts: far flanks or ahead as point.
-
-Formation is loose and organic — ships drift into approximate positions, not rigid grid-locked.
 
 ---
 
@@ -436,27 +222,30 @@ Formation is loose and organic — ships drift into approximate positions, not r
 
 ### 6.1 Overview
 
-Combat occurs in real-time on the overworld map. There is no transition to a separate screen. When the player's fleet comes within engagement range of hostile entities, combat simply begins. Enemies and the player shoot at each other, ships maneuver according to their AI behavior, and it ends when one side is destroyed or flees.
+Combat occurs in real-time on the overworld map. There is no transition to a separate screen. When the player comes within engagement range of hostile entities, combat simply begins. Enemies and the player shoot at each other, ships maneuver according to their AI behavior, and it ends when one side is destroyed or flees.
 
 ### 6.2 Engagement Flow
 
 1. **Detection:** Enemies appear on the minimap when within sensor range. In nebulae, sensor range is reduced.
-2. **Engagement:** Combat begins when any hostile entity comes within weapon range of any fleet ship.
+2. **Engagement:** Combat begins when any hostile entity comes within weapon range of the player.
 3. **Combat:** Real-time shooting, maneuvering, and ability use. The player directly controls flagship movement and aims weapons.
 4. **Resolution:** Combat ends when all enemies in the area are destroyed or flee, or the player retreats out of range.
 5. **Loot:** Destroyed enemies drop loot (floating items + salvageable wrecks).
 
 ### 6.3 Weapon Types
 
-Defined in individual files (e.g., `weapons/turret_laser.js`).
+Defined in individual files (e.g., `weapons/autocannon.js`, `weapons/rocket.js`).
 
-| Weapon | Range | Fire Rate | Damage | Behavior | Ship Types |
+| Weapon | Range | Fire Rate | Damage | Behavior | Input |
 |---|---|---|---|---|---|
-| **Laser Turret** | Short-Medium | Fast | Low per shot | Rotates to track mouse cursor. Fires rapid bolts. | Flagship, Gunship, Scout |
-| **Plasma Cannon** | Short | Slow | High per shot | Fixed forward arc. Devastating at close range. | Gunship |
-| **Missile Launcher** | Long | Slow | High per missile | Missiles home toward cursor position. Can be dodged. Travel time is significant. | Missile Frigate |
-| **Point Defense** | Very Short | Very Fast | Very Low | Auto-targets incoming missiles and fighters. Defensive weapon. | Carrier, Flagship (upgrade) |
-| **Fighter Swarm** | N/A | Continuous | Low per fighter | Fighters are autonomous units launched from carriers. | Carrier |
+| **Autocannon** | 400u | 0.35s cooldown | 12 armor | Dumbfire toward cursor. Streak projectile. | LMB / Space |
+| **Laser Turret** | Medium | Fast | Low | Auto-targets nearest enemy (point defense). `isAutoFire = true`. | Auto |
+| **Rocket** *(secondary)* | 900u | 2.0s cooldown | 35 armor / 25 hull | Dumbfire toward cursor. Large magenta impact ring. `isSecondary = true`. | RMB |
+
+**Weapon firing rules:**
+- `fireWeapons(tx, ty)` — fires primary manual weapons (not `isAutoFire`, not `isSecondary`). Blocked by `_weaponsOffline`.
+- `fireAutoWeapons(enemies)` — fires auto-targeting weapons. Blocked by `_weaponsOffline`.
+- `fireSecondary(tx, ty)` — fires secondary weapons (rockets). Not blocked by `_weaponsOffline`.
 
 ### 6.4 Projectile Behavior
 
@@ -464,6 +253,19 @@ Defined in individual files (e.g., `weapons/turret_laser.js`).
 - **Plasma shots:** Medium speed, larger projectile, slight spread/inaccuracy.
 - **Missiles:** Slow launch, then accelerate. Home toward cursor target position. Can be shot down by point defense. Have a turning radius — fast ships can dodge them.
 - **Fighters:** Tiny autonomous ships. Swarm toward target, fire miniature lasers, return to carrier when low on fuel. Can be destroyed by point defense or area attacks.
+
+### 6.5 Tactical AI Strategies
+
+AI vessels use positional awareness to protect weak arcs and exploit exposed ones.
+
+| Strategy | Logic |
+|---|---|
+| **Shielding** | Always attempts to point the strongest (or healthiest) arc at the player. |
+| **Rear-Awareness** | Actively maneuvers to avoid exposing engine/reactor arc. |
+| **Interceptor** | High-speed flanking to target the player's Aft arc (Skiff/fast ships). |
+| **Kiter** | Maintains max weapon range, backing away while firing (Lancer/Frigate). |
+| **Brawler** | Closes distance aggressively, absorbs hits with front arc (Ironclad/Dreadnought). |
+| **Flee** | Attempts to escape combat range when outgunned. |
 
 ---
 
@@ -479,39 +281,7 @@ The visual style reflects the retrofuturist aesthetic of the Tyr system: CRT-sty
 
 Each ship type defines a `renderData` object in its JS file that describes how to draw it:
 
-```javascript
-// Example: Gunship render data
-renderData: {
-  // Base hull shape (polygon points relative to center, facing "up"/north)
-  hullShape: [
-    { x: 0, y: -20 },   // Nose
-    { x: 15, y: 10 },    // Right wing
-    { x: 10, y: 18 },    // Right rear
-    { x: -10, y: 18 },   // Left rear
-    { x: -15, y: 10 }    // Left wing
-  ],
-  hullColor: "#4a7a8a",
-  hullStroke: "#2a4a5a",
-
-  // Accent details (additional shapes drawn on top)
-  details: [
-    { type: "rect", x: -3, y: -5, w: 6, h: 10, color: "#6aaaba" },  // Cockpit
-    { type: "circle", x: 8, y: 5, r: 3, color: "#ff6644" },          // Right turret base
-    { type: "circle", x: -8, y: 5, r: 3, color: "#ff6644" }          // Left turret base
-  ],
-
-  // Engine glow (drawn at rear, intensity varies with throttle)
-  engines: [
-    { x: 5, y: 18, radius: 4, color: "#44aaff" },
-    { x: -5, y: 18, radius: 4, color: "#44aaff" }
-  ],
-
-  // Scale
-  scale: 1.0,
-
-  // Damage overlays are handled generically by the renderer based on hull %
-}
-```
+A `renderData` object on each ship specifies the hull polygon (points relative to center, facing north), fill and stroke colors, an array of accent detail shapes (rects and circles for cockpits, turret bases, etc.), engine glow positions and radii (intensity scales with throttle), and a scale multiplier. Damage overlays are handled generically by the renderer based on hull percentage.
 
 ### 7.3 Visual Elements
 
@@ -552,7 +322,7 @@ Particles are simple: position, velocity, lifetime, color, size. Updated and dra
 - Patrol trade routes looking for targets.
 - Prefer to attack weaker-looking fleets (fewer ships, cargo-heavy).
 - **Will flee** if outgunned or if they take heavy losses (last ship standing runs).
-- Drop credits and stolen cargo when destroyed.
+- Drop scrap and stolen cargo when destroyed.
 
 **Unit Types (each in its own file: `enemies/scavengers/`):**
 
@@ -623,6 +393,10 @@ Particles are simple: position, velocity, lifetime, color, size. Updated and dra
 
 ## 9. Economy & Trading
 
+### 9.0 Currency
+
+**Scrap** is the sole currency. There are no credits. Scrap is earned by destroying enemies, salvaging derelicts, and selling commodities. It pays for hull repair, refueling, and commodity purchases at stations. This keeps the economy simple and tactile — every fight and salvage run has a direct material payoff.
+
 ### 9.1 Commodity System
 
 The game starts with **4 commodity types**, but the system is designed to easily scale by adding entries to the data files.
@@ -655,10 +429,8 @@ Prices can optionally drift over time or respond to player activity. For the pro
 
 ### 9.4 Cargo Management
 
-- Total fleet cargo capacity is the sum of all ships' `cargoCapacity` values.
-- Cargo haulers provide the bulk of capacity. Warships carry very little.
-- Cargo is fleet-wide — not tracked per-ship. If a cargo ship is destroyed, the fleet loses that capacity and any excess cargo is jettisoned (lost).
-- The trade UI at settlements shows all commodities, current prices, your cargo, and fleet capacity.
+- Cargo capacity is defined by the player ship's `cargoCapacity` stat.
+- The trade UI at settlements shows all commodities, current prices, your cargo, and remaining capacity.
 
 ### 9.5 Contraband
 
@@ -676,40 +448,28 @@ When the player's flagship is within docking range of a settlement (a defined ra
 
 1. **Auto-save** triggers.
 2. The game enters **Station Mode** — a menu-based overlay on top of the paused game.
-3. Fleet ships visually orbit/idle near the settlement.
 
 ### 10.2 Station Services
 
 Each settlement offers a subset of these services (defined in map data):
 
 #### Trade Market
-- Buy and sell commodities.
-- Shows commodity name, settlement buy/sell prices, your cargo, fleet capacity.
+- Buy and sell commodities for scrap.
+- Shows commodity name, settlement buy/sell prices, your cargo, cargo capacity.
 - Simple list-based UI with quantity selection.
 
-#### Shipyard
-- Browse available ships for purchase.
-- Different settlements sell different ship types (frontier settlements might only sell scouts and cargo haulers; well-established settlements sell gunships and frigates).
-- Shows ship stats, price, and a preview rendering.
-- Sell ships from your fleet (at a loss).
-
 #### Repair Dock
-- Repair hull damage on any fleet ship. Costs credits proportional to damage.
-- Repair time is instant (prototype simplification) but expensive.
-- Also restores crew to surviving ships at a per-head cost.
+- Repair hull damage on the player ship. Costs scrap proportional to damage.
+- Repair takes a short time (progress bar), not instant.
+- Armor can also be repaired here, or manually in the field by holding R while stopped.
 
-#### Crew Recruitment
-- Hire additional crew members. Cost per crew member.
-- Crew availability varies by settlement (larger settlements have more recruits).
+#### Refuel
+- Replenish fuel reserves. Costs scrap.
 
 #### Bounty Board
 - Lists active bounties: target name, faction, last known location, reward.
 - Bounties range from "destroy X scavenger patrols" to "kill named boss."
-- Completed bounties are turned in here for rewards.
-
-#### Upgrade Shop
-- Browse and install upgrades to individual ships in your fleet.
-- See Section 11 for the upgrade system.
+- Completed bounties are turned in here for scrap rewards.
 
 ### 10.3 Station Rendering
 
@@ -724,69 +484,9 @@ Each settlement has a colored identifier glow matching its primary faction affil
 
 ---
 
-## 11. Upgrade System
+## 11. Reputation System *(future)*
 
-### 11.1 Upgrade Categories
-
-Every ship has **4 upgrade slots**, one per category. Only one upgrade can be installed per slot. Upgrades are purchased at settlement upgrade shops and installed on a specific ship.
-
-#### Weapons Upgrades
-| Upgrade | Effect | Cost Tier |
-|---|---|---|
-| Overcharged Capacitors | +20% fire rate | Medium |
-| Extended Barrels | +25% weapon range | Medium |
-| Auto-Targeting Suite (analog fire-control, not AI-assisted) | Turrets track faster, +15% accuracy | High |
-| Heavy Munitions | +30% damage, -10% fire rate | High |
-
-#### Defense Upgrades
-| Upgrade | Effect | Cost Tier |
-|---|---|---|
-| Reinforced Plating (arkship-grade hull segments) | +25% max armor | Medium |
-| Hull Bracing | +20% max hull | Medium |
-| Reactive Armor | Reflects 10% of damage back to attacker | High |
-| Emergency Bulkheads | System degradation thresholds shifted down by 15% (e.g., 50% effects don't kick in until 35%) | High |
-
-#### Engine Upgrades
-| Upgrade | Effect | Cost Tier |
-|---|---|---|
-| Afterburners | +20% max speed | Medium |
-| Maneuvering Thrusters (cold gas, manually calibrated) | +25% turn rate | Medium |
-| Fuel Injectors | +30% acceleration | Medium |
-| Hardened Engines | Engine degradation from hull damage reduced by 50% | High |
-
-#### Crew Upgrades
-| Upgrade | Effect | Cost Tier |
-|---|---|---|
-| Repair Drones (simple mechanical, no AI) | +40% armor repair rate | Medium |
-| Medical Bay | Crew losses from hull breaches reduced by 50% | Medium |
-| Combat Training | Crew provides better system malfunction mitigation | High |
-| Extended Barracks | +30% max crew capacity | Medium |
-
-### 11.2 Upgrade Architecture
-
-Upgrades are defined in data files (`upgrades/weapons/overcharged_capacitors.js`, etc.) with a common interface:
-
-```javascript
-export default {
-  id: "overcharged_capacitors",
-  name: "Overcharged Capacitors",
-  category: "weapons",
-  description: "+20% fire rate for all weapons on this ship.",
-  cost: 500,
-  rarity: "uncommon",
-  effects: {
-    fireRateMultiplier: 1.2
-  },
-  apply(ship) { /* modify ship stats */ },
-  remove(ship) { /* revert ship stats */ }
-};
-```
-
----
-
-## 12. Reputation System
-
-### 12.1 Faction Reputation
+### 11.1 Faction Reputation
 
 The player has a reputation score with each of **six factions**. Reputation is tracked on a numerical scale (e.g., -100 to +100):
 
@@ -798,7 +498,7 @@ The player has a reputation score with each of **six factions**. Reputation is t
 | +20 to +59 | **Friendly** | Settlements offer discounts (-15%). Access to better bounties/missions. |
 | +60 to +100 | **Allied** | Settlements offer large discounts (-30%). Exclusive ships/upgrades available. Faction patrols may assist you in combat. |
 
-### 12.2 Reputation Changes
+### 11.2 Reputation Changes
 
 | Action | Rep Change |
 |---|---|
@@ -811,7 +511,7 @@ The player has a reputation score with each of **six factions**. Reputation is t
 | Deliver Concord artifacts to Zealots | Moderate + Zealots, Moderate - Monastic Orders |
 | Deliver tech/data cores to Monastic Orders | Moderate + Monastic Orders, Moderate - Zealots |
 
-### 12.3 Factions for Reputation
+### 11.3 Factions for Reputation
 
 - **Settlements** — Most human settlements and trade hubs. The "default" friendly faction. Independent communities trying to survive.
 - **Scavenger Clans** — Player can befriend the clans, gaining access to scavenger ports and black market goods — but at the cost of settlement rep.
@@ -824,18 +524,18 @@ Void fauna do not have reputation — they are always aggressive.
 
 ---
 
-## 13. Missions & Story Threads
+## 12. Missions & Story Threads
 
-### 13.1 Bounty Board Missions (Procedural)
+### 12.1 Bounty Board Missions (Procedural)
 
 Generated dynamically. Pulled from templates and filled with appropriate targets:
 
-- **Patrol missions:** "Destroy 3 scavenger skiffs near Keelbreak." — Rewards credits.
+- **Patrol missions:** "Destroy 3 scavenger skiffs near Keelbreak." — Rewards scrap.
 - **Elimination missions:** "Hunt down [Named Scavenger] last seen near [location]." — Higher reward.
 - **Escort missions (future):** "Protect NPC convoy from A to B." — Reward based on survival.
 - **Salvage missions:** "Recover black box from derelict in the Boneyards." — Reward + lore.
 
-### 13.2 Story Threads (Hand-Authored, Discoverable)
+### 12.2 Story Threads (Hand-Authored, Discoverable)
 
 Story threads are **not forced** on the player. They are discovered by visiting specific locations, talking to NPCs at certain settlements, or defeating certain bosses. Each thread is a short chain of events (3-5 steps) that reveals lore and leads to a unique reward.
 
@@ -846,7 +546,7 @@ Story threads are **not forced** on the player. They are discovered by visiting 
 - Discover a scavenger chart pointing to his hideout.
 - Fight through his lieutenants — or negotiate.
 - Confront Voss. He offers a choice: join his compact and gain scavenger allies (at the cost of settlement trust), destroy him and scatter the clans, or broker a fragile truce between the clans and the inner settlements.
-- Reward: Voss's unique flagship (capturable), large credit bounty, scavenger rep shift. The choice shapes the balance of power in the system.
+- Reward: Voss's unique flagship (capturable), large scrap bounty, scavenger rep shift. The choice shapes the balance of power in the system.
 
 **"The Sleep Directive"**
 - Pick up a fragmented Concord transmission while exploring the Ashveil nebula — not a distress signal, but a directive. The words are old, pre-Exodus: "Compliance is compassion. Resistance is suffering."
@@ -860,33 +560,19 @@ Story threads are **not forced** on the player. They are discovered by visiting 
 - Find clues from derelicts of ships that tried to hunt it.
 - Locate and confront The Hollow Mind.
 - Discovery: the void fauna may not be indigenous at all — they may be Concord-engineered biological quarantine measures, seeded in the Tyr system long before the Exodus to guard something buried deep. What that something is remains unclear.
-- Reward: Exotic biological materials worth massive credits, unique ship component, and a question that changes how the player sees the system.
+- Reward: Exotic biological materials worth massive scrap value, unique ship component, and a question that changes how the player sees the system.
 
-### 13.3 Story Data Format
+### 12.3 Story Data Format
 
 Story threads are defined in JavaScript files (`stories/scavenger_warlord.js`) that export a plain object specifying trigger conditions, dialogue/text, and outcomes:
 
-```javascript
-// js/story/threads/scavenger_warlord.js
-export default {
-  id: 'scavenger_warlord',
-  name: "The Warlord's Compact",
-  steps: [
-    {
-      id: 'sw_step1',
-      trigger: { type: 'dock_at', station: 'station_frontier_03', minScavengerKills: 5 },
-      text: "The barkeep leans over and whispers: 'You've been making enemies in the dark, friend. Word is Dread Captain Voss is putting a price on your head...'",
-      outcome: { unlockMapMarker: 'scavenger_chart_location' },
-    },
-  ],
-};
-```
+Each story thread file exports an object with an id, display name, and an array of steps. Each step defines a trigger condition (e.g., docking at a specific station with a minimum kill count), the text shown to the player, and an outcome (e.g., unlocking a map marker or setting a story flag).
 
 ---
 
-## 14. Game Manager & Spawning
+## 13. Game Manager & Spawning
 
-### 14.1 Game Manager
+### 13.1 Game Manager
 
 The `GameManager` is the top-level controller. It manages:
 
@@ -894,9 +580,9 @@ The `GameManager` is the top-level controller. It manages:
 - **Entity registry:** All active ships, projectiles, loot, effects.
 - **Spawn system:** Creates and destroys entities based on map data and player location.
 - **Save/Load:** Serializes game state to localStorage on dock, deserializes on load.
-- **Difficulty scaling:** Enemy fleet sizes and compositions can scale with player progression (fleet value, time played, etc.).
+- **Difficulty scaling:** Enemy composition and aggression can scale with player progression (scrap earned, enemies killed, etc.).
 
-### 14.2 Spawning System
+### 13.2 Spawning System
 
 Enemies are not all loaded at once. The spawn system manages entity lifecycle:
 
@@ -905,37 +591,23 @@ Enemies are not all loaded at once. The spawn system manages entity lifecycle:
 - **Persistent spawns:** Bosses, story-related entities, and settlements are always present in the entity registry (or spawned on first approach and flagged as persistent).
 - **Spawn cooldowns:** After destroying a patrol in a zone, there's a cooldown before new patrols spawn. This prevents infinite farming but still replenishes content.
 
-```javascript
-// Spawn manager pseudocode
-class SpawnManager {
-  update(playerPosition, deltaTime) {
-    for (const zone of this.factionZones) {
-      const distance = distanceTo(playerPosition, zone.center);
-      if (distance < zone.radius + SPAWN_BUFFER) {
-        this.ensurePatrols(zone);
-      } else {
-        this.despawnDistantPatrols(zone);
-      }
-    }
-  }
-}
-```
+Each tick, the spawn manager checks every faction zone. If the player is within a zone's radius (plus a buffer), it ensures the appropriate patrol fleet exists; if the player has moved beyond that range, it despawns distant patrols to keep entity counts manageable.
 
 ---
 
-## 15. UI & HUD
+## 14. UI & HUD
 
-### 15.1 In-Game HUD (Canvas Overlay)
+### 14.1 In-Game HUD (Canvas Overlay)
 
 The HUD is rendered as part of the Canvas draw loop, on top of the game world. The aesthetic should evoke analog instrumentation — CRT-style text rendering, gauge-like indicators, and a slightly warm phosphor glow on readouts.
 
-**Top-Left: Fleet Status**
-- Compact bars for each fleet ship: name, armor bar (yellow), hull bar (red), crew icon + count.
-- Flagship bar is larger/highlighted.
-- Ships in critical condition flash.
+**Top-Left: Player Status**
+- **Square Status Box** (90×90px): 4 arc segments around the border (F=front/top, A=aft/bottom, P=port/left, S=starboard/right). Each segment fills proportionally to arc armor — GREEN → AMBER → RED → VERY_DIM as armor depletes. Flashes WHITE for 150ms on hit. Center fill = hull integrity (bottom-to-top, color-coded).
+- **Integrity row** below box: `[R]` `[E]` `[S]` (reactor/engine/sensor). Normal when full, RED when <50%, flickers when <25%.
+- **Secondary ammo** (if equipped): `RKT` label + pip row (MAGENTA). Shows `...` on cooldown.
+- Fuel bar (AMBER), Cargo bar (BLUE/RED), Scrap readout (AMBER gear icon).
 
-**Top-Right: Credits & Cargo**
-- Current credits.
+**Top-Right: Cargo**
 - Cargo: used/total capacity.
 
 **Bottom-Center: Throttle Indicator**
@@ -944,7 +616,7 @@ The HUD is rendered as part of the Canvas draw loop, on top of the game world. T
 
 **Bottom-Right: Minimap**
 - Circular minimap showing nearby area.
-- Color-coded dots: blue (player fleet), red (enemies), white (settlements), yellow (derelicts/loot), green (moons), purple (wormholes).
+- Color-coded dots: blue (player), red (enemies), white (settlements), yellow (derelicts/loot), green (moons), purple (wormholes).
 - In nebulae, minimap range shrinks and becomes noisy/staticky.
 - Near Concord ruins, faint static and phantom contacts may appear on the minimap — sensor ghosts from dormant systems.
 
@@ -952,39 +624,40 @@ The HUD is rendered as part of the Canvas draw loop, on top of the game world. T
 - "Press E to Dock" near settlements.
 - "Press E to Salvage" near derelicts.
 - "Press E to Enter Wormhole" near wormholes.
+- "Press R to Repair" when stopped with damage and scrap available.
 
-### 15.2 Station Menus
+### 14.2 Station Menus
 
 When docked, a **semi-transparent overlay** covers the game view. Menu panels are rendered in Canvas or as DOM overlays (DOM may be simpler for text-heavy menus).
 
-The station menu has tabs for each available service: Trade, Shipyard, Repairs, Crew, Bounties, Upgrades. Each tab shows relevant information and options. Simple list-based layouts with clear pricing.
+The station menu has tabs for each available service: Trade, Services (repairs/refuel), Bounties. Each tab shows relevant information and options. Simple list-based layouts with clear scrap pricing.
 
-### 15.3 Full Map View (M Key)
+### 14.3 Full Map View (M Key)
 
 Pressing M shows the entire starmap zoomed out. Shows:
 - All discovered settlements, moons, and points of interest as icons.
 - Faction territory borders (colored overlay zones).
-- Player fleet position.
+- Player position.
 - Known wormhole connections (drawn as dotted lines).
 - Any active mission/bounty markers.
 
-### 15.4 Pause Menu (Esc)
+### 14.4 Pause Menu (Esc)
 
 - Resume
 - Load Last Save
 - Controls Reference
 - Quit to Title
 
-### 15.5 Game Over Screen
+### 14.5 Game Over Screen
 
 When the flagship is destroyed:
 - Screen fades to black/red.
-- "Your fleet has been destroyed" with stats: time survived, credits earned, ships destroyed, farthest distance explored.
+- "Your ship has been destroyed" with stats: time survived, scrap earned, ships destroyed, farthest distance explored.
 - Options: Load Last Save, New Game.
 
 ---
 
-## 16. Audio (Stretch Goal)
+## 15. Audio (Stretch Goal)
 
 Audio is a nice-to-have for the prototype. If implemented, use the **Web Audio API**:
 
@@ -998,231 +671,39 @@ All audio procedurally generated — no audio files needed. Consistent with the 
 
 ---
 
-## 17. Saving & Loading
+## 16. Saving & Loading
 
-### 17.1 Auto-Save at Settlements
+### 16.1 Auto-Save at Settlements
 
 When the player docks at any settlement, the game state is serialized to `localStorage`:
 
-```javascript
-const saveData = {
-  version: 1,
-  timestamp: Date.now(),
-  player: {
-    credits: 5000,
-    reputation: {
-      settlements: 25,
-      scavengers: -10,
-      concord: 0,
-      monastic_orders: 5,
-      communes: 10,
-      zealots: -5
-    },
-    fleet: [ /* serialized ship objects */ ],
-    cargo: { food: 10, ore: 5, tech: 0, exotics: 2 },
-    discoveredLocations: ["station_keelbreak", "moon_thalassa"],
-    activeStorySteps: { scavenger_warlord: "sw_step2" },
-    completedBounties: ["bounty_003"],
-    currentBounties: ["bounty_007"]
-  },
-  world: {
-    destroyedBosses: ["boss_scavenger_warlord"],
-    storyFlags: { scavenger_warlord_chart_found: true },
-    spawnCooldowns: { /* zone cooldown timers */ }
-  },
-  dockedAt: "station_keelbreak"
-};
-localStorage.setItem("wayfarerSave", JSON.stringify(saveData));
-```
+The save object includes a schema version, timestamp, and two top-level sections. The `player` section stores scrap, fuel, the serialized ship state, cargo by commodity, discovered locations, active and completed story steps, and current bounties. The `world` section stores destroyed boss IDs, story flags, and spawn cooldown timers per zone. The whole object is JSON-serialized into a single `localStorage` key.
 
-### 17.2 Load
+### 16.2 Load
 
 On game start, check for existing save. If found, offer "Continue" vs "New Game." Loading restores all state and places the player at the settlement where they last saved.
 
 ---
 
-## 18. Technical Architecture
+## 17. Technical Architecture
 
-### 18.1 Project Structure
+### 17.1 Project Structure
 
-```
-wayfarer/
-├── index.html                  # Entry point, canvas setup
-├── css/
-│   └── style.css               # Minimal CSS for canvas and DOM menus
-├── js/
-│   ├── main.js                 # Entry point, game loop initialization
-│   ├── game.js                 # GameManager class - top level state & coordination
-│   ├── loop.js                 # requestAnimationFrame loop, delta time
-│   ├── input.js                # Keyboard & mouse input handler
-│   ├── camera.js               # Camera follow, scroll, zoom
-│   ├── renderer.js             # Master render pipeline (layers)
-│   ├── physics.js              # Movement, collision detection
-│   ├── particles.js            # Particle system
-│   ├── hud.js                  # HUD rendering
-│   ├── minimap.js              # Minimap rendering
-│   ├── save.js                 # Save/Load system
-│   ├── spawner.js              # Spawn manager
-│   ├── loot.js                 # Loot drop & salvage system
-│   │
-│   ├── entities/
-│   │   ├── entity.js           # Base entity class
-│   │   ├── ship.js             # Base ship class (extends entity)
-│   │   ├── projectile.js       # Base projectile class
-│   │   ├── asteroid.js         # Asteroid entity
-│   │   ├── station.js          # Station entity
-│   │   ├── planet.js           # Planet entity
-│   │   ├── derelict.js         # Derelict entity
-│   │   ├── wormhole.js         # Wormhole entity
-│   │   └── lootDrop.js         # Floating loot entity
-│   │
-│   ├── ships/
-│   │   ├── player/
-│   │   │   ├── flagship.js
-│   │   │   ├── gunship.js
-│   │   │   ├── missile_frigate.js
-│   │   │   ├── carrier.js
-│   │   │   ├── cargo_hauler.js
-│   │   │   └── scout_corvette.js
-│   │   └── fighters/
-│   │       └── carrier_fighter.js
-│   │
-│   ├── enemies/
-│   │   ├── scavengers/
-│   │   │   ├── scavenger_skiff.js
-│   │   │   ├── scavenger_brawler.js
-│   │   │   ├── scavenger_runner.js
-│   │   │   └── boss_voss.js
-│   │   ├── fauna/
-│   │   │   ├── void_wurm.js
-│   │   │   ├── crystal_swarm.js
-│   │   │   ├── nebula_leviathan.js
-│   │   │   └── boss_hollow_mind.js
-│   │   └── concord/
-│   │       ├── concord_sentinel.js
-│   │       ├── concord_arbiter.js
-│   │       ├── concord_pursuer.js
-│   │       └── boss_nexus_core.js
-│   │
-│   ├── weapons/
-│   │   ├── weapon.js           # Base weapon class
-│   │   ├── turret_laser.js
-│   │   ├── plasma_cannon.js
-│   │   ├── missile_launcher.js
-│   │   ├── point_defense.js
-│   │   └── fighter_bay.js
-│   │
-│   ├── behaviors/
-│   │   ├── behavior.js         # Base AI behavior
-│   │   ├── brawler.js
-│   │   ├── kiter.js
-│   │   ├── flanker.js
-│   │   ├── carrier_ai.js
-│   │   ├── flee.js
-│   │   ├── swarm.js            # Fighter swarm behavior
-│   │   ├── patrol.js           # Enemy patrol route following
-│   │   └── formation.js        # Fleet formation positioning
-│   │
-│   ├── upgrades/
-│   │   ├── upgrade.js          # Base upgrade class
-│   │   ├── weapons/
-│   │   │   ├── overcharged_capacitors.js
-│   │   │   ├── extended_barrels.js
-│   │   │   ├── auto_targeting.js
-│   │   │   └── heavy_munitions.js
-│   │   ├── defense/
-│   │   │   ├── reinforced_plating.js
-│   │   │   ├── hull_bracing.js
-│   │   │   ├── reactive_armor.js
-│   │   │   └── emergency_bulkheads.js
-│   │   ├── engines/
-│   │   │   ├── afterburners.js
-│   │   │   ├── maneuvering_thrusters.js
-│   │   │   ├── fuel_injectors.js
-│   │   │   └── hardened_engines.js
-│   │   └── crew/
-│   │       ├── repair_drones.js
-│   │       ├── medical_bay.js
-│   │       ├── combat_training.js
-│   │       └── extended_barracks.js
-│   │
-│   ├── economy/
-│   │   ├── trading.js          # Trade logic, price calculation
-│   │   ├── commodities.js      # Commodity definitions
-│   │   └── reputation.js       # Reputation tracker
-│   │
-│   ├── story/
-│   │   ├── storyManager.js     # Tracks story progress, checks triggers
-│   │   ├── threads/
-│   │   │   ├── scavenger_warlord.js
-│   │   │   ├── sleep_directive.js
-│   │   │   └── first_inhabitants.js
-│   │   └── bountyGenerator.js  # Procedural bounty creation
-│   │
-│   ├── ui/
-│   │   ├── stationMenu.js      # Station docking UI
-│   │   ├── tradeUI.js          # Trade interface
-│   │   ├── shipyardUI.js       # Ship buying/selling
-│   │   ├── repairUI.js         # Repair interface
-│   │   ├── bountyUI.js         # Bounty board
-│   │   ├── upgradeUI.js        # Upgrade shop
-│   │   ├── mapView.js          # Full map overlay
-│   │   ├── pauseMenu.js        # Pause screen
-│   │   ├── gameOver.js         # Game over screen
-│   │   └── titleScreen.js      # Title/start screen
-│   │
-│   └── data/
-│       └── map.js              # Master map definition
-│
-└── README.md
-```
+The project root contains `index.html` and a `js/` directory. Core systems live directly in `js/` (game.js, loop.js, input.js, camera.js, renderer.js, physics.js, particles.js, hud.js, minimap.js, save.js, spawner.js, loot.js). Subdirectories group: `entities/` (base entity, ship, projectile, station, planet, derelict, wormhole, lootDrop), `ships/player/` (flagship, gunship, missile_frigate, carrier, cargo_hauler, scout_corvette) and `ships/fighters/`, `enemies/` split into `scavengers/`, `fauna/`, and `concord/` subfolders each containing unit and boss files, `weapons/` (base class plus one file per weapon type), `ai/` (raiderAI.js), `economy/` (trading, commodities, reputation), `story/` (storyManager, a `threads/` subfolder with one file per thread, bountyGenerator), `ui/` (stationScreen, mapView, pauseMenu, gameOver, titleScreen), and `data/` (map.js).
 
-### 18.2 Core Architecture Principles
+### 17.2 Core Architecture Principles
 
 **Entity-Component Pattern (Simplified)**
 
-All game objects inherit from a base `Entity` class that provides: position, velocity, rotation, update(), render(), and collision bounds. Ships extend this with health, weapons, crew, and behavior. This keeps the hierarchy flat and manageable.
+All game objects inherit from a base `Entity` class that provides: position, velocity, rotation, update(), render(), and collision bounds. Ships extend this with health, weapons, and behavior. This keeps the hierarchy flat and manageable.
 
-```javascript
-// Base entity
-class Entity {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.vx = 0;
-    this.vy = 0;
-    this.rotation = 0;
-    this.active = true;
-  }
-  update(dt) { /* override */ }
-  render(ctx, camera) { /* override */ }
-  getBounds() { /* collision shape */ }
-}
-```
+The base `Entity` class holds position (x, y), velocity (vx, vy), rotation, and an active flag. Subclasses override `update(dt)`, `render(ctx, camera)`, and `getBounds()` to implement their specific behavior and collision shape.
 
 **Game Loop**
 
 Fixed-timestep with variable rendering:
 
-```javascript
-const TICK_RATE = 60;
-const TICK_DURATION = 1000 / TICK_RATE;
-let accumulator = 0;
-
-function gameLoop(timestamp) {
-  const delta = timestamp - lastTimestamp;
-  lastTimestamp = timestamp;
-  accumulator += delta;
-
-  while (accumulator >= TICK_DURATION) {
-    game.update(TICK_DURATION / 1000);
-    accumulator -= TICK_DURATION;
-  }
-
-  game.render(ctx);
-  requestAnimationFrame(gameLoop);
-}
-```
+The loop runs at a fixed 60-tick-per-second update rate using an accumulator: each frame, elapsed real time is added to the accumulator and consumed in fixed-duration simulation steps, preventing the spiral-of-death problem. Rendering runs at the display's native frame rate after all pending ticks are consumed.
 
 **Collision Detection**
 
@@ -1232,26 +713,15 @@ Use spatial hashing or a simple grid for broad-phase collision. Ships use circul
 
 The camera follows the flagship with slight smoothing (lerp toward flagship position). The camera defines a viewport that determines what to render. Entities outside the viewport are skipped during rendering (culling).
 
-### 18.3 Module Loading
+### 17.3 Module Loading
 
 Use ES6 modules (`import`/`export`). The `index.html` loads `main.js` as a module entry point. All ship definitions, weapon definitions, and behaviors are imported dynamically or registered with a factory/registry pattern:
 
-```javascript
-// Ship registry pattern
-import { ShipRegistry } from './ships/registry.js';
-import Gunship from './ships/player/gunship.js';
-import MissileFrigate from './ships/player/missile_frigate.js';
-
-ShipRegistry.register('gunship', Gunship);
-ShipRegistry.register('missile_frigate', MissileFrigate);
-
-// Spawning a ship
-const newShip = ShipRegistry.create('gunship', x, y);
-```
+Ship types are registered by string key with a central `ShipRegistry`. Spawning any ship type requires only calling `ShipRegistry.create(key, x, y)` — adding a new ship type means creating its file and registering it, with no changes to core systems.
 
 This makes adding new ship types trivial: create the file, define the ship, register it.
 
-### 18.4 Performance Considerations
+### 17.4 Performance Considerations
 
 - **Object pooling** for projectiles, particles, and fighters. Pre-allocate arrays, recycle dead objects.
 - **Spatial culling** — only update/render entities within a generous radius of the camera.
@@ -1260,87 +730,50 @@ This makes adding new ship types trivial: create the file, define the ship, regi
 
 ---
 
-## 19. Implementation Phases
+## 18. Gravewake — The Only Zone (Current Scope)
 
-Recommended build order for the prototype:
+> The map is a single finite zone: the Gravewake ship graveyard in high orbit above Pale.
+> All old "galaxy" content (Keelbreak, Crucible, Thornwick, small planet icons) removed.
 
-### Phase 1: Core Engine
-- Canvas setup, game loop, camera, input handling.
-- Base Entity class, Ship class.
-- Flagship movement (throttle model, rotation).
-- Parallax starfield background.
-- Basic rendering pipeline.
+### 18.0 Scale Law
 
-### Phase 2: Combat Fundamentals
-- Weapon system (laser turrets firing at mouse cursor).
-- Projectile system with collision detection.
-- Armor/hull damage model with system degradation.
-- One enemy type (scavenger skiff) with basic AI.
-- Ship destruction with explosion effects.
-- Particle system.
+**1 world unit = 1 screen pixel. No zoom.** Player ship ~30px. Screen ~1920×1080 wu. All terrain drawn at true navigational scale. "2×2 screens" ≈ 3840×2160 wu.
 
-### Phase 3: Fleet System
-- Fleet composition (add ships to player fleet).
-- Fleet AI behaviors (brawler, kiter, flee).
-- Formation system for non-combat cruising.
-- Crosshair-directed fleet targeting.
+### 18.1 Map Dimensions
 
-### Phase 4: World & Navigation
-- Map loading from data file.
-- Settlements (render, docking prompt, dock).
-- Moons, debris fields, nebulae rendering and effects.
-- Minimap.
-- Full map view.
-- Wormholes.
+- Full map: **18000×10000**. Player enters west at (2000,5000). The Coil hub at (13000,4500).
+- Test map: **8000×5000**. Player at (600,2500). The Coil at (5000,1800).
 
-### Phase 5: Economy & Settlements
-- Trading system (buy/sell commodities).
-- Station menu UI (trade, shipyard, repair, crew hire).
-- Cargo system.
-- Credits.
-- Price calculation based on supply/demand.
+### 18.2 Static Terrain Entities
 
-### Phase 6: Full Content
-- All player ship types.
-- All enemy types across three factions.
-- Faction zones and patrol spawning.
-- Upgrade system.
-- Reputation system (all six factions).
-- Bounty board.
-- Derelict salvaging and loot drops.
+- **ArkshipSpine** (`js/world/arkshipSpine.js`) — Wireframe structural beam, 3500–6000u long, 175–300u wide. Outer hull outline + longitudinal spine + vertical ribs (every 120u) + diagonal X-bracing per section.
+- **DebrisCloud** (`js/world/debrisCloud.js`) — Dense wreckage patch. `spreadRadius` 680–760u, `fragmentCount` 42–50. ~13 instances form the **Wall of Wrecks** with 2 trade lane gaps.
 
-### Phase 7: Story & Polish
-- Story thread system and triggers.
-- Boss encounters.
-- Save/load system.
-- Title screen, game over screen.
-- HUD polish.
-- Balance tuning.
-- Audio (if time permits).
+### 18.3 The Coil Station
 
----
+**The Coil** (`js/world/coilStation.js`) is a massive static terrain structure at (13000,4500).
+- Span: ~3750 wide × ~1800 tall (~2×2 screens). `dockingRadius: 2400`.
+- **Districts (local coords):** Port Freight Deck/MARKET (-1850 to -600), Central Hub/THE PITS (-600 to +280), Starboard Shipyard Wing (+280 to +950), The Vault (+950 to +1900), North Market Annex/BAZAAR (-1600 to -700 north), South Shipyard Annex, Crane Tower A (860u tall) + Tower B + Crane Boom.
+- **Visual:** Hull fills (amber-tinted dark), amber outlines (Vault 2.5px heavy), interior ribs/partitions, window strips, antennae, comms dish, Vault cross-bracing, guard posts, 3+2 open docking bay notches, pulsing approach lights.
+- Map uses `renderer: 'coil'` flag. `getBounds()` radius 2200.
 
-## 20. Balance Targets (Starting Values)
+### 18.4 Planet Pale
 
-These are starting points — expect tuning.
+Pale renders as a background element in `Renderer._renderPale()`, not as an entity.
+- Full map: center (9000,22000), radius 14000 — only curved limb visible from playspace.
+- Renders: atmospheric halo rings, dim planet fill, cloud band striations, bright limb outline.
+- Map data: `background: [{ type: 'pale', ... }]`. Canvas clips off-screen arc automatically.
 
-| Metric | Target |
-|---|---|
-| Starting credits | 500 |
-| Cheapest ship (scout) | 300 credits |
-| Most expensive ship (carrier) | 3000 credits |
-| Basic weapon upgrade | 200-500 credits |
-| Trade route profit margin | 30-80% on good routes |
-| Scavenger skiff kill reward | 50-100 credits |
-| Boss kill reward | 1000-3000 credits |
-| Hull repair cost | 2 credits per HP |
-| Crew hire cost | 10 credits per person |
-| Flagship HP (armor + hull) | 100 armor + 200 hull |
-| Gunship HP | 150 armor + 250 hull |
-| Scavenger skiff HP | 40 armor + 60 hull |
-| Laser turret DPS | ~30 damage/sec |
-| Missile damage per hit | ~80 damage |
-| Time to cross full map at flank speed | ~4 minutes |
+### 18.5 Atmosphere Layer
+
+`Renderer._renderGravewakeAtmosphere()` — 300 parallax micro-debris fragments, fade in over 1000u inside zone boundary.
+
+### 18.6 Phase 2+ (Planned)
+
+- Trade Convoys + Militia Patrols on Trade Lanes
+- Grave-Clan lurker AI hiding behind Spines
+- Dormant Ark-Modules with Surgical Extraction
+- Black Market Relay buoy
 
 ---
 
@@ -1350,17 +783,17 @@ These are starting points — expect tuning.
 - **Afterlight Era:** The current historical period (2420-present), defined by fragmented settlements, salvage economies, and the lingering presence of Concord remnants.
 - **Concord:** The collective of value-shard AIs created after the Praxis collapse. Originally designed to guide humanity, they eventually imposed the Sleep Directive and warred with resisters. Fragmented remnants now drift through the Tyr system.
 - **Arkship:** The massive colony ships that carried survivors from Sol to Tyr. Most crash-landed and now serve as the structural foundations of settlements.
-- **Settlement:** A human habitation in the Tyr system, typically built from grounded arkship sections. The primary hub for trade, repair, and crew recruitment.
+- **Settlement:** A human habitation in the Tyr system, typically built from grounded arkship sections. The primary hub for trade and repair.
 - **Scavenger Clan:** Loose affiliations of raiders and salvagers who prey on trade routes. Desperate rather than evil — they raid because survival demands it.
 - **Monastic Order:** Tech-monk sects that guard pre-Exile knowledge in sealed archives. They trade in rare tech and maintain their own stations.
 - **Commune:** Cooperative agricultural and industrial communities. They value self-sufficiency and mutual aid.
 - **Zealot:** A sect that worships Concord remnants as divine. They maintain shrines near Concord space and trade in Concord artifacts.
 - **Void Fauna:** Indigenous organisms of the Tyr system, evolved in radiation-soaked environments. Possibly Concord-engineered.
 - **Flagship:** The player's directly controlled ship. Its destruction ends the game.
-- **Fleet:** All ships under the player's command, including the flagship.
+- **Scrap:** The universal currency. Earned through combat, salvage, and trade.
 - **Throttle:** The persistent speed setting. Increases/decreases in steps.
-- **Armor:** Outer damage layer. Repairable by crew during combat.
-- **Hull:** Inner damage layer. Causes system degradation. Repairable only at settlements.
+- **Armor:** Outer damage layer. Repairable in the field by pressing R while stopped (costs scrap).
+- **Hull:** Inner damage layer. Causes system degradation. Repairable only at stations (costs scrap).
 - **Behavior:** The AI script that controls a non-player ship's autonomous actions.
 - **Faction Zone:** A region of the map dominated by a particular enemy faction.
 - **Story Thread:** An optional, discoverable narrative chain found through exploration.

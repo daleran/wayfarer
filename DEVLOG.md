@@ -1,5 +1,118 @@
 # Wayfarer — Development Log
 
+## Test Harnesses — 2026-03-07
+
+**Files:** `js/main.js`, `js/test/shipDesigner.js`, `js/test/poiDesigner.js`, `js/game.js`, `js/hud.js`, `CLAUDE.md`
+
+- **`?test-ships`** — Ship Designer harness. Left stats panel (hull, armor arcs, movement, weapons), right canvas renders ship at 7× scale via direct `_drawShape()` call. `←/→` cycles all 5 ships, `T` toggles auto-rotation. No Camera needed — plain `ctx.scale()` + `ctx.rotate()`.
+- **`?test-poi`** — POI Designer harness. Mock camera (world 0,0 = preview center) renders stations, planets, derelicts, arkship spines, debris clouds. Scroll zoom, drag pan, `R` to reset view. Left info panel shows type-specific fields.
+- **`?test` enhancements** — Added dev spawn controls: `Z`/`X`/`C` spawn shielding/kiter/interceptor raider at mouse cursor with `_aggro = true`. `Q` toggles LaserTurret on player. Dev controls shown in top-right HUD panel (amber key legend + current weapon list). `LaserTurret` imported into `game.js`.
+- Routed new URL params in `main.js` (`?test-ships`, `?test-poi`). Harnesses implement `update(dt)` / `render()` — compatible with existing `startLoop`.
+- Updated `CLAUDE.md` with full Test Modes section covering all three harnesses.
+
+## Station Intel Tab — 2026-03-07
+
+**Files:** `js/ui/stationScreen.js`, `js/data/map.js`, `js/data/testMap.js`
+
+- Added `lore` field to station data (array of pre-wrapped strings).
+- `StationScreen` gains a third tab "Intel" — only shown when `station.lore` is non-empty.
+- `_renderIntelTab()` renders lore lines at 11px monospace; blank strings become half-height gaps; lines starting with `[` or in all-caps are rendered in the faction accent color, body text in `DIM_TEXT`.
+- Tab widths reduced from 125→110 to accommodate three tabs. `panelH = 530` when Intel is active.
+- The Coil's lore covers all four districts: Market, The Pits, Shipyard, The Vault.
+
+---
+
+## Gravewake: Scale & Balance Tuning — 2026-03-07
+
+**Files:** `js/world/coilStation.js`, `js/data/map.js`, `js/data/testMap.js`, `js/renderer.js`
+
+- **The Coil scaled to ~1 screen** (~1700×820 wu). All local district coordinates scaled down ~×0.45. `dockingRadius` 1100, `getBounds()` radius 1000.
+- **No enemies at The Coil.** Raiders moved to hidden dens on the west side of the map (opposite The Coil). Full map: dens at (3200,2200) and (2800,7500). Test map: dens at (900,4000) and (2000,4200) — south of player start.
+- **Pale more opaque:** planet body fill alpha 0.18→0.48; limb outline 0.55→0.80. Atmospheric halo kept light and transparent (colorAtmo, alpha 0.12–0.18). Cloud band alpha 0.04→0.10.
+
+---
+
+## Gravewake: Full Zone Redesign — 2026-03-07
+
+**Files:** `js/world/coilStation.js`, `js/data/map.js`, `js/data/testMap.js`, `js/renderer.js`, `SPEC.md`
+
+### World Scale & Tone
+- **Map reframed as a finite zone** — `Gravewake` only. No galaxy, no old stations, no small-icon planets.
+- **1 world unit = 1 screen pixel** (no zoom). Structures must be drawn at true navigational scale.
+- All old stations (Keelbreak, Crucible, Thornwick) and all small planet icons removed from map.
+
+### The Coil (CoilStation complete redesign)
+- Replaced rotating-hauler icon with a massive static terrain structure: ~3750 wide × ~1800 tall (≈2×2 screens).
+- **Districts drawn in local canvas space:** Port Freight Deck (MARKET), Central Hub (THE PITS), Starboard Shipyard Wing, The Vault (east, reinforced, cross-braced), North Market Annex (BAZAAR), South Shipyard Annex, Crane Tower A (860u tall) + Tower B + Crane Boom.
+- Interior detail: structural ribs, room partitions, window strips, antennae, comms dish, guard posts on Vault corners.
+- Docking bays: 3 open notches south of Port Deck, 2 south of Starboard Wing.
+- Approach lights: 10 pulsing amber dots leading west.
+- `dockingRadius: 2400` — dock from anywhere near the structure.
+- `getBounds()` radius 2200 — prevents culling while any part is on screen.
+
+### Planet Pale
+- Removed as a small entity. Now rendered as background element in `Renderer._renderPale()`.
+- Center at world (9000, 22000) / test (4000, 13000) with radius 14000/9000.
+- Only the curved planetary limb is visible from the playspace — atmospheric glow + cloud band striations + bright limb outline. Canvas clips the off-screen circle automatically.
+- Rendered in `_renderBackground(game, camera)`, called between starfield atmosphere and entities.
+- Map data: `background: [{ type: 'pale', ... }]` — not an entity, not spawned.
+
+### Map (Gravewake zone)
+- Full map: 18000×10000. Player enters west at (2000,5000). The Coil at (13000,4500).
+- 8 Arkship Spines: 3500–6000 units long, 175–300 wide.
+- 13 Wall of Wrecks debris clouds: spread radius 680–760, fragment count 42–50. Two trade lane gaps.
+- 6 named derelicts scattered throughout.
+- 3 raiders spawn near The Coil.
+
+### Test Map
+- 8000×5000. Player at (600,2500). The Coil at (5000,1800) — full-size structure, ~5 screens east.
+- 4 spines, 6 debris clouds, 3 derelicts, Pale background. Zone radius 4500.
+- 17 TEST_STEPS updated to match new world.
+
+---
+
+## Gravewake Phase 1: Foundation — 2026-03-07
+
+**Files:** `js/world/arkshipSpine.js` (new), `js/world/debrisCloud.js` (new), `js/world/coilStation.js` (new), `js/data/map.js`, `js/game.js`, `js/renderer.js`, `js/data/testMap.js`, `SPEC.md`
+
+### Phase 1: Static Terrain & Hub Station
+- **`arkshipSpine.js`** — New `Entity` subclass. Renders as a large wireframe structural beam with outer hull outline, longitudinal spine, vertical ribs, and diagonal X-bracing. Props: `length`, `width`, `rotation`. Culling via circumscribed-circle `getBounds()`.
+- **`debrisCloud.js`** — New `Entity` subclass. Pre-generates `fragmentCount` fragment positions using golden-angle deterministic distribution within `spreadRadius`. Each fragment is an elongated pentagon rendered at `VERY_DIM` @ 0.35 alpha.
+- **`coilStation.js`** — `Station` subclass. 4 cargo hauler rects rotate at 0.08 rad/s around a central hex hub (amber, dark fill). Blinking nav lights follow rotation. Station name in AMBER at y+72. `dockingRadius` 180. Faction `salvage_lords`.
+- **`map.js`** — Added `zones[]` (Gravewake, center 15000,9000, radius 5000), `arkshipSpines[]` (8 entries), `wallOfWrecks[]` (18 debris cloud positions with 3 trade lane gaps), and The Coil station with `renderer: 'coil'`.
+- **`game.js`** — Imports 3 new creators. Station loop checks `renderer === 'coil'` to use `createCoilStation`. Two new spawn loops for spines and debris clouds. Passes `map.zones` to `Renderer`.
+- **`renderer.js`** — Constructor accepts `zones` arg. Pre-generates 300 Gravewake micro-debris fragments (golden-angle, parallax 0.15–0.4, size 2–5px). `_renderGravewakeAtmosphere(camera)` fades alpha 0→0.36 over 1000u inside zone boundary; fragments use parallax wrap. Called between starfield and entities.
+- **`testMap.js`** — The Coil at (2400,800), 2 Arkship Spines, 6 Wall of Wrecks clouds with gap, Gravewake zone. 4 new TEST_STEPS for Gravewake features.
+- **`SPEC.md`** — §18 "Gravewake Orbital Zone" added.
+
+---
+
+## Combat2 Overhaul — 2026-03-07
+
+**Files:** `js/entities/ship.js`, `js/ships/player/flagship.js`, `js/enemies/scavengers/raider.js`, `js/game.js`, `js/hud.js`, `js/ai/raiderAI.js`, `js/ui/stationScreen.js`, `js/systems/particlePool.js`, `js/weapons/rocket.js` (new), `js/data/testMap.js`, `js/data/testConfig.js`, `SPEC.md`, `docs/combat2.spec.md`
+
+### Phase 1: Quad-Arc Positional Armor
+- **`ship.js`** — Replaced flat `armorMax/armorCurrent` with `armorArcs`/`armorArcsMax` object (`front/port/starboard/aft`). Computed getter backward-compat. `_getImpactArc(hitX, hitY)` determines hit arc from projectile position relative to ship facing. `takeDamage()` now takes optional `hitX, hitY`; aft hits apply 1.5× hull bleed and 50% engine integrity damage. Hull degradation: random `_engineCutout` and `_weaponsOffline` flags computed per tick based on hull %.
+- **`flagship.js`** — `armorArcsMax`: front 120 / port 90 / starboard 90 / aft 70.
+- **`raider.js`** — `armorArcsMax`: front 50 / port 35 / starboard 35 / aft 25. Added `behaviorType = 'shielding'`.
+- **`game.js`** — Collision passes `proj.x, proj.y` to `takeDamage`. `_updateRepair` repairs most-depleted arc first. Rocket import + `_addRockets` option. RMB input fires secondary weapons. Rocket trail particles emitted per active rocket entity. `behaviorType` propagated from spawn data to raider.
+- **`stationScreen.js`** — Armor repair restores all 4 arcs.
+- **`hud.js`** — Replaced ARMOR + HULL bars with 90×90 Square Status Box: 4 colored arc segments (fills proportional to armor), center hull fill (bottom-to-top), arc labels (F/A/P/S). Flash white 150ms on hit. Integrity row `[R][E][S]` below. Rocket ammo pips (MAGENTA) + cooldown `...` indicator. Kept FUEL, CARGO, SCRAP readouts below.
+
+### Phase 2: Tactical AI Behaviors
+- **`raiderAI.js`** — Strategy dispatch: `shielding` (orbits + rotates best arc toward player), `interceptor` (flanks to player's aft), `kiter` (backs off at <400u, fires at range). `_doLeadFire` extracted as shared helper. Flee behavior preserved across all types.
+
+### Phase 3: Rockets
+- **`rocket.js`** — New secondary weapon: 6 ammo, 35 armor damage, 25 hull damage, 2.0s cooldown, 550 speed, 900 range. MAGENTA streak projectile.
+- **`particlePool.js`** — Added `rocketTrail(x,y)` (magenta puffs) and `rocketImpact(x,y)` (30 particles + 2 large expanding rings).
+- **`testConfig.js`** — `addRockets: true` equips player with rockets in test mode.
+
+### Docs
+- `SPEC.md` §4.1, §4.3, §6.3, §14.1 updated with arc armor schema, weapon table, and status box description.
+- `docs/combat2.spec.md` marked as superseded (merged).
+
+---
+
 ## Phase 1: Engine
 
 **Files:** `js/camera.js`, `js/renderer.js`, `js/loop.js`, `js/input.js`, `js/main.js`, `js/entities/entity.js`, `js/entities/ship.js`, `js/ships/player/flagship.js`, `js/data/map.js`
@@ -215,3 +328,23 @@
 
 - Nebulae with sensor/speed penalties
 - Save/load system
+
+---
+
+## Systems Overhaul — Crew, Fleet, Controls, Currency Removed
+
+### Removed
+- **Crew system** — `crewMax`, `crewCurrent`, `crewRepairRate`, `crewEfficiency` removed from all ships. Hull breach crew casualty mechanic removed. Speed/turn/fire-rate crew penalties removed. Crew section removed from station Services tab. Autocannon/LaserTurret no longer accept `crewEfficiency` parameter.
+- **Fleet system** — `game.fleet` removed. Fleet AI (`fleetAI.js`) no longer called. Formation offsets removed. Shipyard tab removed from station screen. No ship purchasing. Minimap fleet markers removed. Fleet status HUD panel removed.
+- **Credits currency** — `game.credits` removed entirely. All station service costs now paid in scrap. Trade now uses scrap as the medium of exchange. Loot drops no longer produce credits (replaced with scrap + fuel drops).
+
+### Changed
+- **Controls** — Autocannon set to `isAutoFire = false`. Now fires on LMB toward mouse cursor. LaserTurret remains `isAutoFire = true` (point defense role).
+- **Auto-repair** — Crew-based auto-repair replaced with simple passive repair: armor restores 0.5/sec at throttle 0 while scrap is available (1 scrap per armor point).
+- **Loot** — Enemy drops now yield scrap + optional fuel + optional commodity. No more credit drops.
+- **Station services** — Armor repair: 1 scrap/point. Hull repair: 2 scrap/point. Refuel: 1 scrap per 2 fuel.
+- **Trade** — Scrap is the barter medium. Commodity prices (food, ore, tech, exotics) denominated in scrap units. Scrap itself removed from the trade commodity list.
+- **Starting resources** — Player starts with 20 scrap (60 in test mode). No starting credits.
+
+### Lore
+- Economy section added to `LORE.md` explaining the collapse of the old credit system and the return to palace/feudal/barter economies, with scrap as the de-facto universal trade good.

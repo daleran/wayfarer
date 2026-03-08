@@ -1,12 +1,13 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Project instructions for Claude Code.
 
-## Project Overview
-
-Wayfarer is a browser-based top-down 2D space trading and combat game inspired by Sid Meier's Pirates!. Built with HTML5 Canvas and vanilla JavaScript (ES6 modules), bundled with Vite.
-
-The full game design spec is in `SPEC.md`. The development log tracking what's been implemented per phase is in `DEVLOG.md`.
+> **ALWAYS read these before and after making any change:**
+> - `@SPEC.md` — game design, systems, mechanics
+> - `@LORE.md` — worldbuilding, factions, setting, tone
+> - `@UI.md` — visual conventions, color palette, component patterns
+>
+> **ALWAYS update them when anything relevant changes.** If you add, remove, or modify a mechanic → update `SPEC.md`. If you change colors, layouts, or UI patterns → update `UI.md`. If you change lore, faction names, location names, or world tone → update `LORE.md`. These files are the source of truth. Do not let them go stale.
 
 ## Commands
 
@@ -16,96 +17,126 @@ The full game design spec is in `SPEC.md`. The development log tracking what's b
 
 No test framework or linter is configured.
 
-### Test Map (Playtesting)
+### Test Modes
 
-A compact test map exists for validating new features quickly. Everything is close together so you don't have to fly across the whole galaxy.
+Three test harnesses, activated by URL param. All run on the same `startLoop` as the game — each implements `update(dt)` / `render()`.
 
-- **Run test mode:** `npm run dev` then open `http://localhost:5173/?test`
-- **Test map file:** `js/data/testMap.js` — reduced distances (3000x3000 vs 20000x20000)
-- **Verification steps** are shown on-screen in a magenta-bordered overlay (bottom-left)
+| URL | Mode | Purpose |
+|---|---|---|
+| `?test` | Playtest map | Full game on compact map with dev spawn controls |
+| `?test-ships` | Ship Designer | Isolated ship viewer/stats panel, no world |
+| `?test-poi` | POI Designer | Live render of stations, planets, derelicts etc. |
+
+#### `?test` — Playtest Map
+
+- **Run:** `npm run dev` → `http://localhost:5173/?test`
+- **Map:** `js/data/testMap.js` — compact 8000×5000, all key features nearby
+- **Config:** `js/data/testConfig.js` — `startScrap`, `addRockets`, etc.
+- **Overlay:** magenta-bordered verification steps (bottom-right) + dev controls (top-right)
+
+**Dev controls (test mode only — shown in top-right HUD panel):**
+- **Z**: Spawn shielding raider at mouse cursor
+- **X**: Spawn kiter raider at mouse cursor
+- **C**: Spawn interceptor raider at mouse cursor
+- **Q**: Toggle LaserTurret on/off for player
 
 **Every development iteration**, update `js/data/testMap.js`:
-1. Add any new entities/features to the test map so they're easy to reach
+1. Add any new entities/features so they're easy to reach
 2. Update `TEST_STEPS` with verification steps for the new features
 3. Tell the user to open `?test` and follow the on-screen steps to validate
 
+#### `?test-ships` — Ship Designer
+
+- **Run:** `http://localhost:5173/?test-ships`
+- **Source:** `js/test/shipDesigner.js`
+- **Controls:** `←/→` cycle ships, `T` toggle auto-rotation
+- Ships drawn at 7× scale. Stats panel on left shows armor arcs, movement, weapons.
+- **When working here:** edit only the ship JS file (`js/ships/` or `js/enemies/`). Vite HMR reloads on save. When stats finalized, update `SPEC.md` and `js/data/shipTypes.js`.
+- **In scope:** `js/ships/**`, `js/enemies/**`, `js/ui/colors.js`
+
+#### `?test-poi` — POI Designer
+
+- **Run:** `http://localhost:5173/?test-poi`
+- **Source:** `js/test/poiDesigner.js`
+- **Controls:** `←/→` cycle POIs, scroll zoom, drag pan, `R` reset view
+- Mock camera: POI placed at world (0,0), camera centers it. Info panel shows key-specific fields.
+- **When working here:** edit the POI renderer in `js/world/`. For map data changes, edit `js/data/map.js`. For lore, update `LORE.md`. For mechanics/encounters, update `SPEC.md`.
+- **In scope:** `js/world/**`, `js/data/map.js`, `js/data/testMap.js`
+
 ## Key Documentation Files
 
-The following markdown files at the project root are living documents. **Review and update each one during every development iteration** to keep them accurate and in sync with the codebase.
+**MANDATORY: Update these files whenever you make a relevant change. Do not skip this step.**
 
-| File | Purpose | Review / Update During Iteration |
+| File | Purpose | **Mandatory Update Triggers** |
 |---|---|---|
-| `SPEC.md` | Full game design spec — features, systems, phases, balancing | Mark newly implemented features as complete. Update any spec details that changed during implementation. |
-| `DEVLOG.md` | Development progress log — tracks what was built per phase | Append a summary of what was implemented, changed, or fixed this iteration. |
-| `LORE.md` | Worldbuilding — history, factions, locations, aesthetics | Update if new factions, locations, story threads, or lore-relevant content was added. **Also update when the user gives feedback about how the game world should feel, look, or be** — any guidance on tone, setting, or world identity belongs here. |
-| `UI.md` | UI aesthetic guide — color palette, component patterns, decision log | Update if new UI components were added or visual conventions changed. **Also update when the user gives feedback about visual style, ship appearance, color choices, or aesthetic direction** — log decisions and rationale in the Decision Log section. |
-| `docs/ship_overhaul.md` | Ship & Faction Overhaul Spec — classes, modifiers, captains, and locations | Reference during the phased implementation of the new ship and factional systems. |
-| `docs/location_overhaul.md` | Location Overhaul Spec — station types, new commodities, and planet landing | Reference during the phased implementation of the "Living System" system. |
-| `docs/economy_overhaul.md` | Economy Overhaul Spec — dynamic pricing, market events, and smuggling | Reference during the phased implementation of the "Living Market" system. |
-| `docs/combat_tactics.md` | Combat Tactics Spec — formations, command hotkeys, and E-War | Reference during the phased implementation of the "Fleet Command" system. |
-| `docs/narrative_events.md` | Narrative Events Spec — procedural events, dialogue, and reputation | Reference during the phased implementation of the "Living Void" system. |
-| `CLAUDE.md` | This file — project instructions for Claude Code | Update the Architecture section if new systems, entities, or patterns were introduced. |
+| `SPEC.md` | Full game design spec — features, systems, phases, balancing | **ANY** mechanic added, removed, or changed. Controls changed. Currency/economy changed. New systems. Mark phases complete. |
+| `LORE.md` | Worldbuilding — history, factions, locations, economy, aesthetics | Faction names/traits changed. Location names changed. World tone or setting changed. User gives feedback about feel. |
+| `UI.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. User gives aesthetic feedback. |
+| `DEVLOG.md` | Development progress log | Every session — append a summary of what was implemented, changed, or fixed. |
+| `CLAUDE.md` | This file | New systems or patterns introduced. Architecture changes. |
 
 ## Architecture
 
 ### Entry Point
 
-`index.html` loads `js/main.js`, which creates a `GameManager` and starts the game loop.
+`index.html` → `js/main.js` → creates `GameManager` → starts game loop.
 
 ### Core Systems
 
-- **`js/game.js` — `GameManager`**: Central orchestrator. Owns the entity list, camera, renderer, HUD, particle pool, and game state (credits, docking). Its `update(dt)` drives the tick: input processing, entity updates, AI, collisions, particle effects, docking checks. Its `render()` delegates to `Renderer`.
-- **`js/loop.js`**: Fixed-timestep game loop (60 ticks/sec) with spiral-of-death protection. Calls `game.update(dt)` and `game.render()` via `requestAnimationFrame`.
-- **`js/camera.js`**: World-to-screen coordinate transform with smooth follow (exponential lerp) and visibility culling.
-- **`js/input.js`**: Singleton `InputHandler` — keyboard hold (`isDown`), just-pressed (`wasJustPressed`), mouse position/buttons, `mouseWorld(camera)` helper. State is flushed each tick via `tick()`.
-- **`js/renderer.js`**: Clears canvas, draws parallax starfield, renders all entities, then HUD/UI overlays.
+| File | Class | Role |
+|---|---|---|
+| `js/game.js` | `GameManager` | Central orchestrator. Owns entities, camera, renderer, HUD, particle pool, game state. Drives `update(dt)` and `render()`. |
+| `js/loop.js` | — | Fixed-timestep loop (60 ticks/sec), spiral-of-death protection. |
+| `js/camera.js` | `Camera` | World↔screen transform, exponential-lerp follow, visibility culling. |
+| `js/input.js` | `InputHandler` (singleton) | Keyboard hold (`isDown`), just-pressed (`wasJustPressed`), mouse position/buttons, `mouseWorld(camera)`. Flushed each tick via `tick()`. |
+| `js/renderer.js` | `Renderer` | Clears canvas, draws parallax starfield, renders entities, then HUD/UI overlays. |
 
 ### Entity Hierarchy
 
 ```
-Entity (js/entities/entity.js)  — base: x, y, vx, vy, rotation, active
-  Ship (js/entities/ship.js)    — armor/hull health, throttle (6 levels), weapons
-    ScrapShip (js/ships/player/flagship.js) — player ship, asymmetric hull + weld seam details
-    Gunship (js/ships/player/gunship.js)    — brawler, boxy rectangular hull
-    Frigate (js/ships/player/frigate.js)    — kiter, swept-wing angular hull
-    Hauler (js/ships/player/hauler.js)      — cockpit + 3 trailing cargo containers (position history)
-    Raider (js/enemies/scavengers/raider.js) — scavenger enemy, red color scheme
-  Projectile (js/entities/projectile.js)   — velocity-driven, deactivates on range/hit
-  LootDrop (js/entities/lootDrop.js)       — amber diamond, auto-pickup, 30s lifetime
-  Particle (js/entities/particle.js)       — short-lived visual effect
-  Station (js/world/station.js)            — hexagonal, faction-colored, dockable
-  Planet (js/world/planet.js)              — gradient-filled circle, name label
-  Derelict (js/world/derelict.js)          — salvageable wreck, loot table, spark particles
+Entity (js/entities/entity.js)          — base: x, y, vx, vy, rotation, active
+  Ship (js/entities/ship.js)            — armor/hull health, throttle (6 levels), weapons
+    ScrapShip (js/ships/player/flagship.js) — player ship
+    Gunship   (js/ships/player/gunship.js)  — unused; future use
+    Frigate   (js/ships/player/frigate.js)  — unused; future use
+    Hauler    (js/ships/player/hauler.js)   — unused; future use (trailing container rendering)
+    Raider    (js/enemies/scavengers/raider.js) — scavenger enemy
+  Projectile  (js/entities/projectile.js) — velocity-driven, deactivates on range/hit
+  LootDrop    (js/entities/lootDrop.js)   — auto-pickup, 30s lifetime, types: scrap/fuel/commodity
+  Particle    (js/entities/particle.js)   — short-lived visual effect
+  Station     (js/world/station.js)       — hexagonal, faction-colored, dockable
+  Planet      (js/world/planet.js)        — gradient circle, name label
+  Derelict    (js/world/derelict.js)      — salvageable wreck, loot table, spark particles
 ```
 
-Ship subclasses override `_drawShape(ctx)` for custom rendering and `getBounds()` for collision radius.
+Ship subclasses override `_drawShape(ctx)` and `getBounds()`.
 
 ### Key Patterns
 
-- **All game entities** live in `GameManager.entities[]` and are updated/rendered polymorphically. Inactive entities are purged each tick.
-- **Collision detection** is projectile-vs-ship circle checks in `GameManager._runCollisions()`.
-- **AI** is functional — `updateRaiderAI(raider, player, entities, dt)` in `js/ai/raiderAI.js` runs per-raider each tick. Raiders have a `homePosition` (set from their spawn station) and patrol nearby. They only aggro when the player enters ~800 units and deaggro at ~1200 units.
-- **Weapons** are component objects attached to ships via `addWeapon()`. Each weapon has its own cooldown and `fire()` method that spawns projectiles into the entity list. Two weapon types: `Autocannon` (kinetic, amber, standard on all ships) and `LaserTurret` (energy, cyan, rare — high armor damage, low hull damage via `hullDamage` override on projectiles).
-- **Particles** use an object pool (`js/systems/particlePool.js`, 200 slots) with preset emitters (`explosion()`, `engineTrail()`).
-- **World data** is defined in `js/data/map.js` — station/planet/derelict positions, faction info, map size. `js/data/testMap.js` provides a compact variant for playtesting. Raiders are spawned via `raiderSpawns` entries in map data, each referencing a station ID.
-- **UI overlays** (e.g., `js/ui/stationScreen.js`) are drawn directly on canvas and handle their own input when active. Docking sets `isDocked = true`, which skips the main simulation loop.
-- **Shared color palette** (`js/ui/colors.js`) — all color constants (CYAN, AMBER, GREEN, RED, MAGENTA, etc.) and faction color map. All rendering code imports from this module instead of using inline hex strings.
-- **Fuel system** — `game.fuel`/`game.fuelMax` consumed per throttle level (exponential scaling). Empty = clamp to 1/4 speed (free crawl). Refuel at stations.
-- **Scrap resource** — `game.scrap` consumed by armor repair (1 per armor point). Acquired from loot/salvage/trade. Not cargo — separate resource like credits.
-- **Loot drops** — `LootDrop` entities scattered from destroyed enemies and completed salvage. Auto-collected on contact with floating pickup text feedback.
-- **Derelicts** — `Derelict` entities with loot tables. E to salvage (progress bar), spawns loot on completion. Sparking particle effects.
-- **Salvage state machine** — `isSalvaging`, `salvageProgress`, `salvageTarget` in GameManager. Player frozen during salvage, E/Esc cancels.
+- **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically. Inactive entities purged each tick.
+- **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`.
+- **Raider AI** — `updateRaiderAI()` in `js/ai/raiderAI.js`. Raiders have a `homePosition`, patrol nearby, aggro at ~800u, deaggro at ~1200u.
+- **Weapons** — component objects added via `addWeapon()`. Two types:
+  - `Autocannon` (`isAutoFire = false`) — fires on LMB toward mouse cursor
+  - `LaserTurret` (`isAutoFire = true`) — point defense, auto-fires at nearest enemy with lead targeting
+- **Particle pool** — `js/systems/particlePool.js`, 200 slots, presets: `explosion()`, `engineTrail()`.
+- **Map data** — `js/data/map.js` defines stations, planets, derelicts, raider spawns. `js/data/testMap.js` is the compact playtesting variant.
+- **UI overlays** — drawn on canvas, handle their own input. Docking sets `isDocked = true`, skipping the simulation loop.
+- **Color palette** — `js/ui/colors.js` exports all color constants. Never use inline hex strings.
+- **Economy** — `game.scrap` is the sole currency (no credits). `game.fuel` / `game.fuelMax` drive movement. Trade, repairs, and refueling all cost scrap.
+- **Field repair** — press R to toggle armor repair when stopped. 1.5 armor/sec, 1 scrap per armor point. Auto-cancels when full, out of scrap, or ship moves. Press R again to cancel manually.
+- **Salvage state machine** — `isSalvaging`, `salvageProgress`, `salvageTarget` on `GameManager`. Player frozen during salvage; E or Esc cancels.
 
 ### Coordinate System
 
-- Rotation 0 = pointing up (north, negative Y). Ships move in their facing direction.
-- World origin is top-left; positive X is right, positive Y is down.
-- Camera converts world coords to screen coords for rendering.
+- Rotation 0 = pointing up (north, negative Y).
+- World origin top-left; positive X right, positive Y down.
 
 ### Controls
 
-- **W/S or Up/Down arrows**: Increase/decrease throttle (step per press, not held)
-- **A/D or Left/Right arrows**: Rotate left/right (continuous while held)
-- **LMB or Spacebar**: Fire manual weapons (missiles, torpedoes) toward mouse cursor
-- **Turret weapons** (lasers): Auto-fire at nearest enemy in range with lead targeting
-- **E**: Dock/undock at nearby stations
+- **W/S or ↑/↓**: Increase/decrease throttle (step per press)
+- **A/D or ←/→**: Rotate (continuous while held)
+- **LMB or Space**: Fire autocannon toward mouse cursor
+- **R**: Toggle field armor repair (must be stopped; 1.5 armor/sec, 1 scrap/pt)
+- **E**: Dock at nearby station / begin salvage on nearby derelict
+- **Esc**: Cancel salvage / close station screen

@@ -193,7 +193,7 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 - **Projectiles:** Color and shape convey weapon type:
   - **Autocannon rounds (kinetic):** Amber streaks (`#ffaa00` glow, `#ffe0a0` core). Slightly longer lines, slower travel speed. The most common projectile in the game — weighty and impactful.
   - **Laser bolts:** Cyan streaks (`#00ffcc` glow, `#ccffff` core). Thin, fast, short lines. Rare — only seen on well-equipped ships.
-  - **Missiles:** Small triangle with a bright exhaust point.
+  - **Missiles/Rockets:** No particle effect. A **pulsing amber circle** (`#ffaa00`) at the head — outer glow ring + inner bright ring + white core dot, fast pulse (~18Hz). A long **amber engine trail** behind it (position-history polyline, same technique as ship engine trails: fades in alpha and width toward the oldest point). Evokes the Homeworld-style missile aesthetic: a glowing ball of propulsion leaving a bright smear across the void.
 - **Explosions:** Expanding rings/circles (vector style) with scattered particle sparks. Not filled bursts — concentric rings that expand and fade.
 
 ---
@@ -214,6 +214,10 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 ### 2026-03-07: Weapon Projectile Colors
 - **Decision:** Projectile color conveys **weapon type**, not ship relation. Autocannon rounds are amber (`#ffaa00`), laser bolts are cyan (`#00ffcc`). This is an exception to the color-by-relation rule — projectiles follow weapon-type coloring.
 - **Rationale:** Kinetic weapons are the universal standard; their amber streaks should dominate the battlefield. Laser bolts in cyan immediately read as "something different/rare." Players can identify weapon types at a glance, which matters for threat assessment (lasers strip armor fast).
+
+### 2026-03-07: Rocket/Missile Visual — Homeworld Style
+- **Decision:** Rockets use a **pulsing amber circle** at the head + a **long amber position-history trail** — no particles. Same trail technique as ship engines (polyline that fades in alpha and width). The head pulses at ~18Hz: outer glow ring, inner bright ring (`#ffe0a0`), white core dot.
+- **Rationale:** User preference. Evokes the Homeworld missile aesthetic — a bright propulsion ball leaving a smear across space. Visually distinct from cannon streaks and laser bolts. More dramatic and readable at range than a small triangle.
 
 ### 2026-03-07: Ship Shape Philosophy
 - **Decision:** Player ships should feel **chunky and utilitarian**, not sleek or angular. They are salvage-tech workhorses, not fighter jets. Prefer rectangular, boxy silhouettes with visible functional elements (engine bays, bumpers, cargo containers) over pointed/aerodynamic shapes.

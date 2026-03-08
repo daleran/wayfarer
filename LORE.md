@@ -4,7 +4,7 @@
 
 Wayfarer is set in the crumbling remains of a difficult interstellar exodus, where humanity—driven from a ruined Earth—struggles to survive on the moons and wreckage-strewn planets of the Tyr system. The world is built from scrap and memory: fractured communities nest inside the bones of arkships, salvage is more valuable than gold, and ancient technologies hum with forgotten purpose. It is a setting defined by decay, resilience, and the constant push-pull between freedom and control, where every dome farm, derelict corridor, and orbital ruin tells a story of hope wrestled from ruin.
 
-**This is a depopulated universe.** The total surviving human population in the Tyr system numbers in the low tens of thousands—perhaps fewer. The Exodus fleet carried hundreds of thousands, but centuries of attrition, failed colonies, radiation, starvation, and conflict have ground humanity down to a scattered remnant. Settlements that call themselves "cities" hold a few hundred souls. A ship crew of five is a significant concentration of human life. Every person matters, every death diminishes what little remains, and hiring even a single crew member means convincing someone to leave the relative safety of a settlement and risk the void. The emptiness is the defining feature of this world—vast distances between tiny pockets of warmth and light, separated by silence.
+**This is a depopulated universe.** The total surviving human population in the Tyr system numbers in the low tens of thousands—perhaps fewer. The Exodus fleet carried hundreds of thousands, but centuries of attrition, failed colonies, radiation, starvation, and conflict have ground humanity down to a scattered remnant. Settlements that call themselves "cities" hold a few hundred souls. The emptiness is the defining feature of this world—vast distances between tiny pockets of warmth and light, separated by silence.
 
 **Key elements of the setting:**
 
@@ -14,7 +14,19 @@ Wayfarer is set in the crumbling remains of a difficult interstellar exodus, whe
 - Cultures built around scrap economies, dome agriculture, barter, and salvaged tech.
 - A low-tech, text-rich world emphasizing player agency, character depth, and narrative choice.
 - Factions and ideologies that arose from the ruins: communes, zealots, scavenger clans, and more.
-- **A tiny, dwindling human population** — every crew member has a name, a history, and someone who will miss them.
+- **A tiny, dwindling human population** — every person you encounter has a name, a history, and someone who will miss them.
+
+## Economy
+
+**There is no unified currency.** With only a handful of humans left, there are no banks, no centralized mints, and no shared medium of exchange that spans the system. The old exodus credit system collapsed within a generation of arrival. What replaced it are the older, more durable economic forms that humans have always fallen back on when civilization fractures:
+
+- **Palace economies** — large, organized settlements (Keelbreak, The Cradle) operate through redistribution. A central authority—a council, a commune, or a hereditary Salvage Lord—collects, stores, and allocates goods. Access to fuel, food, and parts flows through relationship with that authority.
+- **Feudal tribute economies** — factions like the Scavenger Clans and border Zealot stations extract value through obligation. You fly under their protection; you tithe part of what you find.
+- **Barter** — the universal fallback. Most trade between independent parties is direct exchange: food for tech, ore for fuel, salvage for repairs.
+
+**Scrap is the nearest thing to a universal currency.** It's physically portable, universally useful (everything can be repaired with enough scrap), and its value is intrinsic rather than promised. Fuel is also treated as a store of value — it represents freedom of movement, which is power.
+
+There are no prices in credits. When you trade at a station, you pay in scrap. When you repair your hull, you pay in scrap. Raiders fight for fuel and salvage, not cash.
 
 ## Themes
 
