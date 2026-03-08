@@ -1,14 +1,22 @@
 import { Projectile } from '../entities/projectile.js';
 import { AMBER } from '../ui/colors.js';
+import { BASE_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/stats.js';
+
+const DAMAGE_MULT  = 1.0;
+const RANGE_MULT   = 1.0;
+const SPEED_MULT   = 1.0;
+const COOLDOWN_MULT = 1.04;
 
 export class Autocannon {
   constructor() {
-    this.damage = 12;
-    this.cooldownMax = 0.35;
+    this.damage = BASE_DAMAGE * DAMAGE_MULT;
+    this.cooldownMax = BASE_COOLDOWN * COOLDOWN_MULT;
     this._cooldown = 0;
-    this.projectileSpeed = 380;
-    this.maxRange = 400;
+    this.projectileSpeed = BASE_PROJECTILE_SPEED * SPEED_MULT * PROJECTILE_SPEED_FACTOR;
+    this.maxRange = BASE_WEAPON_RANGE * RANGE_MULT;
     this.isAutoFire = false;
+    this.displayName = 'AUTOCANNON';
     this.color = AMBER;
     this.glowColor = '#ffe0a0';
   }
@@ -36,7 +44,8 @@ export class Autocannon {
     proj.maxRange = this.maxRange;
     proj.color = this.color;
     proj.glowColor = this.glowColor;
-    proj.length = 6;
+    proj.length = 3;       // small tight bolt
+    proj.hasTrail = true;  // short tracer tail
     entities.push(proj);
     this._cooldown = this.cooldownMax;
   }
