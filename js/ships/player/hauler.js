@@ -99,8 +99,6 @@ class Hauler extends Ship {
     this.acceleration = 20;
     this.turnRate = 2.0;
     this.cargoCapacity = 200;
-    this.crewMax = 3;
-    this.crewCurrent = 3;
 
     this._positionHistory = [];
   }

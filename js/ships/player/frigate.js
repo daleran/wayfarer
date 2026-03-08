@@ -86,8 +86,6 @@ class Frigate extends Ship {
     this.acceleration = 35;
     this.turnRate = 3.0;
     this.cargoCapacity = 10;
-    this.crewMax = 4;
-    this.crewCurrent = 4;
 
     this.addWeapon(new Autocannon());
   }

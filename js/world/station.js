@@ -9,6 +9,7 @@ export class Station extends Entity {
     this.services = data.services ?? [];
     this.commodities = data.commodities ?? {};
     this.shipyard = data.shipyard ?? [];
+    this.lore = data.lore ?? null;
     this.dockingRadius = 150;
     this._navPulse = 0;
   }

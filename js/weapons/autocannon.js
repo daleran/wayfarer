@@ -8,7 +8,7 @@ export class Autocannon {
     this._cooldown = 0;
     this.projectileSpeed = 380;
     this.maxRange = 400;
-    this.isAutoFire = true;
+    this.isAutoFire = false;
     this.color = AMBER;
     this.glowColor = '#ffe0a0';
   }
@@ -17,7 +17,7 @@ export class Autocannon {
     if (this._cooldown > 0) this._cooldown -= dt;
   }
 
-  fire(ship, tx, ty, entities, crewEfficiency = 1) {
+  fire(ship, tx, ty, entities) {
     if (this._cooldown > 0) return;
     const dx = tx - ship.x;
     const dy = ty - ship.y;
@@ -38,7 +38,6 @@ export class Autocannon {
     proj.glowColor = this.glowColor;
     proj.length = 6;
     entities.push(proj);
-    // Low crew = slower reload (cooldown inflated by inverse crew efficiency)
-    this._cooldown = this.cooldownMax / crewEfficiency;
+    this._cooldown = this.cooldownMax;
   }
 }

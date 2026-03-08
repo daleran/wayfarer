@@ -7,7 +7,6 @@ export const SHIP_TYPES = {
     hull: 150,
     speed: 100,
     cargo: 15,
-    crew: 5,
     behavior: 'brawler',
   },
   frigate: {
@@ -18,7 +17,6 @@ export const SHIP_TYPES = {
     hull: 80,
     speed: 110,
     cargo: 10,
-    crew: 4,
     behavior: 'kiter',
   },
   hauler: {
@@ -29,7 +27,6 @@ export const SHIP_TYPES = {
     hull: 120,
     speed: 70,
     cargo: 200,
-    crew: 3,
     behavior: 'flee',
   },
 };

@@ -77,8 +77,6 @@ class Gunship extends Ship {
     this.acceleration = 30;
     this.turnRate = 2.5;
     this.cargoCapacity = 15;
-    this.crewMax = 5;
-    this.crewCurrent = 5;
 
     this.addWeapon(new Autocannon());
   }

@@ -1,9 +1,9 @@
+// Scrap is the currency and is not listed here as a commodity.
 export const COMMODITIES = {
   food:    { id: 'food',    name: 'Food',    basePrice: 10 },
   ore:     { id: 'ore',     name: 'Ore',     basePrice: 80 },
   tech:    { id: 'tech',    name: 'Tech',    basePrice: 50 },
   exotics: { id: 'exotics', name: 'Exotics', basePrice: 200 },
-  scrap:   { id: 'scrap',   name: 'Scrap',   basePrice: 15 },
 };
 
 export const SUPPLY_MULTIPLIERS = {

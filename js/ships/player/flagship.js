@@ -3,7 +3,7 @@ import { PLAYER_FILL, PLAYER_STROKE, ENGINE_GREEN } from '../../ui/colors.js';
 
 // Repurposed tug — hammerhead cockpit block, narrow body, long starboard engine nacelle,
 // smaller port utility nacelle. Nacelles are longer than wide (classic sci-fi).
-const HULL_POINTS = [
+export const HULL_POINTS = [
   // Hammerhead cockpit block (bow) — wide with chamfered front corners
   { x: -11, y: -23 },  // port cockpit side
   { x: -9,  y: -26 },  // port chamfer
@@ -65,9 +65,9 @@ class ScrapShip extends Ship {
     this.shipType = 'scrapship';
     this._trailColor = ENGINE_GREEN;
 
-    this.armorMax = 100;
-    this.armorCurrent = 100;
-    this.hullMax = 200;
+    this.armorArcs    = { front: 120, port: 90, starboard: 90, aft: 70 };
+    this.armorArcsMax = { front: 120, port: 90, starboard: 90, aft: 70 };
+    this.hullMax     = 200;
     this.hullCurrent = 200;
     this.speedMax = 120;
     this.acceleration = 30;
@@ -75,8 +75,6 @@ class ScrapShip extends Ship {
     this.throttleLevels = 6;
     this._throttleRatios = [0, 0.15, 0.35, 0.55, 0.8, 1.5];
 
-    this.crewMax = 5;
-    this.crewCurrent = 3;
     this.cargoCapacity = 100;
   }
 

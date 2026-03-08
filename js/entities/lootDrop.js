@@ -9,7 +9,7 @@ const DRAG = 0.97;
 export class LootDrop extends Entity {
   constructor(x, y, lootType, amount) {
     super(x, y);
-    this.lootType = lootType; // 'credits', 'scrap', or commodity id
+    this.lootType = lootType; // 'scrap', 'fuel', or commodity id
     this.amount = amount;
     this.label = LootDrop._makeLabel(lootType, amount);
     this.pickupRadius = PICKUP_RADIUS;
@@ -19,8 +19,8 @@ export class LootDrop extends Entity {
   }
 
   static _makeLabel(type, amount) {
-    if (type === 'credits') return `+${amount} cr`;
     if (type === 'scrap') return `+${amount} Scrap`;
+    if (type === 'fuel') return `+${amount} Fuel`;
     return `+${amount} ${type.charAt(0).toUpperCase() + type.slice(1)}`;
   }
 
@@ -84,10 +84,12 @@ export function createLootDrop(x, y, type, amount) {
 
 export function generateEnemyLoot(x, y) {
   const drops = [];
-  // Always: credits
-  drops.push(createLootDrop(x, y, 'credits', 30 + Math.floor(Math.random() * 71)));
   // Always: scrap
-  drops.push(createLootDrop(x, y, 'scrap', 2 + Math.floor(Math.random() * 4)));
+  drops.push(createLootDrop(x, y, 'scrap', 4 + Math.floor(Math.random() * 8)));
+  // 30% chance: fuel
+  if (Math.random() < 0.30) {
+    drops.push(createLootDrop(x, y, 'fuel', 5 + Math.floor(Math.random() * 10)));
+  }
   // 25% chance: commodity
   if (Math.random() < 0.25) {
     const roll = Math.random();

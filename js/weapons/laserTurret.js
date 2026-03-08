@@ -20,7 +20,7 @@ export class LaserTurret {
     if (this._cooldown > 0) this._cooldown -= dt;
   }
 
-  fire(ship, tx, ty, entities, crewEfficiency = 1) {
+  fire(ship, tx, ty, entities) {
     if (this._cooldown > 0) return;
     const dx = tx - ship.x;
     const dy = ty - ship.y;
@@ -42,7 +42,6 @@ export class LaserTurret {
     proj.hullDamage = this.hullDamage;
     proj.length = 3; // thin, fast beam bolt
     entities.push(proj);
-    // Low crew = slower reload
-    this._cooldown = this.cooldownMax / crewEfficiency;
+    this._cooldown = this.cooldownMax;
   }
 }

@@ -24,11 +24,12 @@ export const FACTION = {
   neutral:     CYAN,
   independent: '#88ff44',
   military:    '#ff8844',
-  scavengers:  RED,
-  monastic:    MAGENTA,
-  communes:    GREEN,
-  zealots:     AMBER,
-  player:      CYAN,
+  scavengers:   RED,
+  monastic:     MAGENTA,
+  communes:     GREEN,
+  zealots:      AMBER,
+  salvage_lords: '#ff6633',
+  player:       CYAN,
 };
 
 // Ship relation colors — color = relation to player, NOT faction/type
