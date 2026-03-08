@@ -21,20 +21,36 @@ export class Projectile extends Entity {
     this.isRocket = false;
     this._rocketTrail = []; // world-space position history
     this._rocketAge = 0;    // used for pulse animation
+    this.rocketTargetX = null;
+    this.rocketTargetY = null;
+    this.shouldDetonate = false; // set true when rocket reaches destination
   }
 
   update(dt) {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
     this.distanceTravelled += Math.sqrt(this.vx * this.vx + this.vy * this.vy) * dt;
-    if (this.distanceTravelled > this.maxRange) {
-      this.active = false;
-    }
 
     if (this.isRocket) {
       this._rocketAge += dt;
       this._rocketTrail.push({ x: this.x, y: this.y });
       if (this._rocketTrail.length > ROCKET_TRAIL_MAX) this._rocketTrail.shift();
+
+      // Detonate at target position
+      if (this.rocketTargetX !== null) {
+        const dx = this.rocketTargetX - this.x;
+        const dy = this.rocketTargetY - this.y;
+        if (dx * dx + dy * dy < 20 * 20) {
+          this.shouldDetonate = true;
+          this.active = false;
+          return;
+        }
+      }
+    }
+
+    if (this.distanceTravelled > this.maxRange) {
+      if (this.isRocket) this.shouldDetonate = true;
+      this.active = false;
     }
   }
 
