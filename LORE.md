@@ -246,7 +246,9 @@ This fusion of high survival knowledge with intentionally degraded tech defines 
 
 ### Settlements
 
-- **The Coil** — A derelict orbital station located in the remote Gravewake graveyard. Made from four identical cargo haulers rotating around a central docking hub, it's a lawless hub for salvage arbitration, black-market ROM speculation, and trade. The Coil is ruled by ever-changing groups of Salvage Lords and former-pirates.
+- **The Coil** — A sprawling, jury-rigged station built from hull sections, lashed containers, and debris stripped from the surrounding Gravewake graveyard. It hangs at the system's edge, shaped like a great harbor mouth: two arms flanking an open dock, anchored to a massive rear block that dwarfs everything else.
+
+  The station has two operating sections. The **right arm** is the market deck — stalls, traders, and brokers crammed into converted cargo bays. The **left arm** is the salvage yard and shipyard, where hulks are torn apart or rebuilt depending on what the Lords need that week. Both arms feed into the **Pit**, a vast pressurized chamber that fills most of the rear block. The Pit is part arena, part court, part bazaar — raw salvage is auctioned, disputes are settled by combat or coin, and unsanctioned business gets done in the dark corners. The Salvage Lords hold court toward the back of the Pit, elevated on a welded platform of interlocked hull plates, where they can watch everything that enters.
 
 - **Keelbreak** — The largest independent settlement in the inner system. Built around the exposed keel section of the arkship *Perseverance*, which cracked open on impact with Thalassa's largest continent. The keel's massive structural ribs now form the walls of a bustling trade hub, with docking arms welded to the exposed frame. Services: trade, repair, shipyard, crew hire, bounty board.
 

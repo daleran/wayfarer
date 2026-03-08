@@ -1,4 +1,4 @@
-# UI & Aesthetic Guide
+# UX & Aesthetic Guide
 
 This document defines the visual aesthetic for all Wayfarer UI elements and serves as a running log of UI/aesthetic decisions.
 
@@ -71,12 +71,17 @@ The entire game screen should feel like a **vector monitor mounted in a 1970s-80
 | Background | Black, translucent | `rgba(0, 4, 8, 0.8)` |
 
 ### Ship Relation Colors
-| Relation | Color | Hex | Usage |
+Ship color is driven entirely by `ship.relation` — a single string property. Change it and the hull color updates instantly. No color is ever hardcoded in a ship class.
+
+| `relation` | Color | Hex | Usage |
 |---|---|---|---|
-| Player-owned | Green | `#00ff66` | Player flagship and fleet ships |
-| Neutral / Cautious | Amber | `#ffaa00` | Ships with no strong alignment |
-| Hostile | Red | `#ff4444` | Enemies actively attacking |
-| Friendly / Allied | Blue | `#4488ff` | Allied ships, escort targets |
+| `'player'` | Green | `#00ff66` | The player's own ship |
+| `'neutral'` | Amber | `#ffaa00` | Ships with no strong alignment |
+| `'enemy'` | Red | `#ff4444` | Actively hostile |
+| `'friendly'` | Blue | `#4488ff` | Allied ships |
+| `'none'` | White | `#ffffff` | Designer preview (no relation context) |
+
+Engine trail color and engine glow match `relation` automatically via the same `RELATION_COLORS` lookup.
 
 ### Faction Accents (UI / Stations only)
 Faction accents are used for **station UI**, **minimap labels**, and **faction insignia** — not for ship hull color (which follows the relation table above).
@@ -186,10 +191,43 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 - Minimap: bottom-right. Circular or rectangular with vector border. Dark background. Dots for contacts.
 - Dock prompt: bottom-center, above throttle. Green text, pulsing slightly.
 - All HUD elements should feel like they're **projected onto a transparent display** — no heavy panel backgrounds, just floating text and indicators over the game world.
+- **Crosshair cursor:** Custom canvas crosshair replaces the OS cursor (cursor: none on canvas). Four short arms with a center dot. Green when mouse is within active primary weapon range; red when out of range. Small "OUT OF RANGE" label appears below the crosshair when red. Drawn after all CRT effects so it's always crisp and on top.
 
 ### Game World Elements
 - **Ships:** Wireframe polygons with minimal fill. Ship types are distinguished by **size and shape** (silhouette), not color. Color indicates **relation to the player**: green = player-owned, amber = neutral/cautious, red = hostile, blue = friendly. Non-faction entities (planets, asteroids, nebulae) may use any color that serves the aesthetic. Engine glow is pulsing outline circles at exhaust points; engine trails are long fading lines behind moving ships.
-- **Settlements:** Geometric wireframe-style structures. Bright outline with minimal fill. Docking lights blink in cyan or amber.
+- **Stations:** See station design philosophy below.
+
+### Station Design Philosophy
+
+Stations are **not** sleek, symmetric, corporate structures. This is a broken universe. Stations look like they were assembled over decades by whoever had the parts. Design principles:
+
+1. **Built from rectangles, not polygons.** Each station is a collection of distinct rectangular hull plates and modules of different sizes — stacked, offset, and bolted together. No hexagons. No perfect symmetry. The irregularity of the rect arrangement IS the character.
+
+2. **Asymmetric by design.** Left and right sides should differ. One arm is wider than the other. Panels extend at slightly different lengths. A section may jut out or step in unexpectedly. This should feel like it grew organically over time, not like it was CAD-designed.
+
+3. **Cobbled construction language.** Visual detail should reinforce the "scrapped together" feel:
+   - Thin seam lines between hull sections (at low alpha)
+   - Small overlapping patch panels at slight rotations (`strokeRect` at 5–20° offset)
+   - Rivet-dot at patch center
+   - Inner-surface ribs (faint horizontal lines across arms/modules)
+
+4. **Faction color defines the station's visual identity.** The station should feel unmistakably belonging to its faction at a glance. Use the faction color for all outlines, lights, and labels — not as a fill.
+
+5. **Docked ships add life.** Use small boxy ship silhouettes (rectangular hull + cockpit block + wing stubs) parked at jetty tips and inner piers. Vary rotation and scale. They should read as "in various states of disassembly/assembly" — not all perfectly aligned.
+
+6. **Animated amber docking lights at every pier tip.** Pulsing sinusoid, slightly offset per pier so they don't all pulse in sync.
+
+7. **Approach beacon at the harbor mouth.** Two amber beacons at the harbor entrance corners, pulsing together. A faint trapezoidal gradient beam pointing away from the mouth.
+
+8. **Label below the structure** in faction color, small bold monospace.
+
+**Anti-patterns to avoid:**
+- No hexagons
+- No symmetric 4-arm or 6-arm radial designs
+- No solid fills on hull (dark near-black fill with bright outline only)
+- No rounded corners
+- Don't draw stations as single closed polygon paths — individual rects are preferred
+
 - **Projectiles:** Color and shape convey weapon type:
   - **Autocannon rounds (kinetic):** Amber streaks (`#ffaa00` glow, `#ffe0a0` core). Slightly longer lines, slower travel speed. The most common projectile in the game — weighty and impactful.
   - **Laser bolts:** Cyan streaks (`#00ffcc` glow, `#ccffff` core). Thin, fast, short lines. Rare — only seen on well-equipped ships.
@@ -211,6 +249,12 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 - **Exception:** Non-faction entities (planets, asteroids, nebulae, stations) can use whatever color serves the aesthetic.
 - **Rationale:** At a glance in combat, the player needs to instantly know friend from foe. Shape + size differentiates ship class. Color overloading both faction and relation is confusing — relation is the critical combat readout.
 
+### 2026-03-08: Dynamic Relation Color System
+- **Decision:** `ship.relation` is the single property that drives all hull color (fill, stroke, engine glow, engine trail). Colors are looked up from `RELATION_COLORS` in `colors.js` via getters on the `Ship` base class. No color is ever hardcoded in a ship class or subclass.
+- **Designer:** Ships displayed in the designer always have `relation = 'none'` → white silhouette (no relation context in preview).
+- **Dynamic flipping:** Changing `ship.relation` at any time (e.g., from `'enemy'` to `'neutral'` when a pirate stands down) instantly recolors the ship with no other changes needed.
+- **Subclasses:** Enemy ships set `this.relation = 'enemy'` in their constructor. Player ship sets `this.relation = 'player'`. No ship class ever imports or references color constants directly.
+
 ### 2026-03-07: Weapon Projectile Colors
 - **Decision:** Projectile color conveys **weapon type**, not ship relation. Autocannon rounds are amber (`#ffaa00`), laser bolts are cyan (`#00ffcc`). This is an exception to the color-by-relation rule — projectiles follow weapon-type coloring.
 - **Rationale:** Kinetic weapons are the universal standard; their amber streaks should dominate the battlefield. Laser bolts in cyan immediately read as "something different/rare." Players can identify weapon types at a glance, which matters for threat assessment (lasers strip armor fast).
@@ -226,3 +270,9 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 - **Frigate:** Swept-wing and angular — the exception that proves the rule. Speed-oriented silhouette.
 - **Hauler:** Semi-truck: small cockpit pulling 3 rectangular cargo containers that snake behind via position history.
 - **Rationale:** Shape is the primary way to identify ship type. Chunky/utilitarian shapes reinforce the salvage-tech lore and contrast with the clean vector rendering style.
+
+### 2026-03-08: Station Design — No More Hexagons
+- **Decision:** Stations must not use hexagonal or other regular polygon forms. All stations are built from collections of rectangles of varying sizes, deliberately misaligned, to feel cobbled-together rather than manufactured. Asymmetry is required.
+- **Key rules:** Faction color drives the visual identity (outlines, lights, label). Dark near-black fills only. Docked ship silhouettes (boxy rectangular) at jetty tips add life. Amber pulsing pier lights. Harbor mouth with approach beacon + gradient beam for docking stations.
+- **Anti-patterns banned:** hexagons, radial symmetry, single closed polygon paths, solid hull fills, rounded corners.
+- **Rationale:** This universe is broken and improvised. Stations should look like they grew over decades from salvage and desperation, not like they were engineered by a functioning civilization.

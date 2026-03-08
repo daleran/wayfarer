@@ -1,0 +1,36 @@
+WAYFARER — TEST VERIFICATION CHECKLIST
+Run: npm run dev → http://localhost:5173/?test
+========================================
+
+SHIP
+ 1. HULLBREAKER: confirm blocky tug shape (not hammerhead). Single green engine glow at aft center.
+ 2. FUEL: HUD fuel bar — Hullbreaker tank is ~104 units. Fuel drains at 50% base rate (move at throttle 5).
+
+WEAPON CYCLING
+ 3. CYCLING: press 2 to cycle primary — HUD shows AUTOCANNON → RAILGUN → FLAK-S → LANCE-S → PLASMA-S → CANNON
+ 4. CYCLING: press 4 to cycle secondary — HUD shows ROCKET → ROCKET×5 → WIRE-MSL → WIRE×3 → HEAT-MSL → TORPEDO
+
+KINETIC / ENERGY PRIMARIES
+ 5. AUTOCANNON (cycle to it): LMB — rapid amber bolts, tracer trail, hits at 1500u
+ 6. RAILGUN: cycle to it, LMB — 6s pause then brilliant white streak, high damage (use X raider as target)
+ 7. FLAK-S: cycle to it, LMB on far point — amber burst at click distance; LMB near missiles — intercepts them
+ 8. CANNON: cycle to it, LMB — slow heavy shell, AoE blast on ship contact (120u radius)
+ 9. PLASMA-S: cycle to it, LMB at short vs long range — more hull damage close up (falloff visible)
+
+LANCE BEAM
+10. LANCE: cycle to it, hold LMB — cyan beam appears toward cursor; brightens over 2s; releases and ramps down
+
+SECONDARY / MISSILES
+11. ROCKETS (RMB): fire at raider — amber blast 280u; RMB again for ROCKET×5 burst of 5
+12. WIRE MISSILE: cycle to WIRE-MSL (RMB), steer missile with mouse; WIRE×3 fires spread of 3
+13. HEAT MISSILE: cycle to HEAT-MSL (RMB) — missile locks onto nearest raider automatically; 10s self-destruct
+14. TORPEDO: cycle to it (RMB) — face raider, fires along heading; slow amber blob; interceptable
+
+ENEMY WEAPONS
+15. ENEMY WEAPONS: press X — kiter spawns with Railgun (fast blue-white streak). Press C — interceptor with flak
+16. INTERCEPTION: fire a wire missile, spawn C interceptor nearby — flak may shoot down your missile
+
+NEW ENEMY TYPES (pre-spawned in test map)
+17. LIGHT FIGHTERS: two red needle ships patrol east (~1800, 2500). Approach — they should flank to your aft and fire aligned.
+18. ARMED HAULER: wide red boxy ship at (~2200, 2100). Should kite at range with autocannon and lance beam.
+19. SALVAGE MOTHERSHIP: large red frigate at (~2800, 2700). Should hold at 1200u and lob cannon + heat missiles.

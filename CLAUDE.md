@@ -3,11 +3,11 @@
 Project instructions for Claude Code.
 
 > **ALWAYS read these before and after making any change:**
-> - `@SPEC.md` — game design, systems, mechanics
+> - `@MECHANICS.md` — game mechanics, systems, controls, balancing
 > - `@LORE.md` — worldbuilding, factions, setting, tone
-> - `@UI.md` — visual conventions, color palette, component patterns
+> - `@UX.md` — visual conventions, color palette, component patterns
 >
-> **ALWAYS update them when anything relevant changes.** If you add, remove, or modify a mechanic → update `SPEC.md`. If you change colors, layouts, or UI patterns → update `UI.md`. If you change lore, faction names, location names, or world tone → update `LORE.md`. These files are the source of truth. Do not let them go stale.
+> **ALWAYS update them when anything relevant changes.** If you add, remove, or modify a mechanic → update `MECHANICS.md`. If you change colors, layouts, or UI patterns → update `UX.md`. If you change lore, faction names, location names, or world tone → update `LORE.md`. These files are the source of truth. Do not let them go stale.
 
 ## Commands
 
@@ -17,17 +17,29 @@ Project instructions for Claude Code.
 
 No test framework or linter is configured.
 
-### Test Modes
+## Documentation Guide
 
-Three test harnesses, activated by URL param. All run on the same `startLoop` as the game — each implements `update(dt)` / `render()`.
+**MANDATORY: Update these files whenever you make a relevant change. Do not skip this step.**
+
+| File | Purpose | **Mandatory Update Triggers** |
+|---|---|---|
+| `MECHANICS.md` | Game mechanics — movement, weapons, damage, AI, economy, HUD | **ANY** mechanic added, removed, or changed. Controls changed. Economy changed. New systems. |
+| `LORE.md` | Worldbuilding — history, factions, locations, tone | Faction names/traits changed. Location names changed. World tone or setting changed. |
+| `UX.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. |
+| `DEVLOG.md` | Development progress log — major features only | Every session — append one line per major feature completed. |
+| `NEXT.md` | Upcoming features (A/B/C) + minor fix list | Add new planned features. Remove items when completed. |
+| `CLAUDE.md` | This file — dev flow, architecture, rules | New systems or patterns introduced. Architecture changes. |
+
+## Test Modes
+
+Two test harnesses. Both run on the same `startLoop` — each implements `update(dt)` / `render()`.
 
 | URL | Mode | Purpose |
 |---|---|---|
 | `?test` | Playtest map | Full game on compact map with dev spawn controls |
-| `?test-ships` | Ship Designer | Isolated ship viewer/stats panel, no world |
-| `?test-poi` | POI Designer | Live render of stations, planets, derelicts etc. |
+| `?designer` | Unified Designer | Browse all ships, POIs, and weapons with stats panels |
 
-#### `?test` — Playtest Map
+### `?test` — Playtest Map
 
 - **Run:** `npm run dev` → `http://localhost:5173/?test`
 - **Map:** `js/data/testMap.js` — compact 8000×5000, all key features nearby
@@ -35,45 +47,43 @@ Three test harnesses, activated by URL param. All run on the same `startLoop` as
 - **Overlay:** magenta-bordered verification steps (bottom-right) + dev controls (top-right)
 
 **Dev controls (test mode only — shown in top-right HUD panel):**
-- **Z**: Spawn shielding raider at mouse cursor
-- **X**: Spawn kiter raider at mouse cursor
-- **C**: Spawn interceptor raider at mouse cursor
-- **Q**: Toggle LaserTurret on/off for player
+- **Z**: Spawn Light Fighter (stalker) at mouse cursor
+- **X**: Spawn Armed Hauler (kiter) at mouse cursor
+- **C**: Spawn Salvage Mothership (standoff) at mouse cursor
 
 **Every development iteration**, update `js/data/testMap.js`:
 1. Add any new entities/features so they're easy to reach
 2. Update `TEST_STEPS` with verification steps for the new features
 3. Tell the user to open `?test` and follow the on-screen steps to validate
 
-#### `?test-ships` — Ship Designer
+### `?designer` — Unified Designer
 
-- **Run:** `http://localhost:5173/?test-ships`
-- **Source:** `js/test/shipDesigner.js`
-- **Controls:** `←/→` cycle ships, `T` toggle auto-rotation
-- Ships drawn at 7× scale. Stats panel on left shows armor arcs, movement, weapons.
-- **When working here:** edit only the ship JS file (`js/ships/` or `js/enemies/`). Vite HMR reloads on save. When stats finalized, update `SPEC.md` and `js/data/shipTypes.js`.
-- **In scope:** `js/ships/**`, `js/enemies/**`, `js/ui/colors.js`
+- **Run:** `npm run dev:designer` → `http://localhost:5176/designer.html?designer`
+- **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
+- **Navigation:**
+  - `↑/↓` — change category (Ships / Stations / Planets / Derelicts / Environment / Weapons)
+  - `←/→` — cycle item within current category
+  - `T` — toggle auto-rotation (ships only)
+  - `R` — reset view (zoom + pan to item default)
+  - Scroll — zoom
+  - Drag — pan (non-ship categories)
+- **Deep-link:** `?designer&category=<cat>&id=<slug>` — e.g. `?designer&category=weapons&id=railgun`
+- **When working here:**
+  - Ships: edit `js/ships/**` or `js/enemies/**`. Vite HMR reloads on save.
+  - POIs: edit `js/world/**` or `js/data/map.js`.
+  - Weapons: edit `js/weapons/**`. Stats panel reads live from the weapon instance.
+- **In scope:** `js/ships/**`, `js/enemies/**`, `js/world/**`, `js/weapons/**`, `js/ui/colors.js`
 
-#### `?test-poi` — POI Designer
+### Designer Item `id` Slugs
 
-- **Run:** `http://localhost:5173/?test-poi`
-- **Source:** `js/test/poiDesigner.js`
-- **Controls:** `←/→` cycle POIs, scroll zoom, drag pan, `R` reset view
-- Mock camera: POI placed at world (0,0), camera centers it. Info panel shows key-specific fields.
-- **When working here:** edit the POI renderer in `js/world/`. For map data changes, edit `js/data/map.js`. For lore, update `LORE.md`. For mechanics/encounters, update `SPEC.md`.
-- **In scope:** `js/world/**`, `js/data/map.js`, `js/data/testMap.js`
+Every item in `CATEGORIES` in `js/test/designer.js` has a durable `id` — kebab-case, stable even if the display label changes. Used for URL deep-linking.
 
-## Key Documentation Files
-
-**MANDATORY: Update these files whenever you make a relevant change. Do not skip this step.**
-
-| File | Purpose | **Mandatory Update Triggers** |
-|---|---|---|
-| `SPEC.md` | Full game design spec — features, systems, phases, balancing | **ANY** mechanic added, removed, or changed. Controls changed. Currency/economy changed. New systems. Mark phases complete. |
-| `LORE.md` | Worldbuilding — history, factions, locations, economy, aesthetics | Faction names/traits changed. Location names changed. World tone or setting changed. User gives feedback about feel. |
-| `UI.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. User gives aesthetic feedback. |
-| `DEVLOG.md` | Development progress log | Every session — append a summary of what was implemented, changed, or fixed. |
-| `CLAUDE.md` | This file | New systems or patterns introduced. Architecture changes. |
+- **Ships:** `onyx-tug`, `swift-runner`, `g100-hauler`, `dec-frigate`, `hullbreaker`, `raider`, `light-fighter`, `armed-hauler`, `salvage-mothership` (driven from `js/ships/registry.js`)
+- **Stations:** `station-keelbreak`, `station-crucible`, `station-thornwick`, `the-coil`
+- **Planets:** `planet-thalassa`, `planet-pale`
+- **Derelicts:** `derelict-hollow-march`
+- **Environment:** `arkship-spine`, `debris-cloud`
+- **Weapons:** `autocannon`, `railgun`, `railgun-f`, `flak-s`, `flak-l`, `lance-s`, `lance-l`, `lance-f`, `plasma-s`, `plasma-l`, `cannon`, `rocket`, `rocket-large`, `wire-msl`, `wire-msl-l`, `heat-msl`, `heat-msl-l`, `torpedo`
 
 ## Architecture
 
@@ -94,13 +104,13 @@ Three test harnesses, activated by URL param. All run on the same `startLoop` as
 ### Entity Hierarchy
 
 ```
-Entity (js/entities/entity.js)          — base: x, y, vx, vy, rotation, active
-  Ship (js/entities/ship.js)            — armor/hull health, throttle (6 levels), weapons
-    ScrapShip (js/ships/player/flagship.js) — player ship
-    Gunship   (js/ships/player/gunship.js)  — unused; future use
-    Frigate   (js/ships/player/frigate.js)  — unused; future use
-    Hauler    (js/ships/player/hauler.js)   — unused; future use (trailing container rendering)
-    Raider    (js/enemies/scavengers/raider.js) — scavenger enemy
+Entity (js/entities/entity.js)               — base: x, y, vx, vy, rotation, active
+  Ship (js/entities/ship.js)                 — armor/hull health, throttle (6 levels), weapons, fuelMax, fuelEfficiency
+    OnyxClassTug (js/ships/classes/onyxTug.js)    — class template: hammerhead tug shape, defaults
+      Hullbreaker (js/ships/player/hullbreaker.js) — player variant: reduced armor, +fuel tank
+    LightFighter      (js/enemies/scavengers/lightFighter.js)      — fast stalker (Swift Runner hull)
+    ArmedHauler       (js/enemies/scavengers/armedHauler.js)       — kiter with autocannon + lance (G100 Class Hauler hull)
+    SalvageMothership (js/enemies/scavengers/salvageMothership.js) — standoff, lobs missiles (Dec. Frigate hull)
   Projectile  (js/entities/projectile.js) — velocity-driven, deactivates on range/hit
   LootDrop    (js/entities/lootDrop.js)   — auto-pickup, 30s lifetime, types: scrap/fuel/commodity
   Particle    (js/entities/particle.js)   — short-lived visual effect
@@ -115,12 +125,13 @@ Ship subclasses override `_drawShape(ctx)` and `getBounds()`.
 
 - **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically. Inactive entities purged each tick.
 - **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`.
-- **Raider AI** — `updateRaiderAI()` in `js/ai/raiderAI.js`. Raiders have a `homePosition`, patrol nearby, aggro at ~800u, deaggro at ~1200u.
+- **Enemy AI** — `updateRaiderAI()` in `js/ai/raiderAI.js`. Enemies have a `homePosition`, patrol nearby, aggro at 1400u, deaggro at 2000u. Behaviors: `stalker` (LightFighter), `kiter` (ArmedHauler), `standoff` (SalvageMothership). AI distance constants live in `RAIDER_AI` in `js/data/stats.js`.
 - **Weapons** — component objects added via `addWeapon()`. Two types:
   - `Autocannon` (`isAutoFire = false`) — fires on LMB toward mouse cursor
-  - `LaserTurret` (`isAutoFire = true`) — point defense, auto-fires at nearest enemy with lead targeting
 - **Particle pool** — `js/systems/particlePool.js`, 200 slots, presets: `explosion()`, `engineTrail()`.
 - **Map data** — `js/data/map.js` defines stations, planets, derelicts, raider spawns. `js/data/testMap.js` is the compact playtesting variant.
+- **Centralized stats** — `js/data/stats.js` is the single source of truth for all base stats and tuning knobs. Each ship/weapon file defines its own multiplier constants (e.g. `HULL_MULT`, `SPEED_MULT`) and computes final values as `BASE_* × multiplier`. `SPEED_FACTOR` and `PROJECTILE_SPEED_FACTOR` are global pacing knobs. Never hardcode raw stat numbers in ship/weapon constructors — define a multiplier instead.
+- **Ship registry** — `js/ships/registry.js` is the single import point for all ships. `game.js` and `designer.js` both use it. To add a new ship: create the file, add one entry to `SHIP_REGISTRY`. `BASE_FUEL_MAX` and `BASE_FUEL_EFFICIENCY` are per-ship tank/drain tuning knobs on `ship.fuelMax` / `ship.fuelEfficiency`. `game.fuelMax` is set from `player.fuelMax` on init.
 - **UI overlays** — drawn on canvas, handle their own input. Docking sets `isDocked = true`, skipping the simulation loop.
 - **Color palette** — `js/ui/colors.js` exports all color constants. Never use inline hex strings.
 - **Economy** — `game.scrap` is the sole currency (no credits). `game.fuel` / `game.fuelMax` drive movement. Trade, repairs, and refueling all cost scrap.
@@ -132,11 +143,31 @@ Ship subclasses override `_drawShape(ctx)` and `getBounds()`.
 - Rotation 0 = pointing up (north, negative Y).
 - World origin top-left; positive X right, positive Y down.
 
-### Controls
+## Controls Reference
 
 - **W/S or ↑/↓**: Increase/decrease throttle (step per press)
 - **A/D or ←/→**: Rotate (continuous while held)
-- **LMB or Space**: Fire autocannon toward mouse cursor
+- **LMB or Space**: Fire primary weapon toward mouse cursor
+- **RMB**: Fire secondary weapon (missiles/torpedoes) toward mouse cursor
 - **R**: Toggle field armor repair (must be stopped; 1.5 armor/sec, 1 scrap/pt)
 - **E**: Dock at nearby station / begin salvage on nearby derelict
 - **Esc**: Cancel salvage / close station screen
+
+## Rules & Conventions
+
+### Stats: Multiplier Pattern
+Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `js/data/stats.js`. Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` and `PROJECTILE_SPEED_FACTOR`.
+
+### Colors: Always Use `js/ui/colors.js`
+Never use inline hex strings anywhere in the codebase. Import named constants from `js/ui/colors.js`. If a new color is needed, add it there first.
+
+### Docs: Always Update After Changes
+- Mechanic added/changed → `MECHANICS.md`
+- Visual/UI changed → `UX.md`
+- Lore/names changed → `LORE.md`
+- Major feature completed → append one line to `DEVLOG.md`
+- Feature planned or completed → update `NEXT.md`
+
+### Commits: Log to DEVLOG.md
+Format: `YYYY-MMM-DD-HHMM: Feature name (one-line description)`
+Major features only — no tuning passes, no small fixes.
