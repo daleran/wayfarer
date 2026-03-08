@@ -18,6 +18,8 @@ export class StationScreen {
     this._closeBtn = null;
     this._tradeButtons = [];
     this._tabRects = {};
+    // Intel tab scroll
+    this._intelScrollY = 0;
     // Hull repair progress
     this._repairing = false;
     this._repairProgress = 0;
@@ -29,6 +31,7 @@ export class StationScreen {
     this.visible = true;
     this.station = station;
     this._activeTab = 'services';
+    this._intelScrollY = 0;
     this._repairing = false;
     this._repairProgress = 0;
   }
@@ -419,12 +422,27 @@ export class StationScreen {
     const contentX = px + 45;
     const contentY = py + 138;
     const lineH = 21;
+    const closeAreaH = 90; // space reserved for close button
+    const clipH = panelH - (contentY - py) - closeAreaH;
+
+    // Measure total content height
+    let totalH = 0;
+    for (const line of lore) {
+      totalH += line === '' ? Math.floor(lineH * 0.6) : lineH;
+    }
+    this._intelMaxScroll = Math.max(0, totalH - clipH);
+
+    // Clip to content area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(px, contentY, panelW, clipH);
+    ctx.clip();
 
     ctx.font = '14px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    let y = contentY;
+    let y = contentY - this._intelScrollY;
     for (const line of lore) {
       if (line === '') {
         y += Math.floor(lineH * 0.6);
@@ -442,6 +460,25 @@ export class StationScreen {
       ctx.fillText(line, contentX, y);
       ctx.globalAlpha = 1;
       y += lineH;
+    }
+
+    ctx.restore();
+
+    // Scroll indicator
+    if (this._intelMaxScroll > 0) {
+      const trackX = px + panelW - 18;
+      const trackY = contentY + 2;
+      const trackH = clipH - 4;
+      const thumbH = Math.max(20, trackH * (clipH / totalH));
+      const thumbY = trackY + (this._intelScrollY / this._intelMaxScroll) * (trackH - thumbH);
+
+      ctx.fillStyle = DIM_OUTLINE;
+      ctx.globalAlpha = 0.4;
+      ctx.fillRect(trackX, trackY, 4, trackH);
+      ctx.fillStyle = CYAN;
+      ctx.globalAlpha = 0.7;
+      ctx.fillRect(trackX, thumbY, 4, thumbH);
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -465,6 +502,14 @@ export class StationScreen {
       return;
     }
 
+    // Intel tab scrolling
+    if (this._activeTab === 'intel' && input.wheelDelta !== 0) {
+      this._intelScrollY = Math.max(0, Math.min(
+        this._intelMaxScroll ?? 0,
+        this._intelScrollY + input.wheelDelta * 0.5,
+      ));
+    }
+
     if (input.wasJustClicked()) {
       const mx = input.mouseScreen.x;
       const my = input.mouseScreen.y;
@@ -473,6 +518,7 @@ export class StationScreen {
       for (const [tabId, rect] of Object.entries(this._tabRects)) {
         if (mx >= rect.x && mx <= rect.x + rect.w && my >= rect.y && my <= rect.y + rect.h) {
           this._activeTab = tabId;
+          this._intelScrollY = 0;
           return;
         }
       }

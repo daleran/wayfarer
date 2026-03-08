@@ -10,6 +10,9 @@ export const BLUE = '#4488ff';
 export const MAGENTA = '#ff00aa';
 export const WHITE = '#ffffff';
 export const TEAL = '#44aaff';
+export const RAIL_WHITE   = '#ddeeff';
+export const PLASMA_GREEN = '#44ff88';
+export const TORPEDO_AMBER = '#cc8800';
 
 // Panel / background
 export const PANEL_BG = 'rgba(0,8,16,0.85)';
@@ -43,9 +46,23 @@ export const NEUTRAL_STROKE = AMBER;
 export const FRIENDLY_FILL = 'rgba(5,10,30,0.15)';
 export const FRIENDLY_STROKE = BLUE;
 
-// Engine glow (matches relation color)
+// Designer / preview fill — no relation context
+export const DESIGNER_FILL = 'rgba(20,20,20,0.15)';
+
+// Engine glow aliases (kept for any direct use)
 export const ENGINE_GREEN = GREEN;
 export const ENGINE_RED = RED;
+
+// Relation → color lookup — the single source of truth for ship coloring.
+// Ship._drawShape reads hullFill/hullStroke/engineColor getters derived from this.relation.
+// Changing ship.relation is all you need to recolor a ship.
+export const RELATION_COLORS = {
+  none:     { fill: DESIGNER_FILL,  stroke: WHITE,           engine: WHITE },
+  player:   { fill: PLAYER_FILL,    stroke: PLAYER_STROKE,   engine: GREEN },
+  friendly: { fill: FRIENDLY_FILL,  stroke: FRIENDLY_STROKE, engine: BLUE },
+  neutral:  { fill: NEUTRAL_FILL,   stroke: NEUTRAL_STROKE,  engine: AMBER },
+  enemy:    { fill: ENEMY_FILL,     stroke: ENEMY_STROKE,    engine: RED },
+};
 
 // Minimap
 export const MINIMAP_BG = 'rgba(0,4,8,0.8)';

@@ -124,7 +124,7 @@ export class ParticlePool {
       ctx.lineWidth = 2;
       ctx.globalAlpha = alpha * 0.6;
       ctx.beginPath();
-      ctx.arc(screen.x, screen.y, ring.radius, 0, Math.PI * 2);
+      ctx.arc(screen.x, screen.y, ring.radius * camera.zoom, 0, Math.PI * 2);
       ctx.stroke();
     }
 

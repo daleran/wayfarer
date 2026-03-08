@@ -4,6 +4,7 @@ export class Camera {
     this.y = 0;
     this.width = width;
     this.height = height;
+    this.zoom = 0.44;
   }
 
   follow(target, dt) {
@@ -14,15 +15,15 @@ export class Camera {
 
   worldToScreen(wx, wy) {
     return {
-      x: wx - this.x + this.width / 2,
-      y: wy - this.y + this.height / 2,
+      x: (wx - this.x) * this.zoom + this.width / 2,
+      y: (wy - this.y) * this.zoom + this.height / 2,
     };
   }
 
   screenToWorld(sx, sy) {
     return {
-      x: sx + this.x - this.width / 2,
-      y: sy + this.y - this.height / 2,
+      x: (sx - this.width / 2) / this.zoom + this.x,
+      y: (sy - this.height / 2) / this.zoom + this.y,
     };
   }
 

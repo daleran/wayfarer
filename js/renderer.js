@@ -1,3 +1,6 @@
+import { GREEN, RED } from './ui/colors.js';
+import { input } from './input.js';
+
 // Starfield layer config: [count, parallaxFactor, starSize]
 const STAR_LAYERS = [
   { count: 200, parallax: 0.05, size: 1 },
@@ -68,6 +71,7 @@ export class Renderer {
     if (this._gravewakeZone) this._renderGravewakeAtmosphere(camera);
     this._renderBackground(game, camera);
     this._renderEntities(entities, camera);
+    this._renderBeams(game, camera);
     game.particlePool.render(ctx, camera);
     game.hud.render(ctx, game);
 
@@ -79,6 +83,63 @@ export class Renderer {
     // CRT post-processing
     this._renderScanlines(camera);
     this._renderVignette(camera);
+
+    // Crosshair cursor — always on top
+    this._renderCrosshair(game, camera);
+  }
+
+  _renderCrosshair(game, camera) {
+    const { ctx } = this;
+    const mx = input.mouseScreen.x;
+    const my = input.mouseScreen.y;
+
+    // Determine range status
+    let inRange = true;
+    const player = game.player;
+    if (player && player.active) {
+      const primaries = player._primaryWeapons;
+      const weapon = primaries.length > 0 ? primaries[player.primaryWeaponIdx] : null;
+      if (weapon) {
+        const world = camera.screenToWorld(mx, my);
+        const dx = world.x - player.x;
+        const dy = world.y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        inRange = dist <= weapon.maxRange;
+      }
+    }
+
+    const color = inRange ? GREEN : RED;
+    const arm = 8;
+    const gap = 4;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.9;
+
+    // Four arms
+    ctx.beginPath();
+    ctx.moveTo(mx - gap, my); ctx.lineTo(mx - gap - arm, my);
+    ctx.moveTo(mx + gap, my); ctx.lineTo(mx + gap + arm, my);
+    ctx.moveTo(mx, my - gap); ctx.lineTo(mx, my - gap - arm);
+    ctx.moveTo(mx, my + gap); ctx.lineTo(mx, my + gap + arm);
+    ctx.stroke();
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(mx, my, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    if (!inRange) {
+      ctx.font = '10px monospace';
+      ctx.fillStyle = RED;
+      ctx.globalAlpha = 0.85;
+      ctx.textAlign = 'center';
+      ctx.fillText('OUT OF RANGE', mx, my + gap + arm + 14);
+    }
+
+    ctx.restore();
   }
 
   _renderBackground(game, camera) {
@@ -94,38 +155,38 @@ export class Renderer {
     const screen = camera.worldToScreen(pale.x, pale.y);
     const cx = screen.x;
     const cy = screen.y;
-    const r = pale.radius;
+    const r = pale.radius * camera.zoom;
 
     ctx.save();
 
-    // Outer atmospheric halo — light, transparent (colorAtmo)
+    // Outer atmospheric halo — proportional to radius
     ctx.strokeStyle = pale.colorAtmo;
     ctx.beginPath();
-    ctx.arc(cx, cy, r + 320, 0, Math.PI * 2);
-    ctx.lineWidth = 300;
+    ctx.arc(cx, cy, r + r * 0.036, 0, Math.PI * 2);
+    ctx.lineWidth = r * 0.033;
     ctx.globalAlpha = 0.12;
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(cx, cy, r + 90, 0, Math.PI * 2);
-    ctx.lineWidth = 110;
+    ctx.arc(cx, cy, r + r * 0.010, 0, Math.PI * 2);
+    ctx.lineWidth = r * 0.012;
     ctx.globalAlpha = 0.18;
     ctx.stroke();
 
-    // Planet body — more opaque than before but still translucent
+    // Planet body
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = pale.colorAtmo;
     ctx.globalAlpha = 0.48;
     ctx.fill();
 
-    // Cloud band striations (slightly more visible)
+    // Cloud band striations at fractional radii
     ctx.strokeStyle = pale.colorLimb;
-    ctx.lineWidth = 55;
+    ctx.lineWidth = Math.max(1.5, r * 0.006);
     ctx.globalAlpha = 0.1;
-    for (const offset of [-1800, -800, +400, +1600]) {
+    for (const frac of [0.98, 0.95, 0.91, 0.87]) {
       ctx.beginPath();
-      ctx.arc(cx, cy, r - Math.abs(offset) * 0.12, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r * frac, 0, Math.PI * 2);
       ctx.stroke();
     }
 
@@ -137,17 +198,17 @@ export class Renderer {
     ctx.globalAlpha = 0.8;
     ctx.stroke();
 
-    // Name label (only visible when limb is close to camera)
+    // Name label (only visible when near the limb)
     const distToEdge = Math.sqrt(
       (camera.x - pale.x) ** 2 + (camera.y - pale.y) ** 2
     ) - pale.radius;
-    if (distToEdge < 3000) {
+    if (distToEdge < pale.radius * 0.33) {
       ctx.font = '12px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = pale.colorLimb;
-      ctx.globalAlpha = Math.max(0, 1 - distToEdge / 3000) * 0.5;
-      ctx.fillText(pale.name.toUpperCase(), cx, cy - r + 60);
+      ctx.globalAlpha = Math.max(0, 1 - distToEdge / (r * 0.33)) * 0.5;
+      ctx.fillText(pale.name.toUpperCase(), cx, cy - r + 20);
     }
 
     ctx.globalAlpha = 1;
@@ -174,8 +235,8 @@ export class Renderer {
 
     for (const frag of this._gravewakeFragments) {
       // Parallax offset
-      const px = frag.wx - camera.x * frag.parallax;
-      const py = frag.wy - camera.y * frag.parallax;
+      const px = frag.wx - camera.x * frag.parallax * camera.zoom;
+      const py = frag.wy - camera.y * frag.parallax * camera.zoom;
 
       // Wrap to screen
       const sw = camera.width;
@@ -201,8 +262,8 @@ export class Renderer {
     for (const layer of this.starLayers) {
       for (const star of layer.stars) {
         // Parallax: offset star position by a fraction of camera displacement from world origin
-        const px = star.x - camera.x * layer.parallax;
-        const py = star.y - camera.y * layer.parallax;
+        const px = star.x - camera.x * layer.parallax * camera.zoom;
+        const py = star.y - camera.y * layer.parallax * camera.zoom;
 
         // Wrap stars so they tile across the screen
         const sw = camera.width;
@@ -277,9 +338,57 @@ export class Renderer {
     ctx.restore();
   }
 
+  _renderBeams(game, camera) {
+    const { ctx } = this;
+    for (const entity of game.entities) {
+      if (!entity.isShip) continue;
+      for (const w of entity.weapons || []) {
+        if (!w.isBeam || w._rampUp <= 0) continue;
+        const t = Math.min(w._rampUp / w.rampTime, 1);
+        const s = camera.worldToScreen(w._beamOriginX, w._beamOriginY);
+        const e = camera.worldToScreen(w._beamEndX, w._beamEndY);
+        ctx.save();
+        ctx.lineCap = 'round';
+        // Outer glow
+        ctx.strokeStyle = '#00ffaa';
+        ctx.lineWidth = (3 + t * 6) * camera.zoom;
+        ctx.globalAlpha = 0.12 * t;
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(e.x, e.y);
+        ctx.stroke();
+        // Mid glow
+        ctx.strokeStyle = '#88ffdd';
+        ctx.lineWidth = (1 + t * 2.5) * camera.zoom;
+        ctx.globalAlpha = 0.5 + t * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(e.x, e.y);
+        ctx.stroke();
+        // Bright core
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = Math.max(0.5, t) * camera.zoom;
+        ctx.globalAlpha = t;
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(e.x, e.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+    }
+  }
+
   _renderEntities(entities, camera) {
+    // Two-pass: scenery first, ships always on top
     for (const entity of entities) {
-      if (!entity.active) continue;
+      if (!entity.active || entity.isShip) continue;
+      const bounds = entity.getBounds();
+      if (!camera.isVisible(bounds.x, bounds.y, bounds.radius + 64)) continue;
+      entity.render(this.ctx, camera);
+    }
+    for (const entity of entities) {
+      if (!entity.active || !entity.isShip) continue;
       const bounds = entity.getBounds();
       if (!camera.isVisible(bounds.x, bounds.y, bounds.radius + 64)) continue;
       entity.render(this.ctx, camera);

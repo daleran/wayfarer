@@ -7,9 +7,19 @@ class InputHandler {
     this.mouseButtons = { left: false, right: false };
     this._justClicked = false;
     this._pendingClick = false;
+    this.wheelDelta = 0;
+    this._pendingWheel = 0;
 
+    window.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      this._pendingWheel += e.deltaY;
+    }, { passive: false });
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
+      // Prevent browser default for keys the game uses
+      if (['arrowleft','arrowright','arrowup','arrowdown',' '].includes(key)) {
+        e.preventDefault();
+      }
       if (!this.keysDown.has(key)) {
         this._pendingPress.add(key);
       }
@@ -52,6 +62,8 @@ class InputHandler {
     this._pendingPress.clear();
     this._justClicked = this._pendingClick;
     this._pendingClick = false;
+    this.wheelDelta = this._pendingWheel;
+    this._pendingWheel = 0;
   }
 
   mouseWorld(camera) {

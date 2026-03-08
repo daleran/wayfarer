@@ -3,11 +3,22 @@ import { Renderer } from './renderer.js';
 import { HUD } from './hud.js';
 import { input } from './input.js';
 import { MAP } from './data/map.js';
-import { createScrapShip } from './ships/player/flagship.js';
-import { createRaider } from './enemies/scavengers/raider.js';
+import { createHullbreaker } from './ships/player/hullbreaker.js';
+import { createLightFighter } from './enemies/scavengers/lightFighter.js';
+import { createArmedHauler } from './enemies/scavengers/armedHauler.js';
+import { createSalvageMothership } from './enemies/scavengers/salvageMothership.js';
 import { Autocannon } from './weapons/autocannon.js';
-import { LaserTurret } from './weapons/laserTurret.js';
+
 import { Rocket } from './weapons/rocket.js';
+import { Railgun } from './weapons/railgun.js';
+import { FlakCannon } from './weapons/flakCannon.js';
+import { Lance } from './weapons/lance.js';
+import { PlasmaCannon } from './weapons/plasmaCannon.js';
+import { Cannon } from './weapons/cannon.js';
+import { RocketLarge } from './weapons/rocketLarge.js';
+import { MissileWire } from './weapons/missileWire.js';
+import { MissileHeat } from './weapons/missileHeat.js';
+import { Torpedo } from './weapons/torpedo.js';
 import { ParticlePool } from './systems/particlePool.js';
 import { updateRaiderAI } from './ai/raiderAI.js';
 import { Ship } from './entities/ship.js';
@@ -22,8 +33,8 @@ import { Derelict, createDerelict } from './world/derelict.js';
 import { StationScreen } from './ui/stationScreen.js';
 import { RocketExplosion } from './entities/rocketExplosion.js';
 
-const FLAGSHIP_START = { x: 2000, y: 3000 };
-const FUEL_RATES = [0, 0, 0.3, 0.6, 1.0, 2.5];
+import { DEFAULT_SCRAP, FUEL_RATES,
+         REPAIR_RATE, REPAIR_COST_PER_PT } from './data/stats.js';
 
 export class GameManager {
   constructor(options = {}) {
@@ -40,9 +51,9 @@ export class GameManager {
     this.isTestMode  = options.testMode  || false;
     this.testSteps   = options.testSteps || [];
     this._addRockets = options.addRockets || false;
-    this.scrap = options.startScrap ?? 20;
-    this.fuel = 100;
-    this.fuelMax = 100;
+    this.scrap = options.startScrap ?? DEFAULT_SCRAP;
+    this.fuel = 0;    // set from player.fuelMax in init()
+    this.fuelMax = 0; // set from player.fuelMax in init()
     this.cargo = { food: 0, ore: 0, tech: 0, exotics: 0 };
     this.isDocked = false;
     this.stationScreen = null;
@@ -61,11 +72,20 @@ export class GameManager {
     // Repair state
     this.isRepairing = false;
     this._repairAccum = 0;
+
+    // Pan mode (test only)
+    this.isPanMode = false;
+
+    // AI freeze mode (test only) — V key toggle
+    this.aiDisabled = false;
+
+    // Auto-fire mode — F key toggle
+    this.autoFireMode = false;
   }
 
   init() {
-    // Canvas setup
     this.canvas = document.getElementById('game');
+    this.canvas.style.cursor = 'none';
     this._resizeCanvas();
     this.ctx = this.canvas.getContext('2d');
 
@@ -75,41 +95,49 @@ export class GameManager {
       this.camera.height = this.canvas.height;
     });
 
-    // Camera
     this.camera = new Camera(this.canvas.width, this.canvas.height);
-
-    // HUD
     this.hud = new HUD();
-
-    // Station screen overlay
     this.stationScreen = new StationScreen();
-
-    // Renderer (generates starfield + zone atmosphere)
     this.renderer = new Renderer(this.ctx, this.map.mapSize, this.map.zones);
-
-    // Particle pool
     this.particlePool = new ParticlePool();
 
-    // Spawn flagship
-    const start = this.map.playerStart || FLAGSHIP_START;
-    this.player = createScrapShip(start.x, start.y);
-    this.player.addWeapon(new Autocannon());
-    if (this._addRockets) this.player.addWeapon(new Rocket());
+    // Spawn player
+    const start = this.map.playerStart || { x: 400, y: 400 };
+    this.player = createHullbreaker(start.x, start.y);
+    this.fuel    = this.player.fuelMax;
+    this.fuelMax = this.player.fuelMax;
+
+    if (this.isTestMode) {
+      // Full weapon roster in test mode
+      this.player.addWeapon(new Autocannon());
+      this.player.addWeapon(new Railgun());
+      this.player.addWeapon(new FlakCannon('small'));
+      this.player.addWeapon(new Lance('small'));
+      this.player.addWeapon(new PlasmaCannon('small'));
+      this.player.addWeapon(new Cannon());
+      // Secondary
+      this.player.addWeapon(new Rocket());
+      this.player.addWeapon(new RocketLarge());
+      this.player.addWeapon(new MissileWire('small'));
+      this.player.addWeapon(new MissileWire('large'));
+      this.player.addWeapon(new MissileHeat('small'));
+      this.player.addWeapon(new Torpedo());
+    } else {
+      this.player.addWeapon(new Autocannon());
+      this.player.addWeapon(new Rocket());
+    }
+
     this.entities.push(this.player);
 
-    // Spawn world entities from map data
+    // World entities
     for (const s of this.map.stations) {
       const station = s.renderer === 'coil' ? createCoilStation(s) : createStation(s);
       this.entities.push(station);
     }
-    for (const p of this.map.planets)  this.entities.push(createPlanet(p));
+    for (const p of this.map.planets) this.entities.push(createPlanet(p));
+    for (const d of (this.map.derelicts || [])) this.entities.push(createDerelict(d));
 
-    // Spawn derelicts from map data
-    for (const d of (this.map.derelicts || [])) {
-      this.entities.push(createDerelict(d));
-    }
-
-    // Spawn raiders near their assigned stations
+    // Raiders
     for (const spawn of (this.map.raiderSpawns || [])) {
       const station = this.map.stations.find(s => s.id === spawn.stationId);
       const home = station ? { x: station.x, y: station.y } : { x: spawn.x, y: spawn.y };
@@ -118,7 +146,9 @@ export class GameManager {
         const dist = 150 + Math.random() * 200;
         const rx = home.x + Math.sin(angle) * dist;
         const ry = home.y - Math.cos(angle) * dist;
-        const raider = createRaider(rx, ry);
+        const raider = spawn.shipType === 'armed-hauler'       ? createArmedHauler(rx, ry)
+                     : spawn.shipType === 'salvage-mothership' ? createSalvageMothership(rx, ry)
+                     : createLightFighter(rx, ry);
         raider.homePosition = { x: home.x, y: home.y };
         if (spawn.behaviorType) raider.behaviorType = spawn.behaviorType;
         this.entities.push(raider);
@@ -126,13 +156,11 @@ export class GameManager {
       }
     }
 
-    // Spawn Gravewake terrain entities
     for (const spine of (this.map.arkshipSpines || []))
       this.entities.push(createArkshipSpine(spine));
     for (const cloud of (this.map.wallOfWrecks || []))
       this.entities.push(createDebrisCloud(cloud));
 
-    // Snap camera to player immediately (no lerp on first frame)
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
   }
@@ -152,36 +180,52 @@ export class GameManager {
       return;
     }
 
-    // Salvage state machine
-    if (this.isSalvaging) {
-      this._updateSalvage(dt);
-    }
+    if (this.isSalvaging) this._updateSalvage(dt);
 
     this._processInput(dt);
-
-    // Fuel consumption
     this._consumeFuel(dt);
 
     for (const entity of this.entities) {
       if (!entity.active) continue;
-      // Freeze player during salvage or repair
       if ((this.isSalvaging || this.isRepairing) && entity === this.player) continue;
-      entity.update(dt);
+      entity.update(dt, this.entities);
     }
 
     for (const raider of this.raiders) {
-      if (raider.active) updateRaiderAI(raider, this.player, this.entities, dt);
+      if (!raider.active) continue;
+      if (this.aiDisabled) {
+        raider.throttleLevel = 0;
+        raider.rotationInput = 0;
+      } else {
+        updateRaiderAI(raider, this.player, this.entities, dt);
+      }
     }
 
-    // Player auto-fire turret weapons at nearest enemy (disabled during salvage/repair)
+    // Auto-fire turrets
     const enemies = this.raiders.filter(r => r.active);
     if (this.player && this.player.active && !this.isSalvaging && !this.isRepairing) {
       this.player.fireAutoWeapons(enemies, this.entities);
+
+      // F-key auto-fire mode: active primary also fires at nearest enemy
+      if (this.autoFireMode) {
+        let nearest = null;
+        let nearestDist = Infinity;
+        for (const e of enemies) {
+          const dx = e.x - this.player.x;
+          const dy = e.y - this.player.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < nearestDist) { nearestDist = d; nearest = e; }
+        }
+        if (nearest) {
+          this.player.fireWeapons(nearest.x, nearest.y, this.entities, true);
+        }
+      }
     }
 
-    // Active repair (player-initiated via Hold R)
     if (this.isRepairing) this._updateRepair(dt);
 
+    // Update guided projectile targets
+    this._updateGuidedProjectiles();
 
     this.particlePool.update(dt);
     this._runCollisions();
@@ -190,14 +234,37 @@ export class GameManager {
     this._updateDerelictSparks(dt);
     this._purgeInactive();
 
-    // Check derelicts before docking (E-key priority)
     this._checkDerelictInteraction();
-    if (!this.isSalvaging) {
-      this._checkDocking();
-    }
+    if (!this.isSalvaging) this._checkDocking();
 
-    if (this.player && this.player.active) {
+    if (this.player && this.player.active && !this.isPanMode) {
       this.camera.follow(this.player, dt);
+    }
+  }
+
+  _updateGuidedProjectiles() {
+    const enemies = this.raiders.filter(r => r.active);
+    for (const entity of this.entities) {
+      if (!(entity instanceof Projectile) || !entity.active || !entity.isGuided) continue;
+      if (entity.guidedType === 'wire') {
+        if (this._cachedMouseWorld) {
+          entity.guidanceTargetX = this._cachedMouseWorld.x;
+          entity.guidanceTargetY = this._cachedMouseWorld.y;
+        }
+      } else if (entity.guidedType === 'heat') {
+        let nearest = null;
+        let nearestDist = Infinity;
+        for (const e of enemies) {
+          const dx = e.x - entity.x;
+          const dy = e.y - entity.y;
+          const d = dx * dx + dy * dy;
+          if (d < nearestDist) { nearestDist = d; nearest = e; }
+        }
+        if (nearest) {
+          entity.guidanceTargetX = nearest.x;
+          entity.guidanceTargetY = nearest.y;
+        }
+      }
     }
   }
 
@@ -205,7 +272,7 @@ export class GameManager {
     if (!this.player || !this.player.active) return;
     const rate = FUEL_RATES[this.player.throttleLevel] || 0;
     if (rate > 0) {
-      this.fuel -= rate * dt;
+      this.fuel -= rate * this.player.fuelEfficiency * dt;
       if (this.fuel <= 0) {
         this.fuel = 0;
         if (this.player.throttleLevel > 1) this.player.throttleLevel = 1;
@@ -213,69 +280,53 @@ export class GameManager {
     }
   }
 
-  _startRepair() {
-    this.isRepairing = true;
-    this._repairAccum = 0;
-  }
-
-  _cancelRepair() {
-    this.isRepairing = false;
-    this._repairAccum = 0;
-  }
+  _startRepair() { this.isRepairing = true; this._repairAccum = 0; }
+  _cancelRepair() { this.isRepairing = false; this._repairAccum = 0; }
 
   _updateRepair(dt) {
     const ship = this.player;
     if (!ship || !ship.active) return;
-
-    const REPAIR_RATE = 1.5; // armor/sec, 1 scrap per point
     this._repairAccum += REPAIR_RATE * dt;
-
     const arcOrder = ['front', 'port', 'starboard', 'aft'];
     while (this._repairAccum >= 1 && this.scrap > 0) {
-      // Repair the most depleted arc
       let targetArc = null;
       let maxDiff = 0;
       for (const arc of arcOrder) {
         const diff = ship.armorArcsMax[arc] - ship.armorArcs[arc];
         if (diff > maxDiff) { maxDiff = diff; targetArc = arc; }
       }
-      if (!targetArc || maxDiff < 1) break; // all arcs full
+      if (!targetArc || maxDiff < 1) break;
       ship.armorArcs[targetArc] = Math.min(ship.armorArcs[targetArc] + 1, ship.armorArcsMax[targetArc]);
-      this.scrap--;
+      this.scrap -= REPAIR_COST_PER_PT;
       this._repairAccum -= 1;
     }
-
-    // Auto-cancel when done or out of scrap
-    if (ship.armorCurrent >= ship.armorMax || this.scrap <= 0) {
-      this._cancelRepair();
-    }
+    if (ship.armorCurrent >= ship.armorMax || this.scrap <= 0) this._cancelRepair();
   }
 
   _handleTestInput() {
     const mx = this._cachedMouseWorld?.x ?? (this.player.x + 300);
     const my = this._cachedMouseWorld?.y ?? this.player.y;
 
-    const spawnRaider = (behaviorType) => {
-      const r = createRaider(mx, my);
+    const spawnEnemy = (factory) => {
+      const r = factory(mx, my);
       r.homePosition = { x: mx, y: my };
-      r.behaviorType = behaviorType;
       r._aggro = true;
       this.entities.push(r);
       this.raiders.push(r);
     };
 
-    if (input.wasJustPressed('z')) spawnRaider('shielding');
-    if (input.wasJustPressed('x')) spawnRaider('kiter');
-    if (input.wasJustPressed('c')) spawnRaider('interceptor');
+    if (input.wasJustPressed('?')) this.isPanMode = !this.isPanMode;
+    if (input.wasJustPressed('v')) this.aiDisabled = !this.aiDisabled;
 
-    if (input.wasJustPressed('q')) {
-      const hasLaser = this.player.weapons.some(w => w instanceof LaserTurret);
-      if (hasLaser) {
-        this.player.weapons = this.player.weapons.filter(w => !(w instanceof LaserTurret));
-      } else {
-        this.player.addWeapon(new LaserTurret());
-      }
-    }
+    if (input.wasJustPressed('z')) spawnEnemy(createLightFighter);
+    if (input.wasJustPressed('x')) spawnEnemy(createArmedHauler);
+    if (input.wasJustPressed('c')) spawnEnemy(createSalvageMothership);
+
+    // Weapon cycling
+    if (input.wasJustPressed('1')) this.player.cyclePrimary(-1);
+    if (input.wasJustPressed('2')) this.player.cyclePrimary(1);
+    if (input.wasJustPressed('3')) this.player.cycleSecondary(-1);
+    if (input.wasJustPressed('4')) this.player.cycleSecondary(1);
   }
 
   _processInput(dt) {
@@ -286,19 +337,23 @@ export class GameManager {
 
     if (this.isTestMode) this._handleTestInput();
 
-    // Always track right mouse button state to avoid false fires after state changes
+    if (this.isPanMode) {
+      const speed = 800 * dt;
+      if (input.isDown('w') || input.isDown('arrowup'))    this.camera.y -= speed;
+      if (input.isDown('s') || input.isDown('arrowdown'))  this.camera.y += speed;
+      if (input.isDown('a') || input.isDown('arrowleft'))  this.camera.x -= speed;
+      if (input.isDown('d') || input.isDown('arrowright')) this.camera.x += speed;
+      return;
+    }
+
     const rightJustPressed = input.mouseButtons.right && !this._prevMouseRight;
     this._prevMouseRight = input.mouseButtons.right;
 
-    // Cancel salvage with E or Esc
     if (this.isSalvaging) {
-      if (input.wasJustPressed('e') || input.wasJustPressed('escape')) {
-        this._cancelSalvage();
-      }
-      return; // No other input while salvaging
+      if (input.wasJustPressed('e') || input.wasJustPressed('escape')) this._cancelSalvage();
+      return;
     }
 
-    // Repair: press R to toggle, auto-cancels if conditions not met
     if (this.isRepairing) {
       const stillValid = p.throttleLevel === 0 && p.armorCurrent < p.armorMax && this.scrap > 0;
       if (!stillValid || input.wasJustPressed('escape')) {
@@ -307,34 +362,30 @@ export class GameManager {
         this._cancelRepair();
         return;
       }
-      return; // No other input while repairing
-    }
-
-    const canRepair = p.throttleLevel === 0 && p.armorCurrent < p.armorMax && this.scrap > 0;
-    if (input.wasJustPressed('r') && canRepair) {
-      this._startRepair();
       return;
     }
 
-    // Throttle steps once per keypress (not held)
+    const canRepair = p.throttleLevel === 0 && p.armorCurrent < p.armorMax && this.scrap > 0;
+    if (input.wasJustPressed('r') && canRepair) { this._startRepair(); return; }
+
+    if (input.wasJustPressed('f')) this.autoFireMode = !this.autoFireMode;
+
     if (input.wasJustPressed('w') || input.wasJustPressed('arrowup')) p.increaseThrottle();
     if (input.wasJustPressed('s') || input.wasJustPressed('arrowdown')) p.decreaseThrottle();
 
-    // Clamp throttle if out of fuel
     if (this.fuel <= 0 && p.throttleLevel > 1) p.throttleLevel = 1;
 
-    // Rotation is continuous while held
-    if (input.isDown('a') || input.isDown('arrowleft')) p.rotationInput = -1;
+    if (input.isDown('a') || input.isDown('arrowleft'))  p.rotationInput = -1;
     if (input.isDown('d') || input.isDown('arrowright')) p.rotationInput = 1;
 
-    // LMB or spacebar fires manual weapons toward cursor
+    // LMB / space fires active primary (onlyActive=true for player)
     if (input.mouseButtons.left || input.isDown(' ')) {
-      p.fireWeapons(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities);
+      p.fireWeapons(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
     }
 
-    // RMB fires secondary weapons (rockets)
+    // RMB fires active secondary
     if (rightJustPressed) {
-      p.fireSecondary(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities);
+      p.fireSecondary(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
     }
   }
 
@@ -353,9 +404,7 @@ export class GameManager {
       }
     }
 
-    if (this.nearbyDerelict && input.wasJustPressed('e')) {
-      this._startSalvage(this.nearbyDerelict);
-    }
+    if (this.nearbyDerelict && input.wasJustPressed('e')) this._startSalvage(this.nearbyDerelict);
   }
 
   _startSalvage(derelict) {
@@ -363,7 +412,6 @@ export class GameManager {
     this.salvageProgress = 0;
     this.salvageTotal = derelict.salvageTime;
     this.salvageTarget = derelict;
-    // Freeze player
     this.player.throttleLevel = 0;
   }
 
@@ -373,22 +421,16 @@ export class GameManager {
       return;
     }
     this.salvageProgress += dt;
-    if (this.salvageProgress >= this.salvageTotal) {
-      this._completeSalvage();
-    }
+    if (this.salvageProgress >= this.salvageTotal) this._completeSalvage();
   }
 
   _completeSalvage() {
     const derelict = this.salvageTarget;
     derelict.salvaged = true;
     derelict.active = false;
-
-    // Spawn loot from loot table
     for (const loot of derelict.lootTable) {
-      const drop = createLootDrop(derelict.x, derelict.y, loot.type, loot.amount);
-      this.entities.push(drop);
+      this.entities.push(createLootDrop(derelict.x, derelict.y, loot.type, loot.amount));
     }
-
     this.particlePool.explosion(derelict.x, derelict.y, 10);
     this.isSalvaging = false;
     this.salvageProgress = 0;
@@ -409,8 +451,7 @@ export class GameManager {
         entity._sparkTimer -= 1.0;
         this.particlePool.explosion(
           entity.x + (Math.random() - 0.5) * 16,
-          entity.y + (Math.random() - 0.5) * 16,
-          3
+          entity.y + (Math.random() - 0.5) * 16, 3
         );
       }
     }
@@ -420,7 +461,6 @@ export class GameManager {
     if (!this.player || !this.player.active) return;
     const px = this.player.x;
     const py = this.player.y;
-
     for (const entity of this.entities) {
       if (!(entity instanceof LootDrop) || !entity.active) continue;
       const dx = entity.x - px;
@@ -435,7 +475,6 @@ export class GameManager {
           entity.active = false;
           this.hud.addPickupText(entity.label, entity.x, entity.y);
         } else {
-          // Commodity — only if cargo not full
           if (this.totalCargoUsed < this.totalCargoCapacity) {
             this.cargo[entity.lootType] = (this.cargo[entity.lootType] || 0) + entity.amount;
             entity.active = false;
@@ -455,7 +494,10 @@ export class GameManager {
         const dist = 150 + Math.random() * 200;
         const rx = entry.homePosition.x + Math.sin(angle) * dist;
         const ry = entry.homePosition.y - Math.cos(angle) * dist;
-        const raider = createRaider(rx, ry);
+        const factory = entry.shipType === 'armed-hauler'       ? createArmedHauler
+                       : entry.shipType === 'salvage-mothership' ? createSalvageMothership
+                       : createLightFighter;
+        const raider = factory(rx, ry);
         raider.homePosition = { x: entry.homePosition.x, y: entry.homePosition.y };
         this.entities.push(raider);
         this.raiders.push(raider);
@@ -482,14 +524,44 @@ export class GameManager {
   }
 
   _runCollisions() {
+    // --- Interception pass: canIntercept projectiles vs isInterceptable projectiles ---
+    const interceptors = [];
+    const interceptables = [];
+    for (const e of this.entities) {
+      if (!(e instanceof Projectile) || !e.active) continue;
+      if (e.canIntercept)    interceptors.push(e);
+      if (e.isInterceptable) interceptables.push(e);
+    }
+    for (const inter of interceptors) {
+      const ib = inter.getBounds();
+      for (const tgt of interceptables) {
+        if (!tgt.active) continue;
+        if (inter.owner?.faction === tgt.owner?.faction) continue;
+        const tb = tgt.getBounds();
+        const dx = ib.x - tb.x;
+        const dy = ib.y - tb.y;
+        if (dx * dx + dy * dy < 144) { // (6+6)²
+          inter.active = false;
+          tgt.active = false;
+          tgt.shouldDetonate = false; // prevent AoE on interception
+          this.particlePool.explosion(tgt.x, tgt.y, 3);
+          break;
+        }
+      }
+    }
+
+    // --- Main collision pass ---
     for (const entity of this.entities) {
       if (!(entity instanceof Projectile)) continue;
 
-      // Rockets that reached their target (flagged inactive in Projectile.update)
-      if (entity.isRocket && entity.shouldDetonate && !entity.active) {
+      // AoE expiry detonation (rockets / flak that ran out of range)
+      if ((entity.isRocket || entity.detonatesOnExpiry) && entity.shouldDetonate && !entity.active) {
         const tx = entity.rocketTargetX ?? entity.x;
         const ty = entity.rocketTargetY ?? entity.y;
-        this._rocketExplode(tx, ty, entity.damage, entity.hullDamage);
+        const radius = entity.blastRadius || 280;
+        this._aoeExplode(tx, ty, entity.damage, entity.hullDamage ?? 0, radius);
+        this.particlePool.explosion(tx, ty, entity.isRocket ? 20 : 12);
+        if (entity.isRocket) this.entities.push(new RocketExplosion(tx, ty, radius));
         entity.shouldDetonate = false;
         continue;
       }
@@ -501,19 +573,36 @@ export class GameManager {
       for (const target of this.entities) {
         if (!target.active || !(target instanceof Ship)) continue;
         if (proj.owner === target) continue;
-        if (proj.owner.faction && target.faction && proj.owner.faction === target.faction) continue;
+        if (proj.owner?.faction && target.faction && proj.owner.faction === target.faction) continue;
 
         const sb = target.getBounds();
         const dx = pb.x - sb.x;
         const dy = pb.y - sb.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < pb.radius + sb.radius) {
-          if (proj.isRocket) {
-            // Rocket hit a ship — detonate at impact point
+        if (Math.sqrt(dx * dx + dy * dy) < pb.radius + sb.radius) {
+          if (proj.isRocket || proj.detonatesOnContact) {
+            // AoE on direct hit
             proj.active = false;
-            this._rocketExplode(proj.x, proj.y, proj.damage, proj.hullDamage);
+            const radius = proj.blastRadius || 280;
+            this._aoeExplode(proj.x, proj.y, proj.damage, proj.hullDamage ?? 0, radius);
+            this.particlePool.explosion(proj.x, proj.y, 20);
+            if (proj.isRocket) this.entities.push(new RocketExplosion(proj.x, proj.y, radius));
+          } else if (proj.isPlasma) {
+            // Plasma falloff — more damage up close
+            const falloff = Math.max(0, 1 - proj.distanceTravelled / proj.maxRange);
+            const armorDmg = proj.damage * falloff;
+            const hullDmg  = (proj.hullDamage ?? proj.damage) * (0.3 + falloff * 0.7);
+            target.takeDamage(armorDmg, hullDmg, proj.x, proj.y);
+            proj.active = false;
+            this.particlePool.explosion(proj.x, proj.y, 5);
+            if (target.isDestroyed) {
+              this.particlePool.explosion(target.x, target.y, 20);
+              if (target !== this.player) {
+                const drops = generateEnemyLoot(target.x, target.y);
+                for (const drop of drops) this.entities.push(drop);
+              }
+            }
           } else {
+            // Standard direct hit
             target.takeDamage(proj.damage, proj.hullDamage, proj.x, proj.y);
             proj.active = false;
             this.particlePool.explosion(proj.x, proj.y, 5);
@@ -531,24 +620,16 @@ export class GameManager {
     }
   }
 
-  _rocketExplode(x, y, damage, hullDamage) {
-    const BLAST_RADIUS = 130; // world units
-
-    // Visual
-    this.entities.push(new RocketExplosion(x, y, BLAST_RADIUS));
-    this.particlePool.explosion(x, y, 20);
-
-    // AoE damage — all ships, no faction exemption (friendly fire!)
+  _aoeExplode(x, y, damage, hullDamage, blastRadius) {
     for (const entity of this.entities) {
       if (!entity.active || !(entity instanceof Ship)) continue;
       const sb = entity.getBounds();
       const dx = sb.x - x;
       const dy = sb.y - y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < BLAST_RADIUS + sb.radius) {
-        // Fall-off: full damage at center, 30% at edge
-        const falloff = 1 - (dist / (BLAST_RADIUS + sb.radius)) * 0.7;
-        entity.takeDamage(damage * falloff, hullDamage * falloff, x, y);
+      if (dist < blastRadius + sb.radius) {
+        const falloff = 1 - (dist / (blastRadius + sb.radius)) * 0.7;
+        entity.takeDamage(damage * falloff, (hullDamage || 0) * falloff, x, y);
         if (entity.isDestroyed && entity !== this.player) {
           this.particlePool.explosion(entity.x, entity.y, 20);
           const drops = generateEnemyLoot(entity.x, entity.y);
@@ -559,29 +640,23 @@ export class GameManager {
   }
 
   _purgeInactive() {
-    // Queue destroyed raiders for respawn (test mode only)
     if (this.isTestMode) {
       for (const r of this.raiders) {
         if (!r.active && r.homePosition) {
           this._raiderRespawnQueue.push({
             timer: 60,
             homePosition: { x: r.homePosition.x, y: r.homePosition.y },
+            shipType: r.shipType,
           });
         }
       }
     }
-
     this.entities = this.entities.filter(e => e.active);
-    this.raiders = this.raiders.filter(r => r.active);
+    this.raiders  = this.raiders.filter(r => r.active);
   }
 
-  get totalCargoCapacity() {
-    return this.player ? this.player.cargoCapacity : 0;
-  }
-
-  get totalCargoUsed() {
-    return Object.values(this.cargo).reduce((s, v) => s + v, 0);
-  }
+  get totalCargoCapacity() { return this.player ? this.player.cargoCapacity : 0; }
+  get totalCargoUsed() { return Object.values(this.cargo).reduce((s, v) => s + v, 0); }
 
   _enforceCargoCapacity() {
     const cap = this.totalCargoCapacity;
@@ -589,11 +664,7 @@ export class GameManager {
     while (this.totalCargoUsed > cap) {
       let jettisoned = false;
       for (const id of order) {
-        if (this.cargo[id] > 0) {
-          this.cargo[id]--;
-          jettisoned = true;
-          break;
-        }
+        if (this.cargo[id] > 0) { this.cargo[id]--; jettisoned = true; break; }
       }
       if (!jettisoned) break;
     }

@@ -2,7 +2,7 @@ import { Station } from './world/station.js';
 import { Planet } from './world/planet.js';
 import { LootDrop } from './entities/lootDrop.js';
 import { Derelict } from './world/derelict.js';
-import { HULL_POINTS } from './ships/player/flagship.js';
+import { HULL_POINTS } from './ships/classes/onyxTug.js';
 import {
   CYAN, AMBER, GREEN, RED, BLUE, MAGENTA, WHITE,
   BAR_TRACK, DIM_OUTLINE, VERY_DIM, DIM_TEXT,
@@ -55,10 +55,11 @@ export class HUD {
     this._renderSalvageBar(ctx, game);
     this._renderRepairBar(ctx, game);
     this._renderPickupTexts(ctx, game);
+    this._renderAutoFireIndicator(ctx, game);
     this._renderMinimap(ctx, game);
     if (game.isTestMode) {
-      this._renderTestOverlay(ctx, game);
       this._renderDevControls(ctx, game);
+      if (game.isPanMode) this._renderPanModeBanner(ctx, game);
     }
     if (game.stationScreen) game.stationScreen.render(ctx, game);
   }
@@ -187,36 +188,10 @@ export class HUD {
       ix += 26;
     }
 
-    // ── Secondary weapon ammo (rockets) ──────────────────────────────
+    // ── Weapon readout ────────────────────────────────────────────────
     let y = intY + 18;
-    const rocket = player.weapons.find(w => w.isSecondary);
-    if (rocket) {
-      const rktPipW = 10;
-      const rktPipH = 10;
-      const rktPipGap = 3;
-
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = MAGENTA;
-      ctx.fillText('RKT', MARGIN, y + rktPipH / 2);
-
-      const pipStartX = MARGIN + 32;
-      for (let i = 0; i < rocket.ammoMax; i++) {
-        const px = pipStartX + i * (rktPipW + rktPipGap);
-        ctx.fillStyle = i < rocket.ammo ? MAGENTA : VERY_DIM;
-        ctx.fillRect(px, y, rktPipW, rktPipH);
-      }
-
-      if (rocket._cooldown > 0) {
-        const cooldownX = pipStartX + rocket.ammoMax * (rktPipW + rktPipGap) + 4;
-        ctx.fillStyle = DIM_TEXT;
-        ctx.textAlign = 'left';
-        ctx.fillText('...', cooldownX, y + rktPipH / 2);
-      }
-
-      y += rktPipH + ROW_GAP;
-    }
+    this._renderWeaponReadout(ctx, player, y);
+    y += 38; // space for up to 2 weapon rows
 
     // ── FUEL bar ─────────────────────────────────────────────────────
     y += ROW_GAP;
@@ -420,6 +395,21 @@ export class HUD {
     ctx.restore();
   }
 
+  _renderAutoFireIndicator(ctx, game) {
+    if (!game.autoFireMode) return;
+    const { camera } = game;
+    const pulse = 0.75 + Math.sin(Date.now() * 0.008) * 0.25;
+    ctx.save();
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = RED;
+    ctx.globalAlpha = pulse;
+    ctx.fillText('AUTO-FIRE', 20, camera.height - 52);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
   _renderPickupTexts(ctx, game) {
     const { camera } = game;
     const now = Date.now();
@@ -540,14 +530,17 @@ export class HUD {
 
     const px = ox + player.x * SCALE;
     const py = oy + player.y * SCALE;
-    ctx.strokeStyle = MINIMAP_PLAYER;
-    ctx.lineWidth = 1;
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(player.rotation);
+    ctx.fillStyle = MINIMAP_PLAYER;
     ctx.beginPath();
-    ctx.moveTo(px - 4, py);
-    ctx.lineTo(px + 4, py);
-    ctx.moveTo(px, py - 4);
-    ctx.lineTo(px, py + 4);
-    ctx.stroke();
+    ctx.moveTo(0, -5);
+    ctx.lineTo(3.5, 4);
+    ctx.lineTo(-3.5, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
 
     ctx.restore();
   }
@@ -556,14 +549,14 @@ export class HUD {
     const { camera, testSteps } = game;
     if (!testSteps || testSteps.length === 0) return;
 
-    const padding = 14;
-    const lineH = 21;
-    const headerH = 26;
-    const panelW = 480;
+    const padding = 10;
+    const lineH = 16;
+    const headerH = 22;
+    const panelW = 700;
     const maxTextW = panelW - 2 * padding;
 
     ctx.save();
-    ctx.font = '15px monospace';
+    ctx.font = '13px monospace';
     const wrappedLines = [];
     for (let i = 0; i < testSteps.length; i++) {
       const prefix = `${i + 1}. `;
@@ -584,7 +577,7 @@ export class HUD {
 
     const panelH = headerH + padding + wrappedLines.length * lineH + padding;
     const ox = camera.width - panelW - padding;
-    const oy = camera.height - panelH - 190;
+    const oy = camera.height - panelH - padding;
 
     ctx.fillStyle = 'rgba(0, 10, 30, 0.85)';
     ctx.fillRect(ox, oy, panelW, panelH);
@@ -592,13 +585,13 @@ export class HUD {
     ctx.lineWidth = 1;
     ctx.strokeRect(ox, oy, panelW, panelH);
 
-    ctx.font = 'bold 15px monospace';
+    ctx.font = 'bold 13px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = '#f0a';
-    ctx.fillText('TEST MODE — VERIFICATION STEPS', ox + padding, oy + 6);
+    ctx.fillText('TEST MODE — VERIFICATION STEPS', ox + padding, oy + 5);
 
-    ctx.font = '15px monospace';
+    ctx.font = '13px monospace';
     ctx.fillStyle = CYAN;
     for (let i = 0; i < wrappedLines.length; i++) {
       const y = oy + headerH + padding + i * lineH;
@@ -614,20 +607,26 @@ export class HUD {
     const lineH   = 14;
     const panelW  = 210;
 
-    const weapons = player.weapons.map(w => {
-      const tag = w.isAutoFire ? 'A' : w.isSecondary ? 'S' : 'M';
-      return `${w.constructor.name}[${tag}]`;
-    }).join('  ');
+    const panLine = game.isPanMode ? '?: exit pan mode  [PAN]' : '?: pan mode (WASD)';
+    const aiLine  = game.aiDisabled ? 'V: enable AI  [AI FROZEN]' : 'V: freeze AI';
+
+    const primaries   = player._primaryWeapons;
+    const secondaries = player._secondaryWeapons;
+    const priName = (primaries[player.primaryWeaponIdx]?.displayName || '—');
+    const secName = (secondaries[player.secondaryWeaponIdx]?.displayName || '—');
 
     const lines = [
-      'Z: spawn shielding raider',
-      'X: spawn kiter raider',
-      'C: spawn interceptor raider',
+      'Z: spawn light fighter (stalker)',
+      'X: spawn armed hauler (kiter)',
+      'C: spawn salvage mothership (standoff)',
       '(spawns at mouse cursor)',
       '',
       'Q: toggle laser turret',
+      aiLine,
+      panLine,
       '',
-      'WEAPONS: ' + (weapons || 'none'),
+      `PRI: [< 1  ${priName}  2 >]`,
+      `SEC: [< 3  ${secName}  4 >]`,
     ];
 
     const panelH = padding + lines.length * lineH + padding;
@@ -648,10 +647,16 @@ export class HUD {
     for (let i = 0; i < lines.length; i++) {
       const y = oy + padding + i * lineH;
       if (lines[i] === '') continue;
-      if (lines[i].startsWith('WEAPONS')) {
+      if (lines[i].startsWith('PRI:') || lines[i].startsWith('SEC:')) {
+        ctx.fillStyle = CYAN;
+      } else if (lines[i].startsWith('WEAPONS')) {
         ctx.fillStyle = CYAN;
       } else if (lines[i].startsWith('(')) {
         ctx.fillStyle = DIM_TEXT;
+      } else if (lines[i].includes('[AI FROZEN]')) {
+        ctx.fillStyle = MAGENTA;
+      } else if (lines[i].includes('[PAN]')) {
+        ctx.fillStyle = CYAN;
       } else {
         ctx.fillStyle = AMBER;
       }
@@ -659,6 +664,94 @@ export class HUD {
     }
 
     ctx.restore();
+  }
+
+  _renderPanModeBanner(ctx, game) {
+    const { camera } = game;
+    ctx.save();
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = CYAN;
+    ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.005) * 0.5;
+    ctx.fillText('PAN MODE — WASD to pan  |  ? to return', camera.width / 2, 24);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  _renderWeaponReadout(ctx, player, startY) {
+    const primaries   = player._primaryWeapons;
+    const secondaries = player._secondaryWeapons;
+    const activePri   = primaries[player.primaryWeaponIdx];
+    const activeSec   = secondaries[player.secondaryWeaponIdx];
+
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    let y = startY;
+
+    // Primary
+    if (activePri) {
+      const name = activePri.displayName || activePri.constructor.name.toUpperCase();
+      ctx.fillStyle = DIM_TEXT;
+      ctx.fillText('PRI', MARGIN, y + 5);
+      ctx.fillStyle = CYAN;
+      ctx.fillText(name, MARGIN + 26, y + 5);
+
+      // Cooldown bar
+      const cdMax = activePri.cooldownMax || activePri.cooldown || 0;
+      if (cdMax > 0) {
+        const filled = Math.max(0, 1 - (activePri._cooldown || 0) / cdMax);
+        const bx = MARGIN + 26 + 90;
+        const bw = 44;
+        const bh = 6;
+        ctx.fillStyle = VERY_DIM;
+        ctx.fillRect(bx, y + 2, bw, bh);
+        ctx.fillStyle = filled >= 1 ? CYAN : AMBER;
+        ctx.fillRect(bx, y + 2, bw * filled, bh);
+      }
+
+      // Beam ramp indicator
+      if (activePri.isBeam) {
+        const t = Math.min((activePri._rampUp || 0) / activePri.rampTime, 1);
+        const bx = MARGIN + 26 + 90;
+        const bw = 44;
+        const bh = 6;
+        ctx.fillStyle = VERY_DIM;
+        ctx.fillRect(bx, y + 2, bw, bh);
+        ctx.fillStyle = t >= 1 ? '#ffffff' : '#88ffdd';
+        ctx.fillRect(bx, y + 2, bw * t, bh);
+      }
+
+      y += 16;
+    }
+
+    // Secondary
+    if (activeSec) {
+      const name = activeSec.displayName || activeSec.constructor.name.toUpperCase();
+      ctx.fillStyle = DIM_TEXT;
+      ctx.fillText('SEC', MARGIN, y + 5);
+      ctx.fillStyle = MAGENTA;
+      ctx.fillText(name, MARGIN + 26, y + 5);
+
+      // Ammo pips if weapon has ammo
+      if (activeSec.ammoMax) {
+        const pipW = 8;
+        const pipH = 8;
+        const pipGap = 2;
+        const pipX = MARGIN + 26 + 90;
+        const maxPips = Math.min(activeSec.ammoMax, 10);
+        for (let i = 0; i < maxPips; i++) {
+          ctx.fillStyle = i < activeSec.ammo ? MAGENTA : VERY_DIM;
+          ctx.fillRect(pipX + i * (pipW + pipGap), y + 1, pipW, pipH);
+        }
+        if (activeSec._cooldown > 0) {
+          ctx.fillStyle = DIM_TEXT;
+          ctx.fillText('...', pipX + maxPips * (pipW + pipGap) + 4, y + 5);
+        }
+      }
+    }
   }
 
   _renderThrottle(ctx, player, camera) {
@@ -695,12 +788,13 @@ export class HUD {
     const speed = Math.round(player.speed);
     const label = THROTTLE_LABELS[current];
     ctx.fillStyle = CYAN;
-    ctx.font = '12px monospace';
+    ctx.font = '16px monospace';
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
     ctx.fillText(
       `${label}  ${speed} u/s`,
       camera.width / 2,
-      pipY + PIP_H + PIP_LABEL_OFFSET
+      pipY - 8
     );
 
     ctx.restore();
