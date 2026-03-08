@@ -1,12 +1,9 @@
 import { angleDiff } from '../utils/math.js';
+import { RAIDER_AI, BASE_PROJECTILE_SPEED, PROJECTILE_SPEED_FACTOR } from '../data/stats.js';
 
-const ORBIT_RADIUS  = 220;
-const FIRE_RANGE    = 300;
-const FLEE_HULL_RATIO = 0.3;
-const AGGRO_RANGE   = 800;
-const PATROL_RADIUS = 300;
-const DEAGGRO_RANGE = 1200;
-const KITE_RANGE    = 400;
+const { AGGRO_RANGE, DEAGGRO_RANGE, FIRE_RANGE, ORBIT_RADIUS,
+        KITE_RANGE, PATROL_RADIUS, FLEE_HULL_RATIO,
+        STANDOFF_RANGE, STANDOFF_FIRE_RANGE } = RAIDER_AI;
 
 // Arc offset from ship forward to present that arc toward a target
 const ARC_OFFSETS = {
@@ -46,6 +43,8 @@ export function updateRaiderAI(raider, player, entities, dt) {
   switch (raider.behaviorType) {
     case 'interceptor': _doInterceptor(raider, player, entities, dist); break;
     case 'kiter':       _doKiter(raider, player, entities, dist);       break;
+    case 'stalker':     _doStalker(raider, player, entities, dist);     break;
+    case 'standoff':    _doStandoff(raider, player, entities, dist);    break;
     default:            _doShielding(raider, player, entities, dist);   break;
   }
 }
@@ -88,8 +87,8 @@ function _doShielding(raider, player, entities, dist) {
 
 function _doInterceptor(raider, player, entities, dist) {
   // Flank to a point behind the player (player's aft direction)
-  const aftX = player.x - Math.sin(player.rotation) * 150;
-  const aftY = player.y + Math.cos(player.rotation) * 150;
+  const aftX = player.x - Math.sin(player.rotation) * 350;
+  const aftY = player.y + Math.cos(player.rotation) * 350;
 
   const odx = aftX - raider.x;
   const ody = aftY - raider.y;
@@ -130,13 +129,62 @@ function _doKiter(raider, player, entities, dist) {
 }
 
 function _doLeadFire(raider, player, entities, dist) {
-  const projSpeed = 600;
+  const projSpeed = raider.weapons[0]?.projectileSpeed
+    ?? (BASE_PROJECTILE_SPEED * PROJECTILE_SPEED_FACTOR);
   const travelTime = dist / projSpeed;
   const pvx = Math.sin(player.rotation) * player.speed;
   const pvy = -Math.cos(player.rotation) * player.speed;
   const leadX = player.x + pvx * travelTime;
   const leadY = player.y + pvy * travelTime;
   raider.fireWeapons(leadX, leadY, entities);
+  return { leadX, leadY };
+}
+
+function _doStalker(raider, player, entities, dist) {
+  // Position at player's aft and fire only when nose is aligned
+  const aftX = player.x - Math.sin(player.rotation) * 300;
+  const aftY = player.y + Math.cos(player.rotation) * 300;
+
+  const odx = aftX - raider.x;
+  const ody = aftY - raider.y;
+  const aftDist = Math.sqrt(odx * odx + ody * ody);
+  const targetAngle = Math.atan2(odx, -ody);
+  const diff = angleDiff(raider.rotation, targetAngle);
+
+  raider.rotationInput = Math.sign(diff);
+  raider.throttleLevel = aftDist > 80 ? 5 : 3;
+
+  // Fire only when nose is within ~0.4 rad of player bearing
+  const angleToPlayer = Math.atan2(player.x - raider.x, -(player.y - raider.y));
+  const aimDiff = Math.abs(angleDiff(raider.rotation, angleToPlayer));
+  if (aimDiff < 0.4 && dist < FIRE_RANGE) {
+    raider.fireWeapons(player.x, player.y, entities);
+  }
+}
+
+function _doStandoff(raider, player, entities, dist) {
+  const dx = player.x - raider.x;
+  const dy = player.y - raider.y;
+
+  if (dist < STANDOFF_RANGE - 100) {
+    // Too close — back away (face away from player and thrust)
+    const fleeAngle = Math.atan2(-dx, dy);
+    const diff = angleDiff(raider.rotation, fleeAngle);
+    raider.rotationInput = Math.sign(diff);
+    raider.throttleLevel = 4;
+  } else {
+    // At range or approaching — face player
+    const angleToPlayer = Math.atan2(dx, -dy);
+    const diff = angleDiff(raider.rotation, angleToPlayer);
+    raider.rotationInput = Math.sign(diff);
+    raider.throttleLevel = dist > STANDOFF_RANGE + 100 ? 3 : 1;
+  }
+
+  // Fire both primary and secondary when in range
+  if (dist < STANDOFF_FIRE_RANGE) {
+    const result = _doLeadFire(raider, player, entities, dist);
+    raider.fireSecondary(result.leadX, result.leadY, entities);
+  }
 }
 
 function _patrol(raider, dt) {
