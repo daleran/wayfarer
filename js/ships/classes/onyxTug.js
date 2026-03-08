@@ -1,8 +1,24 @@
 import { Ship } from '../../entities/ship.js';
-import { PLAYER_FILL, PLAYER_STROKE, ENGINE_GREEN } from '../../ui/colors.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
+         BASE_HULL, BASE_ARMOR, BASE_CARGO,
+         BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../../data/stats.js';
 
-// Repurposed tug — hammerhead cockpit block, narrow body, long starboard engine nacelle,
-// smaller port utility nacelle. Nacelles are longer than wide (classic sci-fi).
+const SPEED_MULT = 0.55;  // ~46 u/s — very slow
+const ACCEL_MULT = 0.65;  // ~7 u/s²
+const TURN_MULT  = 0.65;  // ~0.43 rad/s — sluggish
+const HULL_MULT  = 1.8;   // 360 hp — heavy frame
+const CARGO_MULT = 2.5;   // 125 units
+
+// Armor arc multipliers (× BASE_ARMOR = 100)
+const ARMOR_FRONT = 2.0;  // 200 — reinforced prow
+const ARMOR_SIDE  = 1.5;  // 150 — welded flanks
+const ARMOR_AFT   = 1.2;  // 120 — protected stern
+
+const FUEL_MAX_MULT = 0.8; // 80 unit tank (small)
+const FUEL_EFF_MULT = 0.5; // burns at 50% base rate (efficient)
+
+// Hammerhead cockpit block, narrow body, long starboard engine nacelle,
+// smaller port utility nacelle. Repurposed hauling tug — asymmetric working vessel.
 export const HULL_POINTS = [
   // Hammerhead cockpit block (bow) — wide with chamfered front corners
   { x: -11, y: -23 },  // port cockpit side
@@ -23,7 +39,7 @@ export const HULL_POINTS = [
   { x: 5,   y: 18  },  // starboard stern
   { x: -4,  y: 18  },  // port stern
 
-  // Utility nacelle (port) — smaller but still longer than wide
+  // Utility nacelle (port) — smaller
   { x: -4,  y: 8   },  // nacelle inner bottom
   { x: -12, y: 8   },  // nacelle outer bottom
   { x: -12, y: -6  },  // nacelle outer top
@@ -31,7 +47,7 @@ export const HULL_POINTS = [
 
   // Port neck
   { x: -4,  y: -20 },  // port neck top
-  { x: -11, y: -20 },  // port cockpit bottom (closes to port cockpit side)
+  { x: -11, y: -20 },  // port cockpit bottom
 ];
 
 // Engine nacelle internal frame line
@@ -53,29 +69,43 @@ const WELD_SEAM = [
 ];
 
 // Single large engine at the back of the starboard nacelle
-const ENGINE_POS = [
-  { x: 11, y: 12 },
-];
+const ENGINE_POS = [{ x: 11, y: 12 }];
 
-class ScrapShip extends Ship {
+export class OnyxClassTug extends Ship {
   constructor(x, y) {
     super(x, y);
 
-    this.faction = 'player';
-    this.shipType = 'scrapship';
-    this._trailColor = ENGINE_GREEN;
+    this.faction = 'neutral';
+    this.shipType = 'onyx-tug';
 
-    this.armorArcs    = { front: 120, port: 90, starboard: 90, aft: 70 };
-    this.armorArcsMax = { front: 120, port: 90, starboard: 90, aft: 70 };
-    this.hullMax     = 200;
-    this.hullCurrent = 200;
-    this.speedMax = 120;
-    this.acceleration = 30;
-    this.turnRate = 2.5;
-    this.throttleLevels = 6;
+    this.flavorText =
+      'Pre-Collapse inner-system workhorse. The Onyx class moved ore, water, and ' +
+      'salvage across a hundred stations before the lights went out. Slow and ugly, ' +
+      'but the hull plating outlasts everything around it. Strength: exceptional ' +
+      'survivability for its class, reliable in every condition. Weakness: painfully ' +
+      'slow, nearly impossible to mount meaningful weapons on without custom work.';
+
+    const fa = {
+      front:     BASE_ARMOR * ARMOR_FRONT,
+      port:      BASE_ARMOR * ARMOR_SIDE,
+      starboard: BASE_ARMOR * ARMOR_SIDE,
+      aft:       BASE_ARMOR * ARMOR_AFT,
+    };
+    this.armorArcs    = { ...fa };
+    this.armorArcsMax = { ...fa };
+
+    this.hullMax     = BASE_HULL * HULL_MULT;
+    this.hullCurrent = this.hullMax;
+
+    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
+    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
+    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
+    this.throttleLevels  = 6;
     this._throttleRatios = [0, 0.15, 0.35, 0.55, 0.8, 1.5];
 
-    this.cargoCapacity = 100;
+    this.cargoCapacity  = BASE_CARGO * CARGO_MULT;
+    this.fuelMax        = BASE_FUEL_MAX * FUEL_MAX_MULT;
+    this.fuelEfficiency = BASE_FUEL_EFFICIENCY * FUEL_EFF_MULT;
   }
 
   get _engineOffsets() {
@@ -83,17 +113,16 @@ class ScrapShip extends Ship {
   }
 
   _drawShape(ctx) {
-    // Main hull — wide bumper, narrow body, starboard engine bay
+    // Main hull
     ctx.beginPath();
     ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
     for (let i = 1; i < HULL_POINTS.length; i++) {
       ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
     }
     ctx.closePath();
-
-    ctx.fillStyle = PLAYER_FILL;
+    ctx.fillStyle = this.hullFill;
     ctx.fill();
-    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.strokeStyle = this.hullStroke;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
@@ -101,7 +130,7 @@ class ScrapShip extends Ship {
     ctx.beginPath();
     ctx.moveTo(-8, -24);
     ctx.lineTo(8, -24);
-    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.strokeStyle = this.hullStroke;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.4;
     ctx.stroke();
@@ -111,7 +140,7 @@ class ScrapShip extends Ship {
     ctx.beginPath();
     ctx.moveTo(BAY_FRAME[0].x, BAY_FRAME[0].y);
     ctx.lineTo(BAY_FRAME[1].x, BAY_FRAME[1].y);
-    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.strokeStyle = this.hullStroke;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.3;
     ctx.stroke();
@@ -121,7 +150,7 @@ class ScrapShip extends Ship {
     ctx.beginPath();
     ctx.moveTo(PORT_BAY_FRAME[0].x, PORT_BAY_FRAME[0].y);
     ctx.lineTo(PORT_BAY_FRAME[1].x, PORT_BAY_FRAME[1].y);
-    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.strokeStyle = this.hullStroke;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.3;
     ctx.stroke();
@@ -131,27 +160,27 @@ class ScrapShip extends Ship {
     ctx.beginPath();
     ctx.moveTo(WELD_SEAM[0].x, WELD_SEAM[0].y);
     ctx.lineTo(WELD_SEAM[1].x, WELD_SEAM[1].y);
-    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.strokeStyle = this.hullStroke;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.25;
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // Engine glow — pulsing circles
+    // Engine glow — nacelle engine
     const pulse = 0.6 + Math.sin(Date.now() * 0.008) * 0.4;
     const baseRadius = 3 + this.throttleLevel * 0.6;
 
     for (const pos of ENGINE_POS) {
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, baseRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = ENGINE_GREEN;
+      ctx.strokeStyle = this.engineColor;
       ctx.lineWidth = 1.5;
       ctx.globalAlpha = pulse;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, baseRadius + 2 + pulse * 2, 0, Math.PI * 2);
-      ctx.strokeStyle = ENGINE_GREEN;
+      ctx.strokeStyle = this.engineColor;
       ctx.lineWidth = 1;
       ctx.globalAlpha = pulse * 0.3;
       ctx.stroke();
@@ -163,8 +192,4 @@ class ScrapShip extends Ship {
   getBounds() {
     return { x: this.x, y: this.y, radius: 20 };
   }
-}
-
-export function createScrapShip(x, y) {
-  return new ScrapShip(x, y);
 }

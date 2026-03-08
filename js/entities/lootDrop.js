@@ -48,6 +48,7 @@ export class LootDrop extends Entity {
 
     ctx.save();
     ctx.translate(screen.x, screen.y);
+    ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
     ctx.globalAlpha = pulse;
 

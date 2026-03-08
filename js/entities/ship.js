@@ -1,5 +1,6 @@
 import { Entity } from './entity.js';
-import { PLAYER_STROKE, GREEN } from '../ui/colors.js';
+import { RELATION_COLORS } from '../ui/colors.js';
+import { BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../data/stats.js';
 
 const TRAIL_MAX_POINTS = 120;
 
@@ -8,7 +9,9 @@ export class Ship extends Entity {
     super(x, y);
 
     // Identity
+    this.isShip = true;
     this.faction = 'neutral';
+    this.relation = 'none';   // 'none' | 'player' | 'friendly' | 'neutral' | 'enemy'
     this.behaviorType = null;
     this.shipType = null;
 
@@ -44,17 +47,28 @@ export class Ship extends Entity {
     // Cargo
     this.cargoCapacity = 50;
 
+    // Fuel
+    this.fuelMax = BASE_FUEL_MAX;
+    this.fuelEfficiency = BASE_FUEL_EFFICIENCY;
+
     // Input state (set by game each frame)
     this.rotationInput = 0; // -1 left, +1 right, 0 none
 
     // Weapons
     this.weapons = [];
+    this.primaryWeaponIdx   = 0;
+    this.secondaryWeaponIdx = 0;
 
     // Engine trail — array of arrays, one per engine
     this._trails     = [];
     this._trailTimer = 0;
-    this._trailColor = GREEN;
   }
+
+  // Color getters — derived entirely from this.relation.
+  // Change this.relation and all hull/engine colors update automatically.
+  get hullFill()    { return (RELATION_COLORS[this.relation] ?? RELATION_COLORS.none).fill; }
+  get hullStroke()  { return (RELATION_COLORS[this.relation] ?? RELATION_COLORS.none).stroke; }
+  get engineColor() { return (RELATION_COLORS[this.relation] ?? RELATION_COLORS.none).engine; }
 
   // Backward-compat getters: average of all 4 arcs
   get armorCurrent() {
@@ -65,6 +79,24 @@ export class Ship extends Entity {
   get armorMax() {
     const { front, port, starboard, aft } = this.armorArcsMax;
     return (front + port + starboard + aft) / 4;
+  }
+
+  // Setters: scale all arcs proportionally so the average equals the given value.
+  // Allows subclasses to write this.armorMax = X without needing per-arc knowledge.
+  set armorMax(value) {
+    const avg = this.armorMax;
+    const scale = avg > 0 ? value / avg : 1;
+    for (const k of Object.keys(this.armorArcsMax)) {
+      this.armorArcsMax[k] = Math.round(this.armorArcsMax[k] * scale);
+    }
+  }
+
+  set armorCurrent(value) {
+    const maxAvg = this.armorMax;
+    const ratio = maxAvg > 0 ? value / maxAvg : 1;
+    for (const k of Object.keys(this.armorArcs)) {
+      this.armorArcs[k] = Math.round(this.armorArcsMax[k] * ratio);
+    }
   }
 
   // Override in subclasses to define engine exhaust positions (local coords)
@@ -94,22 +126,46 @@ export class Ship extends Entity {
     return this._throttleRatios[this.throttleLevel] * this.effectiveSpeedMax;
   }
 
+  get _primaryWeapons() {
+    return this.weapons.filter(w => !w.isAutoFire && !w.isSecondary);
+  }
+
+  get _secondaryWeapons() {
+    return this.weapons.filter(w => w.isSecondary);
+  }
+
+  cyclePrimary(dir = 1) {
+    const arr = this._primaryWeapons;
+    if (arr.length === 0) return;
+    this.primaryWeaponIdx = (this.primaryWeaponIdx + dir + arr.length) % arr.length;
+  }
+
+  cycleSecondary(dir = 1) {
+    const arr = this._secondaryWeapons;
+    if (arr.length === 0) return;
+    this.secondaryWeaponIdx = (this.secondaryWeaponIdx + dir + arr.length) % arr.length;
+  }
+
   addWeapon(weapon) {
     this.weapons.push(weapon);
   }
 
-  fireWeapons(tx, ty, entities) {
+  // onlyActive=true → fire only the indexed weapon (player path)
+  // onlyActive=false → fire all (AI path, unchanged)
+  fireWeapons(tx, ty, entities, onlyActive = false) {
     if (this._weaponsOffline) return;
-    for (const w of this.weapons) {
-      if (w.isAutoFire || w.isSecondary) continue;
-      w.fire(this, tx, ty, entities);
+    const primaries = this._primaryWeapons;
+    for (let i = 0; i < primaries.length; i++) {
+      if (onlyActive && i !== this.primaryWeaponIdx) continue;
+      primaries[i].fire(this, tx, ty, entities);
     }
   }
 
-  fireSecondary(tx, ty, entities) {
-    for (const w of this.weapons) {
-      if (!w.isSecondary) continue;
-      w.fire(this, tx, ty, entities);
+  fireSecondary(tx, ty, entities, onlyActive = false) {
+    const secondaries = this._secondaryWeapons;
+    for (let i = 0; i < secondaries.length; i++) {
+      if (onlyActive && i !== this.secondaryWeaponIdx) continue;
+      secondaries[i].fire(this, tx, ty, entities);
     }
   }
 
@@ -198,8 +254,8 @@ export class Ship extends Entity {
     if (this.throttleLevel > 0) this.throttleLevel--;
   }
 
-  update(dt) {
-    for (const w of this.weapons) w.update(dt);
+  update(dt, entities) {
+    for (const w of this.weapons) w.update(dt, entities);
 
     // Hull degradation — random flags updated once per tick
     const hullRatio = this.hullCurrent / this.hullMax;
@@ -260,6 +316,7 @@ export class Ship extends Entity {
     const screen = camera.worldToScreen(this.x, this.y);
     ctx.save();
     ctx.translate(screen.x, screen.y);
+    ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
     this._drawShape(ctx);
     ctx.restore();
@@ -274,7 +331,7 @@ export class Ship extends Entity {
         const p0 = camera.worldToScreen(trail[i - 1].x, trail[i - 1].y);
         const p1 = camera.worldToScreen(trail[i].x, trail[i].y);
         const t = i / trail.length;
-        ctx.strokeStyle = this._trailColor;
+        ctx.strokeStyle = this.engineColor;
         ctx.globalAlpha = t * 0.6;
         ctx.lineWidth = 1 + t * 1.5;
         ctx.beginPath();
@@ -293,9 +350,9 @@ export class Ship extends Entity {
     ctx.lineTo(0, 4);
     ctx.lineTo(-6, 8);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(0,20,30,0.15)';
+    ctx.fillStyle = this.hullFill;
     ctx.fill();
-    ctx.strokeStyle = PLAYER_STROKE;
+    ctx.strokeStyle = this.hullStroke;
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }
