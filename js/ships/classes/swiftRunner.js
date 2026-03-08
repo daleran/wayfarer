@@ -65,6 +65,13 @@ export class SwiftRunner extends Ship {
     this.faction  = 'neutral';
     this.shipType = 'swift-runner';
 
+    this.flavorText =
+      'The cheapest fast ship money could buy before the Collapse — and after it. ' +
+      'Couriers, smugglers, and desperate people have always needed something fast ' +
+      'with few questions asked. No armor worth mentioning, no cargo space, no ' +
+      'redundancy. Strength: speed, small profile, quick to turn. Weakness: one ' +
+      'solid hit ends the conversation.';
+
     const fa = {
       front:     BASE_ARMOR * ARMOR_FRONT,
       port:      BASE_ARMOR * ARMOR_SIDE,
