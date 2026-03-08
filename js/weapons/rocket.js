@@ -35,9 +35,11 @@ export class Rocket {
       this.damage,
       ship
     );
-    proj.hullDamage = this.hullDamage;
-    proj.maxRange   = 900;
-    proj.isRocket   = true;
+    proj.hullDamage     = this.hullDamage;
+    proj.maxRange       = dist + 20; // just enough to reach the target
+    proj.isRocket       = true;
+    proj.rocketTargetX  = tx;
+    proj.rocketTargetY  = ty;
 
     entities.push(proj);
     this.ammo--;

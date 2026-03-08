@@ -1,5 +1,16 @@
 # Wayfarer — Development Log
 
+## Rocket AoE — 2026-03-07
+
+**Files:** `js/weapons/rocket.js`, `js/entities/projectile.js`, `js/entities/rocketExplosion.js`, `js/game.js`, `js/data/testMap.js`
+
+- Rockets now travel to the **click point** and detonate there (or on ship contact) instead of having a fixed range.
+- `Projectile` gains `rocketTargetX/Y` and `shouldDetonate` flag; detonation triggers when within 20u of target or at max range.
+- `Rocket.js` sets `maxRange = dist + 20` so the rocket always reaches the cursor regardless of distance.
+- New `RocketExplosion` entity: expanding amber rings (outer full-radius ring + inner ring + bright flash core) over 0.55s.
+- `GameManager._rocketExplode(x, y)`: spawns explosion visual, applies AoE damage (blast radius 130u) to **all** ships including player, with 30% distance falloff. Friendly fire — stay clear of your own blasts.
+- Collision loop updated: rocket hitting a ship triggers `_rocketExplode` at impact; rockets flagged `shouldDetonate` (reached target) are caught at top of the collision pass.
+
 ## Test Harnesses — 2026-03-07
 
 **Files:** `js/main.js`, `js/test/shipDesigner.js`, `js/test/poiDesigner.js`, `js/game.js`, `js/hud.js`, `CLAUDE.md`

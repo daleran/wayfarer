@@ -131,4 +131,7 @@ export const TEST_STEPS = [
   'Raiders: fly south to y≈4000 — kiter and interceptor enemies patrol the southwest den',
   // Salvage
   'Salvage Wrecked Hauler near start (x≈1200, y≈2200) — E to begin, watch progress bar',
+  // Rockets
+  'Rockets (RMB): fire at a raider — rocket travels to click point, expanding amber rings on detonation',
+  'Rockets AoE: fire near a cluster — multiple enemies damaged; fire near yourself to verify friendly fire',
 ];

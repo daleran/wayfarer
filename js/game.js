@@ -20,6 +20,7 @@ import { createDebrisCloud } from './world/debrisCloud.js';
 import { createPlanet } from './world/planet.js';
 import { Derelict, createDerelict } from './world/derelict.js';
 import { StationScreen } from './ui/stationScreen.js';
+import { RocketExplosion } from './entities/rocketExplosion.js';
 
 const FLAGSHIP_START = { x: 2000, y: 3000 };
 const FUEL_RATES = [0, 0, 0.3, 0.6, 1.0, 2.5];
@@ -482,7 +483,18 @@ export class GameManager {
 
   _runCollisions() {
     for (const entity of this.entities) {
-      if (!entity.active || !(entity instanceof Projectile)) continue;
+      if (!(entity instanceof Projectile)) continue;
+
+      // Rockets that reached their target (flagged inactive in Projectile.update)
+      if (entity.isRocket && entity.shouldDetonate && !entity.active) {
+        const tx = entity.rocketTargetX ?? entity.x;
+        const ty = entity.rocketTargetY ?? entity.y;
+        this._rocketExplode(tx, ty, entity.damage, entity.hullDamage);
+        entity.shouldDetonate = false;
+        continue;
+      }
+
+      if (!entity.active) continue;
       const proj = entity;
       const pb = proj.getBounds();
 
@@ -497,19 +509,50 @@ export class GameManager {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < pb.radius + sb.radius) {
-          target.takeDamage(proj.damage, proj.hullDamage, proj.x, proj.y);
-          proj.active = false;
-          if (!proj.isRocket) {
+          if (proj.isRocket) {
+            // Rocket hit a ship — detonate at impact point
+            proj.active = false;
+            this._rocketExplode(proj.x, proj.y, proj.damage, proj.hullDamage);
+          } else {
+            target.takeDamage(proj.damage, proj.hullDamage, proj.x, proj.y);
+            proj.active = false;
             this.particlePool.explosion(proj.x, proj.y, 5);
-          }
-          if (target.isDestroyed) {
-            this.particlePool.explosion(target.x, target.y, 20);
-            if (target !== this.player) {
-              const drops = generateEnemyLoot(target.x, target.y);
-              for (const drop of drops) this.entities.push(drop);
+            if (target.isDestroyed) {
+              this.particlePool.explosion(target.x, target.y, 20);
+              if (target !== this.player) {
+                const drops = generateEnemyLoot(target.x, target.y);
+                for (const drop of drops) this.entities.push(drop);
+              }
             }
           }
           break;
+        }
+      }
+    }
+  }
+
+  _rocketExplode(x, y, damage, hullDamage) {
+    const BLAST_RADIUS = 130; // world units
+
+    // Visual
+    this.entities.push(new RocketExplosion(x, y, BLAST_RADIUS));
+    this.particlePool.explosion(x, y, 20);
+
+    // AoE damage — all ships, no faction exemption (friendly fire!)
+    for (const entity of this.entities) {
+      if (!entity.active || !(entity instanceof Ship)) continue;
+      const sb = entity.getBounds();
+      const dx = sb.x - x;
+      const dy = sb.y - y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < BLAST_RADIUS + sb.radius) {
+        // Fall-off: full damage at center, 30% at edge
+        const falloff = 1 - (dist / (BLAST_RADIUS + sb.radius)) * 0.7;
+        entity.takeDamage(damage * falloff, hullDamage * falloff, x, y);
+        if (entity.isDestroyed && entity !== this.player) {
+          this.particlePool.explosion(entity.x, entity.y, 20);
+          const drops = generateEnemyLoot(entity.x, entity.y);
+          for (const drop of drops) this.entities.push(drop);
         }
       }
     }
