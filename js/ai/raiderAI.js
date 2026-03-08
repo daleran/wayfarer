@@ -1,34 +1,40 @@
 import { angleDiff } from '../utils/math.js';
 
-const ORBIT_RADIUS = 220;
-const FIRE_RANGE = 300;
+const ORBIT_RADIUS  = 220;
+const FIRE_RANGE    = 300;
 const FLEE_HULL_RATIO = 0.3;
-const AGGRO_RANGE = 800;
+const AGGRO_RANGE   = 800;
 const PATROL_RADIUS = 300;
 const DEAGGRO_RANGE = 1200;
+const KITE_RANGE    = 400;
+
+// Arc offset from ship forward to present that arc toward a target
+const ARC_OFFSETS = {
+  front:     0,
+  aft:       Math.PI,
+  port:     -Math.PI / 2,
+  starboard: Math.PI / 2,
+};
 
 export function updateRaiderAI(raider, player, entities, dt) {
   const dx = player.x - raider.x;
   const dy = player.y - raider.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
-  // Track aggro state on the raider
   if (raider._aggro === undefined) raider._aggro = false;
 
-  // Aggro when player enters range, deaggro when they leave (with hysteresis)
   if (!raider._aggro && dist < AGGRO_RANGE) {
     raider._aggro = true;
   } else if (raider._aggro && dist > DEAGGRO_RANGE) {
     raider._aggro = false;
   }
 
-  // If not aggro, patrol near home position
   if (!raider._aggro) {
     _patrol(raider, dt);
     return;
   }
 
-  // Flee at low hull
+  // Flee at low hull regardless of behavior type
   if (raider.hullCurrent / raider.hullMax < FLEE_HULL_RATIO) {
     const fleeAngle = Math.atan2(-dx, dy);
     const diff = angleDiff(raider.rotation, fleeAngle);
@@ -37,10 +43,34 @@ export function updateRaiderAI(raider, player, entities, dt) {
     return;
   }
 
-  // Flanking orbit: pick a point 90° off the raider→player line, at ORBIT_RADIUS.
-  const angleToPlayer = Math.atan2(dx, -dy);
-  const orbitAngle = angleToPlayer + Math.PI / 2;
+  switch (raider.behaviorType) {
+    case 'interceptor': _doInterceptor(raider, player, entities, dist); break;
+    case 'kiter':       _doKiter(raider, player, entities, dist);       break;
+    default:            _doShielding(raider, player, entities, dist);   break;
+  }
+}
 
+function _getBestArc(raider) {
+  let bestArc = 'front';
+  let bestVal = -1;
+  for (const [key, val] of Object.entries(raider.armorArcs)) {
+    if (val > bestVal) { bestVal = val; bestArc = key; }
+  }
+  return bestArc;
+}
+
+function _doShielding(raider, player, entities, dist) {
+  const dx = player.x - raider.x;
+  const dy = player.y - raider.y;
+  const angleToPlayer = Math.atan2(dx, -dy);
+
+  // Choose orbit side to present healthiest arc toward player
+  const bestArc = _getBestArc(raider);
+  // Port arc faces player → orbit clockwise (offset +π/2)
+  // Starboard arc faces player → orbit counter-clockwise (offset -π/2)
+  const orbitOffset = (bestArc === 'starboard') ? -Math.PI / 2 : Math.PI / 2;
+
+  const orbitAngle = angleToPlayer + orbitOffset;
   const orbitX = player.x + Math.sin(orbitAngle) * ORBIT_RADIUS;
   const orbitY = player.y - Math.cos(orbitAngle) * ORBIT_RADIUS;
 
@@ -51,32 +81,73 @@ export function updateRaiderAI(raider, player, entities, dt) {
   const targetAngle = Math.atan2(odx, -ody);
   const diff = angleDiff(raider.rotation, targetAngle);
   raider.rotationInput = Math.sign(diff);
-
   raider.throttleLevel = orbitDist > 80 ? 4 : 2;
 
-  if (dist < FIRE_RANGE) {
-    // Lead targeting: predict where player will be when projectile arrives
-    const projSpeed = 600;
-    const travelTime = dist / projSpeed;
-    const pvx = Math.sin(player.rotation) * player.speed;
-    const pvy = -Math.cos(player.rotation) * player.speed;
-    const leadX = player.x + pvx * travelTime;
-    const leadY = player.y + pvy * travelTime;
-    raider.fireWeapons(leadX, leadY, entities);
+  if (dist < FIRE_RANGE) _doLeadFire(raider, player, entities, dist);
+}
+
+function _doInterceptor(raider, player, entities, dist) {
+  // Flank to a point behind the player (player's aft direction)
+  const aftX = player.x - Math.sin(player.rotation) * 150;
+  const aftY = player.y + Math.cos(player.rotation) * 150;
+
+  const odx = aftX - raider.x;
+  const ody = aftY - raider.y;
+  const targetAngle = Math.atan2(odx, -ody);
+  const diff = angleDiff(raider.rotation, targetAngle);
+
+  raider.rotationInput = Math.sign(diff);
+  raider.throttleLevel = Math.sqrt(odx * odx + ody * ody) > 60 ? 5 : 3;
+
+  if (dist < FIRE_RANGE) _doLeadFire(raider, player, entities, dist);
+}
+
+function _doKiter(raider, player, entities, dist) {
+  const dx = player.x - raider.x;
+  const dy = player.y - raider.y;
+
+  if (dist < KITE_RANGE) {
+    // Back away
+    const fleeAngle = Math.atan2(-dx, dy);
+    const diff = angleDiff(raider.rotation, fleeAngle);
+    raider.rotationInput = Math.sign(diff);
+    raider.throttleLevel = 4;
+  } else {
+    // Slow orbit at kite distance
+    const angleToPlayer = Math.atan2(dx, -dy);
+    const orbitAngle = angleToPlayer + Math.PI / 2;
+    const orbitX = player.x + Math.sin(orbitAngle) * KITE_RANGE;
+    const orbitY = player.y - Math.cos(orbitAngle) * KITE_RANGE;
+    const odx = orbitX - raider.x;
+    const ody = orbitY - raider.y;
+    const targetAngle = Math.atan2(odx, -ody);
+    const diff = angleDiff(raider.rotation, targetAngle);
+    raider.rotationInput = Math.sign(diff);
+    raider.throttleLevel = 2;
   }
+
+  if (dist < FIRE_RANGE) _doLeadFire(raider, player, entities, dist);
+}
+
+function _doLeadFire(raider, player, entities, dist) {
+  const projSpeed = 600;
+  const travelTime = dist / projSpeed;
+  const pvx = Math.sin(player.rotation) * player.speed;
+  const pvy = -Math.cos(player.rotation) * player.speed;
+  const leadX = player.x + pvx * travelTime;
+  const leadY = player.y + pvy * travelTime;
+  raider.fireWeapons(leadX, leadY, entities);
 }
 
 function _patrol(raider, dt) {
   const home = raider.homePosition;
   if (!home) { raider.throttleLevel = 0; return; }
 
-  // Initialize patrol angle
   if (raider._patrolAngle === undefined) {
     raider._patrolAngle = Math.random() * Math.PI * 2;
   }
   raider._patrolAngle += dt * 0.3;
 
-  // Orbit around home position
   const targetX = home.x + Math.sin(raider._patrolAngle) * PATROL_RADIUS;
   const targetY = home.y - Math.cos(raider._patrolAngle) * PATROL_RADIUS;
 
@@ -87,6 +158,5 @@ function _patrol(raider, dt) {
   const targetAngle = Math.atan2(pdx, -pdy);
   const diff = angleDiff(raider.rotation, targetAngle);
   raider.rotationInput = Math.sign(diff);
-
   raider.throttleLevel = patrolDist > 60 ? 3 : 2;
 }

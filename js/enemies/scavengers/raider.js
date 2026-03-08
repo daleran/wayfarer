@@ -70,19 +70,17 @@ class Raider extends Ship {
     this.faction = 'scavenger';
     this._trailColor = RED;
 
-    this.armorMax = 40;
-    this.armorCurrent = 40;
-    this.hullMax = 60;
+    this.armorArcs    = { front: 50, port: 35, starboard: 35, aft: 25 };
+    this.armorArcsMax = { front: 50, port: 35, starboard: 35, aft: 25 };
+    this.hullMax     = 60;
     this.hullCurrent = 60;
+    this.behaviorType = 'shielding';
 
     this.speedMax = 150;
     this.acceleration = 40;
     this.turnRate = 3.0;
     this.throttleLevels = 6;
     this._throttleRatios = [0, 0.15, 0.35, 0.55, 0.8, 1.5];
-    this.crewMax = 4;
-    this.crewCurrent = 4;
-
     this.addWeapon(new Autocannon());
   }
 

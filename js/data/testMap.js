@@ -1,53 +1,118 @@
-// Compact test map for playtesting new features.
-// Load with ?test in the URL: npm run dev, then visit http://localhost:5173/?test
+// Compact Gravewake test map.
+// Load with ?test: npm run dev → http://localhost:5173/?test
+// Map is 8000×5000 — same proportions as full map, ~44% scale.
+// The Coil structure is FULL SIZE (3750×1800) — it dominates the eastern half.
 
 export const TEST_MAP = {
-  mapSize: { width: 3000, height: 3000 },
-  playerStart: { x: 1500, y: 1500 },
-  startScrap: 30,
+  mapSize: { width: 8000, height: 5000 },
+  playerStart: { x: 600, y: 2500 },
 
   stations: [
-    { id: 'keelbreak',  name: 'Keelbreak',         x: 1500, y: 1200, faction: 'neutral',     services: ['repair', 'trade', 'shipyard'], commodities: { food: 'high', ore: 'low', tech: 'medium', exotics: 'none', scrap: 'surplus' }, shipyard: ['gunship', 'hauler'] },
-    { id: 'crucible',   name: 'Crucible Station',   x: 800,  y: 2200, faction: 'independent', services: ['repair', 'trade', 'shipyard'], commodities: { food: 'low', ore: 'surplus', tech: 'low', exotics: 'deficit', scrap: 'high' }, shipyard: ['hauler'] },
-    { id: 'thornwick',  name: 'Thornwick Archive',  x: 2200, y: 2200, faction: 'military',    services: ['repair', 'trade', 'shipyard'], commodities: { food: 'medium', ore: 'medium', tech: 'deficit', exotics: 'low', scrap: 'medium' }, shipyard: ['gunship', 'frigate'] },
+    {
+      id: 'the_coil',
+      name: 'The Coil',
+      x: 5000, y: 1800,
+      faction: 'salvage_lords',
+      renderer: 'coil',
+      services: ['repair', 'trade'],
+      commodities: { food: 'medium', ore: 'low', tech: 'medium', exotics: 'surplus' },
+      lore: [
+        'SALVAGE LORDS TERRITORY — OPEN PORT',
+        'Classification: Hostile Neutral',
+        '',
+        'Assembled from four decommissioned cargo haulers,',
+        'welded together over two decades of desperation',
+        'and bad decisions. It shouldn\'t float. It does.',
+        '',
+        '[ MARKET — PORT FREIGHT DECK ]',
+        'Black-market goods, fenced salvage, contraband',
+        'ROM cartridges from pre-Exile archive runs.',
+        'Prices are negotiable. Arguments are not.',
+        '',
+        '[ THE PITS — CENTRAL HUB ]',
+        'Cantina, bunks, and synthetic alcohol that will',
+        'leave you three days behind schedule. The Salvage',
+        'Lords hold court here when they bother to meet.',
+        '',
+        '[ SHIPYARD — STARBOARD WING ]',
+        'Illicit repairs and unregistered hull work.',
+        'The welders ask no questions. Neither should you.',
+        '',
+        '[ THE VAULT — EAST END ]',
+        'Sealed. Always sealed. The Lords haven\'t opened',
+        'it while anyone was watching.',
+      ],
+    },
   ],
 
-  planets: [
-    { id: 'thalassa', name: 'Thalassa', x: 600,  y: 800,  radius: 80, colorInner: '#2a6a2a', colorOuter: '#1a3a1a' },
-    { id: 'grist',    name: 'Grist',    x: 2400, y: 800,  radius: 60, colorInner: '#8a5a2a', colorOuter: '#4a2a10' },
+  planets: [],
+
+  background: [
+    {
+      type: 'pale',
+      name: 'Pale',
+      x: 4000,
+      y: 13000,
+      radius: 9000,
+      colorLimb: '#4a7a9a',
+      colorAtmo: '#1a3a5a',
+    },
+  ],
+
+  zones: [
+    { id: 'gravewake', center: { x: 4500, y: 2500 }, radius: 4500 },
+  ],
+
+  arkshipSpines: [
+    // Flanking the approach to The Coil
+    { x: 2000, y: 1400, rotation: 0.40, length: 2200, width: 140 },
+    { x: 1800, y: 3400, rotation: -0.30, length: 1900, width: 110 },
+    // Deep zone spines near The Coil
+    { x: 3800, y: 900, rotation: 0.70, length: 2800, width: 160 },
+    { x: 6800, y: 3500, rotation: 1.20, length: 1800, width: 100 },
+  ],
+
+  // Partial Wall of Wrecks — diagonal belt with one gap (trade lane)
+  wallOfWrecks: [
+    { x: 2400, y: 1300, spreadRadius: 350, fragmentCount: 28 },
+    { x: 2800, y: 1700, spreadRadius: 380, fragmentCount: 32 },
+    { x: 3200, y: 2100, spreadRadius: 360, fragmentCount: 30 },
+    // gap (trade lane)
+    { x: 3900, y: 2800, spreadRadius: 370, fragmentCount: 30 },
+    { x: 4300, y: 3200, spreadRadius: 350, fragmentCount: 28 },
+    { x: 4700, y: 3600, spreadRadius: 380, fragmentCount: 32 },
   ],
 
   derelicts: [
     {
-      name: 'Wrecked Hauler', x: 1300, y: 1600, salvageTime: 3,
+      name: 'Wrecked Hauler', x: 1200, y: 2200, salvageTime: 3,
       lootTable: [
-        { type: 'credits', amount: 150 },
-        { type: 'scrap', amount: 5 },
-        { type: 'ore', amount: 2 },
+        { type: 'scrap', amount: 20 },
+        { type: 'fuel', amount: 12 },
+        { type: 'ore', amount: 3 },
       ],
     },
     {
-      name: 'Gutted Frigate', x: 1700, y: 1400, salvageTime: 4,
+      name: 'Hollow March', x: 2800, y: 2800, salvageTime: 5,
       lootTable: [
-        { type: 'credits', amount: 250 },
-        { type: 'scrap', amount: 8 },
-        { type: 'tech', amount: 1 },
-        { type: 'exotics', amount: 1 },
+        { type: 'scrap', amount: 40 },
+        { type: 'tech', amount: 3 },
+        { type: 'exotics', amount: 2 },
       ],
     },
     {
-      name: 'Scrap Hulk', x: 1100, y: 1300, salvageTime: 2,
+      name: 'Cold Remnant', x: 4200, y: 1000, salvageTime: 4,
       lootTable: [
-        { type: 'credits', amount: 50 },
-        { type: 'scrap', amount: 15 },
-        { type: 'food', amount: 3 },
+        { type: 'scrap', amount: 28 },
+        { type: 'fuel', amount: 18 },
       ],
     },
   ],
 
+  // Raiders at a den in the south — opposite The Coil in the north
   raiderSpawns: [
-    { stationId: 'crucible',  count: 2 },
-    { stationId: 'thornwick', count: 1 },
+    { x: 900,  y: 4000, count: 2, behaviorType: 'kiter' },
+    { x: 2000, y: 4200, count: 2, behaviorType: 'interceptor' },
   ],
 
   asteroidFields: [],
@@ -56,17 +121,14 @@ export const TEST_MAP = {
 
 // Test verification steps — shown on-screen in test mode.
 export const TEST_STEPS = [
-  'HUD: Crew readout below Scrap (e.g. "Crew: 12/20")',
-  'HUD: Efficiency % shows when crew < 90% (amber/red)',
-  'Fleet status: crew count shown after hull bars',
-  'Flagship starts at 12/20 crew — check reduced speed/fire rate',
-  'Dock at Keelbreak -> Services tab: CREW ROSTER section',
-  'Crew roster: each ship shows name, crew count, efficiency %',
-  'Click +1 to hire one crew (10 cr each)',
-  'Click Fill to hire all missing crew at once',
-  'Hire crew to full -> efficiency shows 100%, speed returns to normal',
-  'Fight raiders -> hull hits have ~15% chance to kill crew',
-  'Low crew (<25%): severe speed/turn/fire rate penalties',
-  'Zero crew: weapons offline, ship barely moves (10% eff)',
-  'Buy a ship at shipyard -> check it starts with full crew',
+  // Gravewake world
+  'Pale: fly south — the curved limb of the planet looms at the horizon, opaque body with lighter atmosphere above',
+  'Arkship Spines: large wireframe beams visible northeast of start — fly along one',
+  'Wall of Wrecks: dense debris belt diagonals across mid-map; find the gap (trade lane)',
+  'The Coil: fly east to x≈5000 — station ~1 screen wide; districts visible (MARKET/PITS/SHIPYARD/VAULT)',
+  'The Coil: dock → Services (repair/refuel), Trade (exotics:surplus), Intel (lore text)',
+  // Raiders
+  'Raiders: fly south to y≈4000 — kiter and interceptor enemies patrol the southwest den',
+  // Salvage
+  'Salvage Wrecked Hauler near start (x≈1200, y≈2200) — E to begin, watch progress bar',
 ];
