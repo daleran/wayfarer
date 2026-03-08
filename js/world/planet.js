@@ -16,7 +16,7 @@ export class Planet extends Entity {
     const screen = camera.worldToScreen(this.x, this.y);
     const cx = screen.x;
     const cy = screen.y;
-    const r = this.radius;
+    const r = this.radius * camera.zoom;
 
     ctx.save();
 

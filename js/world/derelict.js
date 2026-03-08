@@ -26,6 +26,7 @@ export class Derelict extends Entity {
 
     ctx.save();
     ctx.translate(screen.x, screen.y);
+    ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
 
     // Irregular wreck polygon
@@ -68,7 +69,7 @@ export class Derelict extends Entity {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
-    ctx.fillText(this.name, screen.x, screen.y + 22);
+    ctx.fillText(this.name, screen.x, screen.y + 22 * camera.zoom);
     ctx.restore();
   }
 

@@ -1,29 +1,14 @@
-// The Coil — lawless hub station in the Gravewake zone.
-// Visual span: ~1700 wide × 820 tall (world units = pixels, ~1 screen).
-//
-// Districts (local space, 0,0 = structure center):
-//   Port Freight Deck / MARKET    x: -850 to -270,  y:  -90 to  +90
-//   Central Hub / THE PITS        x: -270 to +125,  y: -170 to +170
-//   Starboard Shipyard Wing       x: +125 to +425,  y:  -95 to +100
-//   The Vault (east, reinforced)  x: +425 to +855,  y: -130 to +130
-//   North Market Annex / BAZAAR   x: -720 to -315,  y: -325 to  -90
-//   South Shipyard Annex          x:  -45 to +280,  y: +100 to +335
-//   Crane Tower A (tall)          x:  +20 to  +50,  y: +100 to +490
-//   Crane Tower B                 x: +200 to +225,  y: +100 to +390
-//   Crane Boom at y=490           x: -140 to +320
+// The Coil — lawless hub station icon. ~300px visual diameter.
 
 import { Station } from './station.js';
-import { FACTION, AMBER, DIM_OUTLINE } from '../ui/colors.js';
+import { AMBER, DIM_OUTLINE } from '../ui/colors.js';
 
-const HULL_FILL  = 'rgba(25,12,0,0.92)';
-const VAULT_FILL = 'rgba(12,6,0,0.96)';
-const ANNEX_FILL = 'rgba(20,10,0,0.90)';
-const BAY_FILL   = 'rgba(5,2,0,0.98)';
+const HULL_FILL = 'rgba(25,12,0,0.92)';
 
 export class CoilStation extends Station {
   constructor(x, y, data) {
     super(x, y, data);
-    this.dockingRadius = 1100;
+    this.dockingRadius = 200;
   }
 
   update(dt) {
@@ -32,223 +17,239 @@ export class CoilStation extends Station {
 
   render(ctx, camera) {
     const screen = camera.worldToScreen(this.x, this.y);
-    const cx = screen.x;
-    const cy = screen.y;
+    const cx = screen.x, cy = screen.y;
+    const t = this._navPulse;
 
     ctx.save();
     ctx.translate(cx, cy);
+    ctx.scale(camera.zoom, camera.zoom);
 
-    // ── APPROACH LIGHTS (pulsing amber dots, west docking guide) ────────────
-    const litPhase = Math.floor(this._navPulse * 2) % 4;
-    ctx.fillStyle = AMBER;
-    for (let i = 0; i < 8; i++) {
-      const lx = -950 - i * 100;
-      ctx.globalAlpha = i % 4 === litPhase ? 0.55 : 0.1;
+    const SCAV = '#ff4444'; // mirrors FACTION.scavengers in colors.js
+
+    // ── BOXY SHIP SILHOUETTE HELPER ───────────────────────────────────────────
+    const drawShip = (x, y, rot, sc, alpha) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.scale(sc, sc);
+      ctx.fillStyle = 'rgba(12,3,3,0.9)';
+      ctx.strokeStyle = SCAV;
+      ctx.lineWidth = 1.1 / sc;
+      const part = (rx, ry, rw, rh) => {
+        ctx.beginPath();
+        ctx.rect(rx, ry, rw, rh);
+        ctx.globalAlpha = alpha;
+        ctx.fill();
+        ctx.globalAlpha = alpha * 0.72;
+        ctx.stroke();
+      };
+      part(-9, -8, 18, 20);    // main hull body
+      part(-5, -16, 10, 10);   // cockpit block
+      part(-7, 12, 14,  6);    // engine block
+      part(-16, -3,  7,  9);   // port wing stub
+      part(  9, -3,  7,  9);   // starboard wing stub
       ctx.beginPath();
-      ctx.arc(lx, 110, 6, 0, Math.PI * 2);
+      ctx.arc(0, 18, 2.8, 0, Math.PI * 2);
+      ctx.fillStyle = AMBER;
+      ctx.globalAlpha = alpha * 0.4;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    };
+
+    // ── HARBOR AMBIENT GLOW ──────────────────────────────────────────────────
+    const hg = ctx.createRadialGradient(0, 10, 5, 0, 10, 110);
+    hg.addColorStop(0, 'rgba(255,68,44,0.05)');
+    hg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = hg;
+    ctx.fillRect(-90, -65, 182, 158);
+
+    // ── HULL SECTIONS — 15 rects forming the U ───────────────────────────────
+    // Each is a distinct panel section, deliberately misaligned for cobbled feel.
+    // Inner harbor mouth: x −88 to +88, open at bottom (y > 93)
+    const sections = [
+      // Left arm — right edges cluster near x=−88
+      { x: -155, y: -108, w: 67, h: 52 },   // upper-left
+      { x: -158, y:  -57, w: 68, h: 58 },   // mid-left
+      { x: -153, y:   -1, w: 65, h: 94 },   // lower-left
+      // Back wall — bottom edges cluster near y=−60, much thicker than arms
+      { x:  -88, y: -200, w: 52, h: 140 },  // left-back panel
+      { x:  -36, y: -210, w: 74, h: 150 },  // center hub — tallest
+      { x:   38, y: -195, w: 54, h: 135 },  // right-back panel
+      // Right arm — left edges cluster near x=+88
+      { x:   90, y: -104, w: 62, h: 46 },   // upper-right
+      { x:   92, y:  -58, w: 58, h: 56 },   // mid-right
+      { x:   88, y:   -3, w: 64, h: 90 },   // lower-right
+      // Left outer jettys — right edges at x=−158
+      { x: -208, y:  -84, w: 50, h: 22 },   // jetty L1
+      { x: -200, y:  -18, w: 42, h: 17 },   // jetty L2
+      { x: -196, y:   40, w: 38, h: 15 },   // jetty L3
+      // Right outer jettys — left edges at x=+152
+      { x:  152, y:  -78, w: 55, h: 20 },   // jetty R1
+      { x:  152, y:   18, w: 46, h: 16 },   // jetty R2
+      // Back top jetty — connects to hub top at y=−210
+      { x:  -20, y: -262, w: 40, h: 52 },   // jetty top
+    ];
+
+    ctx.strokeStyle = SCAV;
+    ctx.lineWidth = 1.6;
+    for (const s of sections) {
+      ctx.beginPath();
+      ctx.rect(s.x, s.y, s.w, s.h);
+      ctx.fillStyle = 'rgba(18,4,4,0.95)';
+      ctx.fill();
+      ctx.globalAlpha = 0.82;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // ── INTERIOR RIB LINES (panel plating detail) ─────────────────────────────
+    ctx.strokeStyle = SCAV;
+    ctx.lineWidth = 0.6;
+    ctx.globalAlpha = 0.18;
+    for (const y of [-88, -35, 22, 65]) {
+      ctx.beginPath(); ctx.moveTo(-158, y); ctx.lineTo(-88, y); ctx.stroke();
+    }
+    for (const y of [-80, -22, 32, 72]) {
+      ctx.beginPath(); ctx.moveTo(88, y); ctx.lineTo(152, y); ctx.stroke();
+    }
+    for (const x of [-58, -5, 55]) {
+      ctx.beginPath(); ctx.moveTo(x, -210); ctx.lineTo(x, -60); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // ── HARBOR INNER DOCKING PIERS ────────────────────────────────────────────
+    const harborArms = [
+      { x: -88, y: -30, dir:  1, len: 45, w: 10 },
+      { x: -88, y:  38, dir:  1, len: 30, w:  8 },
+      { x:  88, y: -22, dir: -1, len: 40, w:  9 },
+      { x:  88, y:  42, dir: -1, len: 50, w: 11 },
+    ];
+    for (const arm of harborArms) {
+      const aw = arm.dir * arm.len;
+      ctx.beginPath();
+      ctx.rect(arm.x, arm.y - arm.w / 2, aw, arm.w);
+      ctx.fillStyle = 'rgba(10,2,2,0.92)';
+      ctx.fill();
+      ctx.strokeStyle = SCAV;
+      ctx.lineWidth = 1.1;
+      ctx.globalAlpha = 0.52;
+      ctx.stroke();
+      const tipX = arm.x + aw;
+      const pulse = 0.45 + 0.4 * Math.sin(t * 3.2 + arm.y * 0.15);
+      ctx.beginPath();
+      ctx.arc(tipX, arm.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = AMBER;
+      ctx.globalAlpha = pulse;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // ── DOCKED / DISASSEMBLED SHIPS ───────────────────────────────────────────
+    // Left outer jettys (nose pointing away from station — left)
+    drawShip(-208,      -73, -Math.PI * 0.5,  1.4, 0.52);
+    drawShip(-200,       -9,  Math.PI * 0.45, 1.6, 0.48);
+    drawShip(-196,       47, -Math.PI * 0.5,  1.3, 0.44);
+    // Right outer jettys
+    drawShip(152 + 55,  -68,  Math.PI * 0.5,  1.5, 0.50);
+    drawShip(152 + 46,   26,  Math.PI * 1.5,  1.4, 0.46);
+    // Back top jetty
+    drawShip(0,         -262, 0,              1.3, 0.45);
+    // Harbor inner piers — docked alongside
+    drawShip(-88 + 40,  -30, -Math.PI * 0.5,  1.2, 0.50);
+    drawShip( 88 - 42,   42,  Math.PI * 0.5,  1.3, 0.48);
+
+    // ── PATCHED PANELS (surface clutter) ──────────────────────────────────────
+    const patches = [
+      { x: -132, y:  44, rot:  0.15, w: 28, h: 15 },
+      { x: -128, y: -48, rot: -0.10, w: 22, h: 12 },
+      { x:  118, y: -28, rot:  0.20, w: 24, h: 12 },
+      { x:  122, y:  50, rot: -0.12, w: 20, h: 10 },
+      { x:   -8, y: -95, rot:  0.06, w: 32, h:  9 },
+      { x:  -55, y: -82, rot: -0.08, w: 18, h:  8 },
+    ];
+    ctx.strokeStyle = SCAV;
+    ctx.lineWidth = 0.9;
+    for (const p of patches) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = 0.32;
+      ctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.beginPath();
+      ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = SCAV;
+      ctx.globalAlpha = 0.26;
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+
+    // ── RUNNING LIGHTS — sequential chase ─────────────────────────────────────
+    const litPhase = (t * 2.5) % 1;
+    const leftLY  = [-82, -30, 30, 72];
+    const rightLY = [-72, -15, 62];
+    for (let i = 0; i < leftLY.length; i++) {
+      ctx.beginPath();
+      ctx.arc(-158, leftLY[i], 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = SCAV;
+      ctx.globalAlpha = ((litPhase + i * 0.25) % 1) < 0.3 ? 0.85 : 0.15;
+      ctx.fill();
+    }
+    for (let i = 0; i < rightLY.length; i++) {
+      ctx.beginPath();
+      ctx.arc(152, rightLY[i], 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = SCAV;
+      ctx.globalAlpha = ((litPhase + i * 0.33 + 0.5) % 1) < 0.3 ? 0.85 : 0.15;
       ctx.fill();
     }
     ctx.globalAlpha = 1;
 
-    // ── CRANE STRUCTURES (drawn behind hull) ─────────────────────────────────
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 1;
+    // ── HARBOR ENTRANCE BEACONS ───────────────────────────────────────────────
+    const beaconPulse = 0.5 + 0.5 * Math.sin(t * Math.PI * 1.5);
+    for (const bx of [-88, 88]) {
+      ctx.beginPath();
+      ctx.arc(bx, 93, 12, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,170,0,0.06)';
+      ctx.globalAlpha = beaconPulse;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(bx, 93, 5, 0, Math.PI * 2);
+      ctx.fillStyle = AMBER;
+      ctx.globalAlpha = beaconPulse * 0.9;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
 
-    // Tower A: x 20–50, y 100–490
-    ctx.globalAlpha = 0.55;
-    ctx.strokeRect(20, 100, 30, 390);
-    for (let y = 140; y < 490; y += 50) {
-      ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(50, y); ctx.stroke();
-    }
-    // Tower B: x 200–225, y 100–390
-    ctx.strokeRect(200, 100, 25, 290);
-    for (let y = 140; y < 390; y += 45) {
-      ctx.beginPath(); ctx.moveTo(200, y); ctx.lineTo(225, y); ctx.stroke();
-    }
-    // Crane boom at y=490
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(-140, 490); ctx.lineTo(320, 490); ctx.stroke();
-    // Support cables
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.2;
-    ctx.beginPath(); ctx.moveTo(35, 140); ctx.lineTo(-140, 490); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(35, 140); ctx.lineTo(320, 490); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(212, 130); ctx.lineTo(90, 490); ctx.stroke();
-    // Hook
-    ctx.globalAlpha = 0.4;
-    ctx.beginPath(); ctx.arc(35, 490, 9, 0, Math.PI * 2); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // ── NORTH MARKET ANNEX (Bazaar) ───────────────────────────────────────────
-    ctx.fillStyle = ANNEX_FILL;
-    ctx.fillRect(-720, -325, 405, 235);
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 1.3;
-    ctx.globalAlpha = 0.85;
-    ctx.strokeRect(-720, -325, 405, 235);
-    ctx.globalAlpha = 1;
-    // Processing lines inside
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 0.8;
-    ctx.globalAlpha = 0.1;
-    for (let y = -290; y < -105; y += 55) {
-      ctx.beginPath(); ctx.moveTo(-710, y); ctx.lineTo(-325, y); ctx.stroke();
-    }
-    for (const x of [-600, -500]) {
-      ctx.beginPath(); ctx.moveTo(x, -325); ctx.lineTo(x, -90); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    // ── SOUTH SHIPYARD ANNEX ──────────────────────────────────────────────────
-    ctx.fillStyle = ANNEX_FILL;
-    ctx.fillRect(-45, 100, 325, 235);
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 1.3;
-    ctx.globalAlpha = 0.85;
-    ctx.strokeRect(-45, 100, 325, 235);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 0.8;
-    ctx.globalAlpha = 0.1;
-    for (const y of [150, 210, 270]) {
-      ctx.beginPath(); ctx.moveTo(-35, y); ctx.lineTo(270, y); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    // ── MAIN HULL FILLS ───────────────────────────────────────────────────────
-    ctx.fillStyle = HULL_FILL;
-    ctx.fillRect(-850, -90, 580, 180);   // Port Freight Deck
-    ctx.fillRect(-270, -170, 395, 340);  // Central Hub
-    ctx.fillRect(125, -95, 300, 195);    // Starboard Wing
-    ctx.fillStyle = VAULT_FILL;
-    ctx.fillRect(425, -130, 430, 260);   // The Vault
-
-    // ── DOCKING BAYS (south face notches) ────────────────────────────────────
-    ctx.fillStyle = BAY_FILL;
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.9;
-    for (const bx of [-750, -600, -450]) {
-      ctx.fillRect(bx, 90, 80, 50);
-      ctx.strokeRect(bx, 90, 80, 50);
-    }
-    // Starboard docking bays
-    for (const bx of [145, 255]) {
-      ctx.fillRect(bx, 100, 70, 40);
-      ctx.strokeRect(bx, 100, 70, 40);
-    }
-    ctx.globalAlpha = 1;
-
-    // ── MAIN HULL OUTLINES ────────────────────────────────────────────────────
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.9;
-    ctx.strokeRect(-850, -90, 580, 180);
-    ctx.strokeRect(-270, -170, 395, 340);
-    ctx.strokeRect(125, -95, 300, 195);
-    ctx.lineWidth = 2.5;
-    ctx.globalAlpha = 1.0;
-    ctx.strokeRect(425, -130, 430, 260);  // Vault (heavy)
-    ctx.globalAlpha = 1;
-
-    // Hull junction seams
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 0.8;
-    ctx.globalAlpha = 0.3;
-    ctx.beginPath(); ctx.moveTo(-270, -90); ctx.lineTo(-270, 90); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(125, -95); ctx.lineTo(125, 100); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // ── INTERIOR RIBS ─────────────────────────────────────────────────────────
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 0.8;
-    ctx.globalAlpha = 0.22;
-    // Port Deck ribs (every 90u)
-    for (let x = -760; x < -290; x += 90) {
-      ctx.beginPath(); ctx.moveTo(x, -85); ctx.lineTo(x, 85); ctx.stroke();
-    }
-    // Central Hub partitions
-    for (const ry of [-60, +50]) {
-      ctx.beginPath(); ctx.moveTo(-265, ry); ctx.lineTo(120, ry); ctx.stroke();
-    }
-    ctx.beginPath(); ctx.moveTo(-100, -165); ctx.lineTo(-100, 165); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(+30, -165);  ctx.lineTo(+30, 165);  ctx.stroke();
-    // Starboard ribs
-    for (let x = 185; x < 425; x += 60) {
-      ctx.beginPath(); ctx.moveTo(x, -90); ctx.lineTo(x, 95); ctx.stroke();
-    }
-    // Vault ribs + cross-brace
-    ctx.globalAlpha = 0.18;
-    for (const x of [540, 660, 775]) {
-      ctx.beginPath(); ctx.moveTo(x, -125); ctx.lineTo(x, 125); ctx.stroke();
-    }
-    ctx.globalAlpha = 0.14;
-    ctx.beginPath(); ctx.moveTo(425, -130); ctx.lineTo(855, 130); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(855, -130); ctx.lineTo(425, 130); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // ── WINDOW STRIPS ─────────────────────────────────────────────────────────
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.1;
-    ctx.beginPath(); ctx.moveTo(-840, -50); ctx.lineTo(-285, -50); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-840,  30); ctx.lineTo(-285,  30); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-260, -120); ctx.lineTo(120, -120); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-260,  100); ctx.lineTo(120,  100); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(135, -55); ctx.lineTo(420, -55); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(435, -80); ctx.lineTo(850, -80); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(435,  60); ctx.lineTo(850,  60); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // ── ANTENNAE ──────────────────────────────────────────────────────────────
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.5;
-    for (const [ax, h] of [[-190, 50], [-90, 80], [+25, 44], [+85, 65]]) {
-      ctx.beginPath(); ctx.moveTo(ax, -170); ctx.lineTo(ax, -170 - h); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(ax - 12, -170 - h + 6); ctx.lineTo(ax + 12, -170 - h + 6); ctx.stroke();
-    }
-    // Comms dish on Central Hub
-    ctx.globalAlpha = 0.35;
-    ctx.beginPath(); ctx.arc(-40, -170, 24, Math.PI, 0); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-40, -194); ctx.lineTo(-40, -170); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // ── VAULT GUARD POSTS ─────────────────────────────────────────────────────
-    ctx.fillStyle = AMBER;
-    ctx.globalAlpha = 0.65;
-    for (const [gx, gy] of [[425, -130], [855, -130], [425, 130], [855, 130]]) {
-      ctx.fillRect(gx - 8, gy - 8, 16, 16);
-    }
-    ctx.globalAlpha = 1;
-
-    // ── DISTRICT LABELS ───────────────────────────────────────────────────────
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = AMBER;
-    ctx.globalAlpha = 0.35;
-    ctx.fillText('MARKET',  -560,  0);
-    ctx.fillText('THE PITS', -72,  0);
-    ctx.fillText('SHIPYARD', 275,  0);
-    ctx.fillText('VAULT',    640,  0);
-    ctx.fillText('BAZAAR',  -520, -207);
-    ctx.globalAlpha = 1;
+    // ── APPROACH BEAM ─────────────────────────────────────────────────────────
+    const beam = ctx.createLinearGradient(0, 93, 0, 178);
+    beam.addColorStop(0, 'rgba(255,170,0,0.09)');
+    beam.addColorStop(1, 'rgba(255,170,0,0)');
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(-88, 93);
+    ctx.lineTo(88, 93);
+    ctx.lineTo(112, 178);
+    ctx.lineTo(-112, 178);
+    ctx.closePath();
+    ctx.fill();
 
     // ── STATION NAME ──────────────────────────────────────────────────────────
-    ctx.font = 'bold 16px monospace';
+    const z = camera.zoom;
+    ctx.scale(1 / z, 1 / z);
+    ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = AMBER;
-    ctx.globalAlpha = 0.9;
-    ctx.fillText('THE COIL', -150, -370);
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = SCAV;
+    ctx.globalAlpha = 0.85;
+    ctx.fillText('THE COIL', 0, 110 * z);
     ctx.globalAlpha = 1;
 
     ctx.restore();
   }
 
   getBounds() {
-    return { x: this.x, y: this.y, radius: 1000 };
+    return { x: this.x, y: this.y, radius: 150 };
   }
 }
 

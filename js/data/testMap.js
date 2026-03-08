@@ -1,7 +1,6 @@
 // Compact Gravewake test map.
 // Load with ?test: npm run dev → http://localhost:5173/?test
 // Map is 8000×5000 — same proportions as full map, ~44% scale.
-// The Coil structure is FULL SIZE (3750×1800) — it dominates the eastern half.
 
 export const TEST_MAP = {
   mapSize: { width: 8000, height: 5000 },
@@ -52,8 +51,8 @@ export const TEST_MAP = {
       type: 'pale',
       name: 'Pale',
       x: 4000,
-      y: 13000,
-      radius: 9000,
+      y: 2500,
+      radius: 540,
       colorLimb: '#4a7a9a',
       colorAtmo: '#1a3a5a',
     },
@@ -109,10 +108,13 @@ export const TEST_MAP = {
     },
   ],
 
-  // Raiders at a den in the south — opposite The Coil in the north
   raiderSpawns: [
-    { x: 900,  y: 4000, count: 2, behaviorType: 'kiter' },
-    { x: 2000, y: 4200, count: 2, behaviorType: 'interceptor' },
+    // Light fighters — fast stalkers that hunt the player's aft
+    { x: 1800, y: 2500, count: 2, shipType: 'light-fighter' },
+    // Armed hauler — kiter with autocannon + lance
+    { x: 2200, y: 2100, count: 1, shipType: 'armed-hauler' },
+    // Salvage mothership — holds at range and lobs missiles
+    { x: 2800, y: 2700, count: 1, shipType: 'salvage-mothership' },
   ],
 
   asteroidFields: [],
@@ -121,17 +123,32 @@ export const TEST_MAP = {
 
 // Test verification steps — shown on-screen in test mode.
 export const TEST_STEPS = [
-  // Gravewake world
-  'Pale: fly south — the curved limb of the planet looms at the horizon, opaque body with lighter atmosphere above',
-  'Arkship Spines: large wireframe beams visible northeast of start — fly along one',
-  'Wall of Wrecks: dense debris belt diagonals across mid-map; find the gap (trade lane)',
-  'The Coil: fly east to x≈5000 — station ~1 screen wide; districts visible (MARKET/PITS/SHIPYARD/VAULT)',
-  'The Coil: dock → Services (repair/refuel), Trade (exotics:surplus), Intel (lore text)',
-  // Raiders
-  'Raiders: fly south to y≈4000 — kiter and interceptor enemies patrol the southwest den',
-  // Salvage
-  'Salvage Wrecked Hauler near start (x≈1200, y≈2200) — E to begin, watch progress bar',
-  // Rockets
-  'Rockets (RMB): fire at a raider — rocket travels to click point, expanding amber rings on detonation',
-  'Rockets AoE: fire near a cluster — multiple enemies damaged; fire near yourself to verify friendly fire',
+  // Ship
+  'HULLBREAKER: confirm blocky tug shape (not hammerhead). Single green engine glow at aft center.',
+  'FUEL: HUD fuel bar — Hullbreaker tank is ~104 units. Fuel drains at 50% base rate (move at throttle 5).',
+  // Weapon cycling
+  'CYCLING: press 2 to cycle primary — HUD shows AUTOCANNON → RAILGUN → FLAK-S → LANCE-S → PLASMA-S → CANNON',
+  'CYCLING: press 4 to cycle secondary — HUD shows ROCKET → ROCKET×5 → WIRE-MSL → WIRE×3 → HEAT-MSL → TORPEDO',
+  // Kinetic / energy primaries
+  'AUTOCANNON (cycle to it): LMB — rapid amber bolts, tracer trail, hits at 1500u',
+  'RAILGUN: cycle to it, LMB — 6s pause then brilliant white streak, high damage (use X raider as target)',
+  'FLAK-S: cycle to it, LMB on far point — amber burst at click distance; LMB near missiles — intercepts them',
+  'CANNON: cycle to it, LMB — slow heavy shell, AoE blast on ship contact (120u radius)',
+  'PLASMA-S: cycle to it, LMB at short vs long range — more hull damage close up (falloff visible)',
+  // Lance beam
+  'LANCE: cycle to it, hold LMB — cyan beam appears toward cursor; brightens over 2s; releases and ramps down',
+  // Secondary / missiles
+  'ROCKETS (RMB): fire at raider — amber blast 280u; RMB again for ROCKET×5 burst of 5',
+  'WIRE MISSILE: cycle to WIRE-MSL (RMB), steer missile with mouse; WIRE×3 fires spread of 3',
+  'HEAT MISSILE: cycle to HEAT-MSL (RMB) — missile locks onto nearest raider automatically; 10s self-destruct',
+  'TORPEDO: cycle to it (RMB) — face raider, fires along heading; slow amber blob; interceptable',
+  // Enemy weapons
+  'ENEMY WEAPONS: press X — kiter spawns with Railgun (fast blue-white streak). Press C — interceptor with flak',
+  'INTERCEPTION: fire a wire missile, spawn C interceptor nearby — flak may shoot down your missile',
+  // AI freeze (weapons/armor testing)
+  'AI FREEZE: press V — dev panel shows [AI FROZEN] in magenta. All enemies halt and stop firing. Press V again to unfreeze.',
+  // New enemy types (pre-spawned in test map)
+  'LIGHT FIGHTERS: two red needle ships patrol east (~1800, 2500). Approach — they should flank to your aft and fire aligned.',
+  'ARMED HAULER: wide red boxy ship at (~2200, 2100). Should kite at range with autocannon and lance beam.',
+  'SALVAGE MOTHERSHIP: large red frigate at (~2800, 2700). Should hold at 1200u and lob cannon + heat missiles.',
 ];

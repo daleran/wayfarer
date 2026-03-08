@@ -33,22 +33,20 @@ export class DebrisCloud extends Entity {
 
   render(ctx, camera) {
     const screen = camera.worldToScreen(this.x, this.y);
-    const cx = screen.x;
-    const cy = screen.y;
 
     ctx.save();
+    ctx.translate(screen.x, screen.y);
+    ctx.scale(camera.zoom, camera.zoom);
     ctx.strokeStyle = VERY_DIM;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.35;
 
     for (const frag of this._fragments) {
-      const sx = cx + frag.fx;
-      const sy = cy + frag.fy;
       const hw = frag.size;
       const hh = frag.size * frag.aspect;
 
       ctx.save();
-      ctx.translate(sx, sy);
+      ctx.translate(frag.fx, frag.fy);
       ctx.rotate(frag.angle);
 
       // Elongated pentagon polygon

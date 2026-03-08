@@ -20,6 +20,7 @@ export class ArkshipSpine extends Entity {
 
     ctx.save();
     ctx.translate(cx, cy);
+    ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
 
     const hw = this.width / 2;
