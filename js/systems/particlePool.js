@@ -69,6 +69,28 @@ export class ParticlePool {
     });
   }
 
+  rocketTrail(x, y) {
+    this.emit(x, y, 2, {
+      colors: ['#ff00aa', '#ffffff', '#aa0077'],
+      minSpeed: 5,
+      maxSpeed: 30,
+      life: 0.3,
+      r: 2,
+    });
+  }
+
+  rocketImpact(x, y) {
+    this.emit(x, y, 30, {
+      colors: ['#ff00aa', '#ffffff', '#ffaaff', '#aa0077'],
+      minSpeed: 50,
+      maxSpeed: 200,
+      life: 0.7,
+      r: 4,
+    });
+    this._rings.push({ x, y, radius: 5, maxRadius: 120, life: 0.6, maxLife: 0.6, color: '#ff00aa' });
+    this._rings.push({ x, y, radius: 3, maxRadius: 80,  life: 0.4, maxLife: 0.4, color: '#ffffff' });
+  }
+
   update(dt) {
     for (const p of this._pool) {
       if (!p.active) continue;

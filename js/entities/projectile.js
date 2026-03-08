@@ -1,5 +1,7 @@
 import { Entity } from './entity.js';
-import { GREEN, RED } from '../ui/colors.js';
+import { GREEN, RED, AMBER } from '../ui/colors.js';
+
+const ROCKET_TRAIL_MAX = 80;
 
 export class Projectile extends Entity {
   constructor(x, y, vx, vy, damage, owner) {
@@ -14,6 +16,11 @@ export class Projectile extends Entity {
     this.color = null;
     this.glowColor = null;
     this.length = 4; // half-length of the streak in pixels
+
+    // Rocket-specific
+    this.isRocket = false;
+    this._rocketTrail = []; // world-space position history
+    this._rocketAge = 0;    // used for pulse animation
   }
 
   update(dt) {
@@ -23,9 +30,20 @@ export class Projectile extends Entity {
     if (this.distanceTravelled > this.maxRange) {
       this.active = false;
     }
+
+    if (this.isRocket) {
+      this._rocketAge += dt;
+      this._rocketTrail.push({ x: this.x, y: this.y });
+      if (this._rocketTrail.length > ROCKET_TRAIL_MAX) this._rocketTrail.shift();
+    }
   }
 
   render(ctx, camera) {
+    if (this.isRocket) {
+      this._renderRocket(ctx, camera);
+      return;
+    }
+
     const screen = camera.worldToScreen(this.x, this.y);
     const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
     if (speed === 0) return;
@@ -56,6 +74,55 @@ export class Projectile extends Entity {
     ctx.moveTo(screen.x - nx * len, screen.y - ny * len);
     ctx.lineTo(screen.x + nx * len, screen.y + ny * len);
     ctx.stroke();
+
+    ctx.restore();
+  }
+
+  _renderRocket(ctx, camera) {
+    ctx.save();
+    ctx.lineCap = 'round';
+
+    // --- Trail ---
+    const trail = this._rocketTrail;
+    for (let i = 1; i < trail.length; i++) {
+      const p0 = camera.worldToScreen(trail[i - 1].x, trail[i - 1].y);
+      const p1 = camera.worldToScreen(trail[i].x, trail[i].y);
+      const t = i / trail.length; // 0 = oldest, 1 = newest
+      ctx.strokeStyle = AMBER;
+      ctx.globalAlpha = t * 0.55;
+      ctx.lineWidth = 1 + t * 2.5;
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+    }
+
+    // --- Pulsing head circle ---
+    const screen = camera.worldToScreen(this.x, this.y);
+    const pulse = 0.7 + 0.3 * Math.sin(this._rocketAge * 18); // fast pulse
+
+    // Outer glow
+    ctx.globalAlpha = 0.18 * pulse;
+    ctx.strokeStyle = AMBER;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, 5 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Inner bright circle
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = '#ffe0a0';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, 2.5 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Hot core dot
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, 1.2, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
