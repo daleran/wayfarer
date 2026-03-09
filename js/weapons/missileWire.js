@@ -16,15 +16,17 @@ export class MissileWire {
     } else {
       this.displayName = 'WIRE-MSL';
     }
+    this.ammoType = 'missile';
     this.damage      = BASE_DAMAGE      * V.DAMAGE_MULT;
     this.hullDamage  = BASE_HULL_DAMAGE * V.HULL_DAMAGE_MULT;
-    this.cooldown    = BASE_COOLDOWN    * V.COOLDOWN_MULT;
+    this.cooldownMax = BASE_COOLDOWN    * V.COOLDOWN_MULT;
     this.blastRadius = V.BLAST_RADIUS;
     this.projectileSpeed = BASE_PROJECTILE_SPEED * 1.2 * PROJECTILE_SPEED_FACTOR;
     this.maxRange = BASE_WEAPON_RANGE * 1.5;
     this._cooldown = 0;
     this.ammo    = 6;
     this.ammoMax = 6;
+    this.ammoCargoWeight = 1;
   }
 
   update(dt) { if (this._cooldown > 0) this._cooldown -= dt; }
@@ -54,6 +56,6 @@ export class MissileWire {
       entities.push(proj);
     }
     this.ammo--;
-    this._cooldown = this.cooldown;
+    this._cooldown = this.cooldownMax;
   }
 }

@@ -11,22 +11,21 @@ export class MissileHeat {
     this.isAutoFire  = false;
     this._size = size;
     const V = size === 'large' ? LARGE_H : SMALL_H;
-    if (size === 'large') {
-      this.displayName = 'HEAT×2';
-      this._burstCount = 0;
-      this._burstTimer = 0;
-      this._burstShip  = null;
-    } else {
-      this.displayName = 'HEAT-MSL';
-    }
+    // Burst state initialized for all variants (large uses it, small doesn't fire it)
+    this._burstCount = 0;
+    this._burstTimer = 0;
+    this._burstShip  = null;
+    this.displayName = size === 'large' ? 'HEAT×2' : 'HEAT-MSL';
+    this.ammoType = 'missile';
     this.damage      = BASE_DAMAGE      * V.DAMAGE_MULT;
     this.hullDamage  = BASE_HULL_DAMAGE * V.HULL_DAMAGE_MULT;
-    this.cooldown    = BASE_COOLDOWN    * V.COOLDOWN_MULT;
+    this.cooldownMax = BASE_COOLDOWN    * V.COOLDOWN_MULT;
     this.blastRadius = V.BLAST_RADIUS;
     this.projectileSpeed = BASE_PROJECTILE_SPEED * 1.3 * PROJECTILE_SPEED_FACTOR;
     this._cooldown = 0;
     this.ammo    = 6;
     this.ammoMax = 6;
+    this.ammoCargoWeight = 1;
   }
 
   update(dt, entities) {
@@ -52,7 +51,7 @@ export class MissileHeat {
       this._fireOneMissile(entities, ship);
     }
     this.ammo--;
-    this._cooldown = this.cooldown;
+    this._cooldown = this.cooldownMax * (ship._fireCooldownMult ?? 1);
   }
 
   _fireOneMissile(entities, shipOverride) {

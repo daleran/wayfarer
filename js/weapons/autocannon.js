@@ -1,7 +1,8 @@
 import { Projectile } from '../entities/projectile.js';
-import { AMBER } from '../ui/colors.js';
+import { AMBER, AUTOCANNON_GLOW } from '../ui/colors.js';
 import { BASE_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/stats.js';
+import { normalizeToTarget } from '../utils/math.js';
 
 const DAMAGE_MULT  = 1.0;
 const RANGE_MULT   = 1.0;
@@ -17,8 +18,12 @@ export class Autocannon {
     this.maxRange = BASE_WEAPON_RANGE * RANGE_MULT;
     this.isAutoFire = false;
     this.displayName = 'AUTOCANNON';
+    this.ammoType = 'autocannon';
     this.color = AMBER;
-    this.glowColor = '#ffe0a0';
+    this.glowColor = AUTOCANNON_GLOW;
+    this.ammo = 60;
+    this.ammoMax = 60;
+    this.ammoCargoWeight = 0.1; // 10 rounds per cargo unit
   }
 
   update(dt) {
@@ -26,14 +31,10 @@ export class Autocannon {
   }
 
   fire(ship, tx, ty, entities) {
-    if (this._cooldown > 0) return;
-    const dx = tx - ship.x;
-    const dy = ty - ship.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist === 0) return;
-
-    const nx = dx / dist;
-    const ny = dy / dist;
+    if (this._cooldown > 0 || this.ammo <= 0) return;
+    const n = normalizeToTarget(ship.x, ship.y, tx, ty);
+    if (!n) return;
+    const { nx, ny } = n;
     const proj = new Projectile(
       ship.x, ship.y,
       nx * this.projectileSpeed,
@@ -47,6 +48,7 @@ export class Autocannon {
     proj.length = 3;       // small tight bolt
     proj.hasTrail = true;  // short tracer tail
     entities.push(proj);
-    this._cooldown = this.cooldownMax;
+    this.ammo--;
+    this._cooldown = this.cooldownMax * (ship._fireCooldownMult ?? 1);
   }
 }

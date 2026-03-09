@@ -12,13 +12,16 @@ export class RocketLarge {
     this.isSecondary = true;
     this.isAutoFire  = false;
     this.displayName = 'ROCKET×5';
+    this.ammoType    = 'rocket-large';
     this.damage      = BASE_DAMAGE      * DAMAGE_MULT;
     this.hullDamage  = BASE_HULL_DAMAGE * HULL_DAMAGE_MULT;
     this.projectileSpeed = BASE_PROJECTILE_SPEED * SPEED_MULT * PROJECTILE_SPEED_FACTOR;
-    this.cooldown    = BASE_COOLDOWN * COOLDOWN_MULT;
+    this.cooldownMax = BASE_COOLDOWN * COOLDOWN_MULT;
     this._cooldown   = 0;
     this.ammo        = 3;
     this.ammoMax     = 3;
+    this.ammoCargoWeight = 2; // 2 cargo units per salvo pod
+    this.pipCount    = 5;     // 5-rocket burst pod
     // Burst state
     this._burstCount  = 0;
     this._burstTimer  = 0;
@@ -48,7 +51,7 @@ export class RocketLarge {
     this._burstTimer = 0.18;
     this._fireOneRocket(entities); // fire first immediately
     this.ammo--;
-    this._cooldown = this.cooldown;
+    this._cooldown = this.cooldownMax;
   }
 
   _fireOneRocket(entities) {
