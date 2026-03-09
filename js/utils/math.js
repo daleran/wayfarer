@@ -9,6 +9,18 @@ export function angleDiff(a, b) {
 }
 
 /**
+ * Normalize a direction from (fromX, fromY) toward (toX, toY).
+ * Returns { nx, ny, dist } or null if the points are coincident.
+ */
+export function normalizeToTarget(fromX, fromY, toX, toY) {
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist === 0) return null;
+  return { nx: dx / dist, ny: dy / dist, dist };
+}
+
+/**
  * Euclidean distance between two points.
  */
 export function distanceBetween(a, b) {

@@ -1,5 +1,24 @@
-import { GREEN, RED } from './ui/colors.js';
+import { GREEN, RED, RANGE_CIRCLE, PALE_ICE, PALE_HAZE, AMBER, VERY_DIM } from './ui/colors.js';
 import { input } from './input.js';
+
+// Terrain contour shapes for Pale — normalized coords (r=1), closed polygon per entry.
+// Designed to read as topographic ice-surface scan data (Nostromo-style CRT aesthetic).
+const PALE_CONTOURS = [
+  // Outer cryo-plain boundary
+  [ [ 0.02,-0.80], [ 0.30,-0.65], [ 0.55,-0.40], [ 0.70, 0.02], [ 0.58, 0.40],
+    [ 0.25, 0.62], [-0.18, 0.72], [-0.50, 0.48], [-0.65, 0.08],
+    [-0.58,-0.32], [-0.36,-0.60], [-0.10,-0.78] ],
+  // Mid-latitude highland shelf
+  [ [ 0.10,-0.50], [ 0.35,-0.30], [ 0.50, 0.08], [ 0.38, 0.40],
+    [ 0.00, 0.52], [-0.32, 0.35], [-0.50, 0.00], [-0.35,-0.38], [-0.08,-0.52] ],
+  // Inner plateau
+  [ [ 0.08,-0.26], [ 0.28,-0.06], [ 0.24, 0.24], [-0.06, 0.35],
+    [-0.30, 0.16], [-0.26,-0.20], [ 0.02,-0.32] ],
+  // Northern ridge
+  [ [-0.25,-0.52], [-0.05,-0.62], [ 0.12,-0.48], [ 0.02,-0.36], [-0.20,-0.36] ],
+  // Southern shelf
+  [ [ 0.15, 0.44], [ 0.40, 0.38], [ 0.45, 0.58], [ 0.22, 0.65], [ 0.00, 0.58] ],
+];
 
 // Starfield layer config: [count, parallaxFactor, starSize]
 const STAR_LAYERS = [
@@ -71,6 +90,8 @@ export class Renderer {
     if (this._gravewakeZone) this._renderGravewakeAtmosphere(camera);
     this._renderBackground(game, camera);
     this._renderEntities(entities, camera);
+    this._renderTacticalUI(game, camera);
+    this._renderWeaponRangeCircle(game, camera);
     this._renderBeams(game, camera);
     game.particlePool.render(ctx, camera);
     game.hud.render(ctx, game);
@@ -80,12 +101,94 @@ export class Renderer {
       this._renderFlankWarning(camera);
     }
 
+    // Hull critical warning — pulsing red edge glow when player hull is red (≤25%)
+    if (game.player && game.player.active) {
+      const hr = game.player.hullCurrent / game.player.hullMax;
+      if (hr <= 0.25) this._renderHullWarning(camera, hr);
+    }
+
     // CRT post-processing
     this._renderScanlines(camera);
     this._renderVignette(camera);
 
     // Crosshair cursor — always on top
     this._renderCrosshair(game, camera);
+  }
+
+  _renderTacticalUI(game, camera) {
+    const { player, raiders } = game;
+    if (!player || !player.active) return;
+
+    if (player.capabilities.health_pips) {
+      this._renderHealthPips(raiders, camera);
+    }
+
+    if (player.capabilities.lead_indicators) {
+      this._renderLeadIndicators(game, camera);
+    }
+  }
+
+  _renderHealthPips(raiders, camera) {
+    const { ctx } = this;
+    ctx.save();
+    for (const r of raiders) {
+      if (!r.active) continue;
+      const bounds = r.getBounds();
+      if (!camera.isVisible(bounds.x, bounds.y, bounds.radius)) continue;
+
+      const screen = camera.worldToScreen(r.x, r.y);
+      const totalIntegrity = r.armorMax + r.hullMax;
+      const curIntegrity = r.armorCurrent + r.hullCurrent;
+      const ratio = curIntegrity / totalIntegrity;
+
+      const pipW = 10 * camera.zoom;
+      const pipH = 3 * camera.zoom;
+      const gap = 2 * camera.zoom;
+      const xStart = screen.x - (pipW * 4 + gap * 3) / 2;
+      const y = screen.y - bounds.radius * camera.zoom - 15 * camera.zoom;
+
+      for (let i = 0; i < 4; i++) {
+        const threshold = (i + 1) / 4;
+        const filled = ratio >= threshold - 0.125; // slight tolerance
+        ctx.fillStyle = filled ? (ratio > 0.5 ? GREEN : ratio > 0.25 ? AMBER : RED) : VERY_DIM;
+        ctx.fillRect(xStart + i * (pipW + gap), y, pipW, pipH);
+      }
+    }
+    ctx.restore();
+  }
+
+  _renderLeadIndicators(game, camera) {
+    const { ctx } = this;
+    const { player, raiders } = game;
+    const primaries = player._primaryWeapons;
+    const weapon = primaries[player.primaryWeaponIdx];
+    if (!weapon || !weapon.projectileSpeed) return;
+
+    ctx.save();
+    ctx.strokeStyle = AMBER;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 2]);
+
+    for (const r of raiders) {
+      if (!r.active) continue;
+      const dx = r.x - player.x;
+      const dy = r.y - player.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > weapon.maxRange) continue;
+
+      // Simple lead calculation
+      const travelTime = dist / weapon.projectileSpeed;
+      const tvx = Math.sin(r.rotation) * r.speed;
+      const tvy = -Math.cos(r.rotation) * r.speed;
+      const leadX = r.x + tvx * travelTime;
+      const leadY = r.y + tvy * travelTime;
+
+      const screen = camera.worldToScreen(leadX, leadY);
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, 4 * camera.zoom, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   _renderCrosshair(game, camera) {
@@ -152,64 +255,73 @@ export class Renderer {
 
   _renderPale(pale, camera) {
     const { ctx } = this;
-    const screen = camera.worldToScreen(pale.x, pale.y);
-    const cx = screen.x;
-    const cy = screen.y;
-    const r = pale.radius * camera.zoom;
+
+    // Parallax — Pale is a distant background body, moves at 70% of camera speed
+    const PARALLAX = 0.7;
+    const cx = camera.width  / 2 + (pale.x - camera.x) * camera.zoom * PARALLAX;
+    const cy = camera.height / 2 + (pale.y - camera.y) * camera.zoom * PARALLAX;
+    const r  = pale.radius * camera.zoom;
+
+    // Cull if off-screen
+    if (cx + r < 0 || cx - r > camera.width || cy + r < 0 || cy - r > camera.height) return;
 
     ctx.save();
 
-    // Outer atmospheric halo — proportional to radius
-    ctx.strokeStyle = pale.colorAtmo;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r + r * 0.036, 0, Math.PI * 2);
-    ctx.lineWidth = r * 0.033;
-    ctx.globalAlpha = 0.12;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, r + r * 0.010, 0, Math.PI * 2);
-    ctx.lineWidth = r * 0.012;
-    ctx.globalAlpha = 0.18;
-    ctx.stroke();
-
-    // Planet body
+    // Very faint body fill — just enough to read as a sphere, not a ring
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = pale.colorAtmo;
-    ctx.globalAlpha = 0.48;
+    ctx.fillStyle = PALE_ICE;
+    ctx.globalAlpha = 0.06;
     ctx.fill();
 
-    // Cloud band striations at fractional radii
-    ctx.strokeStyle = pale.colorLimb;
-    ctx.lineWidth = Math.max(1.5, r * 0.006);
-    ctx.globalAlpha = 0.1;
-    for (const frac of [0.98, 0.95, 0.91, 0.87]) {
+    // Terrain contour polygons — clipped to disk
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.clip();
+
+    ctx.strokeStyle = PALE_ICE;
+    ctx.lineWidth = Math.max(0.5, r * 0.006);
+
+    const alphas = [0.22, 0.28, 0.32, 0.24, 0.20];
+    for (let ci = 0; ci < PALE_CONTOURS.length; ci++) {
+      ctx.globalAlpha = alphas[ci];
+      const pts = PALE_CONTOURS[ci];
       ctx.beginPath();
-      ctx.arc(cx, cy, r * frac, 0, Math.PI * 2);
+      ctx.moveTo(cx + pts[0][0] * r, cy + pts[0][1] * r);
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(cx + pts[i][0] * r, cy + pts[i][1] * r);
+      }
+      ctx.closePath();
       ctx.stroke();
     }
 
-    // Limb outline — solid bright edge
+    ctx.restore(); // removes clip
+
+    ctx.save();
+
+    // Thin outer atmosphere haze ring
     ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = pale.colorLimb;
-    ctx.lineWidth = 2.5;
-    ctx.globalAlpha = 0.8;
+    ctx.arc(cx, cy, r + r * 0.025, 0, Math.PI * 2);
+    ctx.strokeStyle = PALE_HAZE;
+    ctx.lineWidth = Math.max(1.5, r * 0.020);
+    ctx.globalAlpha = 0.10;
     ctx.stroke();
 
-    // Name label (only visible when near the limb)
-    const distToEdge = Math.sqrt(
-      (camera.x - pale.x) ** 2 + (camera.y - pale.y) ** 2
-    ) - pale.radius;
-    if (distToEdge < pale.radius * 0.33) {
-      ctx.font = '12px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = pale.colorLimb;
-      ctx.globalAlpha = Math.max(0, 1 - distToEdge / (r * 0.33)) * 0.5;
-      ctx.fillText(pale.name.toUpperCase(), cx, cy - r + 20);
-    }
+    // Limb outline
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = PALE_ICE;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.65;
+    ctx.stroke();
+
+    // Name label — always visible above the limb
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = PALE_ICE;
+    ctx.globalAlpha = 0.50;
+    ctx.fillText(pale.name.toUpperCase(), cx, cy - r - 10);
 
     ctx.globalAlpha = 1;
     ctx.restore();
@@ -335,6 +447,81 @@ export class Renderer {
     ctx.fillStyle = grad;
     ctx.fillRect(0, h - edgeW, w, edgeW);
 
+    ctx.restore();
+  }
+
+  _renderHullWarning(camera, hullRatio) {
+    const { ctx } = this;
+    const w = camera.width;
+    const h = camera.height;
+    // Pulse faster as hull drops toward 0 — urgent at very low hull
+    const urgency = 1 - hullRatio / 0.25;
+    const pulseSpeed = 0.004 + urgency * 0.010;
+    const basePulse = 0.07 + Math.sin(Date.now() * pulseSpeed) * 0.07;
+    const alpha = basePulse * (0.5 + urgency * 0.7);
+    const edgeW = 90;
+
+    ctx.save();
+    let grad;
+
+    grad = ctx.createLinearGradient(0, 0, edgeW, 0);
+    grad.addColorStop(0, `rgba(255,0,0,${alpha})`);
+    grad.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, edgeW, h);
+
+    grad = ctx.createLinearGradient(w - edgeW, 0, w, 0);
+    grad.addColorStop(0, 'rgba(255,0,0,0)');
+    grad.addColorStop(1, `rgba(255,0,0,${alpha})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(w - edgeW, 0, edgeW, h);
+
+    grad = ctx.createLinearGradient(0, 0, 0, edgeW);
+    grad.addColorStop(0, `rgba(255,0,0,${alpha})`);
+    grad.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, edgeW);
+
+    grad = ctx.createLinearGradient(0, h - edgeW, 0, h);
+    grad.addColorStop(0, 'rgba(255,0,0,0)');
+    grad.addColorStop(1, `rgba(255,0,0,${alpha})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, h - edgeW, w, edgeW);
+
+    ctx.restore();
+  }
+
+  _renderWeaponRangeCircle(game, camera) {
+    const { ctx } = this;
+    const player = game.player;
+    if (!player || !player.active) return;
+
+    const primaries = player._primaryWeapons;
+    const weapon = primaries.length > 0 ? primaries[player.primaryWeaponIdx] : null;
+    if (!weapon || !weapon.maxRange) return;
+
+    const center = camera.worldToScreen(player.x, player.y);
+    const screenRadius = weapon.maxRange * camera.zoom;
+
+    ctx.save();
+    ctx.strokeStyle = RANGE_CIRCLE;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 8]);
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, screenRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Flak: also draw blast-AoE ring at cursor position
+    if (weapon.detonatesOnExpiry && weapon.blastRadius > 0) {
+      const blastScreenRadius = weapon.blastRadius * camera.zoom;
+      const mx = input.mouseScreen.x;
+      const my = input.mouseScreen.y;
+      ctx.beginPath();
+      ctx.arc(mx, my, blastScreenRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.setLineDash([]);
     ctx.restore();
   }
 
