@@ -1,9 +1,20 @@
 // Scrap is the currency and is not listed here as a commodity.
 export const COMMODITIES = {
-  food:    { id: 'food',    name: 'Food',    basePrice: 10 },
-  ore:     { id: 'ore',     name: 'Ore',     basePrice: 80 },
-  tech:    { id: 'tech',    name: 'Tech',    basePrice: 50 },
-  exotics: { id: 'exotics', name: 'Exotics', basePrice: 200 },
+  ration_packs:      { id: 'ration_packs',      name: 'Ration Packs',       basePrice: 12  },
+  recycled_polymer:  { id: 'recycled_polymer',  name: 'Recycled Polymer',   basePrice: 25  },
+  bio_cultures:      { id: 'bio_cultures',      name: 'Bio-Cultures',       basePrice: 38  },
+  alloys:            { id: 'alloys',            name: 'Alloys',             basePrice: 50  },
+  machine_parts:     { id: 'machine_parts',     name: 'Machine Parts',      basePrice: 65  },
+  hull_plating:      { id: 'hull_plating',      name: 'Hull Plating',       basePrice: 70  },
+  electronics:       { id: 'electronics',       name: 'Electronics',        basePrice: 85  },
+  raw_ore:           { id: 'raw_ore',           name: 'Raw Ore',            basePrice: 90  },
+  medical_supplies:  { id: 'medical_supplies',  name: 'Medical Supplies',   basePrice: 100 },
+  reactor_fuel:      { id: 'reactor_fuel',      name: 'Reactor Fuel',       basePrice: 125 },
+  weapons_cache:     { id: 'weapons_cache',     name: 'Weapons Cache',      basePrice: 155 },
+  nav_charts:        { id: 'nav_charts',        name: 'Navigation Charts',  basePrice: 175 },
+  data_cores:        { id: 'data_cores',        name: 'Data Cores',         basePrice: 200 },
+  contraband:        { id: 'contraband',        name: 'Contraband',         basePrice: 260 },
+  void_crystals:     { id: 'void_crystals',     name: 'Void Crystals',      basePrice: 320 },
 };
 
 export const SUPPLY_MULTIPLIERS = {

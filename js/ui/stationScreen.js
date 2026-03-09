@@ -1,9 +1,12 @@
 import { COMMODITIES, getBuyPrice, getSellPrice } from '../data/commodities.js';
 import {
-  CYAN, AMBER, GREEN, RED, TEAL, WHITE,
+  CYAN, AMBER, GREEN, RED, TEAL, WHITE, MAGENTA,
   PANEL_BG, DIM_OUTLINE, DIM_TEXT, VERY_DIM, BAR_TRACK,
   FACTION,
+  standingColor,
 } from './colors.js';
+import { BOUNTY, REPUTATION } from '../data/stats.js';
+import { FACTIONS, FACTION_LABELS } from '../systems/reputation.js';
 
 const REPAIR_DURATION = 2; // seconds
 
@@ -20,11 +23,17 @@ export class StationScreen {
     this._tabRects = {};
     // Intel tab scroll
     this._intelScrollY = 0;
+    // Bounty tab scroll
+    this._bountyScrollY = 0;
+    this._bountyMaxScroll = 0;
+    this._bountyButtons = [];
     // Hull repair progress
     this._repairing = false;
     this._repairProgress = 0;
     this._repairTotal = REPAIR_DURATION;
     this._repairCost = 0;
+    // Reactor overhaul buttons (one per installed fission reactor, rebuilt each render)
+    this._overhaulBtns = [];
   }
 
   open(station) {
@@ -32,6 +41,8 @@ export class StationScreen {
     this.station = station;
     this._activeTab = 'services';
     this._intelScrollY = 0;
+    this._bountyScrollY = 0;
+    this._bountyButtons = [];
     this._repairing = false;
     this._repairProgress = 0;
   }
@@ -64,9 +75,11 @@ export class StationScreen {
 
     // Centered panel
     const panelW = 625;
-    let panelH = 594;
-    if (this._activeTab === 'services') panelH = 650;
-    if (this._activeTab === 'intel') panelH = 663;
+    let panelH = 612;
+    if (this._activeTab === 'services')  panelH = 670;
+    if (this._activeTab === 'intel')     panelH = 681;
+    if (this._activeTab === 'bounties')  panelH = 681;
+    if (this._activeTab === 'relations') panelH = 630;
     const px = (W - panelW) / 2;
     const py = (H - panelH) / 2;
     const accent = FACTION[this.station.faction] ?? CYAN;
@@ -90,14 +103,25 @@ export class StationScreen {
     ctx.fillStyle = accent;
     ctx.fillText(`[ ${this.station.faction} ]`, W / 2, py + 58);
 
+    // Reputation standing badge
+    if (game?.reputation) {
+      const repFaction = this.station.reputationFaction;
+      const level = game.reputation.getLevel(repFaction);
+      const standing = game.reputation.getStanding(repFaction);
+      const sign = standing >= 0 ? '+' : '';
+      ctx.font = '12px monospace';
+      ctx.fillStyle = standingColor(level);
+      ctx.fillText(`${level.toUpperCase()}  [${sign}${standing}]`, W / 2, py + 76);
+    }
+
     // Divider
-    this._drawDivider(ctx, px, py + 78, panelW, CYAN);
+    this._drawDivider(ctx, px, py + 96, panelW, CYAN);
 
     // Tab bar
-    this._renderTabs(ctx, px, py, panelW, accent);
+    this._renderTabs(ctx, px, py, panelW, accent, game);
 
     // Divider below tabs
-    this._drawDivider(ctx, px, py + 120, panelW, CYAN);
+    this._drawDivider(ctx, px, py + 138, panelW, CYAN);
 
     // Tab content
     if (this._activeTab === 'services') {
@@ -106,6 +130,10 @@ export class StationScreen {
       this._renderTradeTab(ctx, px, py, panelW, panelH, game, accent);
     } else if (this._activeTab === 'intel') {
       this._renderIntelTab(ctx, px, py, panelW, panelH, accent);
+    } else if (this._activeTab === 'bounties') {
+      this._renderBountiesTab(ctx, px, py, panelW, panelH, game, accent);
+    } else if (this._activeTab === 'relations') {
+      this._renderRelationsTab(ctx, px, py, panelW, panelH, game, accent);
     }
 
     // Close button
@@ -156,17 +184,21 @@ export class StationScreen {
     ctx.globalAlpha = 1;
   }
 
-  _renderTabs(ctx, px, py, panelW, accent) {
+  _renderTabs(ctx, px, py, panelW, accent, game) {
     const haslore = this.station && this.station.lore && this.station.lore.length > 0;
+    const hasBounties = (this.station.bounties?.length > 0) ||
+      (game?.activeBounties?.some(b => b.stationId === this.station.id));
     const tabs = [
-      { id: 'services', label: 'Services' },
-      { id: 'trade',    label: 'Trade'    },
+      { id: 'services',  label: 'Services'  },
+      { id: 'trade',     label: 'Trade'     },
+      { id: 'relations', label: 'Relations' },
+      ...(hasBounties ? [{ id: 'bounties', label: 'Bounties' }] : []),
       ...(haslore ? [{ id: 'intel', label: 'Intel' }] : []),
     ];
-    const tabW = 138;
+    const tabW = 110;
     const tabH = 30;
-    const tabY = py + 88;
-    const startX = px + 45;
+    const tabY = py + 106;
+    const startX = px + 35;
 
     this._tabRects = {};
     ctx.font = '18px monospace';
@@ -195,7 +227,7 @@ export class StationScreen {
   }
 
   _renderServicesTab(ctx, px, py, panelW, panelH, game, accent) {
-    const contentY = py + 133;
+    const contentY = py + 151;
 
     // Credits readout
     ctx.font = '19px monospace';
@@ -209,12 +241,20 @@ export class StationScreen {
     const player = game.player;
     const needsArmorRepair = player.armorCurrent < player.armorMax;
     const needsRepair = player.hullCurrent < player.hullMax;
+    const isAllied = game.reputation?.isAllied(this.station.reputationFaction) ?? false;
+    const discount = isAllied ? (1 - REPUTATION.DISCOUNT_RATE) : 1;
+    if (isAllied) {
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = CYAN;
+      ctx.fillText('ALLIED — 15% discount', px + panelW - 45, contentY + 2);
+    }
     let btnYOffset = contentY + 60;
 
     // Repair Armor button
     if (needsArmorRepair) {
       const armorDmg = Math.ceil(player.armorMax - player.armorCurrent);
-      const cost = armorDmg; // 1 scrap per armor point
+      const cost = Math.ceil(armorDmg * discount); // 1 scrap per armor point
       const canAfford = game.scrap >= cost;
       const btnX = px + 45;
       const btnY = btnYOffset;
@@ -261,7 +301,7 @@ export class StationScreen {
 
       btnYOffset += barH + 15;
     } else if (needsRepair) {
-      const cost = Math.ceil((player.hullMax - player.hullCurrent) * 2); // 2 scrap per hull point
+      const cost = Math.ceil((player.hullMax - player.hullCurrent) * 2 * discount); // 2 scrap per hull point
       const canAfford = game.scrap >= cost;
       const btnX = px + 45;
       const btnY = btnYOffset;
@@ -292,7 +332,7 @@ export class StationScreen {
 
     // Refuel button
     const fuelNeeded = game.fuelMax - game.fuel;
-    const fuelCost = Math.ceil(fuelNeeded * 0.5); // 1 scrap per 2 fuel units
+    const fuelCost = Math.ceil(fuelNeeded * 0.5 * discount); // 1 scrap per 2 fuel units
     if (fuelNeeded > 0.5) {
       const canAfford = game.scrap >= fuelCost;
       const btnX = px + 45;
@@ -322,10 +362,52 @@ export class StationScreen {
       btnYOffset += 45;
     }
 
+    // Reactor overhaul — only at stations with canOverhaulReactor
+    this._overhaulBtns = [];
+    if (this.station.canOverhaulReactor) {
+      const fissionMods = (game.player.moduleSlots || [])
+        .map((mod, idx) => ({ mod, idx }))
+        .filter(({ mod }) => mod?.isFissionReactor);
+
+      if (fissionMods.length > 0) {
+        ctx.font = 'bold 13px monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = MAGENTA;
+        ctx.fillText('REACTOR OVERHAUL', px + 45, btnYOffset);
+        btnYOffset += 20;
+
+        for (const { mod, idx } of fissionMods) {
+          const canAfford = game.scrap >= mod.overhaulCost;
+          const btnX = px + 45;
+          const btnY = btnYOffset;
+          const btnW = panelW - 90;
+          const btnH = 50;
+
+          const labelColor = mod.isOverdue ? MAGENTA : (canAfford ? CYAN : DIM_TEXT);
+          ctx.strokeStyle = mod.isOverdue ? MAGENTA : (canAfford ? CYAN : VERY_DIM);
+          ctx.lineWidth = 1;
+          ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+          ctx.font = '17px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = labelColor;
+          const overhaulLabel = mod.isOverdue
+            ? `!! Overhaul ${mod.displayName} — ${mod.overhaulCost} scrap  [OVERDUE]`
+            : `Overhaul ${mod.displayName} — ${mod.overhaulCost} scrap`;
+          ctx.fillText(overhaulLabel, btnX + btnW / 2, btnY + btnH / 2);
+
+          this._overhaulBtns.push({ x: btnX, y: btnY, w: btnW, h: btnH, mod, canAfford });
+          btnYOffset += btnH + 10;
+        }
+      }
+    }
+
   }
 
   _renderTradeTab(ctx, px, py, panelW, panelH, game, accent) {
-    const contentY = py + 133;
+    const contentY = py + 151;
     this._tradeButtons = [];
 
     const cargoUsed = game.totalCargoUsed;
@@ -343,13 +425,13 @@ export class StationScreen {
     // Shift hint
     ctx.font = '14px monospace';
     ctx.fillStyle = DIM_TEXT;
-    ctx.fillText('Hold Shift to trade x10', px + 45, contentY + 23);
+    ctx.fillText('Hold Shift to trade x10', px + 45, contentY + 24);
 
     // Divider
-    this._drawDivider(ctx, px, contentY + 30, panelW, CYAN);
+    this._drawDivider(ctx, px, contentY + 44, panelW, CYAN);
 
     // Column headers
-    const headerY = contentY + 40;
+    const headerY = contentY + 54;
     ctx.font = '15px monospace';
     ctx.fillStyle = DIM_TEXT;
     ctx.textAlign = 'left';
@@ -359,8 +441,12 @@ export class StationScreen {
 
     // Commodity rows (scrap is the currency, not traded here)
     const rowH = 35;
-    const commodityIds = ['food', 'ore', 'tech', 'exotics'];
-    const startRowY = contentY + 65;
+    const commodityIds = Object.keys(COMMODITIES).filter(id => {
+      const supply = this.station.commodities?.[id] ?? 'none';
+      const qty = game.cargo[id] ?? 0;
+      return supply !== 'none' || qty > 0;
+    });
+    const startRowY = headerY + 20;
 
     for (let i = 0; i < commodityIds.length; i++) {
       const id = commodityIds[i];
@@ -420,7 +506,7 @@ export class StationScreen {
     if (!lore || lore.length === 0) return;
 
     const contentX = px + 45;
-    const contentY = py + 138;
+    const contentY = py + 151;
     const lineH = 21;
     const closeAreaH = 90; // space reserved for close button
     const clipH = panelH - (contentY - py) - closeAreaH;
@@ -510,6 +596,12 @@ export class StationScreen {
       ));
     }
 
+    // Bounty tab scrolling
+    if (this._activeTab === 'bounties' && input.wheelDelta !== 0) {
+      this._bountyScrollY = Math.max(0,
+        Math.min(this._bountyMaxScroll, this._bountyScrollY + input.wheelDelta * 0.5));
+    }
+
     if (input.wasJustClicked()) {
       const mx = input.mouseScreen.x;
       const my = input.mouseScreen.y;
@@ -519,6 +611,7 @@ export class StationScreen {
         if (mx >= rect.x && mx <= rect.x + rect.w && my >= rect.y && my <= rect.y + rect.h) {
           this._activeTab = tabId;
           this._intelScrollY = 0;
+          this._bountyScrollY = 0;
           return;
         }
       }
@@ -560,6 +653,15 @@ export class StationScreen {
             return;
           }
         }
+        for (const b of this._overhaulBtns) {
+          if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+            if (b.canAfford) {
+              game.scrap -= b.mod.overhaulCost;
+              b.mod.resetOverhaul();
+            }
+            return;
+          }
+        }
       }
 
       // Trade tab buttons
@@ -594,6 +696,20 @@ export class StationScreen {
         }
       }
 
+      // Bounty tab accept buttons
+      if (this._activeTab === 'bounties') {
+        for (const btn of this._bountyButtons) {
+          const renderedBtnY = this._bountyScrollStartY + btn.listOffsetY - this._bountyScrollY;
+          if (renderedBtnY < this._bountyScrollStartY ||
+              renderedBtnY + btn.h > this._bountyClipBottom) continue;
+          if (mx >= btn.x && mx <= btn.x + btn.w &&
+              my >= renderedBtnY && my <= renderedBtnY + btn.h) {
+            game.acceptBounty(this.station, btn.contract);
+            return;
+          }
+        }
+      }
+
       // Close button
       if (this._closeBtn) {
         const b = this._closeBtn;
@@ -602,5 +718,190 @@ export class StationScreen {
         }
       }
     }
+  }
+
+  _renderBountiesTab(ctx, px, py, panelW, panelH, game, accent) {
+    const contentX = px + 45;
+    const contentW = panelW - 90;
+    const contentY = py + 151;
+    const scrollStartY = contentY + 30;
+    const closeAreaH = 90;
+    const clipH = panelH - (scrollStartY - py) - closeAreaH;
+    this._bountyButtons = [];
+    this._bountyScrollStartY = scrollStartY;
+    this._bountyClipBottom = scrollStartY + clipH;
+
+    // Scrap header
+    ctx.font = '19px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = AMBER;
+    ctx.fillText(`Scrap: ${game.scrap}`, contentX, contentY);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(px, scrollStartY, panelW, clipH);
+    ctx.clip();
+
+    let y = scrollStartY - this._bountyScrollY;
+
+    // ── Available ──────────────────────────────────────────────────────────
+    const available = this.station.bounties ?? [];
+    if (available.length > 0) {
+      ctx.font = '12px monospace';
+      ctx.fillStyle = DIM_TEXT;
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+      ctx.fillText('AVAILABLE CONTRACTS', contentX, y);
+      y += 20;
+
+      for (const contract of available) {
+        const cardH = 70;
+        ctx.strokeStyle = DIM_OUTLINE;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(contentX, y, contentW, cardH);
+
+        ctx.font = '15px monospace';
+        ctx.fillStyle = CYAN;
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
+        ctx.fillText(contract.title, contentX + 10, y + 8);
+
+        ctx.font = '13px monospace';
+        ctx.fillStyle = AMBER;
+        ctx.fillText(`Target: ${contract.targetName}`, contentX + 10, y + 28);
+
+        ctx.fillStyle = GREEN;
+        ctx.fillText(`Reward: ${contract.reward} scrap`, contentX + 10, y + 46);
+
+        // Accept button
+        const btnW = 80; const btnH = 28;
+        const btnX = contentX + contentW - btnW - 10;
+        const btnY = y + (cardH - btnH) / 2;
+        ctx.strokeStyle = CYAN;
+        ctx.strokeRect(btnX, btnY, btnW, btnH);
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = CYAN;
+        ctx.fillText('Accept', btnX + btnW / 2, btnY + btnH / 2);
+
+        this._bountyButtons.push({
+          x: btnX,
+          listOffsetY: (y + this._bountyScrollY) - scrollStartY + (cardH - btnH) / 2,
+          w: btnW, h: btnH,
+          contract,
+        });
+
+        y += cardH + 8;
+      }
+    }
+
+    // ── Your contracts ─────────────────────────────────────────────────────
+    const mine = (game.activeBounties ?? []).filter(b => b.stationId === this.station.id);
+    if (mine.length > 0) {
+      ctx.font = '12px monospace';
+      ctx.fillStyle = DIM_TEXT;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('YOUR CONTRACTS', contentX, y);
+      y += 20;
+
+      for (const bounty of mine) {
+        const cardH = 56;
+        const borderColor = bounty.status === 'completed' ? GREEN
+                          : bounty.status === 'expired'   ? RED
+                          : AMBER;
+        ctx.strokeStyle = borderColor;
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(contentX, y, contentW, cardH);
+        ctx.globalAlpha = 1;
+
+        ctx.font = '14px monospace';
+        ctx.fillStyle = CYAN;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(bounty.contract.title, contentX + 10, y + 8);
+
+        let statusText, statusColor;
+        if (bounty.status === 'completed') {
+          statusText = 'COMPLETE — collect on dock';
+          statusColor = GREEN;
+        } else if (bounty.status === 'expired') {
+          statusText = 'EXPIRED';
+          statusColor = RED;
+        } else {
+          const rem = Math.max(0, bounty.expiryTime - game.totalTime);
+          const m = Math.floor(rem / 60);
+          const s = Math.floor(rem % 60).toString().padStart(2, '0');
+          statusText = `ACTIVE — ${m}:${s} remaining`;
+          statusColor = rem < BOUNTY.EXPIRY_WARNING_SECS ? RED : AMBER;
+        }
+        ctx.font = '13px monospace';
+        ctx.fillStyle = statusColor;
+        ctx.fillText(statusText, contentX + 10, y + 32);
+
+        y += cardH + 8;
+      }
+    }
+
+    const totalH = y + this._bountyScrollY - scrollStartY;
+    this._bountyMaxScroll = Math.max(0, totalH - clipH);
+
+    ctx.restore();
+
+    // Scroll track
+    if (this._bountyMaxScroll > 0) {
+      const tx = px + panelW - 18;
+      const ty = scrollStartY + 2;
+      const th = clipH - 4;
+      const visRatio = clipH / totalH;
+      const thumbH = Math.max(20, th * visRatio);
+      const thumbY = ty + (this._bountyScrollY / this._bountyMaxScroll) * (th - thumbH);
+      ctx.fillStyle = DIM_OUTLINE; ctx.globalAlpha = 0.4;
+      ctx.fillRect(tx, ty, 4, th);
+      ctx.fillStyle = CYAN; ctx.globalAlpha = 0.7;
+      ctx.fillRect(tx, thumbY, 4, thumbH);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  _renderRelationsTab(ctx, px, py, panelW, panelH, game, accent) {
+    const contentX = px + 45;
+    const contentY = py + 151;
+    const rowH = 38;
+
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = DIM_TEXT;
+    ctx.fillText('FACTION STANDINGS', contentX, contentY);
+
+    for (let i = 0; i < FACTIONS.length; i++) {
+      const faction = FACTIONS[i];
+      const label = FACTION_LABELS[faction];
+      const standing = game.reputation.getStanding(faction);
+      const level = game.reputation.getLevel(faction);
+      const color = standingColor(level);
+      const rowY = contentY + 22 + i * rowH;
+      const sign = standing >= 0 ? '+' : '';
+
+      ctx.font = '16px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = WHITE;
+      ctx.globalAlpha = 0.8;
+      ctx.fillText(label, contentX, rowY + rowH / 2);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 1;
+      ctx.fillText(`${level}  [${sign}${standing}]`, px + panelW - 45, rowY + rowH / 2);
+
+      // Thin separator
+      this._drawDivider(ctx, px, rowY + rowH, panelW, DIM_OUTLINE);
+    }
+    ctx.globalAlpha = 1;
   }
 }
