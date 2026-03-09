@@ -1,8 +1,7 @@
 import { G100ClassHauler } from '../../ships/classes/g100Hauler.js';
-import { Autocannon } from '../../weapons/autocannon.js';
-import { Lance } from '../../weapons/lance.js';
+import { AutocannonModule, LanceModuleSmall } from '../../systems/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL, BASE_ARMOR } from '../../data/stats.js';
+         BASE_HULL } from '../../data/stats.js';
 
 const SPEED_MULT = 1.0;   // ~84 u/s — faster than a stock hauler
 const ACCEL_MULT = 0.9;
@@ -21,7 +20,15 @@ export class ArmedHauler extends G100ClassHauler {
     this.faction      = 'scavenger';
     this.relation     = 'enemy';
     this.shipType     = 'armed-hauler';
+    this.displayName  = 'Armed Hauler';
     this.behaviorType = 'kiter';
+
+    this.flavorText =
+      'A G100 hauler with the cargo bays gutted and armor plate welded over ' +
+      'everything. What was once a trade vessel became a mobile fire platform. ' +
+      'Scavenger conversion work — ugly, functional, surprisingly hard to kill. ' +
+      'Strength: heavy armor in all arcs, kites well at range with lance and ' +
+      'autocannon. Weakness: slow, predictable movement pattern.';
 
     this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
     this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
@@ -30,17 +37,10 @@ export class ArmedHauler extends G100ClassHauler {
     this.hullMax     = BASE_HULL * HULL_MULT;
     this.hullCurrent = this.hullMax;
 
-    const fa = {
-      front:     BASE_ARMOR * ARMOR_FRONT,
-      port:      BASE_ARMOR * ARMOR_SIDE,
-      starboard: BASE_ARMOR * ARMOR_SIDE,
-      aft:       BASE_ARMOR * ARMOR_AFT,
-    };
-    this.armorArcs    = { ...fa };
-    this.armorArcsMax = { ...fa };
+    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
 
-    this.addWeapon(new Autocannon());
-    this.addWeapon(new Lance('small'));
+    this.moduleSlots = [new AutocannonModule(), new LanceModuleSmall(), null];
+    this._applyModules();
   }
 }
 

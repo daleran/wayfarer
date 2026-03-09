@@ -1,8 +1,7 @@
-import { DecFrigate } from '../../ships/classes/decFrigate.js';
-import { Cannon } from '../../weapons/cannon.js';
-import { MissileHeat } from '../../weapons/missileHeat.js';
+import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
+import { CannonModule, MissileHeatModule } from '../../systems/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL, BASE_ARMOR } from '../../data/stats.js';
+         BASE_HULL } from '../../data/stats.js';
 
 const SPEED_MULT = 0.6;   // ~50 u/s — slow, hangs back
 const ACCEL_MULT = 0.6;
@@ -14,14 +13,23 @@ const ARMOR_FRONT = 3.5;  // 350 — hardened bow
 const ARMOR_SIDE  = 2.8;  // 280 — heavy flank plating
 const ARMOR_AFT   = 2.0;  // 200 — protected stern
 
-export class SalvageMothership extends DecFrigate {
+export class SalvageMothership extends GarrisonFrigate {
   constructor(x, y) {
     super(x, y);
 
     this.faction      = 'scavenger';
     this.relation     = 'enemy';
     this.shipType     = 'salvage-mothership';
+    this.displayName  = 'Salvage Mothership';
     this.behaviorType = 'standoff';
+
+    this.flavorText =
+      'A Garrison-class Frigate repurposed as a mobile salvage base and clan flagship. ' +
+      'Cannon for hard targets. Missiles for deterrence. It moves slowly and fights ' +
+      'cautiously — hanging back, making engagement too costly to press. Where you ' +
+      'find one of these, the clan has been working this sector a long time. ' +
+      'Strength: fortress-class armor, long-range standoff capability. Weakness: ' +
+      'lumbering in close quarters, easy to outrun.';
 
     this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
     this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
@@ -30,17 +38,10 @@ export class SalvageMothership extends DecFrigate {
     this.hullMax     = BASE_HULL * HULL_MULT;
     this.hullCurrent = this.hullMax;
 
-    const fa = {
-      front:     BASE_ARMOR * ARMOR_FRONT,
-      port:      BASE_ARMOR * ARMOR_SIDE,
-      starboard: BASE_ARMOR * ARMOR_SIDE,
-      aft:       BASE_ARMOR * ARMOR_AFT,
-    };
-    this.armorArcs    = { ...fa };
-    this.armorArcsMax = { ...fa };
+    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
 
-    this.addWeapon(new Cannon());
-    this.addWeapon(new MissileHeat('large'));
+    this.moduleSlots = [new CannonModule(), new MissileHeatModule('large'), null, null];
+    this._applyModules();
   }
 }
 
