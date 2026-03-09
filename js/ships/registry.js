@@ -1,13 +1,14 @@
 // Central ship registry. Add new ships here only.
 // game.js and designer.js both import from here.
 import { OnyxClassTug } from './classes/onyxTug.js';
-import { SwiftRunner } from './classes/swiftRunner.js';
+import { MaverickCourier } from './classes/maverickCourier.js';
 import { G100ClassHauler } from './classes/g100Hauler.js';
-import { DecFrigate } from './classes/decFrigate.js';
+import { GarrisonFrigate } from './classes/garrisonFrigate.js';
 import { createHullbreaker } from './player/hullbreaker.js';
 import { createLightFighter } from '../enemies/scavengers/lightFighter.js';
 import { createArmedHauler } from '../enemies/scavengers/armedHauler.js';
 import { createSalvageMothership } from '../enemies/scavengers/salvageMothership.js';
+import { createGraveClanAmbusher } from '../enemies/scavengers/graveClanAmbusher.js';
 import { createTraderConvoy }  from './neutral/traderConvoy.js';
 import { createMilitiaPatrol } from './neutral/militiaPatrol.js';
 
@@ -29,19 +30,19 @@ export const SHIP_REGISTRY = [
     create: (x, y) => createHullbreaker(x, y),
   },
   {
-    id: 'swift-runner',
-    label: 'Swift Runner',
+    id: 'maverick-courier',
+    label: 'Maverick Class Courier',
     faction: 'neutral',
-    file: 'js/ships/classes/swiftRunner.js',
+    file: 'js/ships/classes/maverickCourier.js',
     parentClass: null,
-    create: (x, y) => new SwiftRunner(x, y),
+    create: (x, y) => new MaverickCourier(x, y),
   },
   {
     id: 'light-fighter',
     label: 'Light Fighter',
     faction: 'scavenger',
     file: 'js/enemies/scavengers/lightFighter.js',
-    parentClass: 'swift-runner',
+    parentClass: 'maverick-courier',
     create: (x, y) => createLightFighter(x, y),
   },
   {
@@ -61,20 +62,28 @@ export const SHIP_REGISTRY = [
     create: (x, y) => createArmedHauler(x, y),
   },
   {
-    id: 'dec-frigate',
-    label: 'Decommissioned Frigate',
+    id: 'garrison-frigate',
+    label: 'Garrison Class Frigate',
     faction: 'neutral',
-    file: 'js/ships/classes/decFrigate.js',
+    file: 'js/ships/classes/garrisonFrigate.js',
     parentClass: null,
-    create: (x, y) => new DecFrigate(x, y),
+    create: (x, y) => new GarrisonFrigate(x, y),
   },
   {
     id: 'salvage-mothership',
     label: 'Salvage Mothership',
     faction: 'scavenger',
     file: 'js/enemies/scavengers/salvageMothership.js',
-    parentClass: 'dec-frigate',
+    parentClass: 'garrison-frigate',
     create: (x, y) => createSalvageMothership(x, y),
+  },
+  {
+    id: 'grave-clan-ambusher',
+    label: 'Grave-Clan Ambusher',
+    faction: 'scavenger',
+    file: 'js/enemies/scavengers/graveClanAmbusher.js',
+    parentClass: 'maverick-courier',
+    create: (x, y) => createGraveClanAmbusher(x, y),
   },
   {
     id: 'trader-convoy',
@@ -89,7 +98,7 @@ export const SHIP_REGISTRY = [
     label: 'Militia Patrol',
     faction: 'neutral',
     file: 'js/ships/neutral/militiaPatrol.js',
-    parentClass: 'dec-frigate',
+    parentClass: 'garrison-frigate',
     create: (x, y) => createMilitiaPatrol(x, y),
   },
 ];

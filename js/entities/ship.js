@@ -1,6 +1,7 @@
 import { Entity } from './entity.js';
 import { RELATION_COLORS } from '../ui/colors.js';
-import { BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../data/stats.js';
+import { BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
+         THROTTLE_LEVELS, THROTTLE_RATIOS } from '../data/stats.js';
 
 const TRAIL_MAX_POINTS = 120;
 
@@ -32,6 +33,11 @@ export class Ship extends Entity {
     // Degradation flags — updated once per tick in update()
     this._engineCutout  = false;
     this._weaponsOffline = false;
+    this._fireCooldownMult = 1.0;
+
+    // Damage effect timers — driven by game._updateDamageEffects()
+    this._smokeTimer = 0;
+    this._sparkTimer = 0;
 
     // Movement
     this.speedMax    = 120;
@@ -40,9 +46,9 @@ export class Ship extends Entity {
     this.speed       = 0;   // current speed (scalar, forward direction)
 
     // Throttle: 6 levels, 0-5 index
-    this.throttleLevels  = 6;
+    this.throttleLevels  = THROTTLE_LEVELS;
     this.throttleLevel   = 0;
-    this._throttleRatios = [0, 0.15, 0.35, 0.55, 0.8, 1.5];
+    this._throttleRatios = [...THROTTLE_RATIOS];
 
     // Cargo
     this.cargoCapacity = 50;
@@ -50,6 +56,16 @@ export class Ship extends Entity {
     // Fuel
     this.fuelMax = BASE_FUEL_MAX;
     this.fuelEfficiency = BASE_FUEL_EFFICIENCY;
+
+    // Capabilities (set by modules)
+    this.capabilities = {
+      minimap_stations: false,
+      minimap_ships: false,
+      sensor_range: 0,
+      lead_indicators: false,
+      health_pips: false,
+      salvage_detail: false
+    };
 
     // Input state (set by game each frame)
     this.rotationInput = 0; // -1 left, +1 right, 0 none
@@ -111,7 +127,8 @@ export class Ship extends Entity {
   get effectiveSpeedMax() {
     const ratio = this.hullCurrent / this.hullMax;
     if (ratio <= 0.05) return this.speedMax * 0.1;
-    if (ratio <= 0.15) return this.speedMax * 0.5;
+    if (ratio <= 0.10) return this.speedMax * 0.5;
+    if (ratio <= 0.15) return this.speedMax * 0.75;  // engines stuck at 3/4
     if (this._engineCutout) return this.speedMax * 0.4;
     return this.speedMax;
   }
@@ -148,6 +165,64 @@ export class Ship extends Entity {
 
   addWeapon(weapon) {
     this.weapons.push(weapon);
+  }
+
+  removeWeapon(weapon) {
+    const idx = this.weapons.indexOf(weapon);
+    if (idx !== -1) this.weapons.splice(idx, 1);
+  }
+
+  // Initialize quad-arc armor from per-arc multipliers.
+  // Subclasses call this instead of repeating the fa = { ... } boilerplate.
+  _initArmorArcs(frontMult, sideMult, aftMult) {
+    const fa = {
+      front:     BASE_ARMOR * frontMult,
+      port:      BASE_ARMOR * sideMult,
+      starboard: BASE_ARMOR * sideMult,
+      aft:       BASE_ARMOR * aftMult,
+    };
+    this.armorArcs    = { ...fa };
+    this.armorArcsMax = { ...fa };
+  }
+
+  // Call at the end of any ship constructor that uses module-based weapons.
+  _applyModules() {
+    // Freeze base movement stats so engine modules can apply clean multipliers.
+    this._baseSpeedMax     = this.speedMax;
+    this._baseAcceleration = this.acceleration;
+    this._baseFuelEff      = this.fuelEfficiency;
+
+    for (const mod of (this.moduleSlots || [])) {
+      if (mod?.onInstall) mod.onInstall(this);
+    }
+    this.refreshCapabilities();
+  }
+
+  // Recalculates based on currently installed modules.
+  refreshCapabilities() {
+    // Reset to defaults
+    this.capabilities = {
+      minimap_stations: false,
+      minimap_ships: false,
+      sensor_range: 0,
+      lead_indicators: false,
+      health_pips: false,
+      salvage_detail: false
+    };
+
+    if (!this.moduleSlots) return;
+
+    for (const mod of this.moduleSlots) {
+      if (!mod) continue;
+      if (mod.minimap_stations) this.capabilities.minimap_stations = true;
+      if (mod.minimap_ships)    this.capabilities.minimap_ships    = true;
+      if (mod.sensor_range > this.capabilities.sensor_range) {
+        this.capabilities.sensor_range = mod.sensor_range;
+      }
+      if (mod.lead_indicators) this.capabilities.lead_indicators = true;
+      if (mod.health_pips)     this.capabilities.health_pips     = true;
+      if (mod.salvage_detail)  this.capabilities.salvage_detail  = true;
+    }
   }
 
   // onlyActive=true → fire only the indexed weapon (player path)
@@ -259,6 +334,12 @@ export class Ship extends Entity {
 
     // Hull degradation — random flags updated once per tick
     const hullRatio = this.hullCurrent / this.hullMax;
+    // Fire rate: enemies slow down linearly from 40% hull → 2× cooldown at 0%
+    if (this.relation === 'enemy' && hullRatio <= 0.40) {
+      this._fireCooldownMult = 1.0 + (0.40 - hullRatio) / 0.40;
+    } else {
+      this._fireCooldownMult = 1.0;
+    }
     this._engineCutout = hullRatio <= 0.5 && Math.random() < 0.05;
     if (hullRatio <= 0.05) {
       this._weaponsOffline = Math.random() < 0.9;
@@ -319,6 +400,22 @@ export class Ship extends Entity {
     ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
     this._drawShape(ctx);
+
+    // Enemy damage overlay — darkens at ≤50% hull
+    if (this.relation === 'enemy') {
+      const hullRatio = this.hullCurrent / this.hullMax;
+      if (hullRatio <= 0.5) {
+        const r = this.getBounds().radius;
+        const alpha = ((0.5 - hullRatio) / 0.5) * 0.45;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
     ctx.restore();
   }
 

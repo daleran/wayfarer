@@ -1,7 +1,8 @@
 import { Ship } from '../../entities/ship.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL, BASE_ARMOR, BASE_CARGO,
+         BASE_HULL, BASE_CARGO,
          BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../../data/stats.js';
+import { drawEngineGlow } from '../../systems/engineGlow.js';
 
 const SPEED_MULT = 0.55;  // ~46 u/s — very slow
 const ACCEL_MULT = 0.65;  // ~7 u/s²
@@ -85,14 +86,7 @@ export class OnyxClassTug extends Ship {
       'survivability for its class, reliable in every condition. Weakness: painfully ' +
       'slow, nearly impossible to mount meaningful weapons on without custom work.';
 
-    const fa = {
-      front:     BASE_ARMOR * ARMOR_FRONT,
-      port:      BASE_ARMOR * ARMOR_SIDE,
-      starboard: BASE_ARMOR * ARMOR_SIDE,
-      aft:       BASE_ARMOR * ARMOR_AFT,
-    };
-    this.armorArcs    = { ...fa };
-    this.armorArcsMax = { ...fa };
+    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
 
     this.hullMax     = BASE_HULL * HULL_MULT;
     this.hullCurrent = this.hullMax;
@@ -100,8 +94,6 @@ export class OnyxClassTug extends Ship {
     this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
     this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
     this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
-    this.throttleLevels  = 6;
-    this._throttleRatios = [0, 0.15, 0.35, 0.55, 0.8, 1.5];
 
     this.cargoCapacity  = BASE_CARGO * CARGO_MULT;
     this.fuelMax        = BASE_FUEL_MAX * FUEL_MAX_MULT;
@@ -167,26 +159,7 @@ export class OnyxClassTug extends Ship {
     ctx.globalAlpha = 1;
 
     // Engine glow — nacelle engine
-    const pulse = 0.6 + Math.sin(Date.now() * 0.008) * 0.4;
-    const baseRadius = 3 + this.throttleLevel * 0.6;
-
-    for (const pos of ENGINE_POS) {
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, baseRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = this.engineColor;
-      ctx.lineWidth = 1.5;
-      ctx.globalAlpha = pulse;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, baseRadius + 2 + pulse * 2, 0, Math.PI * 2);
-      ctx.strokeStyle = this.engineColor;
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = pulse * 0.3;
-      ctx.stroke();
-
-      ctx.globalAlpha = 1;
-    }
+    drawEngineGlow(ctx, ENGINE_POS, this.engineColor, 3 + this.throttleLevel * 0.6, 2, 2, 0.3);
   }
 
   getBounds() {
