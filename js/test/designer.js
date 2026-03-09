@@ -7,13 +7,26 @@ import { input } from '../input.js';
 // Ships — imported from central registry
 import { SHIP_REGISTRY } from '../ships/registry.js';
 
+// Stations — imported from central registry
+import { STATION_REGISTRY } from '../world/stationRegistry.js';
+
 // POIs
-import { createStation }     from '../world/station.js';
-import { createCoilStation } from '../world/coilStation.js';
-import { createPlanet }      from '../world/planet.js';
-import { createDerelict }    from '../world/derelict.js';
+import { createPlanet }       from '../world/planet.js';
+import { createDerelict }     from '../world/derelict.js';
 import { createArkshipSpine } from '../world/arkshipSpine.js';
 import { createDebrisCloud }  from '../world/debrisCloud.js';
+
+// Modules
+import {
+  OnyxDriveUnit,
+  ChemRocketSmall, ChemRocketLarge,
+  MagplasmaTorchSmall, MagplasmaTorchLarge,
+  IonThruster,
+  AutocannonModule, LanceModuleSmall, CannonModule, MissileHeatModule,
+  HydrogenFuelCell, SmallFissionReactor, LargeFissionReactor, LargeFusionReactor,
+  SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
+  SalvageScannerModule, LongRangeScannerModule,
+} from '../systems/shipModule.js';
 
 // Weapons
 import { Autocannon }   from '../weapons/autocannon.js';
@@ -70,6 +83,61 @@ function _buildShipItems() {
   return result;
 }
 
+// ─── STATION ITEMS (from registry) ────────────────────────────────────────────
+
+function _buildStationItems() {
+  return STATION_REGISTRY.map(s => ({
+    id:         s.id,
+    label:      s.label,
+    file:       s.file,
+    type:       'poi',
+    zoom:       s.designerZoom,
+    flavorText: s.flavorText ?? null,
+    create:     () => s.create(0, 0),
+    info: {
+      Type:        s.renderer ? s.renderer : 'Station',
+      Faction:     s.faction,
+      'Docking R': `${s.dockingRadius}u`,
+      Services:    s.services.join(' · '),
+    },
+  }));
+}
+
+// ─── MODULE ITEMS ─────────────────────────────────────────────────────────────
+
+function _mod(id, label, category, createFn) {
+  return { id, label, file: 'js/systems/shipModule.js', type: 'module', category, create: createFn };
+}
+
+function _buildModuleItems() {
+  return [
+    // ── Engines
+    _mod('onyx-drive-unit',   'Onyx Drive Unit',         'ENGINE', () => new OnyxDriveUnit()),
+    _mod('chem-rocket-s',     'Chem Rocket (S)',          'ENGINE', () => new ChemRocketSmall()),
+    _mod('chem-rocket-l',     'Chem Rocket (L)',          'ENGINE', () => new ChemRocketLarge()),
+    _mod('magplasma-torch-s', 'Mag-Plasma Torch (S)',     'ENGINE', () => new MagplasmaTorchSmall()),
+    _mod('magplasma-torch-l', 'Mag-Plasma Torch (L)',     'ENGINE', () => new MagplasmaTorchLarge()),
+    _mod('ion-thruster',      'Ion Thruster',             'ENGINE', () => new IonThruster()),
+    // ── Weapons
+    _mod('mod-autocannon',    'Autocannon Mount',         'WEAPON', () => new AutocannonModule()),
+    _mod('mod-lance-s',       'Lance Mount (S)',          'WEAPON', () => new LanceModuleSmall()),
+    _mod('mod-cannon',        'Cannon Mount',             'WEAPON', () => new CannonModule()),
+    _mod('mod-heat-msl',      'Heat Missile Mount',       'WEAPON', () => new MissileHeatModule('small')),
+    _mod('mod-heat-msl-l',    'Heat Missile Mount (×2)',  'WEAPON', () => new MissileHeatModule('large')),
+    // ── Power
+    _mod('h2-fuel-cell',      'H2 Fuel Cell (S)',         'POWER',  () => new HydrogenFuelCell()),
+    _mod('fission-s',         'Fission Reactor (S)',      'POWER',  () => new SmallFissionReactor()),
+    _mod('fission-l',         'Fission Reactor (L)',      'POWER',  () => new LargeFissionReactor()),
+    _mod('fusion-l',          'Fusion Reactor (L)',       'POWER',  () => new LargeFusionReactor()),
+    // ── Sensors
+    _mod('salvaged-sensors',  'Salvaged Sensors',         'SENSOR', () => new SalvagedSensorSuite()),
+    _mod('standard-sensors',  'Standard Sensors',         'SENSOR', () => new StandardSensorSuite()),
+    _mod('combat-computer',   'Combat Computer',          'SENSOR', () => new CombatComputerModule()),
+    _mod('salvage-scanner',   'Salvage Scanner',          'SENSOR', () => new SalvageScannerModule()),
+    _mod('long-range-sensors','Long-Range Sensors',       'SENSOR', () => new LongRangeScannerModule()),
+  ];
+}
+
 // ─── CATEGORY DEFINITIONS ─────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -81,28 +149,7 @@ const CATEGORIES = [
   {
     id: 'stations',
     label: 'Stations',
-    items: [
-      {
-        id: 'station-keelbreak', label: 'Keelbreak (neutral)', file: 'js/world/station.js', type: 'poi', zoom: 3.5,
-        create: () => createStation({ x: 0, y: 0, id: 'keelbreak', name: 'Keelbreak', faction: 'neutral', services: ['repair', 'trade', 'fuel'] }),
-        info: { Type: 'Station', Faction: 'neutral', 'Docking R': '150u', Services: 'repair · trade · fuel' },
-      },
-      {
-        id: 'station-crucible', label: 'Crucible (scavengers)', file: 'js/world/station.js', type: 'poi', zoom: 3.5,
-        create: () => createStation({ x: 0, y: 0, id: 'crucible', name: 'Crucible', faction: 'scavengers', services: ['trade'] }),
-        info: { Type: 'Station', Faction: 'scavengers', 'Docking R': '150u', Services: 'trade' },
-      },
-      {
-        id: 'station-thornwick', label: 'Thornwick (monastic)', file: 'js/world/station.js', type: 'poi', zoom: 3.5,
-        create: () => createStation({ x: 0, y: 0, id: 'thornwick', name: 'Thornwick', faction: 'monastic', services: ['repair'] }),
-        info: { Type: 'Station', Faction: 'monastic', 'Docking R': '150u', Services: 'repair' },
-      },
-      {
-        id: 'the-coil', label: 'The Coil (salvage_lords)', file: 'js/world/coilStation.js', type: 'poi', zoom: 0.35,
-        create: () => createCoilStation({ x: 0, y: 0, id: 'the_coil', name: 'The Coil', faction: 'salvage_lords', services: ['repair', 'trade'] }),
-        info: { Type: 'CoilStation', Faction: 'salvage_lords', 'Docking R': '1100u', Note: 'Zoom out with scroll' },
-      },
-    ],
+    items: _buildStationItems(),
   },
   {
     id: 'planets',
@@ -110,13 +157,15 @@ const CATEGORIES = [
     items: [
       {
         id: 'planet-thalassa', label: 'Thalassa (moon)', file: 'js/world/planet.js', type: 'poi', zoom: 1.0,
+        flavorText: "A cold green moon, barely breathable. Settlers called it promising once. The second wave never came.",
         create: () => createPlanet({ x: 0, y: 0, name: 'Thalassa', radius: 200, colorInner: '#4a9a4a', colorOuter: '#2a5a2a' }),
         info: { Type: 'Planet', Radius: '200u', Color: 'green gradient' },
       },
       {
-        id: 'planet-pale', label: 'Pale (gas giant)', file: 'js/world/planet.js', type: 'poi', zoom: 0.04,
-        create: () => createPlanet({ x: 0, y: 0, name: 'Pale', radius: 9000, colorInner: '#4a7a9a', colorOuter: '#1a3a5a' }),
-        info: { Type: 'Planet (gas giant)', Radius: '9000u', Note: 'Zoom out far' },
+        id: 'planet-pale', label: 'Pale (ice planet)', file: 'js/world/planet.js', type: 'poi', zoom: 0.04,
+        flavorText: "A frozen world of nitrogen plains and fractured ice. Navigation charts list it as uninhabitable — the scavenger clans who've built settlements on its cryo-flats prefer it that way.",
+        create: () => createPlanet({ x: 0, y: 0, name: 'Pale', radius: 9000, colorInner: '#b8ccd8', colorOuter: '#2a3848' }),
+        info: { Type: 'Planet (ice)', Radius: '9000u', Note: 'Zoom out far' },
       },
     ],
   },
@@ -126,8 +175,9 @@ const CATEGORIES = [
     items: [
       {
         id: 'derelict-hollow-march', label: 'Hollow March', file: 'js/world/derelict.js', type: 'poi', zoom: 8.0,
-        create: () => createDerelict({ x: 0, y: 0, name: 'Hollow March', salvageTime: 5, lootTable: [{ type: 'scrap', amount: 40 }, { type: 'tech', amount: 3 }] }),
-        info: { Type: 'Derelict', 'Salvage Time': '5s', Loot: 'scrap×40, tech×3', 'Interact R': '120u' },
+        flavorText: "The registration marks are burned off. Cargo manifests mention nothing that would explain the damage.",
+        create: () => createDerelict({ x: 0, y: 0, name: 'Hollow March', salvageTime: 5, lootTable: [{ type: 'scrap', amount: 40 }, { type: 'void_crystals', amount: 3 }] }),
+        info: { Type: 'Derelict', 'Salvage Time': '5s', Loot: 'scrap×40, void_crystals×3', 'Interact R': '120u' },
       },
     ],
   },
@@ -137,11 +187,13 @@ const CATEGORIES = [
     items: [
       {
         id: 'arkship-spine', label: 'Arkship Spine', file: 'js/world/arkshipSpine.js', type: 'poi', zoom: 0.25,
+        flavorText: "The skeletal remains of a colony ship, kilometers long. It still drifts on the course it was launched with centuries ago.",
         create: () => createArkshipSpine({ x: 0, y: 0, rotation: 0, length: 2200, width: 140 }),
         info: { Type: 'ArkshipSpine', Length: '2200u', Width: '140u', Note: 'Static terrain' },
       },
       {
         id: 'debris-cloud', label: 'Debris Cloud', file: 'js/world/debrisCloud.js', type: 'poi', zoom: 0.8,
+        flavorText: "The field spreads a little wider every year. Something blew here. Nobody agrees on what.",
         create: () => createDebrisCloud({ x: 0, y: 0, spreadRadius: 350, fragmentCount: 30 }),
         info: { Type: 'DebrisCloud', 'Spread R': '350u', Fragments: '30' },
       },
@@ -153,113 +205,136 @@ const CATEGORIES = [
     items: [
       {
         id: 'autocannon',  label: 'Autocannon',    file: 'js/weapons/autocannon.js',  type: 'weapon',
+        flavorText: "Rotating breech, medium caseless, point-and-fire. Standard issue for anyone who can afford it and most who can't.",
         create: () => new Autocannon(),
         projColor: AMBER,   projLen: 3,  projTrail: true,
         flags: ['manual'],
       },
       {
         id: 'railgun',     label: 'Railgun',       file: 'js/weapons/railgun.js',     type: 'weapon',
+        flavorText: "Two conductive rails, one very fast slug. Accuracy drops before effective range does.",
         create: () => new Railgun(),
         projColor: RAIL_WHITE, projLen: 12, projTrail: true,
         flags: ['manual', 'hull-dmg'],
       },
       {
         id: 'railgun-f',   label: 'Railgun (fixed)', file: 'js/weapons/railgun.js',  type: 'weapon',
+        flavorText: "A forward-mounted rail accelerator. No pivot mount — the whole ship is the gun platform.",
         create: () => new Railgun('fixed'),
         projColor: RAIL_WHITE, projLen: 12, projTrail: true,
         flags: ['fixed', 'hull-dmg'],
       },
       {
         id: 'flak-s',      label: 'Flak Cannon (S)', file: 'js/weapons/flakCannon.js', type: 'weapon',
+        flavorText: "Programmable-detonation shell. Blasts wide at proximity. Effective against soft targets and incoming missiles.",
         create: () => new FlakCannon('small'),
         projColor: AMBER,   projLen: 5,  projTrail: false,
         flags: ['manual', 'aoe', 'intercept', 'hull-dmg'],
       },
       {
         id: 'flak-l',      label: 'Flak Cannon (L)', file: 'js/weapons/flakCannon.js', type: 'weapon',
+        flavorText: "Heavy-bore flak battery. Recoil was an engineering problem; it still is.",
         create: () => new FlakCannon('large'),
         projColor: AMBER,   projLen: 5,  projTrail: false,
         flags: ['manual', 'aoe', 'intercept', 'hull-dmg'],
       },
       {
         id: 'lance-s',     label: 'Lance (S)',     file: 'js/weapons/lance.js',       type: 'weapon',
+        flavorText: "A coherent energy lance. Burns through armor at sustained contact. The arm stays warm afterward.",
         create: () => new Lance('small'),
         isBeam: true, projColor: CYAN,
         flags: ['beam', 'ramp-dmg'],
       },
       {
         id: 'lance-l',     label: 'Lance (L)',     file: 'js/weapons/lance.js',       type: 'weapon',
+        flavorText: "Long-duration beam system. Melts what it holds. Holds what it finds.",
         create: () => new Lance('large'),
         isBeam: true, projColor: CYAN,
         flags: ['beam', 'ramp-dmg'],
       },
       {
         id: 'lance-f',     label: 'Lance (fixed)', file: 'js/weapons/lance.js',       type: 'weapon',
+        flavorText: "Hull-mounted lance projector. No gimbal. Aim with the ship.",
         create: () => new Lance('fixed'),
         isBeam: true, projColor: CYAN,
         flags: ['beam', 'fixed', 'ramp-dmg'],
       },
       {
         id: 'plasma-s',    label: 'Plasma (S)',    file: 'js/weapons/plasmaCannon.js', type: 'weapon',
+        flavorText: "Superheated bolt, damage falls with distance. Best used close; worst used as a threat.",
         create: () => new PlasmaCannon('small'),
         projColor: PLASMA_GREEN, projLen: 5, projTrail: false,
         flags: ['manual', 'falloff', 'hull-dmg'],
       },
       {
         id: 'plasma-l',    label: 'Plasma (L)',    file: 'js/weapons/plasmaCannon.js', type: 'weapon',
+        flavorText: "Long-cycle plasma system. More mass, longer burn, further reach.",
         create: () => new PlasmaCannon('large'),
         projColor: PLASMA_GREEN, projLen: 5, projTrail: false,
         flags: ['manual', 'falloff', 'hull-dmg'],
       },
       {
         id: 'cannon',      label: 'Cannon',        file: 'js/weapons/cannon.js',      type: 'weapon',
+        flavorText: "Smoothbore heavy round. No electronics. It hits or it doesn't.",
         create: () => new Cannon(),
         projColor: '#dd8800', projLen: 7, projTrail: false,
         flags: ['manual', 'aoe', 'hull-dmg'],
       },
       {
         id: 'rocket',      label: 'Rocket',        file: 'js/weapons/rocket.js',      type: 'weapon',
+        flavorText: "Unguided solid-fuel warhead. Accurate enough at short range; chaotic after that.",
         create: () => new Rocket(),
         projColor: AMBER,   projLen: 8,  projTrail: true,
         flags: ['secondary', 'aoe', 'hull-dmg', 'ammo'],
       },
       {
         id: 'rocket-large', label: 'Rocket ×5',   file: 'js/weapons/rocketLarge.js', type: 'weapon',
+        flavorText: "Burst of five on a single trigger pull. Wide spread, heavy impact.",
         create: () => new RocketLarge(),
         projColor: AMBER,   projLen: 8,  projTrail: true,
         flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'burst'],
       },
       {
         id: 'wire-msl',    label: 'Wire Missile',  file: 'js/weapons/missileWire.js', type: 'weapon',
+        flavorText: "Manual guidance via copper filament. Pilot sees it in, or doesn't.",
         create: () => new MissileWire('small'),
         projColor: AMBER,   projLen: 8,  projTrail: true,
         flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo'],
       },
       {
         id: 'wire-msl-l',  label: 'Wire Missile ×3', file: 'js/weapons/missileWire.js', type: 'weapon',
+        flavorText: "Three on the rail. Feed them in sequence or release all at once.",
         create: () => new MissileWire('large'),
         projColor: AMBER,   projLen: 8,  projTrail: true,
         flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo', 'spread'],
       },
       {
         id: 'heat-msl',    label: 'Heat Missile',  file: 'js/weapons/missileHeat.js', type: 'weapon',
+        flavorText: "Chases engine bloom. Effective against ships running hot. Ineffective against patience.",
         create: () => new MissileHeat('small'),
         projColor: RED,     projLen: 8,  projTrail: true,
         flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo'],
       },
       {
         id: 'heat-msl-l',  label: 'Heat Missile ×2', file: 'js/weapons/missileHeat.js', type: 'weapon',
+        flavorText: "Two heat-seekers linked to the same launch signature.",
         create: () => new MissileHeat('large'),
         projColor: RED,     projLen: 8,  projTrail: true,
         flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo', 'burst'],
       },
       {
         id: 'torpedo',     label: 'Torpedo',       file: 'js/weapons/torpedo.js',     type: 'weapon',
+        flavorText: "Heavy ship-killer. Fixed forward only. Interceptable. Takes commitment.",
         create: () => new Torpedo(),
         projColor: TORPEDO_AMBER, projLen: 16, projTrail: true,
         flags: ['secondary', 'fixed', 'interceptable', 'aoe', 'hull-dmg', 'ammo'],
       },
     ],
+  },
+  {
+    id: 'modules',
+    label: 'Modules',
+    items: _buildModuleItems(),
   },
 ];
 
@@ -488,6 +563,8 @@ export class Designer {
       this._renderShipPreview(ctx, W, H, pcx, pcy, def);
     } else if (def.type === 'weapon') {
       this._renderWeaponPreview(ctx, W, H, pcx, pcy, def);
+    } else if (def.type === 'module') {
+      this._renderModulePreview(ctx, W, H, pcx, pcy, def);
     } else {
       this._renderPoiPreview(ctx, W, H, pcx, pcy);
     }
@@ -533,6 +610,109 @@ export class Designer {
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
     ctx.fillText(`${this._shipScale.toFixed(1)}× scale  •  ${def.file}`, pcx, 12);
+    ctx.restore();
+  }
+
+  // ── Module Preview ───────────────────────────────────────────────────────────
+
+  _renderModulePreview(ctx, W, H, pcx, pcy, def) {
+    const mod = this._entity;
+    const cat = def.category ?? 'MODULE';
+
+    // Background grid
+    ctx.save();
+    ctx.strokeStyle = '#0a1520';
+    ctx.lineWidth = 1;
+    const step = 60;
+    for (let x = PANEL_W; x < W; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += step) {
+      ctx.beginPath(); ctx.moveTo(PANEL_W, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // Category badge
+    const BADGE_COLORS = { ENGINE: AMBER, WEAPON: RED, POWER: GREEN, SENSOR: CYAN };
+    const badgeColor = BADGE_COLORS[cat] ?? WHITE;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    let cy = pcy - 80;
+
+    // Category label
+    ctx.fillStyle = badgeColor;
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText(`[ ${cat} ]`, pcx, cy); cy += 28;
+
+    // Module display name
+    ctx.fillStyle = WHITE;
+    ctx.font = 'bold 22px monospace';
+    ctx.fillText(mod.displayName ?? def.label, pcx, cy); cy += 36;
+
+    // Separator line
+    ctx.strokeStyle = DIM_OUTLINE;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pcx - 120, cy); ctx.lineTo(pcx + 120, cy);
+    ctx.stroke(); cy += 18;
+
+    // Key stats block — varies by category
+    const statLine = (label, value, color) => {
+      ctx.fillStyle = DIM_TEXT;
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(label, pcx - 8, cy);
+      ctx.fillStyle = color;
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(value, pcx + 8, cy);
+      cy += 18;
+    };
+
+    if (mod.isEngine) {
+      statLine('SPEED MULT',   `×${mod.speedMult.toFixed(2)}`,    AMBER);
+      statLine('ACCEL MULT',   `×${mod.accelMult.toFixed(2)}`,    AMBER);
+      statLine('FUEL EFF MULT',`×${mod.fuelEffMult.toFixed(2)}`,  mod.fuelEffMult > 1 ? RED : GREEN);
+      if (mod.fuelDrainRate > 0)
+        statLine('FUEL DRAIN', `+${mod.fuelDrainRate.toFixed(3)}/s`, AMBER);
+      if (mod.powerDraw > 0)
+        statLine('POWER DRAW', `-${mod.powerDraw}W`,               MAGENTA);
+    } else if (cat === 'WEAPON' && mod.weapon) {
+      const w = mod.weapon;
+      const arm = w.damage ?? w.armorDamage;
+      if (arm != null)          statLine('ARMOR DMG',  String(arm),                    GREEN);
+      if (w.hullDamage != null) statLine('HULL DMG',   String(w.hullDamage),           GREEN);
+      if (w.cooldownMax != null)statLine('COOLDOWN',   `${(w.cooldownMax * 1000).toFixed(0)}ms`, AMBER);
+      if (w.maxRange != null)   statLine('RANGE',      `${Math.round(w.maxRange)}u`,   AMBER);
+      if (mod.powerDraw > 0)    statLine('POWER DRAW', `-${mod.powerDraw}W`,           MAGENTA);
+    } else if (cat === 'POWER') {
+      if (mod.powerOutput > 0)  statLine('OUTPUT',     `+${mod.effectivePowerOutput ?? mod.powerOutput}W`, GREEN);
+      if (mod.fuelDrainRate > 0)statLine('FUEL DRAIN', `+${mod.fuelDrainRate.toFixed(3)}/s`, AMBER);
+      if (mod.overhaulCost)     statLine('OVERHAUL',   `${mod.overhaulCost} scrap`,    MAGENTA);
+    } else if (cat === 'SENSOR') {
+      if (mod.sensor_range)     statLine('SENSOR RANGE', `${mod.sensor_range}u`,       CYAN);
+      if (mod.powerDraw > 0)    statLine('POWER DRAW', `-${mod.powerDraw}W`,           MAGENTA);
+      const caps = [];
+      if (mod.minimap_stations) caps.push('stations');
+      if (mod.minimap_ships)    caps.push('ships');
+      if (mod.lead_indicators)  caps.push('lead');
+      if (mod.health_pips)      caps.push('pips');
+      if (mod.salvage_detail)   caps.push('salvage');
+      if (caps.length)          statLine('DETECTS',    caps.join(' · '),               CYAN);
+    }
+
+    ctx.restore();
+
+    // File label bottom
+    ctx.save();
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = DIM_TEXT;
+    ctx.fillText(def.file, pcx, 12);
     ctx.restore();
   }
 
@@ -749,6 +929,8 @@ export class Designer {
       y = this._renderShipStats(ctx, y, def);
     } else if (def.type === 'weapon') {
       y = this._renderWeaponStats(ctx, y, def);
+    } else if (def.type === 'module') {
+      y = this._renderModuleStats(ctx, y, def);
     } else {
       y = this._renderPoiStats(ctx, y, def);
     }
@@ -813,6 +995,14 @@ export class Designer {
     ctx.fillStyle = DIM_TEXT;
     ctx.font = '10px monospace';
     ctx.fillText(def.file, MARGIN, y);
+    y += 20;
+
+    if (ship.flavorText) {
+      this._divider(ctx, y); y += 10;
+      this._header(ctx, 'LORE', y); y += 16;
+      y = this._wrapText(ctx, ship.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+    }
+
     return y;
   }
 
@@ -862,6 +1052,102 @@ export class Designer {
     ctx.fillStyle = DIM_TEXT;
     ctx.font = '10px monospace';
     ctx.fillText(def.file, MARGIN, y);
+    y += 20;
+
+    if (def.flavorText) {
+      this._divider(ctx, y); y += 10;
+      this._header(ctx, 'LORE', y); y += 16;
+      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+    }
+
+    return y;
+  }
+
+  _renderModuleStats(ctx, y, def) {
+    const mod = this._entity;
+    const cat = def.category ?? 'MODULE';
+
+    ctx.fillStyle = DIM_TEXT;
+    ctx.font = '10px monospace';
+    ctx.fillText('← → cycle  •  C compare', MARGIN, y); y += 20;
+
+    // Category badge color
+    const BADGE_COLORS = { ENGINE: AMBER, WEAPON: RED, POWER: GREEN, SENSOR: CYAN };
+    const badgeColor = BADGE_COLORS[cat] ?? WHITE;
+    this._header(ctx, cat, y);
+    ctx.fillStyle = badgeColor;
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(cat, MARGIN, y); y += 18;
+
+    if (mod.isEngine) {
+      this._header(ctx, 'DRIVE STATS', y); y += 18;
+      this._row(ctx, 'Speed Mult',    `×${mod.speedMult.toFixed(2)}`,     AMBER, y); y += 16;
+      this._row(ctx, 'Accel Mult',    `×${mod.accelMult.toFixed(2)}`,     AMBER, y); y += 16;
+      this._row(ctx, 'FuelEff Mult',  `×${mod.fuelEffMult.toFixed(2)}`,   mod.fuelEffMult > 1 ? RED : GREEN, y); y += 20;
+    } else if (cat === 'WEAPON' && mod.weapon) {
+      this._header(ctx, 'WEAPON STATS', y); y += 18;
+      const w = mod.weapon;
+      const arm = w.damage ?? w.armorDamage;
+      if (arm != null)          { this._row(ctx, 'Armor Dmg', arm,                       GREEN, y); y += 16; }
+      if (w.hullDamage != null) { this._row(ctx, 'Hull Dmg',  w.hullDamage,              GREEN, y); y += 16; }
+      if (w.cooldownMax != null){ this._row(ctx, 'Cooldown',  `${(w.cooldownMax*1000).toFixed(0)}ms`, AMBER, y); y += 16; }
+      if (w.maxRange != null)   { this._row(ctx, 'Range',     `${Math.round(w.maxRange)}u`, AMBER, y); y += 16; }
+      y += 4;
+    } else if (cat === 'POWER') {
+      this._header(ctx, 'POWER OUTPUT', y); y += 18;
+      const out = mod.effectivePowerOutput ?? mod.powerOutput;
+      if (out > 0) { this._row(ctx, 'Output', `+${out}W`, GREEN, y); y += 16; }
+      if (mod.overhaulCost) {
+        const interval = mod._overhaulInterval;
+        const hrs = interval ? `every ${(interval/3600).toFixed(0)}h` : '—';
+        this._row(ctx, 'Overhaul',  `${mod.overhaulCost} scrap`, MAGENTA, y); y += 16;
+        this._row(ctx, 'Interval',  hrs, MAGENTA, y); y += 16;
+      }
+      y += 4;
+    } else if (cat === 'SENSOR') {
+      this._header(ctx, 'SENSOR CAPS', y); y += 18;
+      if (mod.sensor_range) { this._row(ctx, 'Range', `${mod.sensor_range}u`, CYAN, y); y += 16; }
+      const caps = [];
+      if (mod.minimap_stations) caps.push('stations');
+      if (mod.minimap_ships)    caps.push('ships');
+      if (mod.lead_indicators)  caps.push('lead');
+      if (mod.health_pips)      caps.push('pips');
+      if (mod.salvage_detail)   caps.push('salvage');
+      if (caps.length) {
+        ctx.fillStyle = DIM_TEXT; ctx.font = '10px monospace';
+        ctx.fillText('Detects', MARGIN, y);
+        ctx.fillStyle = CYAN; ctx.textAlign = 'right';
+        ctx.fillText(caps.join(' · '), PANEL_W - MARGIN, y);
+        ctx.textAlign = 'left';
+        y += 16;
+      }
+      y += 4;
+    }
+
+    this._header(ctx, 'POWER / FUEL', y); y += 18;
+    const draw = mod.powerDraw  ?? 0;
+    const out  = mod.powerOutput ?? 0;
+    if (out  > 0) { this._row(ctx, 'Pwr Output', `+${out}W`, GREEN, y); y += 16; }
+    if (draw > 0) { this._row(ctx, 'Pwr Draw',   `-${draw}W`, MAGENTA, y); y += 16; }
+    const drain = mod.fuelDrainRate ?? 0;
+    if (drain > 0) { this._row(ctx, 'Fuel Drain', `+${drain.toFixed(3)}/s`, AMBER, y); y += 16; }
+    if (draw === 0 && out === 0 && drain === 0) {
+      ctx.fillStyle = DIM_TEXT; ctx.font = '10px monospace';
+      ctx.fillText('  no power or fuel overhead', MARGIN, y); y += 16;
+    }
+    y += 8;
+
+    this._divider(ctx, y); y += 10;
+    ctx.fillStyle = DIM_TEXT;
+    ctx.font = '10px monospace';
+    ctx.fillText(def.file, MARGIN, y); y += 20;
+
+    if (mod.description) {
+      this._divider(ctx, y); y += 10;
+      this._header(ctx, 'DESCRIPTION', y); y += 16;
+      y = this._wrapText(ctx, mod.description, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+    }
+
     return y;
   }
 
@@ -887,6 +1173,14 @@ export class Designer {
     ctx.fillText(`Pan: (${panWx.toFixed(0)}, ${panWy.toFixed(0)})`, MARGIN, y); y += 20;
 
     ctx.fillText(def.file, MARGIN, y);
+    y += 20;
+
+    if (def.flavorText) {
+      this._divider(ctx, y); y += 10;
+      this._header(ctx, 'LORE', y); y += 16;
+      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+    }
+
     return y;
   }
 
@@ -1026,6 +1320,20 @@ export class Designer {
         { label: 'BLAST R',   get: (_, e) => v(e.blastRadius ?? '—',          e.blastRadius != null ? 'cmp-mag' : 'cmp-dim') },
         { label: 'AMMO',      get: (_, e) => v(e.ammoMax ?? '—',              e.ammoMax != null ? 'cmp-white' : 'cmp-dim') },
         { label: 'FLAGS',     get: (d)    => v((d.flags ?? []).join(' '),      'cmp-dim') },
+      ];
+    }
+
+    if (cat.id === 'modules') {
+      return [
+        { label: 'CAT',       get: (d)    => v(d.category ?? '—',                          'cmp-dim') },
+        { label: 'PWR OUT',   get: (_, e) => { const o = e.powerOutput ?? 0; return v(o > 0 ? `+${o}W` : '—', o > 0 ? 'cmp-green' : 'cmp-dim'); } },
+        { label: 'PWR DRAW',  get: (_, e) => { const d = e.powerDraw ?? 0; return v(d > 0 ? `-${d}W` : '—', d > 0 ? 'cmp-mag' : 'cmp-dim'); } },
+        { label: 'FUEL/s',    get: (_, e) => { const f = e.fuelDrainRate ?? 0; return v(f > 0 ? f.toFixed(3) : '—', f > 0 ? 'cmp-amber' : 'cmp-dim'); } },
+        { label: 'SPD ×',     get: (_, e) => v(e.isEngine ? `×${e.speedMult.toFixed(2)}`  : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
+        { label: 'ACCEL ×',   get: (_, e) => v(e.isEngine ? `×${e.accelMult.toFixed(2)}`  : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
+        { label: 'FEFF ×',    get: (_, e) => v(e.isEngine ? `×${e.fuelEffMult.toFixed(2)}`: '—', e.isEngine ? (e.fuelEffMult > 1 ? 'cmp-red' : 'cmp-green') : 'cmp-dim') },
+        { label: 'SENSOR',    get: (_, e) => v(e.sensor_range ? `${e.sensor_range}u` : '—', e.sensor_range ? 'cmp-cyan' : 'cmp-dim') },
+        { label: 'OVERHAUL',  get: (_, e) => v(e.overhaulCost ? `${e.overhaulCost} sc` : '—', e.overhaulCost ? 'cmp-mag' : 'cmp-dim') },
       ];
     }
 

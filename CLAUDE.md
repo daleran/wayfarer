@@ -78,12 +78,13 @@ Two test harnesses. Both run on the same `startLoop` — each implements `update
 
 Every item in `CATEGORIES` in `js/test/designer.js` has a durable `id` — kebab-case, stable even if the display label changes. Used for URL deep-linking.
 
-- **Ships:** `onyx-tug`, `swift-runner`, `g100-hauler`, `dec-frigate`, `hullbreaker`, `raider`, `light-fighter`, `armed-hauler`, `salvage-mothership` (driven from `js/ships/registry.js`)
-- **Stations:** `station-keelbreak`, `station-crucible`, `station-thornwick`, `the-coil`
+- **Ships:** `onyx-tug`, `maverick-courier`, `g100-hauler`, `garrison-frigate`, `hullbreaker`, `raider`, `light-fighter`, `armed-hauler`, `salvage-mothership`, `trader-convoy`, `militia-patrol` (driven from `js/ships/registry.js`)
+- **Stations:** `kells-stop`, `the-coil`, `ashveil-anchorage` (driven from `js/world/stationRegistry.js`)
 - **Planets:** `planet-thalassa`, `planet-pale`
 - **Derelicts:** `derelict-hollow-march`
 - **Environment:** `arkship-spine`, `debris-cloud`
 - **Weapons:** `autocannon`, `railgun`, `railgun-f`, `flak-s`, `flak-l`, `lance-s`, `lance-l`, `lance-f`, `plasma-s`, `plasma-l`, `cannon`, `rocket`, `rocket-large`, `wire-msl`, `wire-msl-l`, `heat-msl`, `heat-msl-l`, `torpedo`
+- **Modules:** `onyx-drive-unit`, `chem-rocket-s`, `chem-rocket-l`, `magplasma-torch-s`, `magplasma-torch-l`, `ion-thruster`, `mod-autocannon`, `mod-lance-s`, `mod-cannon`, `mod-heat-msl`, `mod-heat-msl-l`, `h2-fuel-cell`, `fission-s`, `fission-l`, `fusion-l`, `salvaged-sensors`, `standard-sensors`, `combat-computer`, `salvage-scanner`, `long-range-sensors`
 
 ## Architecture
 
@@ -108,9 +109,11 @@ Entity (js/entities/entity.js)               — base: x, y, vx, vy, rotation, a
   Ship (js/entities/ship.js)                 — armor/hull health, throttle (6 levels), weapons, fuelMax, fuelEfficiency
     OnyxClassTug (js/ships/classes/onyxTug.js)    — class template: hammerhead tug shape, defaults
       Hullbreaker (js/ships/player/hullbreaker.js) — player variant: reduced armor, +fuel tank
-    LightFighter      (js/enemies/scavengers/lightFighter.js)      — fast stalker (Swift Runner hull)
+    LightFighter      (js/enemies/scavengers/lightFighter.js)      — fast stalker (Maverick Class Courier hull)
     ArmedHauler       (js/enemies/scavengers/armedHauler.js)       — kiter with autocannon + lance (G100 Class Hauler hull)
-    SalvageMothership (js/enemies/scavengers/salvageMothership.js) — standoff, lobs missiles (Dec. Frigate hull)
+    SalvageMothership (js/enemies/scavengers/salvageMothership.js) — standoff, lobs missiles (Garrison Class Frigate hull)
+    TraderConvoy      (js/ships/neutral/traderConvoy.js)           — neutral hauler, travels trade lanes (G100 hull, no weapons)
+    MilitiaPatrol     (js/ships/neutral/militiaPatrol.js)          — neutral frigate, orbits The Coil (Garrison hull, no weapons)
   Projectile  (js/entities/projectile.js) — velocity-driven, deactivates on range/hit
   LootDrop    (js/entities/lootDrop.js)   — auto-pickup, 30s lifetime, types: scrap/fuel/commodity
   Particle    (js/entities/particle.js)   — short-lived visual effect
@@ -126,6 +129,7 @@ Ship subclasses override `_drawShape(ctx)` and `getBounds()`.
 - **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically. Inactive entities purged each tick.
 - **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`.
 - **Enemy AI** — `updateRaiderAI()` in `js/ai/raiderAI.js`. Enemies have a `homePosition`, patrol nearby, aggro at 1400u, deaggro at 2000u. Behaviors: `stalker` (LightFighter), `kiter` (ArmedHauler), `standoff` (SalvageMothership). AI distance constants live in `RAIDER_AI` in `js/data/stats.js`.
+- **Neutral AI** — `updateNeutralAI()` in `js/ai/neutralAI.js`. Dispatches on `ship.neutralBehavior`. `'trader'`: state machine between `traveling`/`waiting`, follows `_tradeRouteA`/`_tradeRouteB`. `'militia'`: orbit loop using `_orbitCenter`/`_orbitRadius`/`_orbitAngle`/`_orbitSpeed`. Tuning in `NEUTRAL_AI` in `js/data/stats.js`. Neutral ships tracked in `GameManager.neutralShips[]`, drop no loot on death.
 - **Weapons** — component objects added via `addWeapon()`. Two types:
   - `Autocannon` (`isAutoFire = false`) — fires on LMB toward mouse cursor
 - **Particle pool** — `js/systems/particlePool.js`, 200 slots, presets: `explosion()`, `engineTrail()`.
@@ -151,7 +155,8 @@ Ship subclasses override `_drawShape(ctx)` and `getBounds()`.
 - **RMB**: Fire secondary weapon (missiles/torpedoes) toward mouse cursor
 - **R**: Toggle field armor repair (must be stopped; 1.5 armor/sec, 1 scrap/pt)
 - **E**: Dock at nearby station / begin salvage on nearby derelict
-- **Esc**: Cancel salvage / close station screen
+- **I**: Toggle Ship Status screen (paper doll, modules, stats, cargo)
+- **Esc**: Cancel salvage / close station screen / close ship screen
 
 ## Rules & Conventions
 

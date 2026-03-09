@@ -266,7 +266,7 @@ This fusion of high survival knowledge with intentionally degraded tech defines 
 
 - **Grist** — A rocky, mineral-rich moon pockmarked with strip mines and ore refineries. Mining settlements cling to its surface, processing salvaged metals and reactor-grade alloys. Harsh conditions, high pay.
 
-- **Pale** — A small, ice-covered moon at the system's edge. Largely uninhabited except for a few research outposts and hermit communities. Rumors persist of pre-Exile structures buried beneath the ice.
+- **Pale** — A frozen, Pluto-like world of nitrogen plains, fractured ice shelves, and cryo-volcanic fractures. Navigation charts list it uninhabitable. The scavenger clans who've carved settlements into its cryo-flats prefer it that way — no patrol routes, no tariffs, no questions. Rumors persist of pre-Exile structures buried beneath the deep ice.
 
 ### Debris Fields and Hazard Zones
 

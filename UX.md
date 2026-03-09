@@ -65,10 +65,34 @@ The entire game screen should feel like a **vector monitor mounted in a 1970s-80
 | Settlements | White | `#ffffff` |
 | Enemies | Red | `#ff4444` |
 | Moons | Dim green | `#448844` |
-| Derelicts / loot | Amber | `#ffaa00` |
+| Derelicts / scrap loot | Amber | `#ffaa00` |
+| Module loot diamond | Cyan | `#00ffcc` |
+| Weapon loot diamond | Magenta | `#ff00aa` |
+| Ammo loot diamond | Green | `#00ff66` |
 | Wormholes | Magenta | `#ff44ff` |
 | Minimap border | Cyan, dim | `#00ffcc` at 40% alpha |
 | Background | Black, translucent | `rgba(0, 4, 8, 0.8)` |
+
+### Module Condition Colors
+Used in Ship Screen slot badges, cargo pill badges, and tooltip CONDITION/MULT rows. Helper: `conditionColor(condition)` from `colors.js`.
+
+| Condition | Color | Hex | Mult |
+|---|---|---|---|
+| `'good'` | Green | `#00ff66` | ×1.00 |
+| `'worn'` | Amber | `#ffaa00` | ×0.85 |
+| `'faulty'` | Orange | `#ff8800` | ×0.65 |
+| `'damaged'` | Red | `#ff4444` | ×0.35 |
+| `'destroyed'` | Very dim | `#223344` | ×0.00 → drops as scrap |
+
+### Derelict Hull Class Colors
+Each class has a distinct hull stroke color. Used in `derelict.js`.
+
+| Class | Color | Hex |
+|---|---|---|
+| `'hauler'` | Warm rust-brown | `#886633` |
+| `'fighter'` | Muted green-grey | `#667744` |
+| `'frigate'` | Muted blue-grey | `#556688` |
+| `'unknown'` | Magenta | `#ff00aa` |
 
 ### Ship Relation Colors
 Ship color is driven entirely by `ship.relation` — a single string property. Change it and the hull color updates instantly. No color is ever hardcoded in a ship class.
@@ -174,6 +198,15 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 
 ## Specific UI Components
 
+### Ship Screen (`js/ui/shipScreen.js`)
+- Full-screen overlay, same dark backdrop (`rgba(0,6,14,0.93)`) and `DIM_OUTLINE` border.
+- Three equal columns divided by thin `VERY_DIM` lines.
+- **Left column:** Hull HP, per-arc armor (F/P/S/A), drive stats, scrap readout, module slot list. Module slots are outlined boxes with name + power annotation (`+W` green / `-W` amber).
+- **Center column:** Paper doll — `HULL_POINTS` silhouette scaled ×4, colored by hull health (green/amber/red). Surrounded by full armor arc rings (same style as HUD arc ring, larger). Arc direction labels F/S/A/P outside ring. Hull ratio bar + numeric below.
+- **Right column:** Cargo bay quantities, capacity bar, active weapon list (PRI in cyan, SEC in magenta).
+- Close hint centered at bottom: `[I] or [ESC] — close` in dim text.
+- Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open.
+
 ### Station Screen
 - Dark backdrop overlay (near-black, 85% opacity — the game world should barely ghost through).
 - Central panel with cyan border and corner brackets.
@@ -211,15 +244,15 @@ Stations are **not** sleek, symmetric, corporate structures. This is a broken un
    - Rivet-dot at patch center
    - Inner-surface ribs (faint horizontal lines across arms/modules)
 
-4. **Faction color defines the station's visual identity.** The station should feel unmistakably belonging to its faction at a glance. Use the faction color for all outlines, lights, and labels — not as a fill.
+4. **Relation color signals station attitude — not faction.** Structure (hull plates, rects, brackets) is always WHITE at partial alpha. Accent elements — nav lights, pier lights, beacons, labels — use the `accentColor` getter driven by `station.relation`: AMBER = neutral (default for all factions), CYAN = friendly, RED = enemy. Fuel tanks are always AMBER regardless of relation (hazard marking, not faction).
 
 5. **Docked ships add life.** Use small boxy ship silhouettes (rectangular hull + cockpit block + wing stubs) parked at jetty tips and inner piers. Vary rotation and scale. They should read as "in various states of disassembly/assembly" — not all perfectly aligned.
 
-6. **Animated amber docking lights at every pier tip.** Pulsing sinusoid, slightly offset per pier so they don't all pulse in sync.
+6. **Animated docking lights at every pier tip.** Pulsing sinusoid, slightly offset per pier so they don't all pulse in sync. Pier light color = `accentColor`.
 
-7. **Approach beacon at the harbor mouth.** Two amber beacons at the harbor entrance corners, pulsing together. A faint trapezoidal gradient beam pointing away from the mouth.
+7. **Approach beacon at the harbor mouth.** Two beacons at the harbor entrance corners, pulsing together. A faint trapezoidal gradient beam pointing away from the mouth. Beacon color = `accentColor`.
 
-8. **Label below the structure** in faction color, small bold monospace.
+8. **Label below the structure** in `accentColor`, small bold monospace.
 
 **Anti-patterns to avoid:**
 - No hexagons
@@ -227,6 +260,26 @@ Stations are **not** sleek, symmetric, corporate structures. This is a broken un
 - No solid fills on hull (dark near-black fill with bright outline only)
 - No rounded corners
 - Don't draw stations as single closed polygon paths — individual rects are preferred
+
+### Celestial Body Rendering
+
+Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line work only, no gradients, no filled areas. The look is a topographic instrument readout, not a painting.
+
+**Rendering style by planet type:**
+
+- **Ice / rocky worlds (surface visible from space):** Topographic contour polygons clipped to the disk. Draw 3–6 closed irregular polygon paths at decreasing scales — nested, offset, not centered — to suggest terrain elevation layers. Jagged straight-line segments between vertices (no bezier smoothing). The visual reference is the Nostromo descent computer in *Alien* (1979): a CRT scanner reading back surface topology as jagged closed curves. Pale (`#b8ccd8`) is the reference implementation in `_renderPale()` in `renderer.js`.
+
+- **Gas giants:** Horizontal band striations — thin lines or arcs at different y-offsets across the disk, clipped. Bands should vary in spacing and opacity. Optional: planetary rings as thin ellipses angled across the limb. No solid fills.
+
+- **Thick-atmosphere worlds (habitable or shrouded):** Geometric cloud swirls — angular spiral or arc segments that suggest cloud bands without being smooth curves. Straight-line approximations of spiral paths, or stacked arc segments offset from center, clipped to disk.
+
+**Common rules for all planet types:**
+- Very faint body fill (0.05–0.08 alpha) — just enough to read as a disk, not a ring
+- All surface detail clipped to the disk
+- Thin outer atmosphere haze ring (single stroke, very low alpha) where appropriate
+- Bright limb outline (1–2px stroke)
+- Parallax applied at ~0.7× camera speed — planets are always background, never on the ship plane
+- Name label fades in only when the player is near the surface
 
 - **Projectiles:** Color and shape convey weapon type:
   - **Autocannon rounds (kinetic):** Amber streaks (`#ffaa00` glow, `#ffe0a0` core). Slightly longer lines, slower travel speed. The most common projectile in the game — weighty and impactful.
@@ -264,15 +317,23 @@ Stations are **not** sleek, symmetric, corporate structures. This is a broken un
 - **Rationale:** User preference. Evokes the Homeworld missile aesthetic — a bright propulsion ball leaving a smear across space. Visually distinct from cannon streaks and laser bolts. More dramatic and readable at range than a small triangle.
 
 ### 2026-03-07: Ship Shape Philosophy
-- **Decision:** Player ships should feel **chunky and utilitarian**, not sleek or angular. They are salvage-tech workhorses, not fighter jets. Prefer rectangular, boxy silhouettes with visible functional elements (engine bays, bumpers, cargo containers) over pointed/aerodynamic shapes.
-- **Player scrap ship (flagship):** Repurposed space tug — wide rounded bumper at the nose (for pushing debris), narrow elongated body section, single large engine bay extending out on the starboard side. One big engine. Reads as an asymmetric working vessel, not a warship.
+- **Decision:** All ships should feel **blocky, industrial, and utilitarian** — built from rectangular hull modules, not sculpted from smooth curves. No aerodynamic shaping. No organic silhouettes. Think offshore oil platform or containerized cargo vessel, not fighter jet.
+- **Core rule — no curves in hull outlines.** Ship silhouettes are built entirely from straight lines and hard corners. Curves are only permitted for engine glow/trail effects, not hull geometry.
+- **Stepped H/I-beam profiles are preferred.** A ship that changes width via a hard step — narrow bow tower, wide mid-section, narrow stern block — reads immediately as a modular, assembled vessel. This is the Garrison-class model.
+- **Player scrap ship (flagship):** Repurposed space tug — wide flat bumper at the nose (for pushing debris), narrow elongated body section, single large engine bay extending out on the starboard side. One big engine. Reads as an asymmetric working vessel, not a warship.
 - **Brawler (gunship):** Stout, wide, flat-fronted box. Reads as a tank.
-- **Frigate:** Swept-wing and angular — the exception that proves the rule. Speed-oriented silhouette.
-- **Hauler:** Semi-truck: small cockpit pulling 3 rectangular cargo containers that snake behind via position history.
-- **Rationale:** Shape is the primary way to identify ship type. Chunky/utilitarian shapes reinforce the salvage-tech lore and contrast with the clean vector rendering style.
+- **Garrison Class Frigate:** H/I-beam profile — narrow rectangular bow tower, wide rectangular mid-hull, narrow rectangular stern block. Twin rectangular nacelle pods on short pylons. Structural detail seams (cross-bracing, keel, bow ribs) reinforce the assembled-from-modules aesthetic.
+- **Hauler:** Semi-truck: small cockpit pulling rectangular cargo containers that snake behind via position history.
+- **Anti-patterns to avoid in ship design:**
+  - No smooth tapered bows (pointed like a fighter)
+  - No swept or angled wings
+  - No curved hull outlines
+  - No teardrop or organic silhouettes
+  - Nacelles and engine pods should be rectangular or chamfered-rectangular, not pointed
+- **Rationale:** Shape is the primary way to identify ship type. Industrial/blocky shapes reinforce the salvage-tech lore (these ships were built to work, not to look fast), contrast cleanly with the vector rendering style, and are immediately distinguishable in combat at a glance.
 
 ### 2026-03-08: Station Design — No More Hexagons
 - **Decision:** Stations must not use hexagonal or other regular polygon forms. All stations are built from collections of rectangles of varying sizes, deliberately misaligned, to feel cobbled-together rather than manufactured. Asymmetry is required.
-- **Key rules:** Faction color drives the visual identity (outlines, lights, label). Dark near-black fills only. Docked ship silhouettes (boxy rectangular) at jetty tips add life. Amber pulsing pier lights. Harbor mouth with approach beacon + gradient beam for docking stations.
+- **Key rules:** Structure WHITE at partial alpha. `accentColor` (AMBER=neutral, CYAN=friendly, RED=enemy) drives lights and labels. Dark near-black fills only. Docked ship silhouettes (boxy rectangular) at jetty tips add life. Harbor mouth with approach beacon + gradient beam for docking stations. Fuel tanks always AMBER (hazard marking).
 - **Anti-patterns banned:** hexagons, radial symmetry, single closed polygon paths, solid hull fills, rounded corners.
 - **Rationale:** This universe is broken and improvised. Stations should look like they grew over decades from salvage and desperation, not like they were engineered by a functioning civilization.
