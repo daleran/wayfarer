@@ -1,55 +1,93 @@
 import { Entity } from '../entities/entity.js';
-import { AMBER, DIM_TEXT } from '../ui/colors.js';
+import { AMBER, DIM_TEXT, MAGENTA, DERELICT_HAULER, DERELICT_FIGHTER, DERELICT_FRIGATE } from '../ui/colors.js';
 
 const INTERACTION_RADIUS = 120;
+
+// Hull shape point arrays — scaled at render time
+// class: hauler — fat 8-point octagon (original shape)
+const SHAPE_HAULER = [
+  { x: -12, y: -18 }, { x: 8, y: -16 }, { x: 15, y: -6 }, { x: 14, y: 8 },
+  { x: 6,  y:  16 }, { x: -8, y: 14 }, { x: -16, y: 4 }, { x: -14, y: -10 },
+];
+
+// class: fighter — narrow dart, pointed fore
+const SHAPE_FIGHTER = [
+  { x: 0, y: -22 }, { x: 5, y: -12 }, { x: 14, y: -4 }, { x: 10, y: 8 },
+  { x: 3, y:  14 }, { x: -3, y: 14 }, { x: -10, y: 8 },
+];
+
+// class: frigate — wide H/I-beam profile matching Garrison Class shape language
+const SHAPE_FRIGATE = [
+  { x: -18, y: -14 }, { x: -8, y: -14 }, { x: -8, y: -8 }, { x: 8, y: -8 },
+  { x: 8,  y: -14 }, { x: 18, y: -14 }, { x: 18, y: -4 }, { x: 14, y: 0 },
+  { x: 18, y:  4  }, { x: 18, y:  14 }, { x: -18, y: 14 }, { x: -18, y: -14 },
+];
+
+// class: unknown — irregular asymmetric 9-point
+const SHAPE_UNKNOWN = [
+  { x: -6, y: -20 }, { x: 10, y: -16 }, { x: 18, y: -4 }, { x: 14, y: 6 },
+  { x: 6,  y:  18 }, { x: -4, y: 14 }, { x: -18, y: 10 }, { x: -16, y: -6 },
+  { x: -8, y: -14 },
+];
+
+const SHAPES = {
+  hauler:  SHAPE_HAULER,
+  fighter: SHAPE_FIGHTER,
+  frigate: SHAPE_FRIGATE,
+  unknown: SHAPE_UNKNOWN,
+};
+
+const CLASS_COLORS = {
+  hauler:  DERELICT_HAULER,
+  fighter: DERELICT_FIGHTER,
+  frigate: DERELICT_FRIGATE,
+  unknown: MAGENTA,
+};
+
+const FILL_COLOR = 'rgba(30,20,5,0.3)';
 
 export class Derelict extends Entity {
   constructor(x, y) {
     super(x, y);
     this.name = 'Derelict';
     this.lootTable = [];
+    this.lootTableId = null;  // optional table id for generated loot
     this.salvageTime = 3;
     this.interactionRadius = INTERACTION_RADIUS;
     this.salvaged = false;
     this._sparkTimer = 0;
+    this.derelictClass = 'hauler';  // hauler | fighter | frigate | unknown
+    this.loreText = [];             // 2-3 short lore lines shown in HUD
     // Fixed tilted rotation
     this.rotation = (Math.random() - 0.5) * 1.2;
-  }
-
-  update(dt) {
-    // Static — no movement. Spark timer managed by GameManager.
   }
 
   render(ctx, camera) {
     if (this.salvaged) return;
     const screen = camera.worldToScreen(this.x, this.y);
+    const hullColor = CLASS_COLORS[this.derelictClass] ?? DERELICT_HAULER;
+    const pts = SHAPES[this.derelictClass] ?? SHAPE_HAULER;
 
     ctx.save();
     ctx.translate(screen.x, screen.y);
     ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
 
-    // Irregular wreck polygon
+    // Hull polygon
     ctx.beginPath();
-    ctx.moveTo(-12, -18);
-    ctx.lineTo(8, -16);
-    ctx.lineTo(15, -6);
-    ctx.lineTo(14, 8);
-    ctx.lineTo(6, 16);
-    ctx.lineTo(-8, 14);
-    ctx.lineTo(-16, 4);
-    ctx.lineTo(-14, -10);
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(30,20,5,0.3)';
+    ctx.fillStyle = FILL_COLOR;
     ctx.fill();
-    ctx.strokeStyle = '#886633';
+    ctx.strokeStyle = hullColor;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.6;
     ctx.stroke();
 
     // Damage gash lines
     ctx.globalAlpha = 0.4;
-    ctx.strokeStyle = '#553311';
+    ctx.strokeStyle = 'rgba(80,40,10,0.8)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(-6, -12);
@@ -82,6 +120,9 @@ export function createDerelict(data) {
   const d = new Derelict(data.x, data.y);
   d.name = data.name || 'Derelict';
   d.lootTable = data.lootTable || [];
+  d.lootTableId = data.lootTableId || null;
   d.salvageTime = data.salvageTime || 3;
+  d.derelictClass = data.derelictClass || 'hauler';
+  d.loreText = data.loreText || [];
   return d;
 }

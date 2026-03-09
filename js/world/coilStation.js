@@ -1,7 +1,7 @@
 // The Coil — lawless hub station icon. ~300px visual diameter.
 
 import { Station } from './station.js';
-import { AMBER, DIM_OUTLINE } from '../ui/colors.js';
+import { AMBER, WHITE } from '../ui/colors.js';
 
 const HULL_FILL = 'rgba(25,12,0,0.92)';
 
@@ -24,7 +24,7 @@ export class CoilStation extends Station {
     ctx.translate(cx, cy);
     ctx.scale(camera.zoom, camera.zoom);
 
-    const SCAV = '#ff4444'; // mirrors FACTION.scavengers in colors.js
+    const accent = this.accentColor;
 
     // ── BOXY SHIP SILHOUETTE HELPER ───────────────────────────────────────────
     const drawShip = (x, y, rot, sc, alpha) => {
@@ -32,8 +32,8 @@ export class CoilStation extends Station {
       ctx.translate(x, y);
       ctx.rotate(rot);
       ctx.scale(sc, sc);
-      ctx.fillStyle = 'rgba(12,3,3,0.9)';
-      ctx.strokeStyle = SCAV;
+      ctx.fillStyle = 'rgba(12,9,0,0.9)';
+      ctx.strokeStyle = WHITE;
       ctx.lineWidth = 1.1 / sc;
       const part = (rx, ry, rw, rh) => {
         ctx.beginPath();
@@ -50,7 +50,7 @@ export class CoilStation extends Station {
       part(  9, -3,  7,  9);   // starboard wing stub
       ctx.beginPath();
       ctx.arc(0, 18, 2.8, 0, Math.PI * 2);
-      ctx.fillStyle = AMBER;
+      ctx.fillStyle = accent;
       ctx.globalAlpha = alpha * 0.4;
       ctx.fill();
       ctx.globalAlpha = 1;
@@ -59,7 +59,7 @@ export class CoilStation extends Station {
 
     // ── HARBOR AMBIENT GLOW ──────────────────────────────────────────────────
     const hg = ctx.createRadialGradient(0, 10, 5, 0, 10, 110);
-    hg.addColorStop(0, 'rgba(255,68,44,0.05)');
+    hg.addColorStop(0, 'rgba(255,170,0,0.05)');
     hg.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = hg;
     ctx.fillRect(-90, -65, 182, 158);
@@ -91,20 +91,20 @@ export class CoilStation extends Station {
       { x:  -20, y: -262, w: 40, h: 52 },   // jetty top
     ];
 
-    ctx.strokeStyle = SCAV;
+    ctx.strokeStyle = WHITE;
     ctx.lineWidth = 1.6;
     for (const s of sections) {
       ctx.beginPath();
       ctx.rect(s.x, s.y, s.w, s.h);
-      ctx.fillStyle = 'rgba(18,4,4,0.95)';
+      ctx.fillStyle = 'rgba(18,13,0,0.95)';
       ctx.fill();
-      ctx.globalAlpha = 0.82;
+      ctx.globalAlpha = 0.55;
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
     // ── INTERIOR RIB LINES (panel plating detail) ─────────────────────────────
-    ctx.strokeStyle = SCAV;
+    ctx.strokeStyle = WHITE;
     ctx.lineWidth = 0.6;
     ctx.globalAlpha = 0.18;
     for (const y of [-88, -35, 22, 65]) {
@@ -129,17 +129,17 @@ export class CoilStation extends Station {
       const aw = arm.dir * arm.len;
       ctx.beginPath();
       ctx.rect(arm.x, arm.y - arm.w / 2, aw, arm.w);
-      ctx.fillStyle = 'rgba(10,2,2,0.92)';
+      ctx.fillStyle = 'rgba(10,7,0,0.92)';
       ctx.fill();
-      ctx.strokeStyle = SCAV;
+      ctx.strokeStyle = WHITE;
       ctx.lineWidth = 1.1;
-      ctx.globalAlpha = 0.52;
+      ctx.globalAlpha = 0.35;
       ctx.stroke();
       const tipX = arm.x + aw;
       const pulse = 0.45 + 0.4 * Math.sin(t * 3.2 + arm.y * 0.15);
       ctx.beginPath();
       ctx.arc(tipX, arm.y, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = AMBER;
+      ctx.fillStyle = accent;
       ctx.globalAlpha = pulse;
       ctx.fill();
       ctx.globalAlpha = 1;
@@ -168,7 +168,7 @@ export class CoilStation extends Station {
       { x:   -8, y: -95, rot:  0.06, w: 32, h:  9 },
       { x:  -55, y: -82, rot: -0.08, w: 18, h:  8 },
     ];
-    ctx.strokeStyle = SCAV;
+    ctx.strokeStyle = WHITE;
     ctx.lineWidth = 0.9;
     for (const p of patches) {
       ctx.save();
@@ -178,7 +178,7 @@ export class CoilStation extends Station {
       ctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
       ctx.beginPath();
       ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
-      ctx.fillStyle = SCAV;
+      ctx.fillStyle = WHITE;
       ctx.globalAlpha = 0.26;
       ctx.fill();
       ctx.restore();
@@ -192,14 +192,14 @@ export class CoilStation extends Station {
     for (let i = 0; i < leftLY.length; i++) {
       ctx.beginPath();
       ctx.arc(-158, leftLY[i], 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = SCAV;
+      ctx.fillStyle = accent;
       ctx.globalAlpha = ((litPhase + i * 0.25) % 1) < 0.3 ? 0.85 : 0.15;
       ctx.fill();
     }
     for (let i = 0; i < rightLY.length; i++) {
       ctx.beginPath();
       ctx.arc(152, rightLY[i], 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = SCAV;
+      ctx.fillStyle = accent;
       ctx.globalAlpha = ((litPhase + i * 0.33 + 0.5) % 1) < 0.3 ? 0.85 : 0.15;
       ctx.fill();
     }
@@ -207,15 +207,20 @@ export class CoilStation extends Station {
 
     // ── HARBOR ENTRANCE BEACONS ───────────────────────────────────────────────
     const beaconPulse = 0.5 + 0.5 * Math.sin(t * Math.PI * 1.5);
+    // Beacon glow color as rgba — derive from relation
+    const rel = this.relation;
+    const beaconGlowColor = rel === 'friendly' ? 'rgba(0,255,204,0.06)' : rel === 'enemy' ? 'rgba(255,68,68,0.06)' : 'rgba(255,170,0,0.06)';
+    const beaconGlowStop0  = rel === 'friendly' ? 'rgba(0,255,204,0.09)' : rel === 'enemy' ? 'rgba(255,68,68,0.09)' : 'rgba(255,170,0,0.09)';
+    const beaconGlowStop1  = rel === 'friendly' ? 'rgba(0,255,204,0)'    : rel === 'enemy' ? 'rgba(255,68,68,0)'    : 'rgba(255,170,0,0)';
     for (const bx of [-88, 88]) {
       ctx.beginPath();
       ctx.arc(bx, 93, 12, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,170,0,0.06)';
+      ctx.fillStyle = beaconGlowColor;
       ctx.globalAlpha = beaconPulse;
       ctx.fill();
       ctx.beginPath();
       ctx.arc(bx, 93, 5, 0, Math.PI * 2);
-      ctx.fillStyle = AMBER;
+      ctx.fillStyle = accent;
       ctx.globalAlpha = beaconPulse * 0.9;
       ctx.fill();
       ctx.globalAlpha = 1;
@@ -223,8 +228,8 @@ export class CoilStation extends Station {
 
     // ── APPROACH BEAM ─────────────────────────────────────────────────────────
     const beam = ctx.createLinearGradient(0, 93, 0, 178);
-    beam.addColorStop(0, 'rgba(255,170,0,0.09)');
-    beam.addColorStop(1, 'rgba(255,170,0,0)');
+    beam.addColorStop(0, beaconGlowStop0);
+    beam.addColorStop(1, beaconGlowStop1);
     ctx.fillStyle = beam;
     ctx.beginPath();
     ctx.moveTo(-88, 93);
@@ -234,16 +239,7 @@ export class CoilStation extends Station {
     ctx.closePath();
     ctx.fill();
 
-    // ── STATION NAME ──────────────────────────────────────────────────────────
-    const z = camera.zoom;
-    ctx.scale(1 / z, 1 / z);
-    ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = SCAV;
-    ctx.globalAlpha = 0.85;
-    ctx.fillText('THE COIL', 0, 110 * z);
-    ctx.globalAlpha = 1;
+    this._renderNameLabel(ctx, camera, 110, 'bold 11px monospace', 0.85);
 
     ctx.restore();
   }
