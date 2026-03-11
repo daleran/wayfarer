@@ -2,7 +2,7 @@
 
 Raw concepts under consideration. Not yet planned for implementation. Ideas move to `NEXT.md` when prioritized for a build session.
 
-**Next available code: BJ**
+**Next available code: BL**
 
 ---
 

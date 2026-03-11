@@ -7,6 +7,7 @@ export const AMBER = '#ffaa00';
 export const GREEN = '#00ff66';
 export const RED = '#ff4444';
 export const BLUE = '#4488ff';
+export const CONCORD_BLUE = '#4488ff';
 export const MAGENTA = '#ff00aa';
 export const WHITE = '#ffffff';
 export const TEAL = '#44aaff';
@@ -33,6 +34,7 @@ export const FACTION = {
   communes:     GREEN,
   zealots:      AMBER,
   salvage_lords: '#ff6633',
+  concord:      CONCORD_BLUE,
   player:       CYAN,
 };
 

@@ -167,6 +167,25 @@ The **Hullbreaker** is a salvage-modified Onyx Class Tug — stripped armor for 
 - **Salvage Mothership** (Garrison hull) — slow standoff; cannon + heat missiles
 - **Grave-Clan Ambusher** (Maverick hull) — lurker; autocannon + heat missile
 
+### Concord Enemy Ships
+
+Concord Remnants are geometric AI constructs — cold precision, machine-origin. They do not use scavenger tactics.
+
+- **Drone Control Frigate** (custom Garrison hull, concord geometric profile) — standoff AI; Lance beam weapon; 400 HP hull, 200/160/120 armor arcs; spawns up to 3 Snatcher Drones every 12 seconds from lateral bay notches. `_canRespawn = false`. Extreme frontal armor — prioritize flanking.
+- **Snatcher Drone** (Maverick hull) — stalker AI; no weapons; 30 HP, 10 per arc. Rushes the player at ~196 u/s. When within 35px it latches onto the hull (`_isLatched = true`) and drains 2 armor + 0.5 hull per 0.25 seconds (~8 armor/sec, 2 hull/sec). Drone dies if target goes inactive; player should shoot drones off first.
+
+#### Spawn Queue Pattern
+
+DroneControlFrigate builds Snatcher Drone instances during `update()` and pushes them to `this._spawnQueue`. After the entity update loop in `game.js`, the spawn queue processor pops each queued drone and adds it to `entities[]` and `ships[]`. This avoids mutating `entities[]` while iterating.
+
+#### Pickup Text Pattern
+
+SnatcHerDrone pushes `{ text, colorHint }` entries to `this._pickupTextQueue` when it latches. The same queue processor in `game.js` reads this queue and calls `hud.addPickupText()`. Both queues are safe for any entity — the processor skips entities with no queues.
+
+#### Latched Drone AI Exclusion
+
+The ship AI loop in `game.js` skips `updateShipAI()` for any ship with `_isLatched === true`. This prevents the AI from fighting the latch position update.
+
 ### Neutral Ships
 
 - **Trader Convoy** (G100 hull) — follows trade routes between stations; no weapons; drops no loot

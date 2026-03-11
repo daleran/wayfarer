@@ -114,6 +114,8 @@ export const GRAVEWAKE_ZONE = {
   raiderSpawns: [
     { x: 3200, y: 2200, count: 3 },
     { x: 2800, y: 7500, count: 3 },
+    { shipType: 'drone-control-frigate', x: 14000, y: 4200, count: 1 },
+    { shipType: 'drone-control-frigate', x: 10500, y: 2500, count: 1 },
   ],
 
   lurkerSpawns: [

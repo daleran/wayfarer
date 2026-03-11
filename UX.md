@@ -333,6 +333,12 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Exception:** Non-faction entities (planets, asteroids, nebulae, stations) can use whatever color serves the aesthetic.
 - **Rationale:** At a glance in combat, the player needs to instantly know friend from foe. Shape + size differentiates ship class. Color overloading both faction and relation is confusing — relation is the critical combat readout.
 
+### 2026-03-11: CONCORD_BLUE — Faction Stroke Override for Concord Enemies
+- **Decision:** Added `CONCORD_BLUE = '#4488ff'` to `colors.js`. Concord enemies use `ENEMY_FILL` (relation-based fill, red tint) but their stroke is overridden to `CONCORD_BLUE` instead of `ENEMY_STROKE` (`RED`).
+- **Entities:** DroneControlFrigate and SnatcHerDrone both import and hardcode `CONCORD_BLUE` as stroke in their `_drawShape()` implementations.
+- **Rationale:** The color-by-relation rule governs **fill** (a combat readout — red tint = hostile). Stroke color is secondary detail that communicates faction origin — machine-cold blue distinguishes Concord constructs from human-piloted scavenger ships at a glance. The drone core dot is also `CONCORD_BLUE`, reinforcing the machine identity. This is a deliberate exception: fill = relation, stroke = faction (Concord only).
+- **`FACTION.concord`:** Added to the FACTION map in `colors.js` for station/UI badge use.
+
 ### 2026-03-08: Dynamic Relation Color System
 - **Decision:** `ship.relation` is the single property that drives all hull color (fill, stroke, engine glow, engine trail). Colors are looked up from `RELATION_COLORS` in `colors.js` via getters on the `Ship` base class. No color is ever hardcoded in a ship class or subclass.
 - **Designer:** Ships displayed in the designer always have `relation = 'none'` → white silhouette (no relation context in preview).

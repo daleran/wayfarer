@@ -294,12 +294,26 @@ export class GameManager {
       entity.update(dt, this.entities);
     }
 
+    // Process entity spawn queues (e.g. DroneControlFrigate → SnatcHerDrone)
+    for (const entity of [...this.entities]) {
+      if (!entity._spawnQueue?.length && !entity._pickupTextQueue?.length) continue;
+      while (entity._spawnQueue?.length > 0) {
+        const drone = entity._spawnQueue.shift();
+        this.entities.push(drone);
+        this.ships.push(drone);
+      }
+      while (entity._pickupTextQueue?.length > 0) {
+        const msg = entity._pickupTextQueue.shift();
+        if (this.player) this.hud.addPickupText(msg.text, this.player.x, this.player.y, msg.colorHint ?? null);
+      }
+    }
+
     for (const ship of this.ships) {
       if (!ship.active) continue;
       if (this.aiDisabled) {
         ship.throttleLevel = 0;
         ship.rotationInput = 0;
-      } else {
+      } else if (!ship._isLatched) {
         updateShipAI(ship, this.player, this.entities, dt);
       }
     }

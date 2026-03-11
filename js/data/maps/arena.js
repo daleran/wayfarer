@@ -118,7 +118,9 @@ export const MAP = {
     },
   ],
 
-  raiderSpawns: [],
+  raiderSpawns: [
+    { shipType: 'drone-control-frigate', x: 2800, y: 2000, count: 1 },
+  ],
   lurkerSpawns: [],
   tradeConvoys: [],
   militiaPatrols: [],

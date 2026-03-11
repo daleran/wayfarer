@@ -10,6 +10,8 @@ import { createLightFighter }   from '../enemies/scavengers/lightFighter.js';
 import { createArmedHauler }    from '../enemies/scavengers/armedHauler.js';
 import { createSalvageMothership } from '../enemies/scavengers/salvageMothership.js';
 import { createGraveClanAmbusher } from '../enemies/scavengers/graveClanAmbusher.js';
+import { createDroneControlFrigate } from '../enemies/concord/droneControlFrigate.js';
+import { createSnatcHerDrone }       from '../enemies/concord/snatcHerDrone.js';
 import { createTraderConvoy }   from './neutral/traderConvoy.js';
 import { createMilitiaPatrol }  from './neutral/militiaPatrol.js';
 
@@ -111,6 +113,24 @@ export const NPC_REGISTRY = [
     shipClass: 'garrison-frigate',
     file: 'js/ships/neutral/militiaPatrol.js',
     create: (x, y) => createMilitiaPatrol(x, y),
+  },
+  {
+    id: 'drone-control-frigate',
+    label: 'Drone Control Frigate',
+    faction: 'concord',
+    behavior: 'standoff',
+    shipClass: 'garrison-frigate',
+    file: 'js/enemies/concord/droneControlFrigate.js',
+    create: (x, y) => createDroneControlFrigate(x, y),
+  },
+  {
+    id: 'snatcher-drone',
+    label: 'Snatcher Drone',
+    faction: 'concord',
+    behavior: 'stalker',
+    shipClass: 'maverick-courier',
+    file: 'js/enemies/concord/snatcHerDrone.js',
+    create: (x, y) => createSnatcHerDrone(x, y),
   },
 ];
 

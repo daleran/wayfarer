@@ -7,10 +7,12 @@ import { createLightFighter }      from './scavengers/lightFighter.js';
 import { createArmedHauler }       from './scavengers/armedHauler.js';
 import { createSalvageMothership } from './scavengers/salvageMothership.js';
 import { createGraveClanAmbusher } from './scavengers/graveClanAmbusher.js';
+import { createDroneControlFrigate } from './concord/droneControlFrigate.js';
 
 export const RAIDER_REGISTRY = {
-  'light-fighter':       createLightFighter,
-  'armed-hauler':        createArmedHauler,
-  'salvage-mothership':  createSalvageMothership,
-  'grave-clan-ambusher': createGraveClanAmbusher,
+  'light-fighter':         createLightFighter,
+  'armed-hauler':          createArmedHauler,
+  'salvage-mothership':    createSalvageMothership,
+  'grave-clan-ambusher':   createGraveClanAmbusher,
+  'drone-control-frigate': createDroneControlFrigate,
 };
