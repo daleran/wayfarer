@@ -16,8 +16,8 @@ import { PlasmaCannon } from './weapons/plasmaCannon.js';
 import { Cannon } from './weapons/cannon.js';
 import { Torpedo } from './weapons/torpedo.js';
 import { ParticlePool } from './systems/particlePool.js';
-import { updateRaiderAI } from './ai/raiderAI.js';
-import { updateNeutralAI } from './ai/neutralAI.js';
+import { updateShipAI } from './ai/shipAI.js';
+import { AI_TEMPLATES } from './data/tuning/aiTuning.js';
 import { createTraderConvoy }  from './ships/neutral/traderConvoy.js';
 import { createMilitiaPatrol } from './ships/neutral/militiaPatrol.js';
 import { Ship } from './entities/ship.js';
@@ -35,17 +35,14 @@ import { RocketExplosion } from './entities/rocketExplosion.js';
 
 import { DEFAULT_SCRAP, FUEL_RATES,
          REPAIR_RATE, REPAIR_COST_PER_PT, BOUNTY, REPUTATION,
-         SPAWN,
          MODULE_REPAIR_RATE, MODULE_REPAIR_COST,
-         MODULE_BREACH_HULL_THRESHOLD, MODULE_BREACH_CHANCE_LOW,
+       } from './data/tuning/economyTuning.js';
+import { SPAWN } from './data/tuning/shipTuning.js';
+import { MODULE_BREACH_HULL_THRESHOLD, MODULE_BREACH_CHANCE_LOW,
          MODULE_BREACH_CHANCE_MID, MODULE_BREACH_CHANCE_HIGH,
-       } from './data/stats.js';
+       } from './data/tuning/weaponTuning.js';
 import { ReputationSystem } from './systems/reputation.js';
-import {
-  SmallFissionReactor, HydrogenFuelCell, LargeFusionReactor,
-  SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
-  SalvageScannerModule, LongRangeScannerModule,
-} from './systems/shipModule.js';
+import { createModuleById } from './modules/registry.js';
 import { CONDITION_DISTRIBUTIONS } from './data/lootTables.js';
 import { COMMODITIES } from './data/commodities.js';
 import { createShip } from './ships/registry.js';
@@ -56,8 +53,7 @@ export class GameManager {
     this.ctx = null;
     this.entities = [];
     this.player = null;
-    this.raiders = [];
-    this.neutralShips = [];
+    this.ships = [];   // all non-player ships; relation drives hostile/neutral/friendly
     this.camera = null;
     this.renderer = null;
     this.hud = null;
@@ -139,7 +135,7 @@ export class GameManager {
 
     if (this.isTestMode) {
       // Swap slot 2 (H2 fuel cell) to small fission reactor for testing overhaul mechanic
-      this.player.moduleSlots[2] = new SmallFissionReactor();
+      this.player.moduleSlots[2] = createModuleById('SmallFissionReactor');
 
       // Full weapon roster in test mode — replace module-installed weapons
       this.player.weapons = [];
@@ -179,7 +175,7 @@ export class GameManager {
     for (const p of this.map.planets) this.entities.push(createPlanet(p));
     for (const d of (this.map.derelicts || [])) this.entities.push(createDerelict(d));
 
-    // Raiders
+    // Raider spawns
     for (const spawn of (this.map.raiderSpawns || [])) {
       const station = this.map.stations.find(s => s.id === spawn.stationId);
       const home = station ? { x: station.x, y: station.y } : { x: spawn.x, y: spawn.y };
@@ -189,15 +185,19 @@ export class GameManager {
         const rx = home.x + Math.sin(angle) * dist;
         const ry = home.y - Math.cos(angle) * dist;
         const factory = RAIDER_REGISTRY[spawn.shipType] ?? RAIDER_REGISTRY['light-fighter'];
-        const raider = factory(rx, ry);
-        raider.homePosition = { x: home.x, y: home.y };
-        if (spawn.behaviorType) raider.behaviorType = spawn.behaviorType;
-        this.entities.push(raider);
-        this.raiders.push(raider);
+        const ship = factory(rx, ry);
+        ship.homePosition = { x: home.x, y: home.y };
+        ship._canRespawn  = true;
+        // Spawn-level behavior override — replaces the constructor template
+        if (spawn.behaviorType && AI_TEMPLATES[spawn.behaviorType]) {
+          ship.ai = { ...AI_TEMPLATES[spawn.behaviorType] };
+        }
+        this.entities.push(ship);
+        this.ships.push(ship);
       }
     }
 
-    // Lurker spawns — placed at fixed positions; cover point = spawn position
+    // Lurker spawns — cover point = spawn position
     for (const spawn of (this.map.lurkerSpawns || [])) {
       for (let i = 0; i < spawn.count; i++) {
         const angle = (i / Math.max(spawn.count, 1)) * Math.PI * 2;
@@ -205,10 +205,11 @@ export class GameManager {
         const rx = spawn.x + Math.sin(angle) * dist;
         const ry = spawn.y - Math.cos(angle) * dist;
         const ship = createGraveClanAmbusher(rx, ry);
-        ship._coverPoint = { x: rx, y: ry };
+        ship._coverPoint  = { x: rx, y: ry };
         ship.homePosition = { x: spawn.x, y: spawn.y };
+        ship._canRespawn  = true;
         this.entities.push(ship);
-        this.raiders.push(ship);
+        this.ships.push(ship);
       }
     }
 
@@ -222,7 +223,7 @@ export class GameManager {
         ship._tradeRouteA = { ...convoy.routeA };
         ship._tradeRouteB = { ...convoy.routeB };
         this.entities.push(ship);
-        this.neutralShips.push(ship);
+        this.ships.push(ship);
       }
     }
 
@@ -238,7 +239,7 @@ export class GameManager {
         ship._orbitSpeed  = patrol.orbitSpeed;
         ship._orbitAngle  = angle;
         this.entities.push(ship);
-        this.neutralShips.push(ship);
+        this.ships.push(ship);
       }
     }
 
@@ -293,23 +294,18 @@ export class GameManager {
       entity.update(dt, this.entities);
     }
 
-    for (const raider of this.raiders) {
-      if (!raider.active) continue;
+    for (const ship of this.ships) {
+      if (!ship.active) continue;
       if (this.aiDisabled) {
-        raider.throttleLevel = 0;
-        raider.rotationInput = 0;
+        ship.throttleLevel = 0;
+        ship.rotationInput = 0;
       } else {
-        updateRaiderAI(raider, this.player, this.entities, dt);
+        updateShipAI(ship, this.player, this.entities, dt);
       }
     }
 
-    for (const ship of this.neutralShips) {
-      if (!ship.active) continue;
-      updateNeutralAI(ship, dt);
-    }
-
     // Auto-fire turrets
-    const enemies = this.raiders.filter(r => r.active);
+    const enemies = this.ships.filter(s => s.active && s.relation === 'hostile');
     if (this.player && this.player.active && !this.isSalvaging && !this.isRepairing) {
       this.player.fireAutoWeapons(enemies, this.entities);
 
@@ -353,7 +349,7 @@ export class GameManager {
   }
 
   _updateGuidedProjectiles() {
-    const enemies = this.raiders.filter(r => r.active);
+    const enemies = this.ships.filter(s => s.active && s.relation === 'hostile');
     for (const entity of this.entities) {
       if (!(entity instanceof Projectile) || !entity.active || !entity.isGuided) continue;
       if (entity.guidedType === 'wire') {
@@ -585,7 +581,7 @@ export class GameManager {
       r.homePosition = { x: mx, y: my };
       r._aggro = true;
       this.entities.push(r);
-      this.raiders.push(r);
+      this.ships.push(r);
     };
 
     if (input.wasJustPressed('?')) this.isPanMode = !this.isPanMode;
@@ -760,17 +756,11 @@ export class GameManager {
   }
 
   _createModuleById(id) {
-    const map = {
-      SmallFissionReactor:   () => new SmallFissionReactor(),
-      HydrogenFuelCell:      () => new HydrogenFuelCell(),
-      LargeFusionReactor:    () => new LargeFusionReactor(),
-      SalvagedSensorSuite:   () => new SalvagedSensorSuite(),
-      StandardSensorSuite:   () => new StandardSensorSuite(),
-      CombatComputer:        () => new CombatComputerModule(),
-      SalvageScanner:        () => new SalvageScannerModule(),
-      LongRangeScanner:      () => new LongRangeScannerModule(),
-    };
-    return map[id] ? map[id]() : null;
+    try {
+      return createModuleById(id);
+    } catch {
+      return null;
+    }
   }
 
   _createWeaponById(id) {
@@ -903,8 +893,9 @@ export class GameManager {
                        : createLightFighter;
         const raider = factory(rx, ry);
         raider.homePosition = { x: entry.homePosition.x, y: entry.homePosition.y };
+        raider._canRespawn  = true;
         this.entities.push(raider);
-        this.raiders.push(raider);
+        this.ships.push(raider);
         this._raiderRespawnQueue.splice(i, 1);
       }
     }
@@ -1011,10 +1002,12 @@ export class GameManager {
         const dx = pb.x - sb.x;
         const dy = pb.y - sb.y;
         if (Math.sqrt(dx * dx + dy * dy) < pb.radius + sb.radius) {
-          // Attacking a neutral ship: reputation penalty (once per projectile)
+          // Attacking a neutral ship: turn hostile, apply reputation penalty once
           if (proj.owner === this.player && target.relation === 'neutral' && !proj._neutralPenaltyApplied) {
             proj._neutralPenaltyApplied = true;
             this.reputation.change('settlements', REPUTATION.ATTACK_NEUTRAL_PENALTY);
+            target.relation = 'hostile';
+            target._aggro   = true;
           }
           if (proj.isRocket || proj.detonatesOnContact) {
             // AoE on direct hit
@@ -1033,7 +1026,7 @@ export class GameManager {
             if (target === this.player && target.hullCurrent < hullBefore) this._maybeBreachModule(target);
             proj.active = false;
             this.particlePool.explosion(proj.x, proj.y, 5);
-            if (target.isDestroyed && target !== this.player && target.relation !== 'neutral') {
+            if (target.isDestroyed && target !== this.player && target.relation === 'hostile') {
               this._onEnemyKilled(target);
             }
           } else {
@@ -1043,7 +1036,7 @@ export class GameManager {
             if (target === this.player && target.hullCurrent < hullBefore) this._maybeBreachModule(target);
             proj.active = false;
             this.particlePool.explosion(proj.x, proj.y, 5);
-            if (target.isDestroyed && target !== this.player && target.relation !== 'neutral') {
+            if (target.isDestroyed && target !== this.player && target.relation === 'hostile') {
               this._onEnemyKilled(target);
             }
           }
@@ -1074,20 +1067,22 @@ export class GameManager {
 
   _purgeInactive() {
     if (this.isTestMode) {
-      for (const r of this.raiders) {
-        if (!r.active && r.homePosition && !r.isBountyTarget) {
+      for (const s of this.ships) {
+        if (!s.active && s._canRespawn && s.homePosition && !s.isBountyTarget) {
           this._raiderRespawnQueue.push({
             timer: 60,
-            homePosition: { x: r.homePosition.x, y: r.homePosition.y },
-            shipType: r.shipType,
+            homePosition: { x: s.homePosition.x, y: s.homePosition.y },
+            shipType: s.shipType,
           });
         }
       }
     }
-    this.entities      = this.entities.filter(e => e.active);
-    this.raiders       = this.raiders.filter(r => r.active);
-    this.neutralShips  = this.neutralShips.filter(s => s.active);
+    this.entities = this.entities.filter(e => e.active);
+    this.ships    = this.ships.filter(s => s.active);
   }
+
+  // Computed view: all ships currently flagged hostile (for renderer/HUD)
+  get raiders() { return this.ships.filter(s => s.relation === 'hostile'); }
 
   get totalCargoCapacity() { return this.player ? this.player.cargoCapacity : 0; }
   get totalCargoUsed() {
@@ -1137,7 +1132,7 @@ export class GameManager {
     target.homePosition = { ...contract.targetPosition };
     target.isBountyTarget = true;
     this.entities.push(target);
-    this.raiders.push(target);
+    this.ships.push(target);
     const idx = station.bounties.indexOf(contract);
     if (idx !== -1) station.bounties.splice(idx, 1);
     this.activeBounties.push({

@@ -1,6 +1,7 @@
 import { GarrisonFrigate } from '../classes/garrisonFrigate.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/stats.js';
+         BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
 const SPEED_MULT = 0.5;   // ~42 u/s — steady patrol speed
 const ACCEL_MULT = 0.6;
@@ -15,10 +16,10 @@ export class MilitiaPatrol extends GarrisonFrigate {
   constructor(x, y) {
     super(x, y);
 
-    this.faction         = 'neutral';
-    this.relation        = 'neutral';
-    this.shipType        = 'militia-patrol';
-    this.neutralBehavior = 'militia';
+    this.faction  = 'neutral';
+    this.relation = 'neutral';
+    this.shipType = 'militia-patrol';
+    this.ai       = { ...AI_TEMPLATES.militia };
 
     this.flavorText =
       'A settlement-operated Garrison-class Frigate running security on nearby approaches. ' +

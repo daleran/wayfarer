@@ -1,7 +1,8 @@
 import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
 import { CannonModule, RocketPodModule } from '../../systems/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/stats.js';
+         BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
 const SPEED_MULT = 0.6;   // ~50 u/s — slow, hangs back
 const ACCEL_MULT = 0.6;
@@ -17,11 +18,11 @@ export class SalvageMothership extends GarrisonFrigate {
   constructor(x, y) {
     super(x, y);
 
-    this.faction      = 'scavenger';
-    this.relation     = 'enemy';
-    this.shipType     = 'salvage-mothership';
-    this.displayName  = 'Salvage Mothership';
-    this.behaviorType = 'standoff';
+    this.faction     = 'scavenger';
+    this.relation    = 'hostile';
+    this.shipType    = 'salvage-mothership';
+    this.displayName = 'Salvage Mothership';
+    this.ai          = { ...AI_TEMPLATES.standoff };
 
     this.flavorText =
       'A Garrison-class Frigate repurposed as a mobile salvage base and clan flagship. ' +

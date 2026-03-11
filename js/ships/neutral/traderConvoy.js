@@ -1,6 +1,7 @@
 import { CompactHauler } from '../classes/compactHauler.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/stats.js';
+         BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
 const SPEED_MULT = 0.55;  // ~46 u/s — slow trading hauler
 const ACCEL_MULT = 0.75;
@@ -15,10 +16,10 @@ export class TraderConvoy extends CompactHauler {
   constructor(x, y) {
     super(x, y);
 
-    this.faction         = 'neutral';
-    this.relation        = 'neutral';
-    this.shipType        = 'trader-convoy';
-    this.neutralBehavior = 'trader';
+    this.faction  = 'neutral';
+    this.relation = 'neutral';
+    this.shipType = 'trader-convoy';
+    this.ai       = { ...AI_TEMPLATES.trader };
 
     this.flavorText =
       'A G100 hauler on a regular trade run — lightly crewed, unarmed or barely ' +

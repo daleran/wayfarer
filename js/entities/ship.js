@@ -1,7 +1,7 @@
 import { Entity } from './entity.js';
 import { RELATION_COLORS, RED } from '../ui/colors.js';
 import { BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
-         THROTTLE_LEVELS, THROTTLE_RATIOS } from '../data/stats.js';
+         THROTTLE_LEVELS, THROTTLE_RATIOS } from '../data/tuning/shipTuning.js';
 
 const TRAIL_MAX_POINTS = 120;
 
@@ -12,8 +12,8 @@ export class Ship extends Entity {
     // Identity
     this.isShip = true;
     this.faction = 'neutral';
-    this.relation = 'none';   // 'none' | 'player' | 'friendly' | 'neutral' | 'enemy'
-    this.behaviorType = null;
+    this.relation = 'none';   // 'none' | 'player' | 'friendly' | 'neutral' | 'hostile'
+    this.ai = null;            // set to { ...AI_TEMPLATES.x } in subclass constructors
     this.shipType = null;
 
     // Quad-arc armor: front (bow), port (left), starboard (right), aft (stern)

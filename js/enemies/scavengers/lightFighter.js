@@ -1,7 +1,8 @@
 import { MaverickCourier } from '../../ships/classes/maverickCourier.js';
 import { AutocannonModule } from '../../systems/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/stats.js';
+         BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
 const SPEED_MULT = 1.55;  // ~130 u/s — fast; slightly slower than base runner for balance
 const ACCEL_MULT = 1.4;
@@ -17,11 +18,11 @@ export class LightFighter extends MaverickCourier {
   constructor(x, y) {
     super(x, y);
 
-    this.faction      = 'scavenger';
-    this.relation     = 'enemy';
-    this.shipType     = 'light-fighter';
-    this.displayName  = 'Light Fighter';
-    this.behaviorType = 'stalker';
+    this.faction     = 'scavenger';
+    this.relation    = 'hostile';
+    this.shipType    = 'light-fighter';
+    this.displayName = 'Light Fighter';
+    this.ai          = { ...AI_TEMPLATES.stalker };
 
     this.flavorText =
       'A Maverick Courier stripped for aggression — autocannon bolted to the nose, ' +

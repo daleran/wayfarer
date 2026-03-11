@@ -34,7 +34,25 @@ export class EditorOverlay {
   // ── Registry ──────────────────────────────────────────────────────────────
 
   _buildBarItems() {
+    const npcItems = NPC_REGISTRY.map(n => ({
+      id: n.id,
+      label: n.label,
+      faction: n.faction,
+      create: n.create,
+      stats: `${n.faction} · ${n.behavior}`,
+    }));
+    // Enemies (scavenger faction) first, then rest
+    npcItems.sort((a, b) => {
+      const aE = a.faction === 'scavenger' ? 0 : 1;
+      const bE = b.faction === 'scavenger' ? 0 : 1;
+      return aE - bE;
+    });
+
     return [
+      {
+        label: 'NPCS',
+        items: npcItems,
+      },
       {
         label: 'SHIPS',
         items: SHIP_REGISTRY.map(s => ({
@@ -43,16 +61,6 @@ export class EditorOverlay {
           faction: null,
           create: s.create,
           stats: s.label,
-        })),
-      },
-      {
-        label: 'NPCS',
-        items: NPC_REGISTRY.map(n => ({
-          id: n.id,
-          label: n.label,
-          faction: n.faction,
-          create: n.create,
-          stats: `${n.faction} · ${n.behavior}`,
         })),
       },
       {
@@ -146,15 +154,11 @@ export class EditorOverlay {
     const entity = item.create(world.x, world.y);
     game.entities.push(entity);
 
-    // Register in the appropriate tracking list so AI runs correctly
-    if (entity.relation === 'neutral') {
-      game.neutralShips.push(entity);
-    } else if (entity.faction === 'scavenger') {
-      if (entity.homePosition === undefined) {
-        entity.homePosition = { x: world.x, y: world.y };
-      }
-      entity._aggro = true;
-      game.raiders.push(entity);
+    // Register in the unified ships list so AI runs
+    if (entity.ai) {
+      if (entity.homePosition === undefined) entity.homePosition = { x: world.x, y: world.y };
+      if (entity.relation === 'hostile') entity._aggro = true;
+      game.ships.push(entity);
     }
 
     console.log(`[editor] placed ${item.label} at (${Math.round(world.x)}, ${Math.round(world.y)})`);
@@ -165,7 +169,7 @@ export class EditorOverlay {
     const item = cat.items[this._itemIdx];
     if (!item) return;
     const designerCat = DESIGNER_CAT[cat.label] ?? 'ships';
-    const url = `/?designer&category=${designerCat}&id=${item.id}`;
+    const url = `/designer.html?category=${designerCat}&id=${item.id}`;
     window.open(url, '_blank');
   }
 
@@ -221,7 +225,7 @@ export class EditorOverlay {
       const hullMax = Math.round(entity.hullMax       ?? entity.hull    ?? 0);
       const speed   = Math.round(Math.hypot(entity.vx ?? 0, entity.vy ?? 0));
       const speedMax= Math.round(entity.speed ?? 0);
-      const beh     = entity.behaviorType ?? '\u2014';
+      const beh     = entity.ai?.combatBehavior ?? entity.ai?.passiveBehavior ?? '\u2014';
       const state   = entity.aiState      ?? '\u2014';
 
       // Armor arcs — show all 4 sides if available, else simple total

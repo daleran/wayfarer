@@ -1,7 +1,8 @@
 import { MaverickCourier } from '../../ships/classes/maverickCourier.js';
 import { AutocannonModule, RocketPodModule } from '../../systems/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/stats.js';
+         BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
 const SPEED_MULT = 1.1;   // ~120 u/s — fast courier, built to pounce
 const ACCEL_MULT = 1.2;
@@ -17,11 +18,11 @@ export class GraveClanAmbusher extends MaverickCourier {
   constructor(x, y) {
     super(x, y);
 
-    this.faction      = 'scavenger';
-    this.relation     = 'enemy';
-    this.shipType     = 'grave-clan-ambusher';
-    this.displayName  = 'Grave-Clan Ambusher';
-    this.behaviorType = 'lurker';
+    this.faction     = 'scavenger';
+    this.relation    = 'hostile';
+    this.shipType    = 'grave-clan-ambusher';
+    this.displayName = 'Grave-Clan Ambusher';
+    this.ai          = { ...AI_TEMPLATES.lurker };
 
     this.flavorText =
       'A Maverick Courier fielded by Grave-Clan cells — the most patient killers in the ' +
