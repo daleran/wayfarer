@@ -21,7 +21,7 @@ export class EditorOverlay {
   constructor(game) {
     this._game     = game;
     this._panMode  = false;
-    this._debugMode = false;
+    this._debugMode = 0;
     this._barOpen  = false;
     this._catIdx   = 0;
     this._itemIdx  = 0;
@@ -99,7 +99,7 @@ export class EditorOverlay {
     }
 
     // Toggle debug overlay (= key)
-    if (input.wasJustPressed('=')) this._debugMode = !this._debugMode;
+    if (input.wasJustPressed('=')) this._debugMode = (this._debugMode + 1) % 3;
 
     // Toggle object sidebar (- key)
     if (input.wasJustPressed('-')) this._barOpen = !this._barOpen;
@@ -174,7 +174,7 @@ export class EditorOverlay {
     const H    = game.canvas.height;
 
     if (this._panMode)   this._renderPanBanner(ctx, W);
-    if (this._debugMode) this._renderDebugOverlay(ctx, game);
+    if (this._debugMode > 0) this._renderDebugOverlay(ctx, game, this._debugMode);
     if (this._barOpen)   this._renderSidebar(ctx, W, H);
     this._renderHUDBar(ctx, W, H);
   }
@@ -199,7 +199,7 @@ export class EditorOverlay {
 
   // ── Debug overlay ─────────────────────────────────────────────────────────
 
-  _renderDebugOverlay(ctx, game) {
+  _renderDebugOverlay(ctx, game, mode) {
     const cam = game.camera;
     ctx.save();
     ctx.font = '10px monospace';
@@ -210,13 +210,13 @@ export class EditorOverlay {
       if (entity === game.player) continue;
 
       const s   = cam.worldToScreen(entity.x, entity.y);
-      const ox  = s.x + 16;
-      let   oy  = s.y - 24;
+      const ox  = s.x + 32;
+      let   oy  = s.y - 40;
 
       const hull    = Math.round(entity.hullCurrent  ?? entity.hull    ?? 0);
       const hullMax = Math.round(entity.hullMax       ?? entity.hull    ?? 0);
       const speed   = Math.round(Math.hypot(entity.vx ?? 0, entity.vy ?? 0));
-      const speedMax= Math.round(entity.speed ?? 0);
+      const speedMax= Math.round(entity.speedMax ?? 0);
       const beh     = entity.ai?.combatBehavior ?? entity.ai?.passiveBehavior ?? '\u2014';
       const state   = entity.aiState      ?? '\u2014';
 
@@ -235,10 +235,11 @@ export class EditorOverlay {
       const armorLines = hasArcs ? 4 : 1;
       const totalLines = 2 + armorLines + 1 + 2; // hull, armor×N, speed, beh, state
       const wepWrapped = _wrapText(wepLine, 18); // wrap at ~18 chars
-      const boxH = (totalLines + wepWrapped.length) * 14 + 8;
+      const detailLines = mode === 2 ? 5 + 1 : 0; // ACC TRN THR WT THT + separator
+      const boxH = (totalLines + wepWrapped.length + detailLines) * 14 + 8;
       const boxW = 126;
 
-      ctx.fillStyle = 'rgba(0,8,16,0.80)';
+      ctx.fillStyle = 'rgba(0,8,16,0.30)';
       ctx.fillRect(ox - 2, oy - 12, boxW, boxH);
 
       ctx.textAlign = 'left';
@@ -271,6 +272,36 @@ export class EditorOverlay {
         ctx.fillText(ln, ox, oy); oy += 13;
       }
       ctx.font = '10px monospace';
+
+      // Detailed layer
+      if (mode === 2) {
+        ctx.strokeStyle = 'rgba(0,200,220,0.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ox - 2, oy + 2);
+        ctx.lineTo(ox - 2 + boxW, oy + 2);
+        ctx.stroke();
+        oy += 10;
+
+        ctx.fillStyle = 'rgba(200,200,200,0.55)';
+        ctx.font = '10px monospace';
+        ctx.fillText(`ACC: ${(entity.acceleration ?? 0).toFixed(1)}`, ox, oy); oy += 14;
+        ctx.fillText(`TRN: ${(entity.turnRate ?? 0).toFixed(3)} rad/s`, ox, oy); oy += 14;
+        ctx.fillText(`THR: ${entity.throttleLevel ?? '--'}/${entity.throttleLevels ?? '--'}`, ox, oy); oy += 14;
+        ctx.fillText(`WT:  --`, ox, oy); oy += 14;
+        ctx.fillText(`THT: --`, ox, oy); oy += 14;
+
+        const spdMult  = entity._baseSpeedMax     ? entity.speedMax     / entity._baseSpeedMax     : null;
+        const accMult  = entity._baseAcceleration ? entity.acceleration / entity._baseAcceleration : null;
+        const trnMult  = entity._baseTurnRate     ? entity.turnRate     / entity._baseTurnRate     : null;
+        const mods = [];
+        if (spdMult != null && Math.abs(spdMult - 1) > 0.001) mods.push(`SPD×${spdMult.toFixed(2)}`);
+        if (accMult != null && Math.abs(accMult - 1) > 0.001) mods.push(`ACC×${accMult.toFixed(2)}`);
+        if (trnMult != null && Math.abs(trnMult - 1) > 0.001) mods.push(`TRN×${trnMult.toFixed(2)}`);
+        for (const m of mods) {
+          ctx.fillText(m, ox, oy); oy += 14;
+        }
+      }
 
       // Velocity vector
       const vx = entity.vx ?? 0, vy = entity.vy ?? 0;
