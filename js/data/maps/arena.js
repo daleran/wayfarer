@@ -1,3 +1,5 @@
+import { THE_COIL } from '../../world/stations/index.js';
+
 // Arena combat sandbox map.
 // Load with: editor.html?map=arena
 // Pale at center (4000, 3000). Player spawns south. Six derelicts ring the planet.
@@ -6,7 +8,10 @@ export const MAP = {
   mapSize: { width: 8000, height: 6000 },
   playerStart: { x: 4000, y: 4400 },
 
-  stations: [],
+  // The Coil added for BH station overlay testing
+  stations: [
+    { ...THE_COIL, x: 4000, y: 400 },
+  ],
   planets: [],
 
   background: [
@@ -36,9 +41,9 @@ export const MAP = {
       derelictClass: 'frigate',
       lootTableId: 'derelict-frigate',
       lootTable: [
-        { type: 'scrap',    amount: 35 },
+        { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'faulty' },
-        { type: 'ammo',     ammoType: 'autocannon', amount: 20 },
+        { type: 'ammo', ammoType: 'autocannon', amount: 20 },
       ],
       loreText: [
         'DRIFTING VIGIL — Garrison-class frigate, registry struck.',
@@ -50,7 +55,7 @@ export const MAP = {
       derelictClass: 'unknown',
       lootTableId: 'derelict-unknown',
       lootTable: [
-        { type: 'scrap',         amount: 40 },
+        { type: 'scrap', amount: 40 },
         { type: 'void_crystals', amount: 2 },
         { type: 'moduleId', id: 'LargeFusionReactor', condition: 'damaged' },
       ],
@@ -64,9 +69,9 @@ export const MAP = {
       derelictClass: 'fighter',
       lootTableId: 'derelict-fighter',
       lootTable: [
-        { type: 'scrap',    amount: 28 },
+        { type: 'scrap', amount: 28 },
         { type: 'weaponId', id: 'Autocannon' },
-        { type: 'ammo',     ammoType: 'autocannon', amount: 120 },
+        { type: 'ammo', ammoType: 'autocannon', amount: 120 },
       ],
       loreText: [
         'COLD REMNANT — Maverick-class courier, combat-modified.',
@@ -79,9 +84,9 @@ export const MAP = {
       lootTableId: 'derelict-hauler',
       lootTable: [
         { type: 'scrap', amount: 20 },
-        { type: 'fuel',  amount: 12 },
+        { type: 'fuel', amount: 12 },
         { type: 'moduleId', id: 'HydrogenFuelCell', condition: 'worn' },
-        { type: 'ammo',  ammoType: 'rocket', amount: 3 },
+        { type: 'ammo', ammoType: 'rocket', amount: 3 },
       ],
       loreText: [
         'GUTTED PIONEER — G100-class hauler, cargo hold stripped.',
@@ -93,9 +98,9 @@ export const MAP = {
       derelictClass: 'frigate',
       lootTableId: 'derelict-frigate',
       lootTable: [
-        { type: 'scrap',    amount: 35 },
+        { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'worn' },
-        { type: 'ammo',     ammoType: 'autocannon', amount: 20 },
+        { type: 'ammo', ammoType: 'autocannon', amount: 20 },
       ],
       loreText: [
         'BROKEN COVENANT — Garrison-class frigate, registry struck.',
@@ -107,7 +112,7 @@ export const MAP = {
       derelictClass: 'unknown',
       lootTableId: 'derelict-unknown',
       lootTable: [
-        { type: 'scrap',         amount: 32 },
+        { type: 'scrap', amount: 32 },
         { type: 'void_crystals', amount: 1 },
         { type: 'moduleId', id: 'LargeFusionReactor', condition: 'worn' },
       ],

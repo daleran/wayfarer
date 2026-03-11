@@ -1,6 +1,7 @@
 import { PALE_WIDOW }  from '../../npcs/characters/paleWidow.js';
 import { RUNT_CASSIN } from '../../npcs/characters/runtCassin.js';
 import { SIX_WIRE_POL } from '../../npcs/characters/sixWirePol.js';
+import { LAYOUT }       from '../../ui/station-layouts/ashveilAnchorage.js';
 
 export const ASHVEIL_ANCHORAGE = {
   id: 'ashveil_anchorage',
@@ -34,6 +35,7 @@ export const ASHVEIL_ANCHORAGE = {
     'Outbound cargo accepted. Inbound prices',
     'reflect the difficulty of the run.',
   ],
+  layout: LAYOUT,
   bountyBoard: [ PALE_WIDOW, RUNT_CASSIN, SIX_WIRE_POL ],
   bountyContracts: [
     {

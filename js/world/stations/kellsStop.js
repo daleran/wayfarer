@@ -1,5 +1,6 @@
 import { IRONBACK_MAREL } from '../../npcs/characters/ironbackMarel.js';
 import { GUTSHOT_DREV }   from '../../npcs/characters/gutshotDrev.js';
+import { LAYOUT }         from '../../ui/station-layouts/kellsStop.js';
 
 export const KELLS_STOP = {
   id: 'kells_stop',
@@ -31,6 +32,7 @@ export const KELLS_STOP = {
     'Basic hull work only. Expect to pay.',
     "Don't expect it fast.",
   ],
+  layout: LAYOUT,
   bountyBoard: [ IRONBACK_MAREL, GUTSHOT_DREV ],
   bountyContracts: [
     {

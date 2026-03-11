@@ -29,7 +29,7 @@ import { createArkshipSpine } from './world/arkshipSpine.js';
 import { createDebrisCloud } from './world/debrisCloud.js';
 import { createPlanet } from './world/planet.js';
 import { Derelict, createDerelict } from './world/derelict.js';
-import { StationScreen } from './ui/stationScreen.js';
+import { LocationOverlay } from './ui/locationOverlay.js';
 import { ShipScreen } from './ui/shipScreen.js';
 import { RocketExplosion } from './entities/rocketExplosion.js';
 
@@ -122,7 +122,7 @@ export class GameManager {
 
     this.camera = new Camera(this.canvas.width, this.canvas.height);
     this.hud = new HUD();
-    this.stationScreen = new StationScreen();
+    this.stationScreen = new LocationOverlay();
     this.shipScreen = new ShipScreen();
     this.renderer = new Renderer(this.ctx, this.map.mapSize, this.map.zones);
     this.particlePool = new ParticlePool();
@@ -948,7 +948,7 @@ export class GameManager {
       }
       this.isDocked = true;
       this._collectCompletedBounties(this.nearbyStation);
-      this.stationScreen.open(this.nearbyStation);
+      this.stationScreen.open(this.nearbyStation, this);
     }
   }
 

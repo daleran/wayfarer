@@ -92,7 +92,7 @@ export class HUD {
       if (game.isPanMode) this._renderPanModeBanner(ctx, game);
     }
 
-    if (game.stationScreen) game.stationScreen.render(ctx, game);
+    // stationScreen is now HTML (LocationOverlay) — no canvas render needed
     if (game.shipScreen) game.shipScreen.render(ctx, game);
   }
 

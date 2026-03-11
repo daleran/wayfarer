@@ -213,6 +213,7 @@ AQ. 2026-MAR-10-1800: Weapon System Redesign — Autocannon/Cannon AP/HE ammo mo
 BI. 2026-MAR-10-0000: Game Data Rearchitecture — stats.js split into 5 domain tuning files; named ships in js/ships/named/; character files in js/npcs/characters/; station files in js/world/stations/ with bounty boards; terrain files in js/world/terrain/; module registry in js/modules/; zone manifest in js/world/zones/gravewake.js; tyr.js now a thin world composer.
 BJ. 2026-MAR-10-0000: Unified Ship AI — raiderAI.js + neutralAI.js replaced by single shipAI.js; raiders[]/neutralShips[] replaced by ships[]; ship.ai object spread from AI_TEMPLATES replaces behaviorType/neutralBehavior; neutral ships turn hostile on player contact (relation='hostile', _aggro=true); militia combatBehavior=stalker, trader combatBehavior=flee.
 BK. 2026-MAR-11-0000: Concord Enemies — DroneControlFrigate (standoff, lance weapon, spawns 3 Snatcher Drones every 12s from lateral bay notches) and SnatcHerDrone (stalker, no weapons, latches at 35px range and drains 8 armor/sec + 2 hull/sec until killed); spawn/pickup-text queue pattern in game.js; CONCORD_BLUE faction stroke override.
+BH. 2026-MAR-11-1500: Station Overhaul — HTML/CSS LocationOverlay replaces canvas StationScreen; zone-map navigation (map → zone → service); The Coil SVG schematic with 5 clickable zones (The Dock, Salvage Yard, Central Market, The Palace rep-gated, The Slums); Kell's Stop and Ashveil Anchorage simple layouts; 6 service modules (repair, trade, bounties, relations, reactor, intel); full-screen modal with scanline/cassette-futurism CSS.
 
 
 # === IDEA.md ===
@@ -1530,38 +1531,6 @@ See `NEXT.md` for features ready to implement. See `IDEA.md` for raw concepts un
 # NEXT.md — Upcoming Features
 
 ## UP NEXT
-
-
-
-
-### BY — Expanded Debug Overlay
-
-**Dev tool only** (`editor.html`). Rendered per NPC ship entity, world-anchored (moves with ship).
-
-**Toggle:** `=` key cycles through three states: none → simple → detailed → none
-
----
-
-**Simple overlay (current layer — polish pass):**
-- Reduce box background opacity from 0.80 → 0.30 (keep dark tint for readability, lose the heavy panel look)
-- Push anchor point farther from ship: 32px right + 40px above entity screen position (was 16px/24px)
-- Fix SPD stat: currently broken (shows 0/max or static current). Must read `Math.hypot(ship.vx, ship.vy)` for current and `ship.speedMax` for max. Format: `SPD: {current}/{max}` (both rounded to 1 decimal)
-- All other existing stats unchanged: HP, armor arcs (F/P/S/A), BEH, ST, weapon list, velocity vector line, aim line
-
----
-
-**Detailed overlay (new second layer):**
-- Appended below the simple overlay content — same box, extended downward. No separate panel.
-- Separator line (dim cyan, 1px) between simple and detailed sections
-- Additional stats rows:
-  - `ACC: {ship.acceleration}` — world-units/sec²
-  - `TRN: {ship.turnRate.toFixed(3)} rad/s`
-  - `THR: {ship.throttle}/{THROTTLE_LEVELS}` — current throttle index / max steps
-  - `WT: --` — placeholder until weight system implemented
-  - `THT: --` — placeholder until thrust system implemented
-- Modifier block (if any per-ship multipliers differ from 1.0):
-  - `SPD×{speedMult}`, `ACC×{accelMult}`, `TRN×{turnMult}` — only show rows where multiplier ≠ 1.0; omit entire block if all are default
-- All text same size/font as simple layer; detailed rows use dim white (not cyan/amber) to visually separate them from primary stats
 
 
 

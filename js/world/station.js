@@ -15,6 +15,7 @@ export class Station extends Entity {
     this.lore = data.lore ?? null;
     this.bounties = [...(data.bountyContracts ?? [])];
     this.canOverhaulReactor = data.canOverhaulReactor ?? false;
+    this.layout = data.layout ?? null;
     this.dockingRadius = 150;
     this._navPulse = 0;
   }

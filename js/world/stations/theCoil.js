@@ -1,5 +1,6 @@
 import { HOLLOW_BREKK }   from '../../npcs/characters/hollowBrekk.js';
 import { CRESTFALL_ORIN } from '../../npcs/characters/crestfallOrin.js';
+import { LAYOUT }         from '../../ui/station-layouts/theCoil.js';
 
 export const THE_COIL = {
   id: 'the_coil',
@@ -42,6 +43,7 @@ export const THE_COIL = {
     'elevated above the floor where they watch',
     'everything that enters.',
   ],
+  layout: LAYOUT,
   bountyBoard: [ HOLLOW_BREKK, CRESTFALL_ORIN ],
   bountyContracts: [
     {
