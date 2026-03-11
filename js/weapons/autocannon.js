@@ -3,7 +3,7 @@ import { AMBER, AUTOCANNON_GLOW } from '../ui/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          AUTOCANNON_MAG_SIZE, AUTOCANNON_RELOAD_TIME,
-         HE_AUTOCANNON_BLAST } from '../data/stats.js';
+         HE_AUTOCANNON_BLAST } from '../data/tuning/weaponTuning.js';
 import { normalizeToTarget } from '../utils/math.js';
 
 const DAMAGE_MULT  = 1.0;
@@ -67,7 +67,7 @@ export class Autocannon {
     if (ship.relation === 'player' && this.ammo <= 0) return;
     const n = normalizeToTarget(ship.x, ship.y, tx, ty);
     if (!n) return;
-    const { nx, ny } = n;
+    const { nx, ny, dist } = n;
     const mode = AMMO_MODES[this.currentAmmoMode];
     const proj = new Projectile(
       ship.x, ship.y,
@@ -76,15 +76,21 @@ export class Autocannon {
       this.damage * mode.damageMult,
       ship
     );
-    proj.maxRange = this.maxRange;
     proj.color = this.color;
     proj.glowColor = this.glowColor;
     proj.length = 3;
     proj.hasTrail = true;
     if (mode.hullDamageBase !== null) proj.hullDamage = mode.hullDamageBase;
-    if (mode.blastRadius > 0)         proj.blastRadius = mode.blastRadius;
-    if (mode.detonatesOnContact)      proj.detonatesOnContact = true;
-    if (mode.canIntercept)            proj.canIntercept = true;
+    if (mode.blastRadius > 0) {
+      proj.blastRadius = mode.blastRadius;
+      // HE: detonate at click point (range-capped) like flak, and also on contact
+      proj.maxRange           = Math.min(dist + 20, this.maxRange);
+      proj.detonatesOnExpiry  = true;
+      proj.detonatesOnContact = true;
+    } else {
+      proj.maxRange = this.maxRange;
+    }
+    if (mode.canIntercept) proj.canIntercept = true;
     entities.push(proj);
     if (ship.relation === 'player') {
       this.ammo--;

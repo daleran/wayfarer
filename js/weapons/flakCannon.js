@@ -1,7 +1,7 @@
 import { Projectile } from '../entities/projectile.js';
 import { AMBER } from '../ui/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/stats.js';
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/tuning/weaponTuning.js';
 import { normalizeToTarget } from '../utils/math.js';
 
 const SMALL = { DAMAGE_MULT: 1.06, HULL_DAMAGE_MULT: 2.2, COOLDOWN_MULT: 1.1, BLAST_RADIUS: 80,  RANGE_MULT: 0.85 };

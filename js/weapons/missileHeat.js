@@ -1,6 +1,6 @@
 import { Projectile } from '../entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/stats.js';
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/tuning/weaponTuning.js';
 
 const SMALL_H = { DAMAGE_MULT: 3.24, HULL_DAMAGE_MULT: 4.2, COOLDOWN_MULT: 3.5, BLAST_RADIUS: 150 };  // ~55 dmg
 const LARGE_H = { DAMAGE_MULT: 4.71, HULL_DAMAGE_MULT: 6.0, COOLDOWN_MULT: 5.0, BLAST_RADIUS: 200 };  // ~80 dmg

@@ -1,4 +1,7 @@
-import { BASE_DAMAGE, BASE_WEAPON_RANGE } from '../data/stats.js';
+import { BASE_DAMAGE, BASE_WEAPON_RANGE } from '../data/tuning/weaponTuning.js';
+
+const OVERHEAT_LIMIT = 5.0;  // seconds at full power before forced shutdown
+const COOLDOWN_TIME  = 4.0;  // seconds required to cool before firing again
 
 // Lance: ramping beam — baseDamage (at t=0) to maxDamage (at rampTime)
 // Range expressed as a fraction of BASE_WEAPON_RANGE
@@ -39,36 +42,70 @@ export class Lance {
     this.maxDamage   = BASE_DAMAGE * V.MAX_MULT;
     this.maxRange    = BASE_WEAPON_RANGE * V.RANGE_MULT;
     this.rampTime    = 2.0;   // seconds to reach full damage
+    this.overheatLimit = OVERHEAT_LIMIT;
+    this.cooldownTime  = COOLDOWN_TIME;
 
     // State
-    this._rampUp      = 0;   // 0..rampTime
-    this._isFiring    = false;
-    this._hitTarget   = null;
-    this._beamOriginX = 0;
-    this._beamOriginY = 0;
-    this._beamEndX    = 0;
-    this._beamEndY    = 0;
+    this._rampUp         = 0;   // 0..rampTime
+    this._isFiring       = false;
+    this._hitTarget      = null;
+    this._beamOriginX    = 0;
+    this._beamOriginY    = 0;
+    this._beamEndX       = 0;
+    this._beamEndY       = 0;
+    this._fullPowerTimer = 0;   // accumulated seconds at full power
+    this._overheated     = false;
+    this._cooldownTimer  = 0;
   }
 
   update(dt) {
+    // Overheat cooldown — beam is locked out until fully cooled
+    if (this._overheated) {
+      this._isFiring = false;
+      this._cooldownTimer -= dt;
+      this._rampUp = Math.max(this._rampUp - dt * 2, 0);
+      if (this._cooldownTimer <= 0) {
+        this._overheated     = false;
+        this._cooldownTimer  = 0;
+        this._fullPowerTimer = 0;
+      }
+      return;
+    }
+
     if (this._isFiring) {
       this._rampUp = Math.min(this._rampUp + dt, this.rampTime);
+
+      // Track full-power burn time; shut down if limit exceeded
+      if (this._rampUp >= this.rampTime) {
+        this._fullPowerTimer += dt;
+        if (this._fullPowerTimer >= OVERHEAT_LIMIT) {
+          this._overheated    = true;
+          this._cooldownTimer = COOLDOWN_TIME;
+          this._hitTarget     = null;
+          this._isFiring      = false;
+          return;
+        }
+      }
+
       // Apply damage to hit target
       if (this._hitTarget && this._hitTarget.active) {
         const t = this._rampUp / this.rampTime;
         const dmgPerSec = this.baseDamage + (this.maxDamage - this.baseDamage) * t;
         const dmg = dmgPerSec * dt;
-        // hullFactor: proportion of armor damage also applied as hull damage
         this._hitTarget.takeDamage(dmg, dmg * this.hullFactor, this._beamEndX, this._beamEndY);
         if (this._hitTarget.isDestroyed) this._hitTarget = null;
       }
     } else {
       this._rampUp = Math.max(this._rampUp - dt * 2, 0);
+      // Releasing the trigger bleeds heat at the same rate it builds
+      this._fullPowerTimer = Math.max(this._fullPowerTimer - dt, 0);
     }
+
     this._isFiring = false; // reset each frame; fire() re-sets it
   }
 
   fire(ship, tx, ty, entities) {
+    if (this._overheated) return;
     this._isFiring    = true;
     this._beamOriginX = ship.x;
     this._beamOriginY = ship.y;

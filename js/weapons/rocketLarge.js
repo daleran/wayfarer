@@ -1,6 +1,6 @@
 import { Projectile } from '../entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/stats.js';
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/tuning/weaponTuning.js';
 
 const DAMAGE_MULT      = 5.3;   // ~90 armor damage per rocket
 const HULL_DAMAGE_MULT = 6.5;   // 65 hull per rocket
@@ -37,7 +37,7 @@ export class RocketPodLarge {
   }
 
   get displayName() {
-    return 'RPOD-L [' + this.guidanceMode.toUpperCase() + ']';
+    return 'RPOD-L';
   }
 
   get isReloading() { return this._reloadTimer > 0; }

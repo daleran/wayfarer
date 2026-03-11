@@ -5,7 +5,7 @@ import {
   FACTION,
   standingColor,
 } from './colors.js';
-import { BOUNTY, REPUTATION } from '../data/stats.js';
+import { BOUNTY, REPUTATION } from '../data/tuning/economyTuning.js';
 import { FACTIONS, FACTION_LABELS } from '../systems/reputation.js';
 
 const REPAIR_DURATION = 2; // seconds

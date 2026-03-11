@@ -1,4 +1,4 @@
-import { REPUTATION } from '../data/stats.js';
+import { REPUTATION } from '../data/tuning/economyTuning.js';
 
 export const FACTIONS = ['settlements', 'scavengers', 'concord', 'monastic', 'communes', 'zealots'];
 

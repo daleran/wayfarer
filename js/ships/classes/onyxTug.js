@@ -1,7 +1,7 @@
 import { Ship } from '../../entities/ship.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL, BASE_CARGO,
-         BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../../data/stats.js';
+         BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../../data/tuning/shipTuning.js';
 import { drawEngineGlow } from '../../systems/engineGlow.js';
 
 const SPEED_MULT = 0.55;  // ~46 u/s — very slow

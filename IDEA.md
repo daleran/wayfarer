@@ -2,7 +2,7 @@
 
 Raw concepts under consideration. Not yet planned for implementation. Ideas move to `NEXT.md` when prioritized for a build session.
 
-**Next available code: BI**
+**Next available code: BJ**
 
 ---
 
@@ -359,43 +359,4 @@ All audio generated via Web Audio API — no asset files required.
 
 ## Code Architecture
 
-### BI: Rearchitect game data
-
-I believe it is time to rearchitect our code structure. It is not clear
-  where game mechanics go vs game data. The stats are centralized in           
-  @js/data/stats.js, but this pattern will be unmaintainable. AI is in it's
-  own folder, ships include both the definitions of ship classes and actual
-  npc type things. The station logic is mixed with actual definitions of
-  ships. But, those are are all seperated from where the maps are. What are
-  some recommendations on coming up with a new structure for our codebase
-  that makes it very quick and easy for a human to edit things like lore
-  stations, and fine tune variables. I still like the idea of everything have
-  a base stat, and then the other thing just multiplying it. It makes it
-  easier to say X should be better than Y by just multipling X by 1.2 and Y
-  by 0.8. And then saying 'I want all the ships to be faster, this is too
-  slow' and changing one variable. But, this is a bit too much stats needed
-  to be divided up. Do not write any code, just do an analysis and idea and
-  place it in @NEXT.md under code BI. In my opinion, I think we need to have
-  a /entities folder that holds entity.js. And then sub folders for
-   
-  ships
-  - baseShip.js <- has all the base ship tuning factors
-  - shipClasses/ <- 'meta' ship data about base stats for similar ship
-  - ships/ <- Actual in game ships that npc and players can use
-  - shipRegistry.js
-   
-  locations
-  - stations.js
-  - coil/
-  - 
-
-  factions/
-
-  weapons/
-  - weapons.js <- base file with all the base stats the child stats can
-  multiply
-
-  shipModules
-
-
-  I understand the ai folder maybe needs to be it's own thing.
+*(BI promoted to NEXT.md)*

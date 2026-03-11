@@ -828,8 +828,18 @@ export class HUD {
         const t = Math.min((activePri._rampUp || 0) / activePri.rampTime, 1);
         ctx.fillStyle = VERY_DIM;
         ctx.fillRect(bx, y + 2, bw, bh);
-        ctx.fillStyle = t >= 1 ? WHITE : CYAN;
-        ctx.fillRect(bx, y + 2, bw * t, bh);
+        if (activePri._overheated) {
+          // Cooldown recovery — bar fills back up as it cools
+          const cdProg = 1 - (activePri._cooldownTimer || 0) / (activePri.cooldownTime || 1);
+          ctx.fillStyle = RED;
+          ctx.fillRect(bx, y + 2, bw * cdProg, bh);
+        } else {
+          const burnFrac = (activePri._fullPowerTimer || 0) / (activePri.overheatLimit || 5);
+          ctx.fillStyle = t >= 1
+            ? (burnFrac > 0.6 ? RED : burnFrac > 0.3 ? AMBER : WHITE)
+            : CYAN;
+          ctx.fillRect(bx, y + 2, bw * t, bh);
+        }
       } else if (activePri.magSize !== undefined) {
         // Magazine weapon — show reload bar or cooldown bar, then mag/cargo count
         const reloading = activePri._reloadTimer > 0;
@@ -912,7 +922,13 @@ export class HUD {
         const cargo = ammoReserve[activeSec.ammoType] ?? 0;
         ctx.font = '9px monospace';
         ctx.fillStyle = reloading ? AMBER : (activeSec.ammo > 0 ? MAGENTA : RED);
-        ctx.fillText(`${activeSec.ammo} / ${cargo}`, barX + barW + 5, y + 5);
+        const ammoStr = `${activeSec.ammo} / ${cargo}`;
+        ctx.fillText(ammoStr, barX + barW + 5, y + 5);
+        if (activeSec.guidanceMode) {
+          const ammoW = ctx.measureText(ammoStr).width;
+          ctx.fillStyle = DIM_TEXT;
+          ctx.fillText(`[${activeSec.guidanceMode}]`, barX + barW + 5 + ammoW + 5, y + 5);
+        }
         ctx.font = '10px monospace';
 
       } else if (activeSec.magSize !== undefined) {

@@ -1,6 +1,6 @@
 # MECHANICS.md — Wayfarer Game Mechanics
 
-> **Stats, item lists, and specific numbers live in the JS source files (`js/data/stats.js`, `js/data/commodities.js`, `js/data/lootTables.js`, etc.). This document describes behavior only.**
+> **Stats, item lists, and specific numbers live in the JS source files (`js/data/tuning/`, `js/data/commodities.js`, `js/data/lootTables.js`, etc.). This document describes behavior only.**
 
 This is the source of truth for how game systems behave. No lore, no code architecture. For world/faction context see `LORE.md`. For visual conventions see `UX.md`.
 
@@ -154,7 +154,7 @@ The four hull classes:
 - **G100 Class Hauler** — wide cargo barge; raised cab, twin square engine pods; large cargo capacity, medium stats
 - **Garrison Class Frigate** — military workhorse; H/I-beam hull profile, rectangular nacelle pods; high hull, large fuel tank
 
-All stat values are computed from base constants in `js/data/stats.js` via per-ship multipliers.
+All stat values are computed from base constants in `js/data/tuning/` via per-ship multipliers.
 
 ### Player Ship
 
@@ -176,28 +176,52 @@ The **Hullbreaker** is a salvage-modified Onyx Class Tug — stripped armor for 
 
 ## Combat AI
 
-### Raider AI Behaviors
+All non-player ships — hostile, neutral, or friendly — share the same AI system (`js/ai/shipAI.js`). There are no separate raider vs neutral tracking arrays. Every ship tracks in `GameManager.ships[]`. A ship's `relation` field drives behavior:
 
-Each raider has a `homePosition` and patrols nearby. Aggro triggers when the player enters aggro range; deaggro triggers when the player escapes deaggro range.
+- `'hostile'` — combat behavior active; counted as an enemy for targeting and loot
+- `'neutral'` — passive behavior active; turns hostile immediately if struck by the player
+- `'friendly'` — passive behavior active; never targeted
+
+### Ship AI Profile
+
+Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `js/data/tuning/aiTuning.js`. Characters and spawn overrides can change individual values (e.g. a cautious raider with longer `deaggroRange`) without touching the base template.
+
+Two keys define the full behavior:
+
+| Key | Controls |
+|---|---|
+| `combatBehavior` | What the ship does when `relation === 'hostile'` |
+| `passiveBehavior` | What the ship does when `relation !== 'hostile'` |
+
+### Combat Behaviors
+
+Hostile ships with `aggroRange > 0` patrol home when the player is far, then switch to their combat behavior when the player enters range. Hull below `fleeHullRatio` forces a flee regardless of behavior.
 
 | Behavior | Logic |
 |---|---|
 | **Stalker** | Positions at the player's aft; fires only when nose aligns with target |
-| **Kiter** | Backs away at close range; fires from max weapon range |
+| **Kiter** | Backs away at close range; orbits and fires from max weapon range |
 | **Standoff** | Holds at long range; faces player; lobs cannon and missiles |
-| **Lurker** | Hides at spawn cover point; scans for nearby traders; pounces on the nearest trader; switches to player if the player engages within aggro range |
-| **Flee** | Attempts to escape when hull is critically low |
+| **Lurker** | Hides at spawn cover point; scans for nearby traders to pounce; switches to player if player enters aggro range |
+| **Flee** | Turns away from the player and runs at full throttle |
 
-All distance constants (aggro range, deaggro range, orbit radius, standoff range, etc.) are defined in `RAIDER_AI` in `js/data/stats.js`.
+### Passive Behaviors
 
-### Neutral AI
+Ships with `passiveBehavior` set follow it when not hostile:
 
-Neutral ships never aggro the player. They follow their assigned behavior pattern (`ship.neutralBehavior`):
+- **Trader** — state machine between `traveling` and `waiting`; follows `_tradeRouteA` / `_tradeRouteB`; reverses route when arriving. Combat fallback: `flee`
+- **Militia** — orbit loop around `_orbitCenter`; steers toward computed point each tick. Combat fallback: `stalker`
 
-- **Trader** — state machine between `traveling` and `waiting`; follows `_tradeRouteA` / `_tradeRouteB` set at spawn; waits at each endpoint before reversing
-- **Militia** — orbit loop; advances `_orbitAngle` each tick; steers toward the computed orbit point continuously
+### Relation Transitions
 
-Neutral ships track in `GameManager.neutralShips[]` and are purged like raiders. They drop no loot on death.
+When a player projectile hits a neutral ship:
+1. Reputation penalty applied to Settlements faction
+2. `ship.relation` set to `'hostile'`
+3. `ship._aggro` set to `true` — the ship immediately engages rather than patrolling
+
+Ships with `aggroRange === 0` (traders, militia) never turn hostile proactively — only through being attacked. Ships with `aggroRange > 0` (scavengers) turn hostile when the player enters range.
+
+All AI tuning constants are in `js/data/tuning/aiTuning.js`.
 
 ---
 
@@ -252,7 +276,7 @@ Fission reactors track time since their last overhaul. When overdue:
 
 To overhaul: dock at a station with `canOverhaulReactor: true` (currently Ashveil Anchorage). A button appears in the Services tab. Paying the overhaul cost resets the timer and restores full output. Overhauls can also be performed early to reset the timer proactively.
 
-Overhaul intervals and costs are defined in `js/data/stats.js`.
+Overhaul intervals and costs are defined in `js/data/tuning/`.
 
 ### Module Condition
 
@@ -282,7 +306,7 @@ Three-column layout:
 
 ## Economy
 
-**Scrap** is the sole currency. No credits. Scrap also takes cargo space — the conversion rate between scrap and cargo units is defined in `js/data/stats.js`.
+**Scrap** is the sole currency. No credits. Scrap also takes cargo space — the conversion rate between scrap and cargo units is defined in `js/data/tuning/`.
 
 **Fuel** drives movement. Tank size and drain rate are per-ship. Fuel can be purchased at stations.
 
@@ -344,7 +368,7 @@ Expiry timer is shown in YOUR CONTRACTS and flashes red when close to expiry. Bo
 
 ### Standing Levels
 
-Five levels from Hostile through Allied. At Hostile, docking is refused. At Allied, a discount applies to all station services. Exact thresholds and discount rate are in `js/data/stats.js`.
+Five levels from Hostile through Allied. At Hostile, docking is refused. At Allied, a discount applies to all station services. Exact thresholds and discount rate are in `js/data/tuning/`.
 
 ### Triggers
 

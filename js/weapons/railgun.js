@@ -1,7 +1,7 @@
 import { Projectile } from '../entities/projectile.js';
 import { RAIL_WHITE } from '../ui/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/stats.js';
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/tuning/weaponTuning.js';
 
 const VARIANTS = {
   'small-fixed':  { DAMAGE_MULT: 10.6, HULL_MULT: 12.0, COOLDOWN_MULT: 6.0, SPEED_MULT: 4.5, RANGE_MULT: 2.0, fixed: true  },

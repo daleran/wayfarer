@@ -1,14 +1,14 @@
 import { Projectile } from '../entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
-         ROCKET_MAG_SIZE, ROCKET_RELOAD_TIME } from '../data/stats.js';
+         ROCKET_MAG_SIZE, ROCKET_RELOAD_TIME } from '../data/tuning/weaponTuning.js';
 import { normalizeToTarget } from '../utils/math.js';
 
 const DAMAGE_MULT      = 5.3;   // ~100 armor damage
 const HULL_DAMAGE_MULT = 6.5;   // ~78 hull
 const SPEED_MULT       = 1.4;
-const COOLDOWN_MULT    = 5.0;   // cooldown between full burst fires
-const BURST_SPREAD     = 0.07;  // radians between the two tubes
+const COOLDOWN_MULT    = 1.0;   // cooldown between individual shots
+const BURST_SPREAD     = 0.07;  // radians between the two tubes (guided only)
 const CARGO_WEIGHT     = 1.0;   // 1 cargo unit per rocket
 
 export class RocketPodSmall {
@@ -31,10 +31,12 @@ export class RocketPodSmall {
     // Guidance mode
     this.guidanceModes = ['dumbfire', 'wire', 'heat'];
     this.guidanceMode  = 'dumbfire';
+    // Tube alternation
+    this._tubeIdx = 0;
   }
 
   get displayName() {
-    return 'RPOD-S [' + this.guidanceMode.toUpperCase() + ']';
+    return 'RPOD-S';
   }
 
   get isReloading() { return this._reloadTimer > 0; }
@@ -50,42 +52,47 @@ export class RocketPodSmall {
     if (!n) return;
     const { nx, ny, dist } = n;
 
-    // Fire both tubes simultaneously with a slight angular spread
+    // Fire one tube per click; dumbfire goes straight, guided gets slight tube offset
     const baseAngle = Math.atan2(ny, nx);
-    const spreads = [-BURST_SPREAD / 2, BURST_SPREAD / 2];
-    for (const spread of spreads) {
-      const a = baseAngle + spread;
-      const proj = new Projectile(
-        ship.x, ship.y,
-        Math.cos(a) * this.projectileSpeed,
-        Math.sin(a) * this.projectileSpeed,
-        this.damage,
-        ship
-      );
-      proj.hullDamage = this.hullDamage;
-      proj.maxRange   = dist + 20;
-      proj.isInterceptable = true;
+    const tubeSpread = this.guidanceMode === 'dumbfire'
+      ? 0
+      : (this._tubeIdx === 0 ? -BURST_SPREAD / 2 : BURST_SPREAD / 2);
+    const a = baseAngle + tubeSpread;
 
-      if (this.guidanceMode === 'dumbfire') {
-        proj.isRocket      = true;
-        proj.rocketTargetX = tx;
-        proj.rocketTargetY = ty;
-      } else if (this.guidanceMode === 'wire') {
-        proj.isGuided          = true;
-        proj.guidedType        = 'wire';
-        proj.guidanceStrength  = 3.0;
-      } else if (this.guidanceMode === 'heat') {
-        proj.isGuided          = true;
-        proj.guidedType        = 'heat';
-        proj.guidanceStrength  = 2.5;
-      }
+    const proj = new Projectile(
+      ship.x, ship.y,
+      Math.cos(a) * this.projectileSpeed,
+      Math.sin(a) * this.projectileSpeed,
+      this.damage,
+      ship
+    );
+    proj.hullDamage      = this.hullDamage;
+    proj.maxRange        = dist + 20;
+    proj.isInterceptable = true;
 
-      entities.push(proj);
+    if (this.guidanceMode === 'dumbfire') {
+      proj.isRocket      = true;
+      proj.rocketTargetX = tx;
+      proj.rocketTargetY = ty;
+    } else if (this.guidanceMode === 'wire') {
+      proj.isGuided         = true;
+      proj.guidedType       = 'wire';
+      proj.guidanceStrength = 3.0;
+    } else if (this.guidanceMode === 'heat') {
+      proj.isGuided         = true;
+      proj.guidedType       = 'heat';
+      proj.guidanceStrength = 2.5;
     }
 
+    entities.push(proj);
+    this._tubeIdx = 1 - this._tubeIdx;
+
     if (ship.relation === 'player') {
-      this.ammo = 0; // both tubes fired
-      this._reloadTimer = this.reloadTime;
+      this.ammo--;
+      if (this.ammo <= 0) {
+        this._reloadTimer = this.reloadTime;
+        this._tubeIdx = 0;
+      }
     }
     this._cooldown = this.cooldownMax;
   }
