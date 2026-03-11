@@ -2,7 +2,7 @@
 
 Raw concepts under consideration. Not yet planned for implementation. Ideas move to `NEXT.md` when prioritized for a build session.
 
-**Next available code: BT**
+**Next available code: BZ**
 
 ---
 
@@ -11,9 +11,10 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 | Code | Title | Category |
 |---|---|---|
 | AN | Utility Modules | Modules / Equipment |
+| AO | Dynamic Thrust-to-Weight System | Ship Systems |
 | AP | Tribute & Favor System | Economy |
 | AR | Black Market & Under-Barter | Economy |
-| AS | Gravewake Zone Features | World / Map |
+| AS | Gravewake Zone Features & The Coil | World / Map |
 | AV | Specialized Enemy Factions | AI / Enemies |
 | AX | Named Bosses | AI / Enemies |
 | BA | Story Threads & Trigger System | Narrative |
@@ -31,7 +32,13 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 | BP | Sensor Suite Upgrades | Modules / Equipment |
 | BQ | Crew Active Abilities | Ship Systems |
 | BR | Electronic Warfare | Modules / Equipment |
-| BS | Gravity Wells (Backlog) | World / Map |
+| BS | Gravity Wells & Pale (Ice Moon) | World / Map |
+| BT | Inner System Locations | World / Map |
+| BU | Skiff & Planetary Landing | Gameplay |
+| BV | Rogue Salvage Lord Fleet | AI / Enemies |
+| BW | Player Housing & Personal Stash | Gameplay |
+| BX | Monastic Order Expeditionary Ship | AI / World |
+| BY | Expanded Debug Overlay | Dev Tools |
 
 ---
 
@@ -70,34 +77,78 @@ Every command economy has a shadow. Hidden fence dealers at Scrapper hubs allow 
 
 ## World / Map
 
-### AS: Gravewake Zone Features
+### AS: Gravewake Zone Features & The Coil
 
-The Gravewake orbital zone is dense with history. Several major world features belong here.
+The Gravewake orbital zone is dense with history. The Coil is its central hub — a massive U-shaped station built by bolting derelict ships and abandoned stations together over decades. It wraps around a central harbor of active scrapping operations. Lawless and backwater. Ruled by an elite class of Salvage Lords.
+
+**The Coil Interior Districts:**
+
+**1. The Dock (Repair Yard)**
+- Primary entry point: docking, refueling, full ship repair
+- Owned by one of the Salvage Lords; managed by a shady Harbor Master
+- Fuel prices cheaper than standalone depots but still steep; Salvage Lord monopoly keeps overall prices high
+
+**2. The Salvage Yard**
+- Primary industrial store for ship parts and salvage
+- Run by a different Salvage Lord
+- Used equipment, salvaged modules, raw scrap, ship components
+- After completing a specific questline, player can hire a specialized salvage crew member here
+
+**3. The Central Market (Black Market)**
+- Lively, eclectic, shady marketplace — hub for all non-ship goods; reflects Gravewake's lawless character
+- Goods: food, contraband (drugs, alcohol), illegal AI cores, character equipment
+- **The Tavern:** buy food/drink, gather rumors, pick up quests
+- **The Chop Shop:** shady medical clinic; pay to heal injured crew members
+- **Specialty Stalls:** ammo vendors, personal goods, knick-knacks
+- **The Oddities Store:** rare and mysterious items salvaged from deep-space wrecks
+
+**4. "The Palace" (Elite District)**
+- Luxurious living quarters for the station's elite — stark contrast to surrounding squalor
+- Home to the main Salvage Lord captains and their cronies
+- Initially barred to the player; houses the station's primary wealth; late-game / high-reputation area
+
+**5. The Slums**
+- Massive, densely packed residential labyrinth of welded-together shipping containers
+- No stores — narrative hub filled with diverse NPCs, characters, and lore
+- Player can eventually purchase their own home here (see BW)
 
 **Megastructure Terrain:**
 - Arkship Spines — kilometers-long shattered structural beams as massive wireframe polygons with internal ribbing; navigation landmarks, cover from enemies
 - Wall of Wrecks — dense looping belt of early colonization craft; physical chokepoints that force ships into predictable Trade Lanes
 - The Frozen Fleet — cluster of pristine early colonization ships encased in hydrogen ice; rich pre-Exile tech inside, but hull damage risk and high ambush probability
 
-**The Coil Interior Districts** (expand existing CoilStation):
-- The Bazaar: black-market ROM and fenced goods trade deck
-- The Shipyard: illicit ship repairs and unregulated upgrades
-- The Pits: residential/cantina sector, rumor sources and faction gossip
-- The Vault: heavily guarded storage hauler; Salvage Lords power base
-- Salvage Lords council: volatile ruling faction; internal power struggles occasionally spill into docking bays
-
 **Hidden POIs:**
 - Voss's Waystation — fortified resupply point for Dread Captain Voss; requires high scavenger reputation or deciphered patrol routes to find; unique black-market inventory
 - Black Market Relay Buoy — untraceable comms buoy; high-tier illicit bounties
 
-
 ---
 
-### BS: Gravity Wells (Backlog)
+### BS: Gravity Wells & Pale (Ice Moon)
 
 Planets and large celestial bodies possess gravity wells. Flying too close pulls the ship in; failing to escape results in crashing and instant destruction.
 
-*Currently on hold — risk of making combat feel too overwhelming and hectic to manage alongside everything else. Revisit once core combat systems are stable.*
+**Pale (Ice Moon):** A small, icy celestial body at the center of the Gravewake zone. Pale is reachable but requires a Skiff (see BU) — the player's main ship cannot land directly. Pale's surface holds pre-Exile ruins, frozen derelicts, and potential story content.
+
+*Gravity well navigation is currently on hold — risk of making combat feel too overwhelming and hectic to manage alongside everything else. Revisit once core combat systems are stable.*
+
+---
+
+### BT: Inner System Locations
+
+The inner system sits on the exact opposite side of the system from Gravewake, close to the central star. Heavily illuminated; the primary agricultural and leisure hub of the system.
+
+**The Venus-like Planet (Tourism Hub):**
+- Medium-sized planet with hostile Venus-like atmospheric makeup: corrosive/sulfuric elements, ~75% Earth atmospheric pressure; surface completely uninhabitable
+- All habitation on **aerostats** — massive domed cities floating high in the atmosphere
+- No industrial or economic purpose — exists entirely as a high-end tourism destination
+- Features luxury floating resorts and casinos; the system's leisure and excess concentrated here
+
+**The Farming Moon (The Breadbasket):**
+- Small moon orbiting the Venus-like planet; no atmosphere, entirely solid ground
+- Hazards: lacks atmosphere + very close to the star → surface bathed in lethal radiation and UV light
+- Population lives inside massive domed cities built to filter deadly UV radiation
+- Thanks to ideal day-night cycle and proximity to the star, this moon is the **agricultural heart of the entire system** — the vast majority of crops, fruits, and vegetables grown and exported from here
+- Peaceful zone; no active combat expected; economic and narrative significance
 
 ---
 
@@ -105,7 +156,7 @@ Planets and large celestial bodies possess gravity wells. Flying too close pulls
 
 ### AV: Specialized Enemy Factions
 
-Four distinct enemy/neutral faction AI types not yet implemented.
+Distinct enemy/neutral faction AI types not yet implemented.
 
 **Grave-Clans (Scavenger Specialty):** Specialized Gravewake raiders adapted to dense debris. Use Lurker behavior — hide behind Arkship Spines, ambush with grapple lines and harpoons. Prefer targeting convoys. Asymmetric salvage-rigged ship designs.
 
@@ -113,7 +164,7 @@ Four distinct enemy/neutral faction AI types not yet implemented.
 
 **Concord Ghosts:** Dormant, half-broken Concord sentinels that mindlessly repeat century-old patrol routes. Not actively hostile — unpredictable hazards to anyone who interrupts their route or tampers with Ark-Modules they guard.
 
-**Monastic Archive Guardians:** Heavily armed ships patrolling the Thornwick Archive perimeter. Aggressive area denial — will attack anyone entering restricted space regardless of reputation.
+**Monastic Order (Techno-Priests):** See BX for the full encounter design. In Gravewake they field a single large expeditionary capital ship — initially inaccessible to the player. Diabolically opposed to the Concord AI; scavenging the graveyard for artifacts or a super-weapon to defeat it. Not aggressive unless provoked.
 
 **General AI Improvement — Enemy Retreat & Repair:** Human enemies (raiders, cultists) should flee at ~30% hull rather than fight to the death. They return to their mothership or base to repair, then re-engage. Makes factions feel persistent and dangerous. See also BE for named captains who remember the player.
 
@@ -131,7 +182,58 @@ Three unique one-time boss encounters tied to story threads (see BA). Each has m
 
 ---
 
+### BV: Rogue Salvage Lord Fleet
+
+A large pirate capital ship flanked by a fleet of smaller escort ships roaming Gravewake. Commanded by a former Salvage Lord exiled from The Coil — kicked out for disagreeing with the current "order" imposed by the ruling lords. Their goal: return the sector to its true, chaotic criminal past.
+
+- Generally neutral to the player; does not attack on sight
+- **Opportunistic cargo scan:** if they scan the player and detect highly valuable cargo, they will attack to take it
+- Functions as a rebel faction — enemy of the current Salvage Lord establishment, potential uneasy ally against them
+- Fleet composition: one capital ship + 2–4 escort raiders
+
+---
+
+### BX: Monastic Order Expeditionary Ship
+
+A single massive, heavily armored capital ship belonging to the Monastic Order of techno-priests. Present in Gravewake on a scavenging mission — they are hunting long-lost artifacts or a super-weapon capable of defeating the Concord AI, which they are diabolically opposed to.
+
+- Their main base is elsewhere in the system; this is a forward expeditionary deployment
+- Initially **strictly off-limits and locked** to the player; access can eventually be gained through reputation or story progression
+- Not aggressive unless provoked or restricted areas are violated
+
+**The Mercy Mechanic:**
+- If the player approaches in a critical state (< 25% fuel or severely damaged hull), the monks will patch up the ship and provide enough fuel to return to safety — for free
+- Accepting charity creates a **favor debt** to the Order: the player will owe them something, collected at a later story moment
+- This mechanic makes the Order feel present and morally distinct even before the player has access to their ship
+
+---
+
 ## Ship Systems
+
+### AO: Dynamic Thrust-to-Weight System
+
+Ship performance is a direct result of the calculated ratio between total **Thrust** (provided by installed Engine modules) and total dynamic **Weight** (hull + modules + cargo + fuel). Performance variables are independently calculated outcomes — not simple flat penalties.
+
+**Weight composition (cumulative):**
+- Base hull weight
+- Weight of all installed modules (armor plating, reactors, utility slots, etc.)
+- Current cargo weight
+- Current fuel level
+
+**Performance variables (all independently derived from thrust-to-weight ratio):**
+- `Acceleration` — how quickly the ship reaches top speed; most sensitive to weight changes
+- `Top Speed` — maximum achievable velocity; less sensitive than acceleration
+- `Turn Radius` — rotational agility; can be selectively improved with specialized maneuvering thrusters even on a heavy hull
+
+**Strategic implications:**
+- Installing extra armor consumes a slot and raises weight, hurting acceleration and top speed — but high-efficiency Engine modules (acquirable via high Faction Favor, e.g. at Kell's Stop) can compensate, enabling specialized heavy-but-maneuverable builds
+- The Stripped Weight utility module (AN) removes non-essentials to shed mass at the cost of armor and fuel cap — pairs with powerful engines for a fragile but extremely fast configuration
+- A heavy freighter can have poor acceleration and top speed but retain a reasonable turn radius via maneuvering thruster specialization, creating distinct ship archetypes
+- Cargo and fuel loads shift performance dynamically mid-flight — a full hold flies differently than an empty one
+
+This framework ties module choice, inventory management, and exploration directly into combat viability.
+
+---
 
 ### BM: Crew System — Named Crew, Health & Performance
 
@@ -208,6 +310,31 @@ High-tier missions unlock at higher reputation thresholds. Bounties are for real
 
 ---
 
+### BU: Skiff & Planetary Landing
+
+The player's main ship cannot navigate gravity wells or land on planetary/lunar surfaces directly. To do so, it must be equipped with a **Skiff** — a smaller, independent dropship stored in a dedicated large module slot.
+
+- The Skiff launches from the main ship while it holds position in orbit
+- Designed to navigate gravity wells, land on surfaces, and explore planetary environments
+- Required to land on Pale (see BS) and any other landable body in the system
+- Surface exploration is a separate gameplay context from space combat — expect radiation, hostile environments, ruins, and on-foot (or skiff-scale) encounters
+- The Skiff itself has its own stats: hull, fuel, and cargo capacity; it can be upgraded or swapped
+- If the Skiff is destroyed on the surface, the player must find another way off (emergency signal, rescue, or alternative route)
+
+---
+
+### BW: Player Housing & Personal Stash
+
+In The Coil's Slums, the player can eventually purchase their own home — a converted shipping container unit in the residential labyrinth.
+
+- Functions as a personal stash: store excess items and cargo when the ship's hold is full
+- Provides a persistent world anchor — a place the player "lives" beyond their ship
+- Stash access only while docked at The Coil
+- Home can potentially be upgraded over time (larger storage, workbench, etc.)
+- Access gated behind some combination of scrap cost and Coil reputation / story progression
+
+---
+
 ## UI
 
 ### BC: Full Map View
@@ -223,11 +350,22 @@ Toggle with M key. Shows the entire starmap zoomed out:
 
 ---
 
-### BH: Station Overhaul — Multi-Screen UI
+### BH: Station Overhaul — Interactive Map-Based Hubs
 
-Break the current monolithic station screen into a set of distinct sub-screens, each with its own focused purpose. Similar to a real space station having different departments.
+Replace the current monolithic station screen with full-screen, visually rich station maps unique to each location. Each station has a distinct layout reflecting its character — the sprawling vertical markets of Kell's Stop vs. the cramped, multi-level scrapper decks of The Coil.
 
-Examples: Trade Floor, Shipyard (module installs), Repair Bay, Black Market (if rep allows), Rumor Mill / Mission Board, Faction Liaison (reputation management). Each screen has its own visual identity and available actions. Navigation between screens via station-internal menu.
+**Core design:**
+- **Full-screen interactive map** per station — not a menu list, a place you navigate
+- **Explorable zones** — click distinct areas on the map to access different services; no single consolidated menu
+- **Multiple vendors per station** — different stores and services in different zones, rewarding exploration
+- **Lore & flavor** — ambient text, flavor details, and hidden interactions embedded in the station environment; discovery over presentation
+
+**Zone examples per station type:**
+- *The Coil:* The Dock → Salvage Yard → Central Market (Tavern, Chop Shop, Oddities) → The Palace (rep-gated) → The Slums (see BW)
+- *Kell's Stop:* Repair bay, fuel desk, small trade counter, rumor board — compact and functional
+- *Generic settlement:* Trade Floor, Shipyard (module installs), Repair Bay, Rumor Mill / Mission Board, Faction Liaison
+
+**Note on subsystem targeting:** Confirmed out of scope — real-time combat model makes it unworkable.
 
 ---
 
