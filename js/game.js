@@ -866,28 +866,28 @@ export class GameManager {
         if (entity.lootType === 'scrap') {
           this.scrap += entity.amount;
           entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y);
+          this.hud.addPickupText(entity.label, entity.x, entity.y, 'scrap');
         } else if (entity.lootType === 'fuel') {
           this.fuel = Math.min(this.fuelMax, this.fuel + entity.amount);
           entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y);
+          this.hud.addPickupText(entity.label, entity.x, entity.y, 'scrap');
         } else if (entity.lootType === 'module' && entity.moduleData) {
           this.modules.push(entity.moduleData);
           entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y);
+          this.hud.addPickupText(entity.label, entity.x, entity.y, 'module');
         } else if (entity.lootType === 'weapon' && entity.weaponData) {
           this.weapons.push(entity.weaponData);
           entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y);
+          this.hud.addPickupText(entity.label, entity.x, entity.y, 'module');
         } else if (entity.lootType === 'ammo' && entity.ammoType) {
           this.ammo[entity.ammoType] = (this.ammo[entity.ammoType] || 0) + entity.amount;
           entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y);
+          this.hud.addPickupText(entity.label, entity.x, entity.y, 'module');
         } else {
           if (this.totalCargoUsed < this.totalCargoCapacity) {
             this.cargo[entity.lootType] = (this.cargo[entity.lootType] || 0) + entity.amount;
             entity.active = false;
-            this.hud.addPickupText(entity.label, entity.x, entity.y);
+            this.hud.addPickupText(entity.label, entity.x, entity.y, 'cargo');
           }
         }
       }

@@ -58,12 +58,13 @@ export const ENGINE_RED = RED;
 // Ship._drawShape reads hullFill/hullStroke/engineColor getters derived from this.relation.
 // Changing ship.relation is all you need to recolor a ship.
 export const RELATION_COLORS = {
-  none:     { fill: DESIGNER_FILL,  stroke: WHITE,           engine: WHITE },
-  player:   { fill: PLAYER_FILL,    stroke: PLAYER_STROKE,   engine: GREEN },
-  friendly: { fill: FRIENDLY_FILL,  stroke: FRIENDLY_STROKE, engine: BLUE },
-  neutral:  { fill: NEUTRAL_FILL,   stroke: NEUTRAL_STROKE,  engine: AMBER },
-  enemy:    { fill: ENEMY_FILL,     stroke: ENEMY_STROKE,    engine: RED },
-  hostile:  { fill: ENEMY_FILL,     stroke: ENEMY_STROKE,    engine: RED },
+  none:     { fill: DESIGNER_FILL,        stroke: WHITE,           engine: WHITE },
+  player:   { fill: PLAYER_FILL,          stroke: PLAYER_STROKE,   engine: GREEN },
+  friendly: { fill: FRIENDLY_FILL,        stroke: FRIENDLY_STROKE, engine: BLUE },
+  neutral:  { fill: NEUTRAL_FILL,         stroke: NEUTRAL_STROKE,  engine: AMBER },
+  enemy:    { fill: ENEMY_FILL,           stroke: ENEMY_STROKE,    engine: RED },
+  hostile:  { fill: ENEMY_FILL,           stroke: ENEMY_STROKE,    engine: RED },
+  derelict: { fill: 'rgba(35,18,5,0.35)', stroke: '#886633',       engine: 'rgba(0,0,0,0)' },
 };
 
 // Pale — ice planet surface colors
@@ -98,9 +99,6 @@ export const CONDITION_DAMAGED   = RED;
 export const CONDITION_DESTROYED = VERY_DIM;
 
 // Derelict hull class colors
-export const DERELICT_HAULER  = '#886633';   // warm rust-brown
-export const DERELICT_FIGHTER = '#667744';   // muted green-grey
-export const DERELICT_FRIGATE = '#556688';   // muted blue-grey
 // unknown class uses MAGENTA (exotic) — import from above
 
 export function conditionColor(condition) {

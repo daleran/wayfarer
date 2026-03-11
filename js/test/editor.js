@@ -301,6 +301,16 @@ export class EditorOverlay {
       }
     }
 
+    // Cursor world coordinates
+    const ms    = input.mouseScreen;
+    const mw    = game.camera.screenToWorld(ms.x, ms.y);
+    const coordX = Math.round(mw.x);
+    const coordY = Math.round(mw.y);
+    ctx.font      = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(80,120,180,0.55)';
+    ctx.fillText(`${coordX}, ${coordY}`, ms.x, ms.y - 14);
+
     ctx.restore();
   }
 

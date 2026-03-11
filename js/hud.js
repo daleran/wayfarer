@@ -22,8 +22,9 @@ const PIP_W = 32;
 const PIP_H = 14;
 const PIP_GAP = 6;
 
-const PICKUP_DURATION = 1.5;
-const PICKUP_DRIFT = 40;
+const PICKUP_DURATION = 2.0;
+const PICKUP_LINE_H  = 16;
+const PICKUP_ABOVE   = 90;  // px above ship center to bottom of list
 
 const KILL_DURATION = 3.0;
 const KILL_LOG_MAX  = 5;
@@ -121,9 +122,9 @@ export class HUD {
 
     const CARGO_LBL_W = 52;
     const CARGO_BAR_W = 130;  // matches fuel bar
-    const CARGO_NUM_W = 46;
-    const SCRAP_W     = 80;
-    const RIGHT_W     = CARGO_LBL_W + CARGO_BAR_W + CARGO_NUM_W + SCRAP_W + 8;  // 316
+    const CARGO_NUM_W = 52;   // includes 6px gap from bar + number text
+    const SCRAP_W     = 72;   // ⚙ + up to 4-digit count
+    const RIGHT_W     = CARGO_LBL_W + CARGO_BAR_W + CARGO_NUM_W + SCRAP_W;  // 306
 
     const H_GAP   = 22;
     const GROUP_W = LEFT_W + H_GAP + CTR_W + H_GAP + RIGHT_W;
@@ -253,7 +254,7 @@ export class HUD {
           ctx.fillRect(x + 1, row1Y + 1, PIP_W - 2, STRIP_BAR_H - 2);
         }
 
-        ctx.fillStyle = active ? WHITE : DIM_OUTLINE;
+        ctx.fillStyle = active ? '#000000' : DIM_OUTLINE;
         ctx.fillText(THROTTLE_LABELS[i], x + PIP_W / 2, row1Y + STRIP_BAR_H / 2);
       }
     }
@@ -287,14 +288,14 @@ export class HUD {
         fuelBarX + FUEL_BAR_W + 6, row2Y + STRIP_BAR_H / 2
       );
 
-      // Drain rate — below the FUEL label
+      // Drain rate — below the fuel numerical counter
       if (game.fuelBurnRate > 0) {
         ctx.font = '9px monospace';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         ctx.fillStyle = fuelColor;
         ctx.globalAlpha = 0.55;
-        ctx.fillText(`-${game.fuelBurnRate.toFixed(3)}/s`, ctrX, row2Y + STRIP_BAR_H + 2);
+        ctx.fillText(`-${game.fuelBurnRate.toFixed(3)}/s`, fuelBarX + FUEL_BAR_W + 6, row2Y + STRIP_BAR_H + 2);
         ctx.globalAlpha = 1;
       }
     }
@@ -304,7 +305,7 @@ export class HUD {
       const rightEdge = rightX + RIGHT_W;
 
       // Pre-compute cargo bar positions so PWR can align to them
-      const cargoNumEnd = rightEdge - SCRAP_W - 8;
+      const cargoNumEnd = rightEdge - SCRAP_W;
       const cargoBarEnd = cargoNumEnd - CARGO_NUM_W;
       const cargoBarX   = cargoBarEnd - CARGO_BAR_W;
       const cargoLblX   = cargoBarX - CARGO_LBL_W;
@@ -364,13 +365,13 @@ export class HUD {
       ctx.font = '10px monospace';
       ctx.textAlign = 'left';
       ctx.fillStyle = cargoColor;
-      ctx.fillText(`${cargoUsed}/${cargoCap}`, cargoBarEnd, row2Y + STRIP_BAR_H / 2);
+      ctx.fillText(`${cargoUsed}/${cargoCap}`, cargoBarEnd + 6, row2Y + STRIP_BAR_H / 2);
 
-      // SCRAP count (rightmost, row2)
-      ctx.font = 'bold 14px monospace';
-      ctx.textAlign = 'right';
+      // SCRAP count — left-aligned immediately after cargo number area
+      ctx.font = 'bold 13px monospace';
+      ctx.textAlign = 'left';
       ctx.fillStyle = AMBER;
-      ctx.fillText(`\u2699 ${game.scrap}`, rightEdge, row2Y + STRIP_BAR_H / 2);
+      ctx.fillText(`\u2699 ${game.scrap}`, cargoNumEnd + 6, row2Y + STRIP_BAR_H / 2);
     }
 
     ctx.restore();
@@ -536,7 +537,7 @@ export class HUD {
     ctx.save();
 
     // Speed / throttle label — uppercase, reduced opacity cyan
-    ctx.font = '13px monospace';
+    ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = CYAN;
@@ -873,28 +874,62 @@ export class HUD {
   }
 
   _renderPickupTexts(ctx, game) {
-    const { camera } = game;
+    const { camera, player } = game;
     const now = Date.now();
+
+    // Prune expired entries (iterate backwards for safe splice)
+    for (let i = this._pickupTexts.length - 1; i >= 0; i--) {
+      if ((now - this._pickupTexts[i].createdAt) / 1000 > PICKUP_DURATION) {
+        this._pickupTexts.splice(i, 1);
+      }
+    }
+    if (this._pickupTexts.length === 0) return;
+
+    const shipScreen = camera.worldToScreen(player.x, player.y);
+    const count = this._pickupTexts.length;
+
     ctx.save();
-    ctx.font = 'bold 13px monospace';
+    ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    for (let i = this._pickupTexts.length - 1; i >= 0; i--) {
-      const pt      = this._pickupTexts[i];
-      const elapsed = (now - pt.createdAt) / 1000;
-      if (elapsed > PICKUP_DURATION) {
-        this._pickupTexts.splice(i, 1);
-        continue;
-      }
-      const t      = elapsed / PICKUP_DURATION;
-      const screen = camera.worldToScreen(pt.worldX, pt.worldY - PICKUP_DRIFT * t);
-      ctx.globalAlpha = 1 - t;
-      ctx.fillStyle = pt.colorHint === 'breach'  ? CONDITION_FAULTY
-                    : pt.colorHint === 'repair'   ? GREEN
-                    : pt.colorHint === 'hostile'  ? RED
-                    : AMBER;
-      ctx.fillText(pt.text, screen.x, screen.y);
+    // Oldest entries float to the top; newest stays at the bottom of the stack.
+    // slotFromBottom=0 → bottommost (newest), higher slots → upward (older).
+    for (let i = 0; i < count; i++) {
+      const pt          = this._pickupTexts[i];
+      const elapsed     = (now - pt.createdAt) / 1000;
+      const t           = elapsed / PICKUP_DURATION;
+      const slotFromBot = count - 1 - i;
+      const y           = shipScreen.y - PICKUP_ABOVE - slotFromBot * PICKUP_LINE_H;
+
+      const color = pt.colorHint === 'breach'  ? CONDITION_FAULTY
+                  : pt.colorHint === 'repair'   ? GREEN
+                  : pt.colorHint === 'hostile'  ? RED
+                  : pt.colorHint === 'module'   ? GREEN
+                  : pt.colorHint === 'cargo'    ? BLUE
+                  : AMBER;  // scrap, fuel, default
+
+      const alpha     = 1 - t;
+      const textW     = ctx.measureText(pt.text).width;
+      const padX      = 6;
+      const padY      = 3;
+      const boxW      = textW + padX * 2;
+      const boxH      = PICKUP_LINE_H - 2;
+      const boxX      = shipScreen.x - boxW / 2;
+      const boxY      = y - boxH / 2;
+
+      ctx.globalAlpha = alpha * 0.18;
+      ctx.fillStyle   = color;
+      ctx.fillRect(boxX, boxY, boxW, boxH);
+
+      ctx.globalAlpha = alpha * 0.6;
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle   = color;
+      ctx.fillText(pt.text, shipScreen.x, y);
     }
 
     ctx.globalAlpha = 1;
