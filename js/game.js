@@ -340,7 +340,7 @@ export class GameManager {
     this._updateDamageEffects(dt);
     this._purgeInactive();
 
-    this._checkDerelictInteraction();
+    this._checkDerelictInteraction(dt);
     if (!this.isSalvaging) this._checkDocking();
 
     if (this.player && this.player.active && !this.isPanMode) {
@@ -536,6 +536,8 @@ export class GameManager {
     if (idx <= 0) return;
     mod.condition = STEPS[idx - 1];
     mod._applyConditionToWeapon();
+    mod._applyConditionToEngine?.();
+    this.player?.refreshCapabilities();
   }
 
   _degradeCondition(mod) {
@@ -544,6 +546,8 @@ export class GameManager {
     if (idx < 0 || idx >= STEPS.length - 1) return false;
     mod.condition = STEPS[idx + 1];
     mod._applyConditionToWeapon();
+    mod._applyConditionToEngine?.();
+    this.player?.refreshCapabilities();
     return true;
   }
 
@@ -682,18 +686,29 @@ export class GameManager {
     }
   }
 
-  _checkDerelictInteraction() {
+  _checkDerelictInteraction(dt) {
+    const LORE_RADIUS = 400;
+    const LORE_FADE_SPEED = 1.2; // alpha units per second
+
+    // Clear previous nearby flag
+    if (this.nearbyDerelict) this.nearbyDerelict.isNearby = false;
     this.nearbyDerelict = null;
-    if (this.isSalvaging) return;
     if (!this.player || !this.player.active) return;
 
     for (const entity of this.entities) {
       if (!(entity instanceof Derelict) || !entity.active || entity.salvaged) continue;
       const dx = entity.x - this.player.x;
       const dy = entity.y - this.player.y;
-      if (Math.sqrt(dx * dx + dy * dy) < entity.interactionRadius) {
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Fade lore alpha toward target
+      const loreTarget = dist < LORE_RADIUS ? 1 : 0;
+      entity._loreAlpha += (loreTarget - entity._loreAlpha) * Math.min(1, LORE_FADE_SPEED * dt);
+
+      if (this.isSalvaging) continue;
+      if (dist < entity.interactionRadius) {
         this.nearbyDerelict = entity;
-        break;
+        entity.isNearby = true;
       }
     }
 

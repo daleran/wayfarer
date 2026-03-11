@@ -57,7 +57,9 @@ export class Derelict extends Entity {
     this.salvaged = false;
     this._sparkTimer = 0;
     this.derelictClass = 'hauler';  // hauler | fighter | frigate | unknown
-    this.loreText = [];             // 2-3 short lore lines shown in HUD
+    this.loreText = [];             // 2-3 short lore lines shown on map
+    this.isNearby = false;          // set by game when player is in interaction range
+    this._loreAlpha = 0;            // fades in when player enters lore range (wider than interaction)
     // Fixed tilted rotation
     this.rotation = (Math.random() - 0.5) * 1.2;
   }
@@ -101,14 +103,34 @@ export class Derelict extends Entity {
     ctx.globalAlpha = 1;
     ctx.restore();
 
-    // Name label
-    ctx.save();
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText(this.name, screen.x, screen.y + 22 * camera.zoom);
-    ctx.restore();
+    // Lore paragraph — fades in as player approaches (wider range than interaction)
+    if (this._loreAlpha > 0 && this.loreText && this.loreText.length > 0) {
+      const loreX = screen.x + 28 * camera.zoom + 10;
+      const loreY = screen.y - (this.loreText.length - 1) * 6;
+      ctx.save();
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = DIM_TEXT;
+      ctx.globalAlpha = this._loreAlpha * 0.40;
+      for (let i = 0; i < this.loreText.length; i++) {
+        ctx.fillText(this.loreText[i], loreX, loreY + i * 13);
+      }
+      ctx.restore();
+    }
+
+    // "Press E" prompt — below hull, blinking, only at interaction range
+    if (this.isNearby) {
+      const alpha = 0.55 + Math.sin(Date.now() * 0.004) * 0.35;
+      ctx.save();
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = AMBER;
+      ctx.globalAlpha = alpha;
+      ctx.fillText(`[ E ] SALVAGE`, screen.x, screen.y + 42 * camera.zoom);
+      ctx.restore();
+    }
   }
 
   getBounds() {

@@ -107,9 +107,6 @@ export class RocketPodModule extends ShipModule {
   onRemove(ship)  { ship.removeWeapon(this.weapon); }
 }
 
-// Backward-compat alias — old code using MissileHeatModule still works
-export { RocketPodModule as MissileHeatModule };
-
 // ─── Engine modules ──────────────────────────────────────────────────────────
 // Engine modules modify ship speedMax, acceleration, and fuelEfficiency.
 // Base stats are frozen on _baseSpeedMax / _baseAcceleration / _baseFuelEff
@@ -118,17 +115,28 @@ export { RocketPodModule as MissileHeatModule };
 class EngineModule extends ShipModule {
   constructor() {
     super();
-    this.isEngine   = true;
-    this.speedMult  = 1.0;
-    this.accelMult  = 1.0;
+    this.isEngine    = true;
+    this.speedMult   = 1.0;
+    this.accelMult   = 1.0;
     this.fuelEffMult = 1.0;
+    this._ship       = null;
+  }
+  // Rescales ship movement stats from frozen base using speedMult × conditionMultiplier.
+  // Call from onInstall and from game._improveCondition/_degradeCondition.
+  _applyConditionToEngine() {
+    const ship = this._ship;
+    if (!ship) return;
+    const mult = this.conditionMultiplier;
+    ship.speedMax       = (ship._baseSpeedMax     ?? ship.speedMax)       * this.speedMult  * mult;
+    ship.acceleration   = (ship._baseAcceleration ?? ship.acceleration)   * this.accelMult  * mult;
+    ship.fuelEfficiency = (ship._baseFuelEff      ?? ship.fuelEfficiency) * this.fuelEffMult * mult;
   }
   onInstall(ship) {
-    ship.speedMax     = (ship._baseSpeedMax     ?? ship.speedMax)     * this.speedMult;
-    ship.acceleration = (ship._baseAcceleration ?? ship.acceleration) * this.accelMult;
-    ship.fuelEfficiency = (ship._baseFuelEff    ?? ship.fuelEfficiency) * this.fuelEffMult;
+    this._ship = ship;
+    this._applyConditionToEngine();
   }
   onRemove(ship) {
+    this._ship = null;
     if (ship._baseSpeedMax     != null) ship.speedMax     = ship._baseSpeedMax;
     if (ship._baseAcceleration != null) ship.acceleration = ship._baseAcceleration;
     if (ship._baseFuelEff      != null) ship.fuelEfficiency = ship._baseFuelEff;

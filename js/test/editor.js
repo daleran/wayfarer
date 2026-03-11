@@ -123,14 +123,6 @@ export class EditorOverlay {
       }
     }
 
-    // Weapon cycling (player must exist)
-    if (game.player) {
-      if (input.wasJustPressed('[')) game.player.cyclePrimary(-1);
-      if (input.wasJustPressed(']')) game.player.cyclePrimary(1);
-      if (input.wasJustPressed('{')) game.player.cycleSecondary(-1);
-      if (input.wasJustPressed('}')) game.player.cycleSecondary(1);
-    }
-
     // Place selected object at mouse cursor (Alt key)
     if (input.wasJustPressed('alt')) this._placeObject();
 
@@ -437,19 +429,21 @@ export class EditorOverlay {
 
     const mapParam = new URLSearchParams(location.search).get('map') ?? 'test';
     const player = this._game.player;
-    const priName = player
-      ? (player._primaryWeapons[player.primaryWeaponIdx]?.displayName ?? '—')
-      : '—';
-    const secName = player
-      ? (player._secondaryWeapons[player.secondaryWeaponIdx]?.displayName ?? '—')
-      : '—';
+    const pris   = player ? player._primaryWeapons   : [];
+    const secs   = player ? player._secondaryWeapons : [];
+    const priIdx = player?.primaryWeaponIdx   ?? 0;
+    const secIdx = player?.secondaryWeaponIdx ?? 0;
+    const priName = pris[priIdx]?.displayName ?? '—';
+    const secName = secs[secIdx]?.displayName ?? '—';
+    const priLabel = pris.length > 1 ? `${priIdx + 1}/${pris.length} ${priName}` : priName;
+    const secLabel = secs.length > 1 ? `${secIdx + 1}/${secs.length} ${secName}` : secName;
     const segments = [
       { text: '[`: PAN]',      active: this._panMode  },
       { text: '[=: DEBUG]',    active: this._debugMode },
       { text: '[-: OBJECTS]',  active: this._barOpen  },
       { text: '[Alt: PLACE]',  active: false },
-      { text: `[PRI: < ${priName} >]`,  active: false, color: CYAN },
-      { text: `[SEC: < ${secName} >]`,  active: false, color: CYAN },
+      { text: `[PRI: < ${priLabel} >]`, active: false, color: CYAN },
+      { text: `[SEC: < ${secLabel} >]`, active: false, color: CYAN },
       { text: `[?map=${mapParam}]`, active: false },
     ];
 
