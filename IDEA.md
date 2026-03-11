@@ -2,7 +2,7 @@
 
 Raw concepts under consideration. Not yet planned for implementation. Ideas move to `NEXT.md` when prioritized for a build session.
 
-**Next available code: BL**
+**Next available code: BT**
 
 ---
 
@@ -14,11 +14,8 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 | AP | Tribute & Favor System | Economy |
 | AR | Black Market & Under-Barter | Economy |
 | AS | Gravewake Zone Features | World / Map |
-| AT | Advanced Scavenging — Multi-Stage Extraction | Scavenging |
-| AU | Scavenging Minigames & Heat System | Scavenging |
 | AV | Specialized Enemy Factions | AI / Enemies |
 | AX | Named Bosses | AI / Enemies |
-| AY | Officers System | Ship Systems |
 | BA | Story Threads & Trigger System | Narrative |
 | BB | Mission & Bounty Board | Gameplay |
 | BC | Full Map View | UI |
@@ -27,6 +24,14 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 | BF | Cloud Save System | Platform |
 | BG | Module Affixes & Randomized Traits | Modules / Equipment |
 | BH | Station Overhaul — Multi-Screen UI | UI |
+| BL | Core Combat Philosophy — Disabling vs. Destroying | Gameplay |
+| BM | Crew System — Named Crew, Health & Performance | Ship Systems |
+| BN | Salvage Bay & Engineering Bay | Scavenging |
+| BO | Data Extraction — Computer Salvage | Scavenging |
+| BP | Sensor Suite Upgrades | Modules / Equipment |
+| BQ | Crew Active Abilities | Ship Systems |
+| BR | Electronic Warfare | Modules / Equipment |
+| BS | Gravity Wells (Backlog) | World / Map |
 
 ---
 
@@ -85,43 +90,14 @@ The Gravewake orbital zone is dense with history. Several major world features b
 - Voss's Waystation — fortified resupply point for Dread Captain Voss; requires high scavenger reputation or deciphered patrol routes to find; unique black-market inventory
 - Black Market Relay Buoy — untraceable comms buoy; high-tier illicit bounties
 
----
-
-## Scavenging
-
-### AT: Advanced Scavenging — Multi-Stage Extraction
-
-Scavenging high-value wrecks is a process, not a single button press. Three stages require specialized modules.
-
-**Stage 1 — Surveying (Deep Scanner module):** Active scan pulse reveals hidden compartments, structural weak points, dormant hazards, and loot tier. Without a scanner, only surface scrap is accessible.
-
-**Stage 2 — Breaching (Plasma Cutter / Cutting Laser module):** Standard weapons blast wrecks for Tier 1 scrap. Precision breaching with the module targets weak points to open bulkheads without destroying delicate loot. Time-based progress bar; player must stay stationary.
-
-**Stage 3 — Extraction (Salvage Drone / Tractor Tether module):** Deploy to pull out high-value modules, data drives, or cargo pods intact.
-
-**Derelict State Machine:** Untouched → Surveyed → Breached → Depleted. State persists per derelict; a partially breached wreck can be returned to.
-
-**Loot Tiers:**
-- Tier 1 (Surface Scrap): base metals, fuel residue — no tools needed
-- Tier 2 (Breached Cargo): commodities, standard weapons, armor plating — needs breaching module
-- Tier 3 (Secure Vaults): pre-Exile tech, pristine modules, unique blueprints — advanced breaching + extraction
-- Tier 4 (Mainframe): lore logs, encrypted data, coordinates for hidden bases — data decryption minigame
 
 ---
 
-### AU: Scavenging Minigames & Heat System
+### BS: Gravity Wells (Backlog)
 
-The risk and skill layer on top of AT's extraction framework.
+Planets and large celestial bodies possess gravity wells. Flying too close pulls the ship in; failing to escape results in crashing and instant destruction.
 
-**Signature / Heat Meter:** Fills while breaching. High-tier tools fill it faster. Crossing the threshold spawns an AI ambush (Grave-Clan raiders or pirate interceptors warping in to steal the claim).
-
-**Data Decryption Minigame (Tier 4):** Time-limited code-matching sequence for mainframe access. Failure locks the drive permanently or triggers a distress beacon.
-
-**Power Routing Minigame (Tier 3):** Frequency-matching puzzle to open secure vaults. Align ship power with the derelict's dormant grid before the connection overloads or triggers lockdown.
-
-**Automated Defenses:** Military derelicts wake internal point-defense turrets and dormant Concord Ghost sentinels on breach. Player must disable or evade them.
-
-**Ghost Signals:** High-value Ark-Modules emit anomalous signals when tampered with — attracting local raiders or Concord Ghosts.
+*Currently on hold — risk of making combat feel too overwhelming and hectic to manage alongside everything else. Revisit once core combat systems are stable.*
 
 ---
 
@@ -157,17 +133,34 @@ Three unique one-time boss encounters tied to story threads (see BA). Each has m
 
 ## Ship Systems
 
-### AY: Officers System
+### BM: Crew System — Named Crew, Health & Performance
 
-Named individuals with unique traits and backstories assigned to ship roles — not anonymous crew counts.
+Ships are operated by small, named crews — 1 to 5 members depending on ship size. Not abstract officer roles; individual people with health that can be directly damaged.
 
-Three officer roles, each boosting a different stat category:
-- **Tactical Officer** — weapon accuracy, fire rate, reload speed
-- **Engineering Officer** — repair rate, reactor overhaul interval, module condition recovery
-- **Navigation Officer** — acceleration, top speed, sensor range
+**Crew Health & Derelict System:**
+- Each crew member has individual HP, damaged especially by explosive weapons
+- If all crew are killed, the ship immediately becomes a **Derelict** — disabled but with potentially intact hull and modules; prime high-value salvage target
+- Crew death chance spikes when hull drops below 25% (Red tier)
 
-Hull class determines max officer count. Officers recruited at stations (reputation-gated), found in rescued escape pods (Blood-Debt, see AQ), or inherited through Patronage. Officers can be lost permanently if the ship is critically damaged — they are never replaced by anonymous equivalents.
+**Performance Degradation Tiers** (applies to both crew health and module health):
+- **Green (76–100%):** Peak proficiency, no performance penalty
+- **Yellow (50–75%):** Minor degradation begins
+- **Orange (25–50%):** Significant performance loss
+- **Red (0–25%):** Critical failure; crew death chance from incoming fire is dramatically elevated
 
+Crew are recruited at stations (reputation-gated), found via rescue events, or inherited. Permanent death — no respawn. The ship is meaningfully weaker for losing a crew member.
+
+---
+
+### BQ: Crew Active Abilities
+
+Specific crew roles unlock active, high-risk/high-reward combat maneuvers. Each costs resources or causes damage.
+
+- **Engine Burst (Engineer):** Burns a large amount of fuel to jump the ship — extremely fast movement for ~3 seconds to secure a tactical position. Risk: chance to damage the engine module.
+- **Overdrive / Enhanced Flank (Engineer):** Pushes flank speed significantly above normal. Burns extra fuel and damages the engine over time.
+- **Crazy Ivan (Pilot):** Instantaneous 180° rotation — immediately reverses heading. Cost: stress damage directly to hull points.
+- **Rapid Fire (Gunner):** Significantly reduces weapon cooldown timers. Cost: direct damage to the fired weapon modules.
+- **Data Siphon (Electronics Expert):** Safely bypasses derelict security to extract Software ROMs (new EW abilities or ship software upgrades) and valuable system logs. See also BO.
 
 ---
 
@@ -188,6 +181,18 @@ Three optional story threads discoverable through exploration. No forced storyli
 ---
 
 ## Gameplay
+
+### BL: Core Combat Philosophy — Disabling vs. Destroying
+
+Combat is designed to feel weighty and strategic — positioning, timing, and resource management over arcade action. The key tension: **how** you defeat an enemy determines what you get from it.
+
+**Weapon damage profiles shape outcome:**
+- **Explosive weapons (missiles, HE rounds):** High hull damage; high crew kill chance (especially sub-25% hull); high chance of destroying equipped modules. Fast kill, little left intact.
+- **Precision/energy weapons (railguns, lance beams):** High armor damage; low hull damage; low crew/module collateral. Preserves the target — ideal for boarding prep or high-value module extraction.
+
+The player must decide before engaging: do I want this ship dead, or do I want what's inside it?
+
+---
 
 ### BB: Mission & Bounty Board
 
@@ -269,6 +274,55 @@ A collection of non-weapon, non-engine ship modules that add strategic variety t
 Diablo 2-style randomized modifier system for modules. Each module found in the wild has a randomly rolled affix (or pair of affixes) that slightly changes its properties — a Worn Autocannon with a "Rapid" affix has higher fire rate but lower damage; a Faulty Fission Reactor with a "Stable" affix has lower power but resets its overhaul timer. Creates build variety and makes scavenging feel like loot hunting.
 
 Affixes are constrained by module type — not every affix applies to every module. Common affixes slightly improve one stat, Rare affixes trade off two stats, Exotic affixes are unique and potentially game-changing. Station-purchased modules are clean (no affixes); salvage is where the interesting rolls happen.
+
+---
+
+### BP: Sensor Suite Upgrades
+
+Upgrading sensors provides vital combat UI data rather than raw stat boosts.
+
+- Displays estimated trajectory/path of your fired rounds
+- Displays estimated enemy position at round impact (lead indicator)
+- Reveals detailed enemy telemetry: current speed, heading, hull condition
+- Higher-tier suites show crew count and module loadout on targeted ships
+
+---
+
+### BR: Electronic Warfare
+
+Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-lethal combat options for disabling rather than destroying.
+
+- **Decoys** — deployable countermeasures that draw enemy fire and distract tracking missiles
+- **Disruptors** — targeted weapon modules that fire electronic payloads; temporarily disable specific enemy systems (engines, weapons) without hull damage; ideal for capture/salvage setups
+
+---
+
+## Scavenging
+
+### BN: Salvage Bay & Engineering Bay
+
+Two large-slot ship modules that unlock advanced field operations.
+
+**Salvage Bay:**
+- Without it, defeating a ship yields only scrap, fuel, and ammo
+- With it, the player can extract intact weapon and ship modules from derelicts
+- *Scrapping:* Full deconstruction strips everything — fuel, ammo, all modules — and reduces hull to zero. Base scrap yield is proportional to the hull and armor damage dealt during the fight (reward precision combat)
+- Requires a derelict target (crew all dead) or a destroyed hulk
+
+**Engineering Bay** (Large slot):
+- Allows field repair of own hull points and damaged modules using special commodities and scrap
+- Complements the existing field armor repair system with deeper hull restoration capability
+
+---
+
+### BO: Data Extraction — Computer Salvage
+
+With a Computer/Electronics Expert crew member (see BQ), the player can interface with a derelict's mainframe before scrapping.
+
+- Recovers encrypted lore logs, navigational data, and Software ROMs
+- Software ROMs unlock new Electronic Warfare abilities or upgrade existing ship software
+- Requires the Data Siphon crew ability to bypass derelict security safely
+- High-value targets (Concord derelicts, pre-Exile ships) carry the most interesting data
 
 ---
 
