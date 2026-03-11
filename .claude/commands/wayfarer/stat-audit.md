@@ -56,14 +56,21 @@ FIX:   import { RED } from '../ui/colors.js'; ... ctx.strokeStyle = RED;
        (If no matching color exists, add one to js/ui/colors.js first)
 ```
 
-### 3. Stats defined outside stats.js
+### 3. Stats defined outside tuning files
 
-**The rule:** `BASE_*` constants live only in `js/data/stats.js`. No other file should define a constant named `BASE_*`.
+**The rule:** `BASE_*` constants live only in `js/data/tuning/`. No other file should define a constant named `BASE_*`.
 
-**Files to scan:** All `js/**/*.js` except `js/data/stats.js`
+The tuning files are:
+- `js/data/tuning/shipTuning.js` — movement, health, fuel
+- `js/data/tuning/weaponTuning.js` — damage, range, fire rate, ammo
+- `js/data/tuning/aiTuning.js` — AI behavior templates
+- `js/data/tuning/moduleTuning.js` — module stats
+- `js/data/tuning/economyTuning.js` — economy stats
+
+**Files to scan:** All `js/**/*.js` except `js/data/tuning/*.js`
 
 **What to flag:**
-- Any `const BASE_` declaration outside `js/data/stats.js`
+- Any `const BASE_` declaration outside `js/data/tuning/`
 
 ## Audit Output Format
 

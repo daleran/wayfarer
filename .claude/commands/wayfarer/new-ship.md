@@ -20,12 +20,12 @@ Ask the user (or infer from their description) for:
 
 ## Step 2 — Decide on stats
 
-All stats use the multiplier pattern. Import from `js/data/stats.js`:
+All stats use the multiplier pattern. Import from `js/data/tuning/shipTuning.js`:
 ```js
 import {
   BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-  BASE_HULL, BASE_ARMOR, BASE_FUEL
-} from '../../data/stats.js';
+  BASE_HULL, BASE_ARMOR, BASE_FUEL_MAX
+} from '../../data/tuning/shipTuning.js';
 ```
 
 Define multiplier constants at the top of the file:
@@ -62,7 +62,7 @@ const ARMOR_AFT   = 0.6;
 Template for a new base class:
 ```js
 import { Ship } from '../ship.js';   // adjust path for depth
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/stats.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
 
 const SPEED_MULT = 1.0;
 const ACCEL_MULT = 1.0;
@@ -204,4 +204,4 @@ Find the relevant section (Player Ships, Enemies, or Neutral Traffic). Add:
 
 Tell the user to:
 1. Open `?designer&category=Ships&id=<slug>` to verify the visual and stats panel
-2. Open `?test` and follow TEST_STEPS to verify in-game behavior
+2. Open `editor.html?map=arena` to verify in-game behavior (enemy/neutral ships should be visible near player start)

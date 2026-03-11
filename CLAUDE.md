@@ -106,12 +106,12 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, ene
 
 - **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically; inactive purged each tick
 - **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`
-- **Raider AI** — `updateRaiderAI()` in `js/ai/raiderAI.js`; home position + patrol; aggro/deaggro range; behaviors: stalker, kiter, standoff, lurker, flee
-- **Neutral AI** — `updateNeutralAI()` in `js/ai/neutralAI.js`; dispatches on `ship.neutralBehavior` ('trader' or 'militia')
+- **Raider AI** — `js/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `js/data/tuning/aiTuning.js`: stalker, kiter, standoff, lurker, flee
+- **Neutral AI** — `js/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia')
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
 - **Particle pool** — `js/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
-- **Centralized stats** — `js/data/stats.js` is the single source of truth for all base stats. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
+- **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
 - **UI overlays** — drawn on canvas, handle their own input; docking sets `isDocked = true`, skipping the simulation loop
 - **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
 
@@ -134,7 +134,7 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, ene
 ## Rules & Conventions
 
 ### Stats: Multiplier Pattern
-Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `js/data/stats.js`. Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` and `PROJECTILE_SPEED_FACTOR`.
+Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `js/data/tuning/` (see Key Patterns above). Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` (in shipTuning.js) and `PROJECTILE_SPEED_FACTOR` (in weaponTuning.js).
 
 ### Colors: Always Use `js/ui/colors.js`
 Never use inline hex strings anywhere in the codebase. Import named constants from `js/ui/colors.js`. If a new color is needed, add it there first.
@@ -150,3 +150,10 @@ Never use inline hex strings anywhere in the codebase. Import named constants fr
 ### Commits: Log to DEVLOG.md
 Format: `CODE. YYYY-MMM-DD-HHMM: Feature name (one-line description)`
 Major features only — no tuning passes, no small fixes.
+
+### Skills: Keep `.claude/commands/` in Sync
+After any architectural change (new file paths, renamed systems, changed patterns, new module types, new behaviors), scan the skill files in `.claude/commands/wayfarer/` and update any instructions that reference the changed paths or APIs. Specifically watch for:
+- File path changes (e.g. `js/data/stats.js` → `js/data/tuning/*.js`)
+- Renamed classes, modules, or behavior types
+- New or removed weapon/module/AI types listed in skill templates
+- Verification URL changes (`?test` is not a valid harness — use `editor.html?map=arena` or `?designer`)

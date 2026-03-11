@@ -134,4 +134,4 @@ Find the "Stations" section in `MECHANICS.md`. Add:
 
 ## Step 8 — Done
 
-Tell the user to open `?test` and follow the TEST_STEPS on-screen to verify the station renders correctly, can be docked, and provides the expected services.
+Tell the user to open `?designer&category=Stations&id=<slug>` to verify the renderer, and `editor.html?map=arena` to verify docking and services in-game.

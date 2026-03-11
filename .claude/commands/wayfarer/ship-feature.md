@@ -14,7 +14,7 @@ Confirm with the user which feature to implement if not already clear.
 
 Before writing a single line of code:
 - Read every file you intend to modify
-- Read `js/data/stats.js` if the feature involves any numeric stats
+- Read `js/data/tuning/shipTuning.js` (and sibling files: `weaponTuning.js`, `aiTuning.js`, `moduleTuning.js`) if the feature involves any numeric stats
 - Read `js/ui/colors.js` if the feature involves any colors or UI
 - Read `MECHANICS.md` to understand the current system you're extending
 
@@ -75,5 +75,5 @@ If the feature involves a new entity, spawn point, or mechanic that needs in-gam
 Tell the user:
 1. The feature is shipped and docs are updated
 2. Which docs were updated (list them)
-3. To open `?test` and follow TEST_STEPS to verify (if applicable)
+3. To open `editor.html?map=arena` to verify in-game, or `?designer` for visual verification (if applicable)
 4. The DEVLOG entry that was appended (if applicable)

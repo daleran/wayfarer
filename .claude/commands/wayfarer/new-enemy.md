@@ -11,18 +11,17 @@ Ask the user (or infer from their description) for:
   - `stalker` — flanks to player's aft, fires only when nose-aligned; patient, precise
   - `kiter` — maintains distance, backs off when too close, orbits at max range; hit-and-run
   - `standoff` — holds a long fixed range, fires both primary and secondary; capital-style
-  - `interceptor` — charges hard to player's aft quadrant; aggressive flanker
   - `lurker` — hides at a cover point, scans for traders, pounces; ambush predator. Requires a `_coverPoint` set at spawn.
-  - `shielding` (default) — orbit while presenting healthiest armor arc; defensive brawler
+  - `flee` — retreat behavior; used as a fallback when hull is critically low
 - **Faction** — `'scavenger'` (most common), `'concord'`, or other lore-appropriate value
-- **Weapons** — pick from `shipModule.js` module exports: `AutocannonModule`, `RocketModule`, `MissileHeatModule`, `MissileWireModule`, `RailgunModule`, `LanceModule`, `FlakCannonModule`, `TorpedoModule`, `PlasmaCannonModule`
+- **Weapons** — pick from `shipModule.js` module exports: `AutocannonModule`, `LanceModuleSmall`, `CannonModule`, `RocketPodModule`, `TorpedoModule`
 - **Role / flavor** — a short description of its tactical identity
 
 ## Step 2 — Decide on stats
 
-All stats must use the multiplier pattern from `js/data/stats.js`. Import:
+All stats must use the multiplier pattern from `js/data/tuning/shipTuning.js`. Import:
 ```js
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/stats.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
 ```
 
 Define multiplier constants at the top of the file:
@@ -54,7 +53,8 @@ Template:
 ```js
 import { <BaseClass> } from '../../ships/classes/<baseFile>.js';
 import { <WeaponModule1>, <WeaponModule2> } from '../../systems/shipModule.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/stats.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
 const SPEED_MULT = X;
 const ACCEL_MULT = X;
@@ -69,11 +69,11 @@ export class <ClassName> extends <BaseClass> {
   constructor(x, y) {
     super(x, y);
 
-    this.faction      = '<faction>';
-    this.relation     = 'enemy';
-    this.shipType     = '<kebab-slug>';
-    this.displayName  = '<Display Name>';
-    this.behaviorType = '<behaviorType>';
+    this.faction     = '<faction>';
+    this.relation    = 'hostile';
+    this.shipType    = '<kebab-slug>';
+    this.displayName = '<Display Name>';
+    this.ai          = { ...AI_TEMPLATES.<behaviorTemplate> };  // stalker | kiter | standoff | lurker
 
     this.flavorText =
       '<Tactical description. One paragraph. Include: what it is, how it fights, ' +
@@ -127,4 +127,4 @@ Find the "Enemies" or "AI Behaviors" section in `MECHANICS.md`. Add the new enem
 
 ## Step 7 — Done
 
-Tell the user to open `?test` in the browser and follow the on-screen TEST_STEPS to verify the new enemy spawns, behaves correctly, and uses the right weapons.
+Tell the user to open `editor.html?map=arena` to verify the new enemy spawns, behaves correctly, and uses the right weapons.
