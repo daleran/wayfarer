@@ -1,13 +1,15 @@
 import { Projectile } from '../entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/tuning/weaponTuning.js';
+import { normalizeToTarget } from '../utils/math.js';
 
 const DAMAGE_MULT      = 5.3;   // ~90 armor damage per rocket
 const HULL_DAMAGE_MULT = 6.5;   // 65 hull per rocket
 const SPEED_MULT       = 1.4;
-const COOLDOWN_MULT    = 12.0;
+const COOLDOWN_MULT    = 1.5;   // slightly slower than small pod (heavier tubes)
 const LARGE_MAG_SIZE   = 8;     // 8 tubes
-const LARGE_RELOAD_TIME = 13.0; // shared ammo pool with small pod
+const LARGE_RELOAD_TIME = 13.0;
+const TUBE_SPREAD      = 0.07;  // radians between odd/even tubes (guided only)
 
 export class RocketPodLarge {
   constructor() {
@@ -28,12 +30,8 @@ export class RocketPodLarge {
     // Guidance mode
     this.guidanceModes = ['dumbfire', 'wire', 'heat'];
     this.guidanceMode  = 'dumbfire';
-    // Burst state
-    this._burstCount  = 0;
-    this._burstTimer  = 0;
-    this._burstShip   = null;
-    this._burstTx     = 0;
-    this._burstTy     = 0;
+    // Tube alternation
+    this._tubeIdx = 0;
   }
 
   get displayName() {
@@ -42,49 +40,27 @@ export class RocketPodLarge {
 
   get isReloading() { return this._reloadTimer > 0; }
 
-  update(dt, entities) {
+  update(dt) {
     if (this._cooldown > 0) this._cooldown -= dt;
-    if (this._burstCount > 0 && entities) {
-      this._burstTimer -= dt;
-      if (this._burstTimer <= 0) {
-        this._fireOneRocket(entities);
-        this._burstCount--;
-        if (this._burstCount > 0) this._burstTimer = 0.12;
-      }
-    }
   }
 
   fire(ship, tx, ty, entities) {
     if (this._cooldown > 0 || this._reloadTimer > 0) return;
     if (ship.relation === 'player' && this.ammo <= 0) return;
-    this._burstShip  = ship;
-    this._burstTx    = tx;
-    this._burstTy    = ty;
-    this._burstCount = LARGE_MAG_SIZE - 1; // remaining after first
-    this._burstTimer = 0.12;
-    this._fireOneRocket(entities); // fire first immediately
-    if (ship.relation === 'player') {
-      this.ammo = 0; // all tubes fired in burst
-      this._reloadTimer = this.reloadTime;
-    }
-    this._cooldown = this.cooldownMax;
-  }
+    const n = normalizeToTarget(ship.x, ship.y, tx, ty);
+    if (!n) return;
+    const { nx, ny, dist } = n;
 
-  _fireOneRocket(entities) {
-    const ship = this._burstShip;
-    const tx   = this._burstTx;
-    const ty   = this._burstTy;
-    const spread = (Math.random() - 0.5) * 0.16;
-    const dx = tx - ship.x;
-    const dy = ty - ship.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist === 0) return;
-    const baseAngle = Math.atan2(dy, dx);
-    const angle = baseAngle + spread;
+    const baseAngle = Math.atan2(ny, nx);
+    const tubeSpread = this.guidanceMode === 'dumbfire'
+      ? 0
+      : (this._tubeIdx % 2 === 0 ? -TUBE_SPREAD / 2 : TUBE_SPREAD / 2);
+    const a = baseAngle + tubeSpread;
+
     const proj = new Projectile(
       ship.x, ship.y,
-      Math.cos(angle) * this.projectileSpeed,
-      Math.sin(angle) * this.projectileSpeed,
+      Math.cos(a) * this.projectileSpeed,
+      Math.sin(a) * this.projectileSpeed,
       this.damage, ship
     );
     proj.hullDamage      = this.hullDamage;
@@ -94,8 +70,8 @@ export class RocketPodLarge {
 
     if (this.guidanceMode === 'dumbfire') {
       proj.isRocket      = true;
-      proj.rocketTargetX = ship.x + Math.cos(angle) * dist;
-      proj.rocketTargetY = ship.y + Math.sin(angle) * dist;
+      proj.rocketTargetX = tx;
+      proj.rocketTargetY = ty;
     } else if (this.guidanceMode === 'wire') {
       proj.isGuided         = true;
       proj.guidedType       = 'wire';
@@ -107,6 +83,16 @@ export class RocketPodLarge {
     }
 
     entities.push(proj);
+    this._tubeIdx = (this._tubeIdx + 1) % LARGE_MAG_SIZE;
+
+    if (ship.relation === 'player') {
+      this.ammo--;
+      if (this.ammo <= 0) {
+        this._reloadTimer = this.reloadTime;
+        this._tubeIdx = 0;
+      }
+    }
+    this._cooldown = this.cooldownMax;
   }
 }
 

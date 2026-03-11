@@ -6,10 +6,10 @@ const COOLDOWN_TIME  = 4.0;  // seconds required to cool before firing again
 // Lance: ramping beam — baseDamage (at t=0) to maxDamage (at rampTime)
 // Range expressed as a fraction of BASE_WEAPON_RANGE
 const VARIANTS = {
-  'small-fixed':  { BASE_MULT: 0.88, MAX_MULT: 4.12, RANGE_MULT: 0.233, fixed: true,  hullFactor: 1.0, canInterceptBeam: false, powerDraw: 30 },
-  'small-turret': { BASE_MULT: 0.25, MAX_MULT: 1.20, RANGE_MULT: 0.200, fixed: false, hullFactor: 0.0, canInterceptBeam: true,  powerDraw: 15 },
-  'large-fixed':  { BASE_MULT: 1.76, MAX_MULT: 8.24, RANGE_MULT: 0.333, fixed: true,  hullFactor: 1.0, canInterceptBeam: false, powerDraw: 60 },
-  'large-turret': { BASE_MULT: 1.41, MAX_MULT: 6.59, RANGE_MULT: 0.300, fixed: false, hullFactor: 1.0, canInterceptBeam: false, powerDraw: 50 },
+  'small-fixed':  { BASE_MULT: 0.88, MAX_MULT: 4.12, RANGE_MULT: 0.4, fixed: true,  hullFactor: 1.0, canInterceptBeam: false, powerDraw: 30 },
+  'small-turret': { BASE_MULT: 0.25, MAX_MULT: 1.20, RANGE_MULT: 0.340, fixed: false, hullFactor: 0.0, canInterceptBeam: true,  powerDraw: 15 },
+  'large-fixed':  { BASE_MULT: 1.76, MAX_MULT: 8.24, RANGE_MULT: 0.7, fixed: true,  hullFactor: 1.0, canInterceptBeam: false, powerDraw: 60 },
+  'large-turret': { BASE_MULT: 1.41, MAX_MULT: 6.59, RANGE_MULT: 0.4, fixed: false, hullFactor: 1.0, canInterceptBeam: false, powerDraw: 50 },
 };
 
 const DISPLAY_NAMES = {
