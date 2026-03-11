@@ -34,7 +34,7 @@ export const LOOT_TABLES = {
     scrap:     { chance: 1.00, min: 15, max: 30 },
     fuel:      { chance: 0.25, min: 5,  max: 15 },
     weapon:    { chance: 0.30, pool: ['Autocannon', 'LanceSmall'] },
-    ammo:      { chance: 0.60, pool: ['autocannon', 'missile'], min: 80, max: 180 },
+    ammo:      { chance: 0.60, pool: ['autocannon', 'rocket'], min: 80, max: 180 },
     module:    { chance: 0.10, pool: ['SalvagedSensorSuite', 'StandardSensorSuite'] },
   },
 
@@ -43,7 +43,7 @@ export const LOOT_TABLES = {
     scrap:     { chance: 1.00, min: 30, max: 60 },
     fuel:      { chance: 0.40, min: 10, max: 20 },
     weapon:    { chance: 0.25, pool: ['Cannon'] },
-    ammo:      { chance: 0.50, pool: ['cannon', 'rocket-large'], min: 2, max: 8 },
+    ammo:      { chance: 0.50, pool: ['cannon', 'rocket', 'gatling'], min: 2, max: 8 },
     module:    { chance: 0.35, pool: ['SmallFissionReactor', 'HydrogenFuelCell', 'CombatComputer'] },
     commodity: {
       chance: 0.30,

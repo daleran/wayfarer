@@ -6,22 +6,28 @@ const DAMAGE_MULT      = 5.3;   // ~90 armor damage per rocket
 const HULL_DAMAGE_MULT = 6.5;   // 65 hull per rocket
 const SPEED_MULT       = 1.4;
 const COOLDOWN_MULT    = 12.0;
+const LARGE_MAG_SIZE   = 8;     // 8 tubes
+const LARGE_RELOAD_TIME = 13.0; // shared ammo pool with small pod
 
-export class RocketLarge {
+export class RocketPodLarge {
   constructor() {
     this.isSecondary = true;
     this.isAutoFire  = false;
-    this.displayName = 'ROCKET×5';
-    this.ammoType    = 'rocket-large';
+    this.ammoType    = 'rocket'; // shared pool with RocketPodSmall
     this.damage      = BASE_DAMAGE      * DAMAGE_MULT;
     this.hullDamage  = BASE_HULL_DAMAGE * HULL_DAMAGE_MULT;
     this.projectileSpeed = BASE_PROJECTILE_SPEED * SPEED_MULT * PROJECTILE_SPEED_FACTOR;
     this.cooldownMax = BASE_COOLDOWN * COOLDOWN_MULT;
     this._cooldown   = 0;
-    this.ammo        = 3;
-    this.ammoMax     = 3;
-    this.ammoCargoWeight = 2; // 2 cargo units per salvo pod
-    this.pipCount    = 5;     // 5-rocket burst pod
+    this.magSize        = LARGE_MAG_SIZE;
+    this.ammo           = LARGE_MAG_SIZE;
+    this.reloadTime     = LARGE_RELOAD_TIME;
+    this._reloadTimer   = 0;
+    this.ammoCargoWeight = 1.0; // 1 cargo unit per rocket
+    this.pipCount    = LARGE_MAG_SIZE;
+    // Guidance mode
+    this.guidanceModes = ['dumbfire', 'wire', 'heat'];
+    this.guidanceMode  = 'dumbfire';
     // Burst state
     this._burstCount  = 0;
     this._burstTimer  = 0;
@@ -30,6 +36,12 @@ export class RocketLarge {
     this._burstTy     = 0;
   }
 
+  get displayName() {
+    return 'RPOD-L [' + this.guidanceMode.toUpperCase() + ']';
+  }
+
+  get isReloading() { return this._reloadTimer > 0; }
+
   update(dt, entities) {
     if (this._cooldown > 0) this._cooldown -= dt;
     if (this._burstCount > 0 && entities) {
@@ -37,21 +49,24 @@ export class RocketLarge {
       if (this._burstTimer <= 0) {
         this._fireOneRocket(entities);
         this._burstCount--;
-        if (this._burstCount > 0) this._burstTimer = 0.18;
+        if (this._burstCount > 0) this._burstTimer = 0.12;
       }
     }
   }
 
   fire(ship, tx, ty, entities) {
-    if (this._cooldown > 0) return;
+    if (this._cooldown > 0 || this._reloadTimer > 0) return;
     if (ship.relation === 'player' && this.ammo <= 0) return;
     this._burstShip  = ship;
     this._burstTx    = tx;
     this._burstTy    = ty;
-    this._burstCount = 4; // 4 remaining after first
-    this._burstTimer = 0.18;
+    this._burstCount = LARGE_MAG_SIZE - 1; // remaining after first
+    this._burstTimer = 0.12;
     this._fireOneRocket(entities); // fire first immediately
-    if (ship.relation === 'player') this.ammo--;
+    if (ship.relation === 'player') {
+      this.ammo = 0; // all tubes fired in burst
+      this._reloadTimer = this.reloadTime;
+    }
     this._cooldown = this.cooldownMax;
   }
 
@@ -72,12 +87,28 @@ export class RocketLarge {
       Math.sin(angle) * this.projectileSpeed,
       this.damage, ship
     );
-    proj.hullDamage    = this.hullDamage;
-    proj.maxRange      = dist + 20;
-    proj.isRocket      = true;
-    proj.blastRadius   = 280;
-    proj.rocketTargetX = ship.x + Math.cos(angle) * dist;
-    proj.rocketTargetY = ship.y + Math.sin(angle) * dist;
+    proj.hullDamage      = this.hullDamage;
+    proj.maxRange        = dist + 20;
+    proj.blastRadius     = 280;
+    proj.isInterceptable = true;
+
+    if (this.guidanceMode === 'dumbfire') {
+      proj.isRocket      = true;
+      proj.rocketTargetX = ship.x + Math.cos(angle) * dist;
+      proj.rocketTargetY = ship.y + Math.sin(angle) * dist;
+    } else if (this.guidanceMode === 'wire') {
+      proj.isGuided         = true;
+      proj.guidedType       = 'wire';
+      proj.guidanceStrength = 3.0;
+    } else if (this.guidanceMode === 'heat') {
+      proj.isGuided         = true;
+      proj.guidedType       = 'heat';
+      proj.guidanceStrength = 2.5;
+    }
+
     entities.push(proj);
   }
 }
+
+// Backward-compat alias
+export { RocketPodLarge as RocketLarge };

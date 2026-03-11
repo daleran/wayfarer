@@ -3,21 +3,19 @@ import { PLASMA_GREEN } from '../ui/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../data/stats.js';
 
-const SMALL_P = { DAMAGE_MULT: 0.47, HULL_DAMAGE_MULT: 4.0, COOLDOWN_MULT: 1.0, RANGE_MULT: 0.367 };  // ~8 dmg, ~550u
-const LARGE_P = { DAMAGE_MULT: 0.71, HULL_DAMAGE_MULT: 6.0, COOLDOWN_MULT: 1.6, RANGE_MULT: 0.533 };  // ~12 dmg, ~800u
+const VARIANTS = {
+  small: { DAMAGE_MULT: 1.47, HULL_MULT: 8.0,  COOLDOWN_MULT: 1.0, RANGE_MULT: 0.27 },
+  large: { DAMAGE_MULT: 2.94, HULL_MULT: 12.0, COOLDOWN_MULT: 1.6, RANGE_MULT: 0.40 },
+};
 
 export class PlasmaCannon {
   constructor(size = 'small') {
     this.isSecondary = false;
     this.isAutoFire  = false;
-    const V = size === 'large' ? LARGE_P : SMALL_P;
-    if (size === 'large') {
-      this.displayName = 'PLASMA-L';
-    } else {
-      this.displayName = 'PLASMA-S';
-    }
+    const V = VARIANTS[size] ?? VARIANTS.small;
+    this.displayName = size === 'large' ? 'PLASMA-L' : 'PLASMA-S';
     this.damage      = BASE_DAMAGE      * V.DAMAGE_MULT;
-    this.hullDamage  = BASE_HULL_DAMAGE * V.HULL_DAMAGE_MULT;
+    this.hullDamage  = BASE_HULL_DAMAGE * V.HULL_MULT;
     this.cooldownMax = BASE_COOLDOWN    * V.COOLDOWN_MULT;
     this.maxRange    = BASE_WEAPON_RANGE * V.RANGE_MULT;
     this.projectileSpeed = BASE_PROJECTILE_SPEED * 1.6 * PROJECTILE_SPEED_FACTOR;

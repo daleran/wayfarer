@@ -2,23 +2,43 @@ import { BASE_DAMAGE, BASE_WEAPON_RANGE } from '../data/stats.js';
 
 // Lance: ramping beam — baseDamage (at t=0) to maxDamage (at rampTime)
 // Range expressed as a fraction of BASE_WEAPON_RANGE
-const FIXED = { BASE_MULT: 0.88, MAX_MULT: 4.12, RANGE_MULT: 0.233 };  // 15→70 dmg, 350u
-const LARGE = { BASE_MULT: 0.71, MAX_MULT: 3.24, RANGE_MULT: 0.233 };  // 12→55 dmg, 350u
-const SMALL = { BASE_MULT: 0.47, MAX_MULT: 2.35, RANGE_MULT: 0.167 };  // 8→40 dmg, 250u
+const VARIANTS = {
+  'small-fixed':  { BASE_MULT: 0.88, MAX_MULT: 4.12, RANGE_MULT: 0.233, fixed: true,  hullFactor: 1.0, canInterceptBeam: false, powerDraw: 30 },
+  'small-turret': { BASE_MULT: 0.25, MAX_MULT: 1.20, RANGE_MULT: 0.200, fixed: false, hullFactor: 0.0, canInterceptBeam: true,  powerDraw: 15 },
+  'large-fixed':  { BASE_MULT: 1.76, MAX_MULT: 8.24, RANGE_MULT: 0.333, fixed: true,  hullFactor: 1.0, canInterceptBeam: false, powerDraw: 60 },
+  'large-turret': { BASE_MULT: 1.41, MAX_MULT: 6.59, RANGE_MULT: 0.300, fixed: false, hullFactor: 1.0, canInterceptBeam: false, powerDraw: 50 },
+};
+
+const DISPLAY_NAMES = {
+  'small-fixed':  'LANCE-SF',
+  'small-turret': 'LANCE-ST',
+  'large-fixed':  'LANCE-LF',
+  'large-turret': 'LANCE-LT',
+};
 
 export class Lance {
-  constructor(variant = 'small') {
+  constructor(variant = 'small-turret') {
     this.isSecondary = false;
     this.isAutoFire  = false;
     this.isBeam      = true;
-    this.isFixed     = variant === 'fixed';
 
-    const V = variant === 'fixed' ? FIXED : variant === 'large' ? LARGE : SMALL;
+    // Backward-compat: map old variant names to new ones
+    if (variant === 'small') variant = 'small-turret';
+    if (variant === 'large') variant = 'large-turret';
+    if (variant === 'fixed') variant = 'small-fixed';
+    // Default fallback
+    if (!VARIANTS[variant]) variant = 'small-turret';
+
+    const V = VARIANTS[variant];
+    this.isFixed          = V.fixed;
+    this.hullFactor       = V.hullFactor;
+    this.canInterceptBeam = V.canInterceptBeam;
+    this.displayName      = DISPLAY_NAMES[variant];
+
     this.baseDamage  = BASE_DAMAGE * V.BASE_MULT;
     this.maxDamage   = BASE_DAMAGE * V.MAX_MULT;
     this.maxRange    = BASE_WEAPON_RANGE * V.RANGE_MULT;
-    this.displayName = variant === 'fixed' ? 'LANCE-F' : variant === 'large' ? 'LANCE-L' : 'LANCE-S';
-    this.rampTime = 2.0;   // seconds to reach full damage
+    this.rampTime    = 2.0;   // seconds to reach full damage
 
     // State
     this._rampUp      = 0;   // 0..rampTime
@@ -37,7 +57,9 @@ export class Lance {
       if (this._hitTarget && this._hitTarget.active) {
         const t = this._rampUp / this.rampTime;
         const dmgPerSec = this.baseDamage + (this.maxDamage - this.baseDamage) * t;
-        this._hitTarget.takeDamage(dmgPerSec * dt, 0, this._beamEndX, this._beamEndY);
+        const dmg = dmgPerSec * dt;
+        // hullFactor: proportion of armor damage also applied as hull damage
+        this._hitTarget.takeDamage(dmg, dmg * this.hullFactor, this._beamEndX, this._beamEndY);
         if (this._hitTarget.isDestroyed) this._hitTarget = null;
       }
     } else {

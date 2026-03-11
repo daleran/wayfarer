@@ -20,24 +20,62 @@ Fuel consumption scales with throttle level. The lowest level is free; consumpti
 
 **Primary weapons** (LMB / Space) — manually aimed toward the mouse cursor. Player fires the currently indexed primary weapon only. AI fires all weapons simultaneously.
 
-**Secondary weapons** (RMB) — typically missiles, torpedoes, or burst weapons. Same targeting logic. Player fires the indexed secondary weapon; AI fires all.
+**Secondary weapons** (RMB) — rocket pods and torpedoes. Same targeting logic. Player fires the indexed secondary weapon; AI fires all.
 
-Cycle primary with 1/2, secondary with 3/4 (test mode keys).
+**Weapon cycling** — `[` / `]` cycle primary weapon. `{` / `}` cycle secondary weapon. `1` cycles ammo mode on active primary. `2` cycles guidance mode on active secondary (or ammo mode if applicable).
 
 ### Weapon Families
 
-Ten weapon families are implemented:
+Eight weapon families are implemented:
 
-- **Autocannon** — dumbfire kinetic bolt; moderate range; armor-focused
-- **Railgun** — extreme-velocity penetrator; long range; high damage; slow cooldown; fixed-mount variant fires along heading
-- **Flak Cannon** — detonates at the click point; AoE burst; can intercept missiles; small and large variants
-- **Lance** — hitscan beam; armor-only damage; ramps up over a hold period; short range
-- **Plasma Cannon** — hull-heavy blob; damage falls off with distance traveled; small and large variants
-- **Cannon** — slow heavy shell; AoE on contact
-- **Rocket** — dumbfire; detonates at click point; friendly fire; single and burst-of-five variants
-- **Wire Missile** — guided by mouse cursor; interceptable; AoE
-- **Heat Missile** — locks onto nearest raider; self-destructs after a timer; interceptable; single and dual variants
+- **Autocannon** — dumbfire kinetic bolt; moderate range; armor-focused; AP/HE ammo modes; magazine-fed
+- **Gatling Gun** — high rate-of-fire kinetic; short range; low damage per shot but high DPS; can intercept projectiles; magazine-fed
+- **Railgun** — extreme-velocity penetrator; long range; high damage; slow cooldown; three variants: small-fixed (SF), large-turret (LT), large-fixed (LF)
+- **Lance** — hitscan beam; ramps up damage over hold period; four variants: small-fixed (SF), small-turret (ST), large-fixed (LF), large-turret (LT); ST variant can intercept projectiles passing through the beam; SF/LF/LT also apply hull damage scaled by `hullFactor`
+- **Plasma Cannon** — hull-heavy blob; turret-aimed; damage falls off with distance traveled; small and large variants
+- **Cannon** — slow heavy shell; AoE on contact; AP/HE ammo modes; magazine-fed
+- **Rocket Pod** — dumbfire, wire-guided, or heat-seeking; detonates on contact and on expiry; interceptable; small (2-tube) and large (8-tube burst) variants; shared ammo pool
 - **Torpedo** — fixed-mount (fires along heading); slow; interceptable; very high damage AoE; long cooldown
+
+**Removed weapons** (Wire Missile, Heat Missile, Flak Cannon are no longer separate weapons — rocket pods now cover guided and dumbfire roles; gatling gun provides flak-style interception.)
+
+### Ammo Modes
+
+Autocannon and Cannon support switchable ammo modes (key `1` for primary, key `2` for secondary):
+
+| Weapon | AP Mode | HE Mode |
+|---|---|---|
+| Autocannon | Standard armor damage | Reduced armor damage; AoE blast; hull damage; can intercept |
+| Cannon | Standard AoE armor+hull | Reduced armor damage; larger AoE; high hull damage; can intercept |
+
+Switching mode dumps the current magazine back to cargo reserves and starts a reload.
+
+### Guidance Modes (Rocket Pods)
+
+Rocket Pods support three guidance modes (cycle with key `2`):
+
+| Mode | Behavior |
+|---|---|
+| DUMBFIRE | Fires at click point; detonates at target or on contact |
+| WIRE | Guided by mouse cursor; interceptable |
+| HEAT | Homes on nearest raider; interceptable |
+
+### Railgun Variants
+
+| Variant | Size | Mount | Notes |
+|---|---|---|---|
+| RAILGUN-SF | Small | Fixed | Fires along ship heading |
+| RAILGUN-LT | Large | Turret | Mouse-aimed |
+| RAILGUN-LF | Large | Fixed | Double damage/hull multipliers vs SF |
+
+### Lance Variants
+
+| Variant | Size | Mount | Hull Damage | Beam Intercept |
+|---|---|---|---|---|
+| LANCE-SF | Small | Fixed | Yes (1.0×) | No |
+| LANCE-ST | Small | Turret | No (0.0×) | Yes — intercepts projectiles passing through beam |
+| LANCE-LF | Large | Fixed | Yes (1.0×) | No |
+| LANCE-LT | Large | Turret | Yes (1.0×) | No |
 
 ### Projectile Special Behaviors
 
@@ -46,11 +84,16 @@ Ten weapon families are implemented:
 | `detonatesOnContact` | AoE explosion when hitting any ship |
 | `detonatesOnExpiry` | AoE explosion at target point when range runs out |
 | `isGuided + guidedType='wire'` | Steers toward mouse cursor each frame |
-| `isGuided + guidedType='heat'` | Steers toward nearest raider; self-destructs after timer |
-| `isInterceptable` | Can be shot down by weapons with `canIntercept` |
-| `canIntercept` | Intercepts nearby enemy interceptable projectiles on contact |
+| `isGuided + guidedType='heat'` | Steers toward nearest raider |
+| `isInterceptable` | Can be shot down by weapons with `canIntercept` or `canInterceptBeam` |
+| `canIntercept` | Intercepts nearby enemy interceptable projectiles on contact (gatling) |
+| `canInterceptBeam` | Lance small-turret intercepts interceptable projectiles passing within 15px of beam |
 | `isPlasma` | Damage falls off proportionally as the projectile approaches max range |
 | `isBeam` | Lance only; hitscan on fire, rendered as a beam overlay |
+
+### Hit Flash
+
+All ships flash red briefly when they take damage. Flash lasts 0.15 seconds and fades linearly.
 
 ### Weapons and the Offline Flag
 

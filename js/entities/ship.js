@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { RELATION_COLORS } from '../ui/colors.js';
+import { RELATION_COLORS, RED } from '../ui/colors.js';
 import { BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
          THROTTLE_LEVELS, THROTTLE_RATIOS } from '../data/stats.js';
 
@@ -38,6 +38,9 @@ export class Ship extends Entity {
     // Damage effect timers — driven by game._updateDamageEffects()
     this._smokeTimer = 0;
     this._sparkTimer = 0;
+
+    // Hit flash timer — brief red overlay on damage
+    this._hitFlashTimer = 0;
 
     // Movement
     this.speedMax    = 120;
@@ -314,6 +317,9 @@ export class Ship extends Entity {
 
     this.hullCurrent = Math.max(0, this.hullCurrent - hullDmg);
 
+    // Trigger hit flash
+    this._hitFlashTimer = 0.15;
+
     if (this.hullCurrent <= 0) {
       this.hullCurrent = 0;
       this.active = false;
@@ -331,6 +337,7 @@ export class Ship extends Entity {
 
   update(dt, entities) {
     for (const w of this.weapons) w.update(dt, entities);
+    if (this._hitFlashTimer > 0) this._hitFlashTimer -= dt;
 
     // Hull degradation — random flags updated once per tick
     const hullRatio = this.hullCurrent / this.hullMax;
@@ -400,6 +407,17 @@ export class Ship extends Entity {
     ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
     this._drawShape(ctx);
+
+    // Hit flash — brief red overlay on damage
+    if (this._hitFlashTimer > 0) {
+      const alpha = (this._hitFlashTimer / 0.15) * 0.55;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = RED;
+      ctx.beginPath();
+      ctx.arc(0, 0, (this.radius ?? 20) * 1.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
 
     // Enemy damage overlay — darkens at ≤50% hull
     if (this.relation === 'enemy') {

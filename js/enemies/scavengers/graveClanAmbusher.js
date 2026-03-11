@@ -1,5 +1,5 @@
 import { MaverickCourier } from '../../ships/classes/maverickCourier.js';
-import { AutocannonModule, MissileHeatModule } from '../../systems/shipModule.js';
+import { AutocannonModule, RocketPodModule } from '../../systems/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL } from '../../data/stats.js';
 
@@ -40,7 +40,7 @@ export class GraveClanAmbusher extends MaverickCourier {
 
     this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
 
-    this.moduleSlots = [new AutocannonModule(), new MissileHeatModule('small')];
+    this.moduleSlots = [new AutocannonModule(), new RocketPodModule('small', 'heat')];
     this._applyModules();
   }
 }

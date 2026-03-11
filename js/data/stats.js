@@ -33,8 +33,16 @@ export const BASE_COOLDOWN = 0.9;      // seconds between shots (standard single
 // --- Magazine & reload ---
 export const AUTOCANNON_MAG_SIZE    = 60;   // rounds per magazine
 export const AUTOCANNON_RELOAD_TIME = 10.0; // seconds to reload a full magazine
+export const CANNON_MAG_SIZE        = 4;    // shells per magazine
+export const CANNON_RELOAD_TIME     = 14.0; // seconds to reload
+export const GATLING_MAG_SIZE       = 200;  // rounds per belt
+export const GATLING_RELOAD_TIME    = 8.0;  // seconds to reload belt
 export const ROCKET_MAG_SIZE        = 2;    // rockets in launcher (2 tubes)
 export const ROCKET_RELOAD_TIME     = 13.0; // seconds to reload both tubes
+
+// --- Weapon AoE blast radii ---
+export const HE_AUTOCANNON_BLAST    = 60;   // HE autocannon blast radius (world units)
+export const HE_CANNON_BLAST        = 150;  // HE cannon blast radius (world units)
 
 // --- Fuel & economy ---
 export const DEFAULT_SCRAP = 20;

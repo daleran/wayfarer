@@ -4,7 +4,8 @@
 import { Autocannon } from '../weapons/autocannon.js';
 import { Lance }      from '../weapons/lance.js';
 import { Cannon }     from '../weapons/cannon.js';
-import { MissileHeat } from '../weapons/missileHeat.js';
+import { RocketPodSmall } from '../weapons/rocket.js';
+import { RocketPodLarge } from '../weapons/rocketLarge.js';
 import {
   REACTOR_SMALL_FISSION_INTERVAL,
   REACTOR_LARGE_FISSION_INTERVAL,
@@ -92,18 +93,22 @@ export class CannonModule extends ShipModule {
   onRemove(ship)  { ship.removeWeapon(this.weapon); }
 }
 
-export class MissileHeatModule extends ShipModule {
-  constructor(size = 'small') {
+export class RocketPodModule extends ShipModule {
+  constructor(size = 'small', defaultMode = 'heat') {
     super();
-    this.name        = size === 'large' ? 'missile-heat-l' : 'missile-heat';
-    this.displayName = size === 'large' ? 'HEAT MSL ×2' : 'HEAT MSL';
-    this.description = 'Heat-seeking secondary. Guided, interceptable.';
+    this.name        = size === 'large' ? 'rocket-pod-l' : 'rocket-pod-s';
+    this.displayName = size === 'large' ? 'RPOD-L' : 'RPOD-S';
+    this.description = 'Rocket pod. Supports dumbfire, wire, and heat guidance modes.';
     this.powerDraw   = 10;
-    this.weapon      = new MissileHeat(size);
+    this.weapon      = size === 'large' ? new RocketPodLarge() : new RocketPodSmall();
+    this.weapon.guidanceMode = defaultMode;
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
   onRemove(ship)  { ship.removeWeapon(this.weapon); }
 }
+
+// Backward-compat alias — old code using MissileHeatModule still works
+export { RocketPodModule as MissileHeatModule };
 
 // ─── Engine modules ──────────────────────────────────────────────────────────
 // Engine modules modify ship speedMax, acceleration, and fuelEfficiency.

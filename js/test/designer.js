@@ -22,24 +22,22 @@ import {
   ChemRocketSmall, ChemRocketLarge,
   MagplasmaTorchSmall, MagplasmaTorchLarge,
   IonThruster,
-  AutocannonModule, LanceModuleSmall, CannonModule, MissileHeatModule,
+  AutocannonModule, LanceModuleSmall, CannonModule, RocketPodModule,
   HydrogenFuelCell, SmallFissionReactor, LargeFissionReactor, LargeFusionReactor,
   SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
   SalvageScannerModule, LongRangeScannerModule,
 } from '../systems/shipModule.js';
 
 // Weapons
-import { Autocannon }   from '../weapons/autocannon.js';
-import { Railgun }      from '../weapons/railgun.js';
-import { FlakCannon }   from '../weapons/flakCannon.js';
-import { Lance }        from '../weapons/lance.js';
-import { PlasmaCannon } from '../weapons/plasmaCannon.js';
-import { Cannon }       from '../weapons/cannon.js';
-import { Rocket }       from '../weapons/rocket.js';
-import { RocketLarge }  from '../weapons/rocketLarge.js';
-import { MissileWire }  from '../weapons/missileWire.js';
-import { MissileHeat }  from '../weapons/missileHeat.js';
-import { Torpedo }      from '../weapons/torpedo.js';
+import { Autocannon }     from '../weapons/autocannon.js';
+import { GatlingGun }     from '../weapons/gatlingGun.js';
+import { Railgun }        from '../weapons/railgun.js';
+import { Lance }          from '../weapons/lance.js';
+import { PlasmaCannon }   from '../weapons/plasmaCannon.js';
+import { Cannon }         from '../weapons/cannon.js';
+import { RocketPodSmall } from '../weapons/rocket.js';
+import { RocketPodLarge } from '../weapons/rocketLarge.js';
+import { Torpedo }        from '../weapons/torpedo.js';
 
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
@@ -135,8 +133,8 @@ function _buildModuleItems() {
     _mod('mod-autocannon',    'Autocannon Mount',         'WEAPON', () => new AutocannonModule()),
     _mod('mod-lance-s',       'Lance Mount (S)',          'WEAPON', () => new LanceModuleSmall()),
     _mod('mod-cannon',        'Cannon Mount',             'WEAPON', () => new CannonModule()),
-    _mod('mod-heat-msl',      'Heat Missile Mount',       'WEAPON', () => new MissileHeatModule('small')),
-    _mod('mod-heat-msl-l',    'Heat Missile Mount (×2)',  'WEAPON', () => new MissileHeatModule('large')),
+    _mod('mod-rpod-s',        'Rocket Pod (S)',           'WEAPON', () => new RocketPodModule('small', 'dumbfire')),
+    _mod('mod-rpod-l',        'Rocket Pod (L)',           'WEAPON', () => new RocketPodModule('large', 'dumbfire')),
     // ── Power
     _mod('h2-fuel-cell',      'H2 Fuel Cell (S)',         'POWER',  () => new HydrogenFuelCell()),
     _mod('fission-s',         'Fission Reactor (S)',      'POWER',  () => new SmallFissionReactor()),
@@ -218,59 +216,66 @@ const CATEGORIES = [
     items: [
       {
         id: 'autocannon',  label: 'Autocannon',    file: 'js/weapons/autocannon.js',  type: 'weapon',
-        flavorText: "Rotating breech, medium caseless, point-and-fire. Standard issue for anyone who can afford it and most who can't.",
+        flavorText: "Rotating breech, medium caseless, point-and-fire. AP or HE mode. Standard issue for anyone who can afford it.",
         create: () => new Autocannon(),
         projColor: AMBER,   projLen: 3,  projTrail: true,
-        flags: ['manual'],
+        flags: ['manual', 'ammo-modes'],
       },
       {
-        id: 'railgun',     label: 'Railgun',       file: 'js/weapons/railgun.js',     type: 'weapon',
-        flavorText: "Two conductive rails, one very fast slug. Accuracy drops before effective range does.",
-        create: () => new Railgun(),
-        projColor: RAIL_WHITE, projLen: 12, projTrail: true,
-        flags: ['manual', 'hull-dmg'],
+        id: 'gatling',     label: 'Gatling',       file: 'js/weapons/gatlingGun.js',  type: 'weapon',
+        flavorText: "Six barrels, one aim. Shreds at close range. Reloads slow. Point defense capable.",
+        create: () => new GatlingGun(),
+        projColor: GREEN,   projLen: 3,  projTrail: false,
+        flags: ['manual', 'intercept', 'ammo'],
       },
       {
-        id: 'railgun-f',   label: 'Railgun (fixed)', file: 'js/weapons/railgun.js',  type: 'weapon',
-        flavorText: "A forward-mounted rail accelerator. No pivot mount — the whole ship is the gun platform.",
-        create: () => new Railgun('fixed'),
+        id: 'railgun-sf',  label: 'Railgun (SF)',  file: 'js/weapons/railgun.js',     type: 'weapon',
+        flavorText: "Small fixed rail accelerator. No pivot mount — the whole ship is the gun platform.",
+        create: () => new Railgun('small-fixed'),
         projColor: RAIL_WHITE, projLen: 12, projTrail: true,
         flags: ['fixed', 'hull-dmg'],
       },
       {
-        id: 'flak-s',      label: 'Flak Cannon (S)', file: 'js/weapons/flakCannon.js', type: 'weapon',
-        flavorText: "Programmable-detonation shell. Blasts wide at proximity. Effective against soft targets and incoming missiles.",
-        create: () => new FlakCannon('small'),
-        projColor: AMBER,   projLen: 5,  projTrail: false,
-        flags: ['manual', 'aoe', 'intercept', 'hull-dmg'],
+        id: 'railgun-lt',  label: 'Railgun (LT)',  file: 'js/weapons/railgun.js',     type: 'weapon',
+        flavorText: "Two conductive rails, one very fast slug. Accuracy drops before effective range does.",
+        create: () => new Railgun('large-turret'),
+        projColor: RAIL_WHITE, projLen: 12, projTrail: true,
+        flags: ['manual', 'hull-dmg'],
       },
       {
-        id: 'flak-l',      label: 'Flak Cannon (L)', file: 'js/weapons/flakCannon.js', type: 'weapon',
-        flavorText: "Heavy-bore flak battery. Recoil was an engineering problem; it still is.",
-        create: () => new FlakCannon('large'),
-        projColor: AMBER,   projLen: 5,  projTrail: false,
-        flags: ['manual', 'aoe', 'intercept', 'hull-dmg'],
+        id: 'railgun-lf',  label: 'Railgun (LF)',  file: 'js/weapons/railgun.js',     type: 'weapon',
+        flavorText: "The full-length rail cannon. Massive penetrator. Hull-mount only. Devastating.",
+        create: () => new Railgun('large-fixed'),
+        projColor: RAIL_WHITE, projLen: 12, projTrail: true,
+        flags: ['fixed', 'hull-dmg'],
       },
       {
-        id: 'lance-s',     label: 'Lance (S)',     file: 'js/weapons/lance.js',       type: 'weapon',
-        flavorText: "A coherent energy lance. Burns through armor at sustained contact. The arm stays warm afterward.",
-        create: () => new Lance('small'),
+        id: 'lance-sf',    label: 'Lance (SF)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        flavorText: "Hull-mounted lance projector. No gimbal. Ramps to high damage. Aim with the ship.",
+        create: () => new Lance('small-fixed'),
         isBeam: true, projColor: CYAN,
-        flags: ['beam', 'ramp-dmg'],
+        flags: ['beam', 'fixed', 'ramp-dmg', 'hull-dmg'],
       },
       {
-        id: 'lance-l',     label: 'Lance (L)',     file: 'js/weapons/lance.js',       type: 'weapon',
-        flavorText: "Long-duration beam system. Melts what it holds. Holds what it finds.",
-        create: () => new Lance('large'),
+        id: 'lance-st',    label: 'Lance (ST)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        flavorText: "Point-defense beam. Low power draw. Can intercept missiles passing through the beam.",
+        create: () => new Lance('small-turret'),
         isBeam: true, projColor: CYAN,
-        flags: ['beam', 'ramp-dmg'],
+        flags: ['beam', 'ramp-dmg', 'intercept'],
       },
       {
-        id: 'lance-f',     label: 'Lance (fixed)', file: 'js/weapons/lance.js',       type: 'weapon',
-        flavorText: "Hull-mounted lance projector. No gimbal. Aim with the ship.",
-        create: () => new Lance('fixed'),
+        id: 'lance-lf',    label: 'Lance (LF)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        flavorText: "Heavy fixed lance. Full hull-damage application. Maximum ramp ceiling.",
+        create: () => new Lance('large-fixed'),
         isBeam: true, projColor: CYAN,
-        flags: ['beam', 'fixed', 'ramp-dmg'],
+        flags: ['beam', 'fixed', 'ramp-dmg', 'hull-dmg'],
+      },
+      {
+        id: 'lance-lt',    label: 'Lance (LT)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        flavorText: "Heavy turret lance. Full hull damage, wide tracking arc. Power hungry.",
+        create: () => new Lance('large-turret'),
+        isBeam: true, projColor: CYAN,
+        flags: ['beam', 'ramp-dmg', 'hull-dmg'],
       },
       {
         id: 'plasma-s',    label: 'Plasma (S)',    file: 'js/weapons/plasmaCannon.js', type: 'weapon',
@@ -288,52 +293,24 @@ const CATEGORIES = [
       },
       {
         id: 'cannon',      label: 'Cannon',        file: 'js/weapons/cannon.js',      type: 'weapon',
-        flavorText: "Smoothbore heavy round. No electronics. It hits or it doesn't.",
+        flavorText: "Smoothbore heavy round. AP or HE mode. No electronics. It hits or it doesn't.",
         create: () => new Cannon(),
         projColor: '#dd8800', projLen: 7, projTrail: false,
-        flags: ['manual', 'aoe', 'hull-dmg'],
+        flags: ['manual', 'aoe', 'hull-dmg', 'ammo', 'ammo-modes'],
       },
       {
-        id: 'rocket',      label: 'Rocket',        file: 'js/weapons/rocket.js',      type: 'weapon',
-        flavorText: "Unguided solid-fuel warhead. Accurate enough at short range; chaotic after that.",
-        create: () => new Rocket(),
+        id: 'rpod-s',      label: 'Rocket Pod (S)', file: 'js/weapons/rocket.js',    type: 'weapon',
+        flavorText: "Two-tube pod. Dumbfire, wire, or heat guidance. Shared ammo pool with large pod.",
+        create: () => new RocketPodSmall(),
         projColor: AMBER,   projLen: 8,  projTrail: true,
-        flags: ['secondary', 'aoe', 'hull-dmg', 'ammo'],
+        flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'guidance-modes'],
       },
       {
-        id: 'rocket-large', label: 'Rocket ×5',   file: 'js/weapons/rocketLarge.js', type: 'weapon',
-        flavorText: "Burst of five on a single trigger pull. Wide spread, heavy impact.",
-        create: () => new RocketLarge(),
+        id: 'rpod-l',      label: 'Rocket Pod (L)', file: 'js/weapons/rocketLarge.js', type: 'weapon',
+        flavorText: "Eight-tube burst pod. Staggered fire. Fills the sky. Same guidance options as small pod.",
+        create: () => new RocketPodLarge(),
         projColor: AMBER,   projLen: 8,  projTrail: true,
-        flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'burst'],
-      },
-      {
-        id: 'wire-msl',    label: 'Wire Missile',  file: 'js/weapons/missileWire.js', type: 'weapon',
-        flavorText: "Manual guidance via copper filament. Pilot sees it in, or doesn't.",
-        create: () => new MissileWire('small'),
-        projColor: AMBER,   projLen: 8,  projTrail: true,
-        flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo'],
-      },
-      {
-        id: 'wire-msl-l',  label: 'Wire Missile ×3', file: 'js/weapons/missileWire.js', type: 'weapon',
-        flavorText: "Three on the rail. Feed them in sequence or release all at once.",
-        create: () => new MissileWire('large'),
-        projColor: AMBER,   projLen: 8,  projTrail: true,
-        flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo', 'spread'],
-      },
-      {
-        id: 'heat-msl',    label: 'Heat Missile',  file: 'js/weapons/missileHeat.js', type: 'weapon',
-        flavorText: "Chases engine bloom. Effective against ships running hot. Ineffective against patience.",
-        create: () => new MissileHeat('small'),
-        projColor: RED,     projLen: 8,  projTrail: true,
-        flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo'],
-      },
-      {
-        id: 'heat-msl-l',  label: 'Heat Missile ×2', file: 'js/weapons/missileHeat.js', type: 'weapon',
-        flavorText: "Two heat-seekers linked to the same launch signature.",
-        create: () => new MissileHeat('large'),
-        projColor: RED,     projLen: 8,  projTrail: true,
-        flags: ['secondary', 'guided', 'interceptable', 'aoe', 'ammo', 'burst'],
+        flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'burst', 'guidance-modes'],
       },
       {
         id: 'torpedo',     label: 'Torpedo',       file: 'js/weapons/torpedo.js',     type: 'weapon',

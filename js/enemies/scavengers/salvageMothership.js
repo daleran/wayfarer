@@ -1,5 +1,5 @@
 import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
-import { CannonModule, MissileHeatModule } from '../../systems/shipModule.js';
+import { CannonModule, RocketPodModule } from '../../systems/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL } from '../../data/stats.js';
 
@@ -40,7 +40,7 @@ export class SalvageMothership extends GarrisonFrigate {
 
     this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
 
-    this.moduleSlots = [new CannonModule(), new MissileHeatModule('large'), null, null];
+    this.moduleSlots = [new CannonModule(), new RocketPodModule('large', 'heat'), null, null];
     this._applyModules();
   }
 }

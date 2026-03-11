@@ -7,16 +7,13 @@ import { createHullbreaker } from './ships/player/hullbreaker.js';
 import { RAIDER_REGISTRY } from './enemies/raiderRegistry.js';
 import { createGraveClanAmbusher } from './enemies/scavengers/graveClanAmbusher.js';
 import { Autocannon } from './weapons/autocannon.js';
-
-import { Rocket } from './weapons/rocket.js';
+import { RocketPodSmall } from './weapons/rocket.js';
+import { RocketPodLarge } from './weapons/rocketLarge.js';
 import { Railgun } from './weapons/railgun.js';
-import { FlakCannon } from './weapons/flakCannon.js';
+import { GatlingGun } from './weapons/gatlingGun.js';
 import { Lance } from './weapons/lance.js';
 import { PlasmaCannon } from './weapons/plasmaCannon.js';
 import { Cannon } from './weapons/cannon.js';
-import { RocketLarge } from './weapons/rocketLarge.js';
-import { MissileWire } from './weapons/missileWire.js';
-import { MissileHeat } from './weapons/missileHeat.js';
 import { Torpedo } from './weapons/torpedo.js';
 import { ParticlePool } from './systems/particlePool.js';
 import { updateRaiderAI } from './ai/raiderAI.js';
@@ -146,24 +143,29 @@ export class GameManager {
 
       // Full weapon roster in test mode — replace module-installed weapons
       this.player.weapons = [];
+      // Primaries
       this.player.addWeapon(new Autocannon());
-      this.player.addWeapon(new Railgun());
-      this.player.addWeapon(new FlakCannon('small'));
-      this.player.addWeapon(new Lance('small'));
+      this.player.addWeapon(new GatlingGun());
+      this.player.addWeapon(new Railgun('small-fixed'));
+      this.player.addWeapon(new Railgun('large-turret'));
+      this.player.addWeapon(new Railgun('large-fixed'));
+      this.player.addWeapon(new Lance('small-fixed'));
+      this.player.addWeapon(new Lance('small-turret'));
+      this.player.addWeapon(new Lance('large-fixed'));
+      this.player.addWeapon(new Lance('large-turret'));
       this.player.addWeapon(new PlasmaCannon('small'));
+      this.player.addWeapon(new PlasmaCannon('large'));
       this.player.addWeapon(new Cannon());
-      // Secondary
-      this.player.addWeapon(new Rocket());
-      this.player.addWeapon(new RocketLarge());
-      this.player.addWeapon(new MissileWire('small'));
-      this.player.addWeapon(new MissileWire('large'));
-      this.player.addWeapon(new MissileHeat('small'));
+      // Secondaries
+      this.player.addWeapon(new RocketPodSmall());
+      this.player.addWeapon(new RocketPodLarge());
       this.player.addWeapon(new Torpedo());
 
       // Seed cargo ammo reserves for test mode
       this.ammo['autocannon'] = 300;
+      this.ammo['cannon']     = 20;
+      this.ammo['gatling']    = 600;
       this.ammo['rocket']     = 20;
-      this.ammo['missile']    = 12;
     }
     // Normal mode: weapons come from installed modules (set up in ship constructor)
 
@@ -450,6 +452,27 @@ export class GameManager {
     }
   }
 
+  // Cycle ammo mode on a weapon — dumps current magazine back to reserves and starts reload
+  _cycleAmmoMode(weapon) {
+    const modes = weapon.ammoModes;
+    if (!modes || modes.length < 2) return;
+    const next = modes[(modes.indexOf(weapon.currentAmmoMode) + 1) % modes.length];
+    // Return current ammo to reserves
+    this.ammo[weapon.ammoType] = (this.ammo[weapon.ammoType] ?? 0) + weapon.ammo;
+    weapon.ammo = 0;
+    weapon.currentAmmoMode = next;
+    weapon._reloadTimer = weapon.reloadTime;
+    this.hud.addPickupText('\u2192 ' + next.toUpperCase(), this.player.x, this.player.y, null);
+  }
+
+  // Cycle guidance mode on a rocket pod (no ammo state change needed)
+  _cycleGuidanceMode(weapon) {
+    const modes = weapon.guidanceModes;
+    if (!modes || modes.length < 2) return;
+    weapon.guidanceMode = modes[(modes.indexOf(weapon.guidanceMode) + 1) % modes.length];
+    this.hud.addPickupText('\u2192 ' + weapon.guidanceMode.toUpperCase(), this.player.x, this.player.y, null);
+  }
+
   _hasModulesToRepair() {
     const slots = this.player?.moduleSlots;
     if (!slots) return false;
@@ -643,6 +666,23 @@ export class GameManager {
       if (rightJustPressed) {
         p.fireSecondary(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
       }
+
+      // Weapon cycling: [ ] cycle primary, { } cycle secondary
+      if (input.wasJustPressed('[')) p.cyclePrimary(-1);
+      if (input.wasJustPressed(']')) p.cyclePrimary(1);
+      if (input.wasJustPressed('{')) p.cycleSecondary(-1);
+      if (input.wasJustPressed('}')) p.cycleSecondary(1);
+
+      // Ammo / guidance mode cycling: 1 for active primary, 2 for active secondary
+      if (input.wasJustPressed('1')) {
+        const w = p._primaryWeapons[p.primaryWeaponIdx];
+        if (w?.ammoModes?.length > 1) this._cycleAmmoMode(w);
+      }
+      if (input.wasJustPressed('2')) {
+        const w = p._secondaryWeapons[p.secondaryWeaponIdx];
+        if (w?.guidanceModes?.length > 1) this._cycleGuidanceMode(w);
+        else if (w?.ammoModes?.length > 1) this._cycleAmmoMode(w);
+      }
     }
   }
 
@@ -754,10 +794,7 @@ export class GameManager {
       entity._sparkTimer += dt;
       if (entity._sparkTimer >= 1.0) {
         entity._sparkTimer -= 1.0;
-        this.particlePool.explosion(
-          entity.x + (Math.random() - 0.5) * 16,
-          entity.y + (Math.random() - 0.5) * 16, 3
-        );
+        this.particlePool.ping(entity.x, entity.y);
       }
     }
   }
@@ -918,6 +955,29 @@ export class GameManager {
           tgt.shouldDetonate = false; // prevent AoE on interception
           this.particlePool.explosion(tgt.x, tgt.y, 3);
           break;
+        }
+      }
+    }
+
+    // --- Beam interception pass: canInterceptBeam lances vs isInterceptable projectiles ---
+    for (const ship of this.entities) {
+      if (!(ship instanceof Ship) || !ship.active) continue;
+      for (const w of ship.weapons) {
+        if (!w.canInterceptBeam || !w._isFiring) continue;
+        const ox = w._beamOriginX, oy = w._beamOriginY;
+        const ex = w._beamEndX,   ey = w._beamEndY;
+        const blen2 = (ex - ox) ** 2 + (ey - oy) ** 2;
+        if (blen2 === 0) continue;
+        for (const e of this.entities) {
+          if (!(e instanceof Projectile) || !e.active || !e.isInterceptable) continue;
+          if (e.owner?.faction === ship.faction) continue;
+          const t = Math.max(0, Math.min(1, ((e.x - ox) * (ex - ox) + (e.y - oy) * (ey - oy)) / blen2));
+          const dx = e.x - (ox + t * (ex - ox));
+          const dy = e.y - (oy + t * (ey - oy));
+          if (dx * dx + dy * dy < 225) { // 15px radius
+            e.active = false;
+            this.particlePool.explosion(e.x, e.y, 3);
+          }
         }
       }
     }

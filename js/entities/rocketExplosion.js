@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { AMBER } from '../ui/colors.js';
+import { AMBER, WHITE } from '../ui/colors.js';
 
 const DURATION = 0.55; // seconds
 
@@ -42,7 +42,7 @@ export class RocketExplosion extends Entity {
     const outerR = maxR * t;
     const outerAlpha = 1 - t;
     ctx.strokeStyle = AMBER;
-    ctx.lineWidth = (1 - t) * 3 + 0.5;
+    ctx.lineWidth = (1 - t) * 4 + 0.5; // thicker peak
     ctx.globalAlpha = outerAlpha * 0.85;
     ctx.beginPath();
     ctx.arc(center.x, center.y, Math.max(outerR, 1), 0, Math.PI * 2);
@@ -57,6 +57,17 @@ export class RocketExplosion extends Entity {
     ctx.beginPath();
     ctx.arc(center.x, center.y, Math.max(innerR, 1), 0, Math.PI * 2);
     ctx.stroke();
+
+    // Outer edge marker ring — drawn at exact blast radius, bright amber/white
+    const edgeAlpha = Math.max(0, 0.7 * (1 - t * 1.8));
+    if (edgeAlpha > 0) {
+      ctx.strokeStyle = WHITE;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = edgeAlpha;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, Math.max(maxR, 1), 0, Math.PI * 2);
+      ctx.stroke();
+    }
 
     // Glow halo on outer ring
     ctx.strokeStyle = AMBER;

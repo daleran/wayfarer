@@ -91,6 +91,10 @@ export class ParticlePool {
     this._rings.push({ x, y, radius: 3, maxRadius: 80,  life: 0.4, maxLife: 0.4, color: '#ffffff' });
   }
 
+  ping(x, y, color = '#44ff88') {
+    this._rings.push({ x, y, radius: 8, maxRadius: 80, life: 1.2, maxLife: 1.2, color });
+  }
+
   update(dt) {
     for (const p of this._pool) {
       if (!p.active) continue;
