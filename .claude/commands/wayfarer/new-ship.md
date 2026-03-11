@@ -99,9 +99,47 @@ export class SentinelCorvette extends Ship {
   }
 
   _drawShape(ctx) {
-    // Draw hull centered at (0,0), pointing up (rotation 0 = north)
-    // Use colors from js/ui/colors.js — NEVER inline hex
-    // ctx is pre-translated to ship position and rotated
+    // Draw hull centered at (0,0), pointing up (rotation 0 = north).
+    // Use colors from js/ui/colors.js — NEVER inline hex.
+    // ctx is pre-translated to ship position and rotated.
+    //
+    // DIRECTIONAL ARMOR RENDERING — REQUIRED for all ship classes.
+    // When this.relation === 'player', use health-based fill and per-arc outline coloring
+    // instead of flat relation colors. The Ship base class provides two helpers:
+    //
+    //   this._playerHullFill()
+    //     Returns an rgba fill color based on hull health ratio:
+    //     green (>75%) → yellow-green (>50%) → orange (>25%) → red (critical)
+    //
+    //   this._drawHullArcs(ctx, HULL_POINTS, arcSegmentMap)
+    //     Draws each arc's hull outline segment in armorArcColor(ratio).
+    //     arcSegmentMap = { front: [i0,i1,...], starboard: [...], aft: [...], port: [...] }
+    //     Returns true if drawn (player); false if NPC (caller should ctx.stroke() normally).
+    //
+    //   this._strokeArcCurrent(ctx, arcKey)
+    //     Strokes the CURRENT ctx path with the arc health color.
+    //     Returns true if player (drew arc color); false if NPC (caller should stroke normally).
+    //     Use for separate polygon components (nacelles, engine pods) that belong to one arc.
+    //
+    // Pattern for a simple single-polygon ship:
+    //
+    //   const ARC_MAP = {
+    //     front:     [indices for front face of the hull polygon],
+    //     starboard: [indices for right side],
+    //     aft:       [indices for stern],
+    //     port:      [indices for left side],
+    //   };
+    //   ctx.beginPath(); ... ctx.closePath();
+    //   if (this.relation === 'player') {
+    //     ctx.fillStyle = this._playerHullFill(); ctx.fill();
+    //     this._drawHullArcs(ctx, HULL_POINTS, ARC_MAP);
+    //   } else {
+    //     ctx.fillStyle = this.hullFill; ctx.fill();
+    //     ctx.strokeStyle = this.hullStroke; ctx.lineWidth = 1.5; ctx.stroke();
+    //   }
+    //
+    // For ships with separate nacelle/engine polygons, call _strokeArcCurrent() after
+    // filling each sub-polygon. See garrisonFrigate.js and g100Hauler.js for examples.
   }
 
   getBounds() {

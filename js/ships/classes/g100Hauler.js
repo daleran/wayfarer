@@ -118,27 +118,45 @@ export class G100ClassHauler extends Ship {
   }
 
   _drawShape(ctx) {
-    const drawRect = (pts) => {
+    // Arc segment map for the 4-point main hull rectangle.
+    const HULL_ARC_MAP = { front: [0, 1], starboard: [1, 2], aft: [2, 3], port: [3, 0] };
+    const isPlayer = this.relation === 'player';
+    const fill = isPlayer ? this._playerHullFill() : this.hullFill;
+
+    const buildAndFill = (pts) => {
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
       ctx.closePath();
-      ctx.fillStyle = this.hullFill;
+      ctx.fillStyle = fill;
       ctx.fill();
-      ctx.strokeStyle = this.hullStroke;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
     };
 
     // Engine pods first — behind hull
-    drawRect(ENGINE_POD_PORT);
-    drawRect(ENGINE_POD_STBD);
+    for (const [pod, arc] of [[ENGINE_POD_PORT, 'port'], [ENGINE_POD_STBD, 'starboard']]) {
+      buildAndFill(pod);
+      if (!this._strokeArcCurrent(ctx, arc)) {
+        ctx.strokeStyle = this.hullStroke;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    }
 
     // Main cargo platform
-    drawRect(HULL_POINTS);
+    buildAndFill(HULL_POINTS);
+    if (!this._drawHullArcs(ctx, HULL_POINTS, HULL_ARC_MAP)) {
+      ctx.strokeStyle = this.hullStroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
     // Cab module — drawn over hull to appear raised
-    drawRect(CAB);
+    buildAndFill(CAB);
+    if (!this._strokeArcCurrent(ctx, 'front')) {
+      ctx.strokeStyle = this.hullStroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
     // Cab window frame and dividers
     ctx.globalAlpha = 0.55;

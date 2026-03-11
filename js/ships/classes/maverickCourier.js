@@ -83,6 +83,14 @@ export class MaverickCourier extends Ship {
   }
 
   _drawShape(ctx) {
+    // Arc segment map (10 hull points, 0–9).
+    const ARC_MAP = {
+      front:     [9, 0, 1, 2],
+      starboard: [2, 3, 4, 5],
+      aft:       [5, 6],
+      port:      [6, 7, 8, 9],
+    };
+
     // Main hull
     ctx.beginPath();
     ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
@@ -90,11 +98,17 @@ export class MaverickCourier extends Ship {
       ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
     }
     ctx.closePath();
-    ctx.fillStyle = this.hullFill;
-    ctx.fill();
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    if (this.relation === 'player') {
+      ctx.fillStyle = this._playerHullFill();
+      ctx.fill();
+      this._drawHullArcs(ctx, HULL_POINTS, ARC_MAP);
+    } else {
+      ctx.fillStyle = this.hullFill;
+      ctx.fill();
+      ctx.strokeStyle = this.hullStroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
     // Cockpit canopy — slightly lighter fill
     ctx.beginPath();

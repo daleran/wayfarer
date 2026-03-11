@@ -202,7 +202,7 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 - Full-screen overlay, same dark backdrop (`rgba(0,6,14,0.93)`) and `DIM_OUTLINE` border.
 - Three equal columns divided by thin `VERY_DIM` lines.
 - **Left column:** Hull HP, per-arc armor (F/P/S/A), drive stats, scrap readout, module slot list. Module slots are outlined boxes with name + power annotation (`+W` green / `-W` amber).
-- **Center column:** Paper doll — `HULL_POINTS` silhouette scaled ×4, colored by hull health (green/amber/red). Surrounded by full armor arc rings (same style as HUD arc ring, larger). Arc direction labels F/S/A/P outside ring. Hull ratio bar + numeric below.
+- **Center column:** Paper doll — `HULL_POINTS` silhouette scaled ×4, colored by hull health (green/amber/red) with arc-colored outline segments matching the ship's in-game directional armor rendering. Arc direction labels F/S/A/P around the silhouette. Hull ratio bar + numeric below.
 - **Right column:** Cargo bay quantities, capacity bar, active weapon list (PRI in cyan, SEC in magenta).
 - Close hint centered at bottom: `[I] or [ESC] — close` in dim text.
 - Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open.
@@ -217,18 +217,49 @@ These effects are **cosmetic polish**, not critical-path. Implement the clean ve
 - Close prompt at bottom: dim text, "[Esc] Close".
 
 ### HUD (In-Flight)
-- Health bars: top-left. Segmented or smooth, outlined. Label to the left in small caps.
-- Credits: top-right. Amber text, no background panel.
-- Cargo: below credits. Teal text.
-- Throttle: bottom-center. Segmented pips.
-- Minimap: bottom-right. Circular or rectangular with vector border. Dark background. Dots for contacts.
-- Dock prompt: bottom-center, above throttle. Green text, pulsing slightly.
-- All HUD elements should feel like they're **projected onto a transparent display** — no heavy panel backgrounds, just floating text and indicators over the game world.
-- **Crosshair cursor:** Custom canvas crosshair replaces the OS cursor (cursor: none on canvas). Four short arms with a center dot. Green when mouse is within active primary weapon range; red when out of range. Small "OUT OF RANGE" label appears below the crosshair when red. Drawn after all CRT effects so it's always crisp and on top.
+
+The HUD has two zones: **ship-anchored UI** (follows the ship at screen center) and **bottom strip** (fixed screen-space panel at the bottom edge). All elements are projected onto a transparent display — no heavy panel backgrounds.
+
+**Ship-anchored UI (centered on the ship):**
+- **Weapon readout** — directly above the ship. Two rows: `PRI` (cyan) and `SEC` (magenta). Name + cooldown/reload bar + ammo count. Anchored ~85px above ship center in screen space.
+- **Throttle pips** — directly below the ship. Six labeled pips (`Stop/1/4/1/2/3/4/Full/Flank`), active pip filled cyan. Speed and throttle label above the pips. System integrity symbols `[R][E][S]` below the pips in dim text (red if low).
+
+**Bottom strip (fixed, 32px from screen edges):**
+- Two rows. Row 1 (upper): ARMOR pips + Power. Row 2 (lower): HULL bar + FUEL bar + CARGO bar + SCRAP.
+- **ARMOR pips (row 1, left):** Same total width as hull bar below it. 4 equal sections labeled `F/P/S/A`, each independently filled green→amber→red by that arc's health ratio. Arc total `current/max` shown to the right.
+- **HULL bar (row 2, left):** Red segmented bar. Color shifts green→amber→red by hull health. Flashes red below 25%. `current/max` to the right.
+- **FUEL bar (row 2, center):** Amber segmented bar, centered. Burns red below 25%. Burn rate shown above bar at low opacity.
+- **POWER readout (row 1, right):** `PWR +300W [+50W]` — dim label, green gross output, net in green/red brackets.
+- **CARGO bar (row 2, right):** Blue segmented bar. Turns red when full. `used/capacity` to the right.
+- **SCRAP count (row 2, far right):** `⚙ 123` in bold amber to the right of cargo.
+
+**Minimap:** Top-right corner. 225×225, bracket-corner border. Stations (faction-colored squares), derelicts (amber squares), loot (amber dots), enemies (red dots) when sensor capability is installed. Player dot (green triangle, rotation-aware).
+
+**Kill log:** Right-aligned text below the minimap. Entries fade out over 3 seconds.
+
+**Contextual prompts:** Centered horizontally at ~62% screen height. Dock/salvage/repair prompts appear here, pulsing slightly.
+
+**Crosshair cursor:** Custom canvas crosshair replaces the OS cursor (`cursor: none` on canvas). Four short arms with a center dot. Green when mouse is within active primary weapon range; red when out of range. Small "OUT OF RANGE" label appears below the crosshair when red.
+
+**Ship health via ship rendering:** The player ship's hull fill color indicates overall hull health — green (>75%), yellow-green (>50%), orange (>25%), red (critical). The hull outline is split into 4 arc segments (front, starboard, aft, port) each colored by that arc's armor health via `armorArcColor(ratio)`. This applies to **all ships when `relation === 'player'`** — directional damage is readable by looking at the ship itself.
 
 ### Game World Elements
 - **Ships:** Wireframe polygons with minimal fill. Ship types are distinguished by **size and shape** (silhouette), not color. Color indicates **relation to the player**: green = player-owned, amber = neutral/cautious, red = hostile, blue = friendly. Non-faction entities (planets, asteroids, nebulae) may use any color that serves the aesthetic. Engine glow is pulsing outline circles at exhaust points; engine trails are long fading lines behind moving ships.
 - **Stations:** See station design philosophy below.
+
+### Derelict World-Space Labels
+
+Derelicts render two types of text directly in world-space (anchored to the hull's screen position), not in the HUD:
+
+Both are proximity-triggered — only rendered when `derelict.isNearby = true` (player within interaction range). No derelict name label; the lore text replaces it.
+
+1. **Lore paragraph** — Rendered to the **right** of the hull. `9px monospace`, `DIM_TEXT` at 40% alpha. No blinking. Multiple lines from `derelict.loreText[]` spaced 13px apart, vertically centered on the hull. Story unfolds as the player approaches — not in a HUD box.
+
+2. **`[ E ] SALVAGE` prompt** — Rendered **below** the hull. `11px monospace`, AMBER, blinking (sinusoidal alpha 0.55–0.90).
+
+Set `isNearby` on the derelict entity from `game._checkDerelictInteraction()`; clear it when no longer nearby.
+
+**Principle:** Contextual prompts and lore belong to the world, not the HUD. The HUD is for combat-critical readouts. Discovery text should feel like it's written on the object itself.
 
 ### Station Design Philosophy
 
@@ -337,3 +368,9 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Key rules:** Structure WHITE at partial alpha. `accentColor` (AMBER=neutral, CYAN=friendly, RED=enemy) drives lights and labels. Dark near-black fills only. Docked ship silhouettes (boxy rectangular) at jetty tips add life. Harbor mouth with approach beacon + gradient beam for docking stations. Fuel tanks always AMBER (hazard marking).
 - **Anti-patterns banned:** hexagons, radial symmetry, single closed polygon paths, solid hull fills, rounded corners.
 - **Rationale:** This universe is broken and improvised. Stations should look like they grew over decades from salvage and desperation, not like they were engineered by a functioning civilization.
+
+### 2026-03-10: HUD Redesign — Ship-Anchored UI
+- **Decision:** Removed the left-side circular armor ring panel. Replaced with two-zone HUD: ship-anchored UI (weapons above ship, throttle/speed below ship on screen) and a fixed bottom strip (armor pips + hull bar, fuel bar, power readout, cargo bar, scrap count). Minimap moved from bottom-left to top-right.
+- **Ship rendering:** All ships now use directional armor arc rendering when `relation === 'player'`. Hull fill color reflects overall hull health (green→yellow→orange→red). Hull outline is split into 4 arc-colored segments (front/starboard/aft/port) each reflecting that arc's armor health. Helpers `_playerHullFill()`, `_drawHullArcs()`, `_strokeArcCurrent()` on `Ship` base class. All 4 ship base classes updated.
+- **Bottom strip:** Row 1 = ARMOR 4-pip bar (same width as hull bar, labeled F/P/S/A) + PWR text. Row 2 = HULL bar + FUEL bar (centered) + CARGO bar + SCRAP count. 32px edge margins for comfortable screen breathing room.
+- **Rationale:** The old HUD required constant glancing to the top-left corner. Anchoring throttle and weapons near the ship keeps eyes on the action. The bottom strip consolidates critical secondary readouts in one sweep-readable band. Directional health on the ship itself makes hull/armor state immediately obvious in combat without consulting a panel.

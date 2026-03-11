@@ -116,17 +116,29 @@ export class GarrisonFrigate extends Ship {
   }
 
   _drawShape(ctx) {
+    // Arc segment map for the main hull polygon (12 points, 0–11).
+    const ARC_MAP = {
+      front:     [11, 0],
+      starboard: [0, 1, 2, 3, 4, 5],
+      aft:       [5, 6],
+      port:      [6, 7, 8, 9, 10, 11],
+    };
+    const isPlayer = this.relation === 'player';
+    const fill = isPlayer ? this._playerHullFill() : this.hullFill;
+
     // Nacelles first so hull overlaps the pylon roots cleanly
-    for (const nacelle of [NACELLE_PORT, NACELLE_STBD]) {
+    for (const [nacelle, arc] of [[NACELLE_PORT, 'port'], [NACELLE_STBD, 'starboard']]) {
       ctx.beginPath();
       ctx.moveTo(nacelle[0].x, nacelle[0].y);
       for (let i = 1; i < nacelle.length; i++) ctx.lineTo(nacelle[i].x, nacelle[i].y);
       ctx.closePath();
-      ctx.fillStyle = this.hullFill;
+      ctx.fillStyle = fill;
       ctx.fill();
-      ctx.strokeStyle = this.hullStroke;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      if (!this._strokeArcCurrent(ctx, arc)) {
+        ctx.strokeStyle = this.hullStroke;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
     }
 
     // Main hull
@@ -136,11 +148,13 @@ export class GarrisonFrigate extends Ship {
       ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
     }
     ctx.closePath();
-    ctx.fillStyle = this.hullFill;
+    ctx.fillStyle = fill;
     ctx.fill();
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    if (!this._drawHullArcs(ctx, HULL_POINTS, ARC_MAP)) {
+      ctx.strokeStyle = this.hullStroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
     // Detail lines — structural seams and keel
     ctx.strokeStyle = this.hullStroke;

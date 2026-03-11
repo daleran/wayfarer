@@ -105,6 +105,15 @@ export class OnyxClassTug extends Ship {
   }
 
   _drawShape(ctx) {
+    // Arc segment map — maps each armor arc to the hull polygon indices it covers.
+    // Used by _drawHullArcs() when this ship is player-owned.
+    const ARC_MAP = {
+      front:     [0, 1, 2, 3],
+      starboard: [3, 4, 5, 6, 7, 8, 9, 10],
+      aft:       [10, 11, 12],
+      port:      [12, 13, 14, 15, 16, 17, 18, 0],
+    };
+
     // Main hull
     ctx.beginPath();
     ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
@@ -112,11 +121,17 @@ export class OnyxClassTug extends Ship {
       ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
     }
     ctx.closePath();
-    ctx.fillStyle = this.hullFill;
-    ctx.fill();
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    if (this.relation === 'player') {
+      ctx.fillStyle = this._playerHullFill();
+      ctx.fill();
+      this._drawHullArcs(ctx, HULL_POINTS, ARC_MAP);
+    } else {
+      ctx.fillStyle = this.hullFill;
+      ctx.fill();
+      ctx.strokeStyle = this.hullStroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
     // Cockpit window slit inside hammerhead
     ctx.beginPath();

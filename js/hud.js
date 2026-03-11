@@ -2,7 +2,6 @@ import { Station } from './world/station.js';
 import { Planet } from './world/planet.js';
 import { LootDrop } from './entities/lootDrop.js';
 import { Derelict } from './world/derelict.js';
-import { HULL_POINTS } from './ships/classes/onyxTug.js';
 import {
   CYAN, AMBER, GREEN, RED, BLUE, MAGENTA, WHITE,
   BAR_TRACK, DIM_OUTLINE, VERY_DIM, DIM_TEXT,
@@ -14,13 +13,14 @@ import {
   armorArcColor, conditionColor,
 } from './ui/colors.js';
 
-const THROTTLE_LABELS = ['Stop', '1/4', '1/2', '3/4', 'Full', 'Flank'];
+const THROTTLE_LABELS = ['STOP', '1/4', '1/2', '3/4', 'FULL', 'FLANK'];
+
+// Guidance mode display shortnames
+const GUIDANCE_LABELS = { dumbfire: 'DUMB', wire: 'WIRE', heat: 'HEAT' };
 
 const PIP_W = 32;
 const PIP_H = 14;
 const PIP_GAP = 6;
-const PIP_BOTTOM_MARGIN = 20;
-const PIP_LABEL_OFFSET = 18;
 
 const PICKUP_DURATION = 1.5;
 const PICKUP_DRIFT = 40;
@@ -28,17 +28,18 @@ const PICKUP_DRIFT = 40;
 const KILL_DURATION = 3.0;
 const KILL_LOG_MAX  = 5;
 
-// Left-side HUD layout
-const MARGIN  = 20;
-const BAR_W   = 160;
-const BAR_H   = 12;
-const LABEL_W = 56;
-const ROW_GAP = 10;
-const SEG_COUNT = 10;
+// Bottom strip layout
+const BMARGIN       = 32;   // margin from screen bottom for game UI
+const STRIP_BAR_H   = 14;   // bar height in bottom strip
+const STRIP_ROW_GAP = 7;    // vertical gap between armor row and hull row
 
-// Circular armor ring constants
-const RING_R  = 48;
-const RING_TH = 10;
+// Ship-anchored UI offsets
+const THROTTLE_BELOW_OFFSET = 55;  // px below ship screen center (speed label)
+const WEAPON_PANEL_GAP      = 38;  // px from ship center x to weapon panel edge
+
+// Minimap (top-left)
+const MM_MARGIN = 24;
+const MM_PANEL  = 225;
 
 export class HUD {
   constructor() {
@@ -58,123 +59,494 @@ export class HUD {
   render(ctx, game) {
     const { player, camera } = game;
     if (!player) return;
-    this._renderLeftPanel(ctx, game);
+
+    // Top-left minimap + kill log below it
+    this._renderMinimap(ctx, game);
+    this._renderKillLog(ctx, game);
+
+    // Ship-anchored UI (follows the ship at screen center)
+    this._renderWeaponPanels(ctx, game);
     this._renderThrottle(ctx, player, camera);
+
+    // Bottom strip (centered, fixed screen-space position)
+    this._renderBottomStrip(ctx, game);
+
+    // Contextual prompts
     if (game.isPaused) this._renderPauseIcon(ctx, camera);
     this._renderDockPrompt(ctx, game);
-    this._renderDerelictPrompt(ctx, game);
     this._renderRepairPrompt(ctx, game);
+
+    // Active operation bars
     this._renderSalvageBar(ctx, game);
     this._renderRepairBar(ctx, game);
+
+    // World-space floating text
     this._renderPickupTexts(ctx, game);
-    this._renderKillLog(ctx, game);
+
     this._renderAutoFireIndicator(ctx, game);
-    this._renderMinimap(ctx, game);
+
+    // Dev tools (test mode only, not shown in editor)
     if (game.isTestMode && !game.isEditorMode) {
       this._renderDevControls(ctx, game);
       if (game.isPanMode) this._renderPanModeBanner(ctx, game);
     }
+
     if (game.stationScreen) game.stationScreen.render(ctx, game);
     if (game.shipScreen) game.shipScreen.render(ctx, game);
   }
 
-  _renderLeftPanel(ctx, game) {
-    const { player } = game;
+  // ── Bottom strip ───────────────────────────────────────────────────────────
+
+  _renderBottomStrip(ctx, game) {
+    const { player, camera } = game;
     const now = Date.now();
-
+    const SEG = 10;
     ctx.save();
-    ctx.font = '13px monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
 
-    // ── Circular Armor Ring ────────────────────────────────────────────
-    const ARC_R   = RING_R - RING_TH / 2;
-    const GAP_RAD = 0.10;
-    const cx = MARGIN + RING_R + 2;
-    const cy = MARGIN + RING_R + 2;
+    const row2Y = camera.height - BMARGIN - STRIP_BAR_H;
+    const row1Y = row2Y - STRIP_BAR_H - STRIP_ROW_GAP;
 
-    const arcDefs = [
-      { key: 'front',     a0: -Math.PI * 3 / 4 + GAP_RAD, a1: -Math.PI / 4 - GAP_RAD },
-      { key: 'starboard', a0: -Math.PI / 4 + GAP_RAD,      a1:  Math.PI / 4 - GAP_RAD },
-      { key: 'aft',       a0:  Math.PI / 4 + GAP_RAD,      a1:  Math.PI * 3 / 4 - GAP_RAD },
-      { key: 'port',      a0:  Math.PI * 3 / 4 + GAP_RAD,  a1:  Math.PI * 5 / 4 - GAP_RAD },
-    ];
+    // ── Layout: compute group width and center it ───────────────────────────
+    const ARMOR_LBL_W  = 52;
+    const LEFT_BAR_W   = 130;
+    const LEFT_NUM_W   = 44;
+    const LEFT_W       = ARMOR_LBL_W + LEFT_BAR_W + LEFT_NUM_W;  // 226
 
-    ctx.lineWidth = RING_TH;
-    ctx.lineCap   = 'butt';
-    for (const { key, a0, a1 } of arcDefs) {
-      const maxVal = player.armorArcsMax[key];
-      const curVal = player.armorArcs[key];
-      const ratio  = maxVal > 0 ? curVal / maxVal : 0;
-      const hitAge = now - (player._arcHitTimestamps[key] || 0);
-      const flash  = hitAge < 150;
-      const color  = flash ? WHITE : armorArcColor(ratio);
+    const levels      = player.throttleLevels;
+    const THROT_W     = levels * PIP_W + (levels - 1) * PIP_GAP; // 222 for 6 levels
+    const FUEL_LBL_W  = 44;
+    const FUEL_BAR_W  = 130;
+    const FUEL_NUM_W  = 52;
+    const CTR_W       = Math.max(THROT_W, FUEL_LBL_W + FUEL_BAR_W + FUEL_NUM_W); // 226
 
-      // Dim track
-      ctx.strokeStyle = VERY_DIM;
-      ctx.beginPath();
-      ctx.arc(cx, cy, ARC_R, a0, a1);
-      ctx.stroke();
+    const CARGO_LBL_W = 52;
+    const CARGO_BAR_W = 130;  // matches fuel bar
+    const CARGO_NUM_W = 46;
+    const SCRAP_W     = 80;
+    const RIGHT_W     = CARGO_LBL_W + CARGO_BAR_W + CARGO_NUM_W + SCRAP_W + 8;  // 316
 
-      // Health fill
-      if (ratio > 0) {
-        const fillEnd = a0 + (a1 - a0) * ratio;
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = flash ? 0.3 + (1 - hitAge / 150) * 0.7 : 1;
+    const H_GAP   = 22;
+    const GROUP_W = LEFT_W + H_GAP + CTR_W + H_GAP + RIGHT_W;
+    const groupX  = (camera.width - GROUP_W) / 2;
+
+    const leftX  = groupX;
+    const ctrX   = groupX + LEFT_W + H_GAP;
+    const rightX = ctrX + CTR_W + H_GAP;
+
+    // ── LEFT: Armor pips (row1) + Hull bar (row2) ───────────────────────────
+    const arcsMax = player.armorArcsMax;
+    const arcs    = player.armorArcs;
+
+    // ARMOR pips (row1)
+    {
+      const arcKeys  = ['front', 'port', 'starboard', 'aft'];
+      const arcLbls  = ['F', 'P', 'S', 'A'];
+      const totalCur = arcKeys.reduce((s, k) => s + (arcs[k] || 0), 0);
+      const totalMax = arcKeys.reduce((s, k) => s + (arcsMax[k] || 0), 0);
+      const avgRatio = totalMax > 0 ? totalCur / totalMax : 0;
+      const lblColor = armorArcColor(avgRatio);
+      const barX     = leftX + ARMOR_LBL_W;
+
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = lblColor;
+      ctx.fillText('ARMOR', leftX, row1Y + STRIP_BAR_H / 2);
+
+      ctx.strokeStyle = lblColor;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.6;
+      ctx.strokeRect(barX - 1, row1Y - 1, LEFT_BAR_W + 2, STRIP_BAR_H + 2);
+      ctx.globalAlpha = 1;
+
+      const pipW = (LEFT_BAR_W - 3) / 4;
+      for (let i = 0; i < 4; i++) {
+        const key    = arcKeys[i];
+        const ratio  = (arcsMax[key] || 0) > 0 ? (arcs[key] || 0) / arcsMax[key] : 0;
+        const hitAge = now - (player._arcHitTimestamps[key] || 0);
+        const flash  = hitAge < 150;
+        const color  = flash ? WHITE : armorArcColor(ratio);
+        const px     = barX + i * (pipW + 1);
+
+        ctx.fillStyle = BAR_TRACK;
+        ctx.fillRect(px, row1Y, pipW, STRIP_BAR_H);
+
+        if (ratio > 0) {
+          ctx.fillStyle = color;
+          ctx.globalAlpha = flash ? 1.0 : 0.85;
+          ctx.fillRect(px, row1Y, pipW * ratio, STRIP_BAR_H);
+          ctx.globalAlpha = 1;
+        }
+
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = flash ? WHITE : (ratio > 0 ? color : VERY_DIM);
+        ctx.globalAlpha = flash ? 1.0 : 0.7;
+        ctx.fillText(arcLbls[i], px + pipW / 2, row1Y + STRIP_BAR_H / 2);
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = lblColor;
+      ctx.fillText(
+        `${Math.floor(totalCur)}/${Math.floor(totalMax)}`,
+        barX + LEFT_BAR_W + 6, row1Y + STRIP_BAR_H / 2
+      );
+    }
+
+    // HULL bar (row2)
+    {
+      const hullRatio = player.hullMax > 0 ? player.hullCurrent / player.hullMax : 0;
+      const hullColor = hullRatio > 0.5 ? GREEN : hullRatio > 0.25 ? AMBER : RED;
+      const hullFlash = hullRatio < 0.25 && Math.floor(now / 300) % 2 === 0;
+      const color     = hullFlash ? RED : hullColor;
+      const filled    = Math.ceil(hullRatio * SEG);
+      const barX      = leftX + ARMOR_LBL_W;
+
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.fillText('HULL', leftX, row2Y + STRIP_BAR_H / 2);
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(barX - 1, row2Y - 1, LEFT_BAR_W + 2, STRIP_BAR_H + 2);
+      ctx.fillStyle = BAR_TRACK;
+      ctx.fillRect(barX, row2Y, LEFT_BAR_W, STRIP_BAR_H);
+      this._drawSegBar(ctx, barX, row2Y, LEFT_BAR_W, STRIP_BAR_H, filled, SEG, color);
+
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = color;
+      ctx.fillText(
+        `${Math.floor(player.hullCurrent)}/${Math.floor(player.hullMax)}`,
+        barX + LEFT_BAR_W + 6, row2Y + STRIP_BAR_H / 2
+      );
+    }
+
+    // ── CENTER: Throttle pips (row1) + Fuel bar (row2) ─────────────────────
+
+    // Throttle pips (row1) — centered in CTR_W
+    {
+      const current       = player.throttleLevel;
+      const throttleStart = ctrX + (CTR_W - THROT_W) / 2;
+
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 0; i < levels; i++) {
+        const x      = throttleStart + i * (PIP_W + PIP_GAP);
+        const active = i === current;
+
+        ctx.strokeStyle = active ? CYAN : DIM_OUTLINE;
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(cx, cy, ARC_R, a0, fillEnd);
+        ctx.rect(x, row1Y, PIP_W, STRIP_BAR_H);
         ctx.stroke();
+
+        if (active) {
+          ctx.fillStyle = CYAN;
+          ctx.fillRect(x + 1, row1Y + 1, PIP_W - 2, STRIP_BAR_H - 2);
+        }
+
+        ctx.fillStyle = active ? WHITE : DIM_OUTLINE;
+        ctx.fillText(THROTTLE_LABELS[i], x + PIP_W / 2, row1Y + STRIP_BAR_H / 2);
+      }
+    }
+
+    // Fuel bar (row2)
+    {
+      const fuelRatio = game.fuel / game.fuelMax;
+      const fuelLow   = fuelRatio < 0.25;
+      const fuelColor = fuelLow ? RED : AMBER;
+      const filled    = Math.ceil(fuelRatio * SEG);
+      const fuelBarX  = ctrX + FUEL_LBL_W;
+
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = fuelColor;
+      ctx.fillText('FUEL', ctrX, row2Y + STRIP_BAR_H / 2);
+
+      ctx.strokeStyle = fuelColor;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(fuelBarX - 1, row2Y - 1, FUEL_BAR_W + 2, STRIP_BAR_H + 2);
+      ctx.fillStyle = BAR_TRACK;
+      ctx.fillRect(fuelBarX, row2Y, FUEL_BAR_W, STRIP_BAR_H);
+      this._drawSegBar(ctx, fuelBarX, row2Y, FUEL_BAR_W, STRIP_BAR_H, filled, SEG, fuelColor);
+
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = fuelColor;
+      ctx.fillText(
+        `${Math.floor(game.fuel)}/${game.fuelMax}`,
+        fuelBarX + FUEL_BAR_W + 6, row2Y + STRIP_BAR_H / 2
+      );
+
+      // Drain rate — below the FUEL label
+      if (game.fuelBurnRate > 0) {
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = fuelColor;
+        ctx.globalAlpha = 0.55;
+        ctx.fillText(`-${game.fuelBurnRate.toFixed(3)}/s`, ctrX, row2Y + STRIP_BAR_H + 2);
         ctx.globalAlpha = 1;
       }
     }
 
-    // Directional labels just outside the ring
-    const LABEL_OUT_R = RING_R + 9;
-    const arcMids = [
-      { key: 'front',     angle: -Math.PI / 2, label: 'F' },
-      { key: 'starboard', angle:  0,            label: 'S' },
-      { key: 'aft',       angle:  Math.PI / 2,  label: 'A' },
-      { key: 'port',      angle:  Math.PI,       label: 'P' },
-    ];
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (const { key, angle, label } of arcMids) {
-      const ratio = player.armorArcsMax[key] > 0 ? player.armorArcs[key] / player.armorArcsMax[key] : 0;
-      ctx.fillStyle = ratio > 0 ? armorArcColor(ratio) : VERY_DIM;
-      ctx.globalAlpha = 0.65;
-      ctx.fillText(label, cx + Math.cos(angle) * LABEL_OUT_R, cy + Math.sin(angle) * LABEL_OUT_R);
-      ctx.globalAlpha = 1;
+    // ── RIGHT: Power (row1, over cargo) + Cargo + Scrap (row2) ─────────────
+    {
+      const rightEdge = rightX + RIGHT_W;
+
+      // Pre-compute cargo bar positions so PWR can align to them
+      const cargoNumEnd = rightEdge - SCRAP_W - 8;
+      const cargoBarEnd = cargoNumEnd - CARGO_NUM_W;
+      const cargoBarX   = cargoBarEnd - CARGO_BAR_W;
+      const cargoLblX   = cargoBarX - CARGO_LBL_W;
+
+      // POWER readout (row1) — left-aligned starting at cargoLblX, directly above cargo bar
+      {
+        const reactorNet  = game.reactorOutput - game.reactorDraw;
+        const pwrNetColor = reactorNet >= 0 ? GREEN : RED;
+        const outStr      = `+${game.reactorOutput}W`;
+        const netStr      = ` [${reactorNet >= 0 ? '+' : ''}${reactorNet}W]`;
+
+        ctx.font = '11px monospace';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+
+        ctx.fillStyle = DIM_TEXT;
+        ctx.fillText('PWR ', cargoLblX, row1Y + STRIP_BAR_H / 2);
+        const pwrLblW = ctx.measureText('PWR ').width;
+
+        ctx.fillStyle = GREEN;
+        ctx.fillText(outStr, cargoLblX + pwrLblW, row1Y + STRIP_BAR_H / 2);
+        const outW = ctx.measureText(outStr).width;
+
+        ctx.fillStyle = pwrNetColor;
+        ctx.fillText(netStr, cargoLblX + pwrLblW + outW, row1Y + STRIP_BAR_H / 2);
+
+        // Reactor overhaul warning
+        const overdueReactors = (player.moduleSlots || []).filter(m => m?.isOverdue);
+        if (overdueReactors.length > 0) {
+          ctx.font = 'bold 9px monospace';
+          ctx.fillStyle = Math.floor(now / 500) % 2 === 0 ? MAGENTA : RED;
+          ctx.fillText('! OVERHAUL', cargoLblX, row1Y - 4);
+        }
+      }
+
+      // CARGO bar (row2)
+      const cargoUsed  = game.totalCargoUsed;
+      const cargoCap   = game.totalCargoCapacity;
+      const cargoRatio = cargoCap > 0 ? cargoUsed / cargoCap : 0;
+      const cargoFull  = cargoUsed >= cargoCap;
+      const cargoColor = cargoFull ? RED : BLUE;
+      const cargoFill  = Math.ceil(cargoRatio * SEG);
+
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = cargoColor;
+      ctx.fillText('CARGO', cargoLblX, row2Y + STRIP_BAR_H / 2);
+
+      ctx.strokeStyle = cargoColor;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cargoBarX - 1, row2Y - 1, CARGO_BAR_W + 2, STRIP_BAR_H + 2);
+      ctx.fillStyle = BAR_TRACK;
+      ctx.fillRect(cargoBarX, row2Y, CARGO_BAR_W, STRIP_BAR_H);
+      this._drawSegBar(ctx, cargoBarX, row2Y, CARGO_BAR_W, STRIP_BAR_H, cargoFill, SEG, cargoColor);
+
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = cargoColor;
+      ctx.fillText(`${cargoUsed}/${cargoCap}`, cargoBarEnd, row2Y + STRIP_BAR_H / 2);
+
+      // SCRAP count (rightmost, row2)
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = AMBER;
+      ctx.fillText(`\u2699 ${game.scrap}`, rightEdge, row2Y + STRIP_BAR_H / 2);
     }
 
-    // Ship silhouette in center, colored by hull health
-    const hullRatio = Math.max(0, player.hullCurrent / player.hullMax);
-    const hullColor = hullRatio > 0.5 ? GREEN : hullRatio > 0.25 ? AMBER : RED;
-    const hullFlash = hullRatio < 0.25 && Math.floor(now / 300) % 2 === 0;
-    const silColor  = hullFlash ? RED : hullColor;
-    const SHIP_SCALE = 1.1;
+    ctx.restore();
+  }
+
+  // ── Weapon panels (PRI center-left / SEC center-right of ship) ─────────────
+
+  _renderWeaponPanels(ctx, game) {
+    const { player, camera } = game;
+    const shipScreen = camera.worldToScreen(player.x, player.y);
+    // Vertically center the 2-line panel on the ship's y position
+    const panelY     = shipScreen.y - 11;
+
+    // PRI: right edge at shipX - gap (right-justified)
+    // SEC: left edge at shipX + gap (left-justified)
+    const priRightX = shipScreen.x - WEAPON_PANEL_GAP;
+    const secLeftX  = shipScreen.x + WEAPON_PANEL_GAP;
+
+    const primaries   = player._primaryWeapons;
+    const secondaries = player._secondaryWeapons;
+    const activePri   = primaries[player.primaryWeaponIdx];
+    const activeSec   = secondaries[player.secondaryWeaponIdx];
 
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.scale(SHIP_SCALE, SHIP_SCALE);
-    ctx.beginPath();
-    ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
-    for (let i = 1; i < HULL_POINTS.length; i++) {
-      ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = silColor;
-    ctx.globalAlpha = 0.15;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = silColor;
-    ctx.lineWidth = 1.2 / SHIP_SCALE;
-    ctx.stroke();
+    if (activePri) this._renderWeaponPanel(ctx, activePri, 'pri', priRightX, panelY, game.ammo);
+    if (activeSec) this._renderWeaponPanel(ctx, activeSec, 'sec', secLeftX, panelY, game.ammo);
     ctx.restore();
+  }
 
-    // ── Integrity symbols [R] [E] [S] ────────────────────────────────
-    const intY = cy + RING_R + 5;
-    const systems = [
+  // panelX = right edge for 'pri' (right-justified), left edge for 'sec' (left-justified)
+  _renderWeaponPanel(ctx, weapon, type, panelX, panelY, ammoReserve) {
+    const isPri     = type === 'pri';
+    const nameColor = isPri ? CYAN : MAGENTA;
+
+    // Strip embedded mode tag from displayName (e.g. 'AUTOCANNON [AP]' → 'AUTOCANNON')
+    const rawName = weapon.displayName || weapon.constructor.name.toUpperCase();
+    const name    = rawName.replace(/\s*\[.*?\]$/, '').trim();
+
+    // Mode tag: prefer currentAmmoMode, then guidanceMode (shortened), then isBeam
+    let modeTag = '';
+    if (weapon.currentAmmoMode)   modeTag = `[${weapon.currentAmmoMode.toUpperCase()}]`;
+    else if (weapon.guidanceMode) modeTag = `[${(GUIDANCE_LABELS[weapon.guidanceMode] ?? weapon.guidanceMode).toUpperCase()}]`;
+    else if (weapon.isBeam)       modeTag = '[BEAM]';
+
+    const BAR_W = 40;
+    const BAR_H = 5;
+    const barY  = panelY + 13;
+
+    ctx.font = '9px monospace';
+    ctx.textBaseline = 'top';
+    ctx.globalAlpha = 0.65;
+
+    if (isPri) {
+      // Right-justified: panelX is the right edge
+      // Order right-to-left: PRI | NAME | [AP]  (mirrors SEC left-to-right: SEC | NAME | [MODE])
+      const typeLabel = type.toUpperCase();
+      const typeLblW  = ctx.measureText(typeLabel).width;
+      const nameTextW = ctx.measureText(name).width;
+
+      ctx.textAlign = 'right';
+
+      // PRI — rightmost (closest to ship)
+      ctx.fillStyle = DIM_TEXT;
+      ctx.fillText(typeLabel, panelX, panelY);
+
+      // Name — middle
+      ctx.fillStyle = nameColor;
+      ctx.fillText(name, panelX - typeLblW - 6, panelY);
+
+      // [AP] — far left
+      if (modeTag) {
+        ctx.fillStyle = nameColor;
+        ctx.fillText(modeTag, panelX - typeLblW - 6 - nameTextW - 4, panelY);
+      }
+
+      // Bar: right edge at panelX
+      const barX = panelX - BAR_W;
+      this._fillWeaponBar(ctx, weapon, barX, barY, BAR_W, BAR_H, nameColor);
+
+      // Ammo text: right-aligned to barX - 5
+      if (weapon.ammo !== undefined) {
+        const cargo   = ammoReserve[weapon.ammoType] ?? 0;
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = weapon._reloadTimer > 0 ? AMBER : (weapon.ammo > 0 ? nameColor : RED);
+        ctx.fillText(`${weapon.ammo}/${cargo}`, barX - 4, barY + BAR_H / 2);
+      }
+
+    } else {
+      // Left-justified: panelX is the left edge
+      const typeW = ctx.measureText(type.toUpperCase()).width + 6;
+      const nameW = modeTag ? ctx.measureText(name).width + 4 : 0;
+
+      ctx.textAlign = 'left';
+
+      ctx.fillStyle = DIM_TEXT;
+      ctx.fillText(type.toUpperCase(), panelX, panelY);
+      ctx.fillStyle = nameColor;
+      ctx.fillText(name, panelX + typeW, panelY);
+      if (modeTag) {
+        ctx.fillStyle = nameColor;
+        ctx.fillText(modeTag, panelX + typeW + nameW, panelY);
+      }
+
+      // Bar: left edge at panelX
+      this._fillWeaponBar(ctx, weapon, panelX, barY, BAR_W, BAR_H, nameColor);
+
+      // Ammo text: left-aligned after bar
+      if (weapon.ammo !== undefined) {
+        const cargo   = ammoReserve[weapon.ammoType] ?? 0;
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = weapon._reloadTimer > 0 ? AMBER : (weapon.ammo > 0 ? nameColor : RED);
+        ctx.fillText(`${weapon.ammo}/${cargo}`, panelX + BAR_W + 4, barY + BAR_H / 2);
+      }
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  _fillWeaponBar(ctx, weapon, barX, barY, BAR_W, BAR_H, nameColor) {
+    ctx.fillStyle = VERY_DIM;
+    ctx.fillRect(barX, barY, BAR_W, BAR_H);
+
+    if (weapon.isBeam) {
+      const t = Math.min((weapon._rampUp || 0) / (weapon.rampTime || 1), 1);
+      if (weapon._overheated) {
+        const cdProg = 1 - (weapon._cooldownTimer || 0) / (weapon.cooldownTime || 1);
+        ctx.fillStyle = RED;
+        ctx.fillRect(barX, barY, BAR_W * cdProg, BAR_H);
+      } else {
+        const burnFrac = (weapon._fullPowerTimer || 0) / (weapon.overheatLimit || 5);
+        ctx.fillStyle = t >= 1
+          ? (burnFrac > 0.6 ? RED : burnFrac > 0.3 ? AMBER : WHITE)
+          : nameColor;
+        ctx.fillRect(barX, barY, BAR_W * t, BAR_H);
+      }
+    } else {
+      const reloading = weapon._reloadTimer > 0;
+      if (reloading) {
+        const progress = 1 - weapon._reloadTimer / (weapon.reloadTime || 1);
+        ctx.fillStyle = AMBER;
+        ctx.fillRect(barX, barY, BAR_W * progress, BAR_H);
+      } else {
+        const cdMax  = weapon.cooldownMax ?? 0;
+        const filled = cdMax > 0 ? Math.max(0, 1 - (weapon._cooldown || 0) / cdMax) : 1;
+        ctx.fillStyle = filled >= 1 ? nameColor : AMBER;
+        ctx.fillRect(barX, barY, BAR_W * filled, BAR_H);
+      }
+    }
+  }
+
+  // ── Throttle / speed label (below ship) ────────────────────────────────────
+
+  _renderThrottle(ctx, player, camera) {
+    const shipScreen = camera.worldToScreen(player.x, player.y);
+    const speed      = Math.round(player.speed);
+    const label      = THROTTLE_LABELS[player.throttleLevel];
+    const now        = Date.now();
+
+    ctx.save();
+
+    // Speed / throttle label — uppercase, reduced opacity cyan
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = CYAN;
+    ctx.globalAlpha = 0.5;
+    ctx.fillText(`${label}  ${speed} U/S`, shipScreen.x, shipScreen.y + THROTTLE_BELOW_OFFSET);
+    ctx.globalAlpha = 1;
+
+    // [R][E][S] integrity — 6px further down to avoid speed overlap
+    const intY    = shipScreen.y + THROTTLE_BELOW_OFFSET + 24;
+    const sysList = [
       { label: 'R', val: player.reactorIntegrity },
       { label: 'E', val: player.engineIntegrity  },
       { label: 'S', val: player.sensorIntegrity  },
@@ -182,187 +554,92 @@ export class HUD {
     ctx.font = '10px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    let ix = MARGIN + 10;
-    for (const sys of systems) {
-      const ratio = sys.val / 100;
-      const low   = ratio < 0.25;
-      const warn  = ratio < 0.5;
-      const flicker = low && Math.floor(now / 300) % 2 === 0;
-      ctx.fillStyle = flicker ? VERY_DIM : warn ? RED : DIM_TEXT;
-      ctx.fillText(`[${sys.label}]`, ix, intY + 6);
-      ix += 26;
+    const intStartX = shipScreen.x - 26;
+    for (let i = 0; i < sysList.length; i++) {
+      const ratio   = sysList[i].val / 100;
+      const flicker = ratio < 0.25 && Math.floor(now / 300) % 2 === 0;
+      const color   = flicker      ? VERY_DIM
+                    : ratio < 0.25 ? RED
+                    : ratio < 0.5  ? CONDITION_FAULTY
+                    : ratio < 0.75 ? AMBER
+                    : DIM_TEXT;
+      ctx.fillStyle = color;
+      ctx.fillText(`[${sysList[i].label}]`, intStartX + i * 26, intY);
     }
-
-    // ── Weapon readout ────────────────────────────────────────────────
-    let y = intY + 18;
-    this._renderWeaponReadout(ctx, player, y, game.ammo);
-    y += 38; // space for up to 2 weapon rows
-
-    // ── Reactor readout ───────────────────────────────────────────────
-    y += 6;
-    const reactorNet = game.reactorOutput - game.reactorDraw;
-    const reactorNetColor = reactorNet >= 0 ? GREEN : RED;
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText('PWR', MARGIN, y + 5);
-    ctx.fillStyle = GREEN;
-    ctx.fillText(`+${game.reactorOutput}W`, MARGIN + 30, y + 5);
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText('/', MARGIN + 72, y + 5);
-    ctx.fillStyle = RED;
-    ctx.fillText(`${game.reactorDraw}W`, MARGIN + 80, y + 5);
-    ctx.fillStyle = reactorNetColor;
-    ctx.fillText(`[${reactorNet >= 0 ? '+' : ''}${reactorNet}W]`, MARGIN + 116, y + 5);
-    y += 16;
-
-    // ── Reactor overhaul warning ───────────────────────────────────────
-    const overdueReactors = (player.moduleSlots || []).filter(m => m?.isOverdue);
-    if (overdueReactors.length > 0) {
-      ctx.font = 'bold 9px monospace';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = Math.floor(Date.now() / 500) % 2 === 0 ? MAGENTA : RED;
-      ctx.fillText('! REACTOR OVERHAUL REQUIRED', MARGIN, y + 5);
-      y += 14;
-    }
-
-    // ── FUEL bar ─────────────────────────────────────────────────────
-    y += ROW_GAP;
-    const fuelRatio  = game.fuel / game.fuelMax;
-    const fuelLowNow = fuelRatio < 0.25;
-    const fuelColor  = fuelLowNow ? RED : AMBER;
-    const fuelFilled = Math.ceil(fuelRatio * SEG_COUNT);
-    const barX = MARGIN + LABEL_W;
-
-    // Burn rate label — above the bar, right-aligned to bar right edge
-    if (game.fuelBurnRate > 0) {
-      ctx.font = '9px monospace';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'bottom';
-      ctx.fillStyle = fuelLowNow ? RED : AMBER;
-      ctx.globalAlpha = 0.65;
-      ctx.fillText(`-${game.fuelBurnRate.toFixed(3)}/s`, barX + BAR_W, y - 1);
-      ctx.globalAlpha = 1;
-    }
-
-    ctx.font = '13px monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = fuelColor;
-    ctx.fillText('FUEL', MARGIN, y + BAR_H / 2);
-    ctx.strokeStyle = fuelColor;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(barX - 1, y - 1, BAR_W + 2, BAR_H + 2);
-    ctx.fillStyle = BAR_TRACK;
-    ctx.fillRect(barX, y, BAR_W, BAR_H);
-    this._drawSegBar(ctx, barX, y, BAR_W, BAR_H, fuelFilled, SEG_COUNT, fuelColor);
-    ctx.fillStyle = fuelColor;
-    ctx.font = '11px monospace';
-    ctx.fillText(`${Math.floor(game.fuel)}/${game.fuelMax}`, barX + BAR_W + 6, y + BAR_H / 2);
-    ctx.font = '13px monospace';
-    y += BAR_H + ROW_GAP;
-
-    // ── CARGO bar ────────────────────────────────────────────────────
-    const cargoUsed  = game.totalCargoUsed;
-    const cargoCap   = game.totalCargoCapacity;
-    const cargoRatio = cargoCap > 0 ? cargoUsed / cargoCap : 0;
-    const cargoFull  = cargoUsed >= cargoCap;
-    const cargoColor = cargoFull ? RED : BLUE;
-    const cargoFilled = Math.ceil(cargoRatio * SEG_COUNT);
-
-    ctx.fillStyle = cargoColor;
-    ctx.fillText('CARGO', MARGIN, y + BAR_H / 2);
-    ctx.strokeStyle = cargoColor;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(barX - 1, y - 1, BAR_W + 2, BAR_H + 2);
-    ctx.fillStyle = BAR_TRACK;
-    ctx.fillRect(barX, y, BAR_W, BAR_H);
-    this._drawSegBar(ctx, barX, y, BAR_W, BAR_H, cargoFilled, SEG_COUNT, cargoColor);
-    ctx.fillStyle = cargoColor;
-    ctx.font = '11px monospace';
-    ctx.fillText(`${cargoUsed}/${cargoCap}`, barX + BAR_W + 6, y + BAR_H / 2);
-    y += BAR_H + ROW_GAP * 2;
-
-    // ── SCRAP readout ─────────────────────────────────────────────────
-    ctx.font = 'bold 18px monospace';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = AMBER;
-    ctx.fillText(`\u2699 ${game.scrap}`, MARGIN, y + 9);
-
-    // ── Ship screen hint ──────────────────────────────────────────────
-    ctx.font = '10px monospace';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText('[I] SHIP', MARGIN, y + 28);
 
     ctx.restore();
   }
+
+  // ── Pause icon ─────────────────────────────────────────────────────────────
+
+  _renderPauseIcon(ctx, camera) {
+    const flash = Math.sin(Date.now() * 0.006) > 0;
+    if (!flash) return;
+    ctx.save();
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = AMBER;
+    ctx.fillText('II  PAUSED', camera.width / 2, camera.height * 0.55);
+    ctx.restore();
+  }
+
+  // ── Contextual prompts ─────────────────────────────────────────────────────
 
   _renderDockPrompt(ctx, game) {
     if (!game.nearbyStation || game.isSalvaging) return;
     const { camera } = game;
-    const alpha = 0.6 + Math.sin(Date.now() * 0.004) * 0.4;
+    const alpha   = 0.6 + Math.sin(Date.now() * 0.004) * 0.4;
+    const promptY = camera.height * 0.62;
     ctx.save();
     ctx.font = '14px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.globalAlpha = alpha;
     ctx.fillStyle = GREEN;
-    ctx.fillText(
-      `Press E to dock at ${game.nearbyStation.name}`,
-      camera.width / 2,
-      camera.height - PIP_BOTTOM_MARGIN - PIP_H - PIP_LABEL_OFFSET - 24
-    );
+    ctx.fillText(`Press E to dock at ${game.nearbyStation.name}`, camera.width / 2, promptY);
     ctx.globalAlpha = 1;
     ctx.restore();
   }
 
-  _renderDerelictPrompt(ctx, game) {
-    if (!game.nearbyDerelict || game.isSalvaging) return;
-    const { camera } = game;
-    const alpha = 0.6 + Math.sin(Date.now() * 0.004) * 0.4;
+  _renderRepairPrompt(ctx, game) {
+    const { player, camera } = game;
+    if (game.isSalvaging || game.isRepairing || game.isDocked) return;
+    if (!player || player.throttleLevel !== 0) return;
+
+    const armorNeeded   = player.armorCurrent < player.armorMax;
+    const modulesNeeded = game._hasModulesToRepair();
+    if ((!armorNeeded && !modulesNeeded) || game.scrap <= 0) return;
+
+    const alpha   = 0.6 + Math.sin(Date.now() * 0.005) * 0.4;
+    const promptY = camera.height * 0.62;
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-
-    const baseY = camera.height - PIP_BOTTOM_MARGIN - PIP_H - PIP_LABEL_OFFSET - 24;
-
-    // Lore line (first line of loreText, if any)
-    const loreText = game.nearbyDerelict.loreText;
-    if (loreText && loreText[0]) {
-      ctx.font = '10px monospace';
-      ctx.globalAlpha = alpha * 0.6;
-      ctx.fillStyle = DIM_TEXT;
-      ctx.fillText(loreText[0], camera.width / 2, baseY - 18);
-    }
-
-    ctx.font = '14px monospace';
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = AMBER;
-    ctx.fillText(
-      `Press E to salvage ${game.nearbyDerelict.name}`,
-      camera.width / 2,
-      baseY
-    );
+    ctx.font = '14px monospace';
+    ctx.fillStyle = GREEN;
+    const costs = [];
+    if (armorNeeded)   costs.push('1 scrap/pt');
+    if (modulesNeeded) costs.push('15 scrap/step');
+    ctx.fillText(`Press R to Repair  [${costs.join(' · ')}]`, camera.width / 2, promptY);
     ctx.globalAlpha = 1;
     ctx.restore();
   }
+
+  // ── Active operation bars ──────────────────────────────────────────────────
 
   _renderSalvageBar(ctx, game) {
     if (!game.isSalvaging) return;
     const { camera } = game;
-    const ratio = game.salvageProgress / game.salvageTotal;
-
-    const barW = 220;
-    const barH = 16;
+    const ratio    = game.salvageProgress / game.salvageTotal;
+    const barW     = 220;
+    const barH     = 16;
     const segCount = 10;
-    const x = (camera.width - barW) / 2;
-    const y = camera.height - PIP_BOTTOM_MARGIN - PIP_H - PIP_LABEL_OFFSET - 56;
+    const x        = (camera.width - barW) / 2;
+    const y        = camera.height * 0.70;
 
     ctx.save();
-
     ctx.font = 'bold 13px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
@@ -374,59 +651,24 @@ export class HUD {
     ctx.strokeRect(x - 1, y - 1, barW + 2, barH + 2);
     ctx.fillStyle = BAR_TRACK;
     ctx.fillRect(x, y, barW, barH);
-
-    const filled = Math.ceil(ratio * segCount);
-    this._drawSegBar(ctx, x, y, barW, barH, filled, segCount, AMBER);
-
-    ctx.restore();
-  }
-
-  _renderRepairPrompt(ctx, game) {
-    const { player, camera } = game;
-    if (game.isSalvaging || game.isRepairing || game.isDocked) return;
-    if (!player || player.throttleLevel !== 0) return;
-
-    const armorNeeded  = player.armorCurrent < player.armorMax;
-    const modulesNeeded = game._hasModulesToRepair();
-    if ((!armorNeeded && !modulesNeeded) || game.scrap <= 0) return;
-
-    const alpha = 0.6 + Math.sin(Date.now() * 0.005) * 0.4;
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.globalAlpha = alpha;
-
-    const baseY = camera.height - PIP_BOTTOM_MARGIN - PIP_H - PIP_LABEL_OFFSET - 44;
-
-    ctx.font = '14px monospace';
-    ctx.fillStyle = GREEN;
-    const costs = [];
-    if (armorNeeded) costs.push('1 scrap/pt');
-    if (modulesNeeded) costs.push('15 scrap/step');
-    ctx.fillText(`Press R to Repair  [${costs.join(' · ')}]`, camera.width / 2, baseY);
-
-    ctx.globalAlpha = 1;
+    this._drawSegBar(ctx, x, y, barW, barH, Math.ceil(ratio * segCount), segCount, AMBER);
     ctx.restore();
   }
 
   _renderRepairBar(ctx, game) {
     if (!game.isRepairing) return;
     const { player, camera } = game;
-
-    const barW = 220;
-    const barH = 16;
+    const barW     = 220;
+    const barH     = 16;
     const segCount = 10;
-    const x = (camera.width - barW) / 2;
-    const baseY = camera.height - PIP_BOTTOM_MARGIN - PIP_H - PIP_LABEL_OFFSET - 56;
+    const x        = (camera.width - barW) / 2;
+    let   yOffset  = camera.height * 0.70;
 
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
 
     const hasModules = game._hasModulesToRepair();
-    let yOffset = baseY;
-
-    // Module repair bar — shown above armor bar if active
     if (hasModules) {
       const modAccum = game._moduleRepairAccum ?? 0;
       ctx.font = 'bold 13px monospace';
@@ -444,10 +686,8 @@ export class HUD {
       yOffset -= barH + 24;
     }
 
-    // Armor bar
     if (player.armorCurrent < player.armorMax) {
       const ratio = player.armorCurrent / player.armorMax;
-
       ctx.font = 'bold 13px monospace';
       ctx.fillStyle = GREEN;
       ctx.fillText('REPAIRING...', camera.width / 2, yOffset - 4);
@@ -457,74 +697,28 @@ export class HUD {
       ctx.strokeRect(x - 1, yOffset - 1, barW + 2, barH + 2);
       ctx.fillStyle = BAR_TRACK;
       ctx.fillRect(x, yOffset, barW, barH);
-
-      const filled = Math.ceil(ratio * segCount);
-      this._drawSegBar(ctx, x, yOffset, barW, barH, filled, segCount, GREEN);
+      this._drawSegBar(ctx, x, yOffset, barW, barH, Math.ceil(ratio * segCount), segCount, GREEN);
     }
 
     ctx.restore();
   }
 
-  _renderAutoFireIndicator(ctx, game) {
-    if (!game.autoFireMode) return;
-    const { camera } = game;
-    const pulse = 0.75 + Math.sin(Date.now() * 0.008) * 0.25;
-    ctx.save();
-    ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = RED;
-    ctx.globalAlpha = pulse;
-    ctx.fillText('AUTO-FIRE', 20, camera.height - 52);
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
-
-  _renderPickupTexts(ctx, game) {
-    const { camera } = game;
-    const now = Date.now();
-    ctx.save();
-    ctx.font = 'bold 13px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    for (let i = this._pickupTexts.length - 1; i >= 0; i--) {
-      const pt = this._pickupTexts[i];
-      const elapsed = (now - pt.createdAt) / 1000;
-      if (elapsed > PICKUP_DURATION) {
-        this._pickupTexts.splice(i, 1);
-        continue;
-      }
-      const t = elapsed / PICKUP_DURATION;
-      const screen = camera.worldToScreen(pt.worldX, pt.worldY - PICKUP_DRIFT * t);
-      ctx.globalAlpha = 1 - t;
-      // colorHint: null = AMBER (pickup), 'breach' = orange (module damage), 'repair' = GREEN, 'hostile' = RED
-      ctx.fillStyle = pt.colorHint === 'breach'  ? CONDITION_FAULTY
-                    : pt.colorHint === 'repair'   ? GREEN
-                    : pt.colorHint === 'hostile'  ? RED
-                    : AMBER;
-      ctx.fillText(pt.text, screen.x, screen.y);
-    }
-
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
+  // ── Kill log (below minimap, top-left) ────────────────────────────────────
 
   _renderKillLog(ctx, game) {
     if (this._killLog.length === 0) return;
-    const { camera } = game;
     const now = Date.now();
     ctx.save();
     ctx.font = '10px monospace';
-    ctx.textAlign = 'right';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    const lineH = 14;
-    const x = camera.width - 20;
-    const startY = 20;
+    const lineH  = 14;
+    const x      = MM_MARGIN;
+    const startY = MM_MARGIN + MM_PANEL + 8;
 
     for (let i = this._killLog.length - 1; i >= 0; i--) {
-      const entry = this._killLog[i];
+      const entry   = this._killLog[i];
       const elapsed = (now - entry.createdAt) / 1000;
       if (elapsed > KILL_DURATION) {
         this._killLog.splice(i, 1);
@@ -540,46 +734,45 @@ export class HUD {
     ctx.restore();
   }
 
+  // ── Minimap (top-left) ─────────────────────────────────────────────────────
+
   _renderMinimap(ctx, game) {
     const { camera, player, entities, raiders } = game;
     if (!player.active) return;
 
-    // Check for any minimap capability
     const canSeeStations = player.capabilities.minimap_stations;
-    const canSeeShips = player.capabilities.minimap_ships;
+    const canSeeShips    = player.capabilities.minimap_ships;
     if (!canSeeStations && !canSeeShips) return;
 
-    const mapW = game.map.mapSize.width;
-    const mapH = game.map.mapSize.height;
-    const PANEL = 225;
-    const SCALE = PANEL / Math.max(mapW, mapH);
-    const MM_MARGIN = 20;
-    const ox = MM_MARGIN;
-    const oy = camera.height - MM_MARGIN - PANEL;
-    const BRACKET = 8;
+    const mapW  = game.map.mapSize.width;
+    const mapH  = game.map.mapSize.height;
+    const SCALE = MM_PANEL / Math.max(mapW, mapH);
+    const ox    = MM_MARGIN;
+    const oy    = MM_MARGIN;
+    const BRKT  = 8;
 
     ctx.save();
 
     ctx.fillStyle = MINIMAP_BG;
-    ctx.fillRect(ox, oy, PANEL, PANEL);
+    ctx.fillRect(ox, oy, MM_PANEL, MM_PANEL);
 
     ctx.strokeStyle = MINIMAP_BORDER;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(ox, oy + BRACKET); ctx.lineTo(ox, oy); ctx.lineTo(ox + BRACKET, oy);
+    ctx.moveTo(ox, oy + BRKT); ctx.lineTo(ox, oy); ctx.lineTo(ox + BRKT, oy);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(ox + PANEL - BRACKET, oy); ctx.lineTo(ox + PANEL, oy); ctx.lineTo(ox + PANEL, oy + BRACKET);
+    ctx.moveTo(ox + MM_PANEL - BRKT, oy); ctx.lineTo(ox + MM_PANEL, oy); ctx.lineTo(ox + MM_PANEL, oy + BRKT);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(ox, oy + PANEL - BRACKET); ctx.lineTo(ox, oy + PANEL); ctx.lineTo(ox + BRACKET, oy + PANEL);
+    ctx.moveTo(ox, oy + MM_PANEL - BRKT); ctx.lineTo(ox, oy + MM_PANEL); ctx.lineTo(ox + BRKT, oy + MM_PANEL);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(ox + PANEL - BRACKET, oy + PANEL); ctx.lineTo(ox + PANEL, oy + PANEL); ctx.lineTo(ox + PANEL, oy + PANEL - BRACKET);
+    ctx.moveTo(ox + MM_PANEL - BRKT, oy + MM_PANEL); ctx.lineTo(ox + MM_PANEL, oy + MM_PANEL); ctx.lineTo(ox + MM_PANEL, oy + MM_PANEL - BRKT);
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.rect(ox, oy, PANEL, PANEL);
+    ctx.rect(ox, oy, MM_PANEL, MM_PANEL);
     ctx.clip();
 
     if (canSeeStations) {
@@ -596,10 +789,9 @@ export class HUD {
 
       for (const e of entities) {
         if (!(e instanceof Station) || !e.active) continue;
-        const mx = ox + e.x * SCALE;
-        const my = oy + e.y * SCALE;
+        const mx    = ox + e.x * SCALE;
+        const my    = oy + e.y * SCALE;
         const color = FACTION[e.faction] ?? MINIMAP_STATION;
-        // Filled square with contrasting outline
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.9;
         ctx.fillRect(mx - 4, my - 4, 8, 8);
@@ -607,7 +799,6 @@ export class HUD {
         ctx.lineWidth = 1;
         ctx.strokeRect(mx - 4, my - 4, 8, 8);
         ctx.globalAlpha = 1;
-        // Station name label
         ctx.font = '8px monospace';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
@@ -640,7 +831,6 @@ export class HUD {
         const dx = r.x - player.x;
         const dy = r.y - player.y;
         if (dx * dx + dy * dy > rangeSq) continue;
-        
         const mx = ox + r.x * SCALE;
         const my = oy + r.y * SCALE;
         ctx.fillStyle = MINIMAP_ENEMY;
@@ -665,62 +855,53 @@ export class HUD {
     ctx.restore();
   }
 
+  // ── Misc indicators ────────────────────────────────────────────────────────
 
-  _renderTestOverlay(ctx, game) {
-    const { camera, testSteps } = game;
-    if (!testSteps || testSteps.length === 0) return;
-
-    const padding = 10;
-    const lineH = 16;
-    const headerH = 22;
-    const panelW = 700;
-    const maxTextW = panelW - 2 * padding;
-
+  _renderAutoFireIndicator(ctx, game) {
+    if (!game.autoFireMode) return;
+    const { camera } = game;
+    const pulse = 0.75 + Math.sin(Date.now() * 0.008) * 0.25;
     ctx.save();
-    ctx.font = '13px monospace';
-    const wrappedLines = [];
-    for (let i = 0; i < testSteps.length; i++) {
-      const prefix = `${i + 1}. `;
-      const text = prefix + testSteps[i];
-      const words = text.split(' ');
-      let line = '';
-      for (const word of words) {
-        const test = line ? line + ' ' + word : word;
-        if (ctx.measureText(test).width > maxTextW && line) {
-          wrappedLines.push(line);
-          line = '   ' + word;
-        } else {
-          line = test;
-        }
-      }
-      if (line) wrappedLines.push(line);
-    }
-
-    const panelH = headerH + padding + wrappedLines.length * lineH + padding;
-    const ox = camera.width - panelW - padding;
-    const oy = camera.height - panelH - padding;
-
-    ctx.fillStyle = 'rgba(0, 10, 30, 0.85)';
-    ctx.fillRect(ox, oy, panelW, panelH);
-    ctx.strokeStyle = '#f0a';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ox, oy, panelW, panelH);
-
-    ctx.font = 'bold 13px monospace';
+    ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillStyle = '#f0a';
-    ctx.fillText('TEST MODE — VERIFICATION STEPS', ox + padding, oy + 5);
-
-    ctx.font = '13px monospace';
-    ctx.fillStyle = CYAN;
-    for (let i = 0; i < wrappedLines.length; i++) {
-      const y = oy + headerH + padding + i * lineH;
-      ctx.fillText(wrappedLines[i], ox + padding, y);
-    }
-
+    ctx.fillStyle = RED;
+    ctx.globalAlpha = pulse;
+    ctx.fillText('AUTO-FIRE', BMARGIN, BMARGIN);
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
+
+  _renderPickupTexts(ctx, game) {
+    const { camera } = game;
+    const now = Date.now();
+    ctx.save();
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let i = this._pickupTexts.length - 1; i >= 0; i--) {
+      const pt      = this._pickupTexts[i];
+      const elapsed = (now - pt.createdAt) / 1000;
+      if (elapsed > PICKUP_DURATION) {
+        this._pickupTexts.splice(i, 1);
+        continue;
+      }
+      const t      = elapsed / PICKUP_DURATION;
+      const screen = camera.worldToScreen(pt.worldX, pt.worldY - PICKUP_DRIFT * t);
+      ctx.globalAlpha = 1 - t;
+      ctx.fillStyle = pt.colorHint === 'breach'  ? CONDITION_FAULTY
+                    : pt.colorHint === 'repair'   ? GREEN
+                    : pt.colorHint === 'hostile'  ? RED
+                    : AMBER;
+      ctx.fillText(pt.text, screen.x, screen.y);
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // ── Dev overlays ───────────────────────────────────────────────────────────
 
   _renderDevControls(ctx, game) {
     const { camera, player } = game;
@@ -751,8 +932,8 @@ export class HUD {
     ];
 
     const panelH = padding + lines.length * lineH + padding;
-    const ox = camera.width - panelW - padding;
-    const oy = padding;
+    const ox     = camera.width - panelW - padding;
+    const oy     = MM_MARGIN;
 
     ctx.save();
     ctx.fillStyle = 'rgba(0,8,20,0.82)';
@@ -769,8 +950,6 @@ export class HUD {
       const y = oy + padding + i * lineH;
       if (lines[i] === '') continue;
       if (lines[i].startsWith('PRI:') || lines[i].startsWith('SEC:')) {
-        ctx.fillStyle = CYAN;
-      } else if (lines[i].startsWith('WEAPONS')) {
         ctx.fillStyle = CYAN;
       } else if (lines[i].startsWith('(')) {
         ctx.fillStyle = DIM_TEXT;
@@ -800,155 +979,7 @@ export class HUD {
     ctx.restore();
   }
 
-  _renderWeaponReadout(ctx, player, startY, ammoReserve = {}) {
-    const primaries   = player._primaryWeapons;
-    const secondaries = player._secondaryWeapons;
-    const activePri   = primaries[player.primaryWeaponIdx];
-    const activeSec   = secondaries[player.secondaryWeaponIdx];
-
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
-    let y = startY;
-
-    // Primary
-    if (activePri) {
-      const name = activePri.displayName || activePri.constructor.name.toUpperCase();
-      ctx.fillStyle = DIM_TEXT;
-      ctx.fillText('PRI', MARGIN, y + 5);
-      ctx.fillStyle = CYAN;
-      ctx.fillText(name, MARGIN + 26, y + 5);
-
-      const bx = MARGIN + 26 + 90;
-      const bw = 44;
-      const bh = 6;
-
-      if (activePri.isBeam) {
-        const t = Math.min((activePri._rampUp || 0) / activePri.rampTime, 1);
-        ctx.fillStyle = VERY_DIM;
-        ctx.fillRect(bx, y + 2, bw, bh);
-        if (activePri._overheated) {
-          // Cooldown recovery — bar fills back up as it cools
-          const cdProg = 1 - (activePri._cooldownTimer || 0) / (activePri.cooldownTime || 1);
-          ctx.fillStyle = RED;
-          ctx.fillRect(bx, y + 2, bw * cdProg, bh);
-        } else {
-          const burnFrac = (activePri._fullPowerTimer || 0) / (activePri.overheatLimit || 5);
-          ctx.fillStyle = t >= 1
-            ? (burnFrac > 0.6 ? RED : burnFrac > 0.3 ? AMBER : WHITE)
-            : CYAN;
-          ctx.fillRect(bx, y + 2, bw * t, bh);
-        }
-      } else if (activePri.magSize !== undefined) {
-        // Magazine weapon — show reload bar or cooldown bar, then mag/cargo count
-        const reloading = activePri._reloadTimer > 0;
-        if (reloading) {
-          const progress = 1 - activePri._reloadTimer / activePri.reloadTime;
-          ctx.fillStyle = VERY_DIM;
-          ctx.fillRect(bx, y + 2, bw, bh);
-          ctx.fillStyle = AMBER;
-          ctx.fillRect(bx, y + 2, bw * progress, bh);
-        } else {
-          const cdMax = activePri.cooldownMax ?? 0;
-          const filled = cdMax > 0 ? Math.max(0, 1 - (activePri._cooldown || 0) / cdMax) : 1;
-          ctx.fillStyle = VERY_DIM;
-          ctx.fillRect(bx, y + 2, bw, bh);
-          ctx.fillStyle = filled >= 1 ? CYAN : AMBER;
-          ctx.fillRect(bx, y + 2, bw * filled, bh);
-        }
-        // mag / cargo count
-        const cargo = ammoReserve[activePri.ammoType] ?? 0;
-        ctx.font = '9px monospace';
-        ctx.fillStyle = reloading ? AMBER : (activePri.ammo > 0 ? CYAN : RED);
-        ctx.fillText(`${activePri.ammo} / ${cargo}`, bx + bw + 5, y + 5);
-        ctx.font = '10px monospace';
-      } else {
-        // Cooldown bar only (no ammo, e.g. beam)
-        const cdMax = activePri.cooldownMax ?? 0;
-        if (cdMax > 0) {
-          const filled = Math.max(0, 1 - (activePri._cooldown || 0) / cdMax);
-          ctx.fillStyle = VERY_DIM;
-          ctx.fillRect(bx, y + 2, bw, bh);
-          ctx.fillStyle = filled >= 1 ? CYAN : AMBER;
-          ctx.fillRect(bx, y + 2, bw * filled, bh);
-        }
-      }
-
-      y += 16;
-    }
-
-    // Secondary
-    if (activeSec) {
-      const name = activeSec.displayName || activeSec.constructor.name.toUpperCase();
-      ctx.fillStyle = DIM_TEXT;
-      ctx.fillText('SEC', MARGIN, y + 5);
-      ctx.fillStyle = MAGENTA;
-      ctx.fillText(name, MARGIN + 26, y + 5);
-
-      const pipX = MARGIN + 26 + 90;
-
-      if (activeSec.pipCount !== undefined) {
-        // Rocket-style: tube pips + reload or cooldown bar + mag/cargo count
-        const pipW   = 6;
-        const pipGap = 3;
-        const pipCount = activeSec.pipCount;
-        const reloading = activeSec._reloadTimer > 0;
-        const ready     = !reloading && activeSec._cooldown <= 0 && activeSec.ammo > 0;
-
-        for (let i = 0; i < pipCount; i++) {
-          const filled = i < activeSec.ammo;
-          ctx.fillStyle = filled && ready ? MAGENTA : VERY_DIM;
-          ctx.fillRect(pipX + i * (pipW + pipGap), y + 2, pipW, pipW);
-        }
-
-        const barX = pipX + pipCount * (pipW + pipGap) + 5;
-        const barW = 36;
-        const barH = 6;
-        ctx.fillStyle = VERY_DIM;
-        ctx.fillRect(barX, y + 2, barW, barH);
-
-        if (reloading) {
-          const progress = 1 - activeSec._reloadTimer / activeSec.reloadTime;
-          ctx.fillStyle = AMBER;
-          ctx.fillRect(barX, y + 2, barW * progress, barH);
-        } else {
-          const cdMax  = activeSec.cooldownMax || 0;
-          const cdFill = cdMax > 0 ? Math.max(0, 1 - (activeSec._cooldown || 0) / cdMax) : 1;
-          ctx.fillStyle = cdFill >= 1 ? MAGENTA : DIM_TEXT;
-          ctx.fillRect(barX, y + 2, barW * cdFill, barH);
-        }
-
-        const cargo = ammoReserve[activeSec.ammoType] ?? 0;
-        ctx.font = '9px monospace';
-        ctx.fillStyle = reloading ? AMBER : (activeSec.ammo > 0 ? MAGENTA : RED);
-        const ammoStr = `${activeSec.ammo} / ${cargo}`;
-        ctx.fillText(ammoStr, barX + barW + 5, y + 5);
-        if (activeSec.guidanceMode) {
-          const ammoW = ctx.measureText(ammoStr).width;
-          ctx.fillStyle = DIM_TEXT;
-          ctx.fillText(`[${activeSec.guidanceMode}]`, barX + barW + 5 + ammoW + 5, y + 5);
-        }
-        ctx.font = '10px monospace';
-
-      } else if (activeSec.magSize !== undefined) {
-        // Missile-style with mag tracking: pip-per-ammo + cargo count
-        const pipW   = 8;
-        const pipH   = 8;
-        const pipGap = 2;
-        const maxPips = Math.min(activeSec.magSize, 10);
-        for (let i = 0; i < maxPips; i++) {
-          ctx.fillStyle = i < activeSec.ammo ? MAGENTA : VERY_DIM;
-          ctx.fillRect(pipX + i * (pipW + pipGap), y + 1, pipW, pipH);
-        }
-        const cargo = ammoReserve[activeSec.ammoType] ?? 0;
-        ctx.font = '9px monospace';
-        ctx.fillStyle = activeSec.ammo > 0 ? MAGENTA : RED;
-        ctx.fillText(`/ ${cargo}`, pipX + maxPips * (pipW + pipGap) + 4, y + 5);
-        ctx.font = '10px monospace';
-      }
-    }
-  }
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   _drawSegBar(ctx, x, y, w, h, filled, total, color) {
     const segW = w / total;
@@ -958,67 +989,5 @@ export class HUD {
         ctx.fillRect(x + i * segW + 1, y + 1, segW - 2, h - 2);
       }
     }
-  }
-
-  _renderThrottle(ctx, player, camera) {
-    const levels = player.throttleLevels;
-    const current = player.throttleLevel;
-    const totalW = levels * PIP_W + (levels - 1) * PIP_GAP;
-    const startX = (camera.width - totalW) / 2;
-    const pipY = camera.height - PIP_BOTTOM_MARGIN - PIP_H;
-
-    ctx.save();
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    for (let i = 0; i < levels; i++) {
-      const x = startX + i * (PIP_W + PIP_GAP);
-      const active = i === current;
-
-      ctx.strokeStyle = active ? CYAN : DIM_OUTLINE;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.rect(x, pipY, PIP_W, PIP_H);
-      ctx.stroke();
-
-      if (active) {
-        ctx.fillStyle = CYAN;
-        ctx.fillRect(x + 1, pipY + 1, PIP_W - 2, PIP_H - 2);
-      }
-
-      ctx.fillStyle = active ? WHITE : DIM_OUTLINE;
-      ctx.fillText(THROTTLE_LABELS[i], x + PIP_W / 2, pipY + PIP_H / 2);
-    }
-
-    const speed = Math.round(player.speed);
-    const label = THROTTLE_LABELS[current];
-    ctx.fillStyle = CYAN;
-    ctx.font = '16px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(
-      `${label}  ${speed} u/s`,
-      camera.width / 2,
-      pipY - 8
-    );
-
-    ctx.restore();
-  }
-
-  _renderPauseIcon(ctx, camera) {
-    const pipY = camera.height - PIP_BOTTOM_MARGIN - PIP_H;
-    const cx   = camera.width / 2;
-    const flash = Math.sin(Date.now() * 0.006) > 0;
-    if (!flash) return;
-
-    ctx.save();
-    ctx.font = 'bold 13px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = AMBER;
-    // Two vertical bars as a pause symbol, then label
-    ctx.fillText('II  PAUSED', cx, pipY - 34);
-    ctx.restore();
   }
 }

@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { RELATION_COLORS, RED } from '../ui/colors.js';
+import { RELATION_COLORS, RED, WHITE, armorArcColor } from '../ui/colors.js';
 import { BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
          THROTTLE_LEVELS, THROTTLE_RATIOS } from '../data/tuning/shipTuning.js';
 
@@ -12,7 +12,7 @@ export class Ship extends Entity {
     // Identity
     this.isShip = true;
     this.faction = 'neutral';
-    this.relation = 'none';   // 'none' | 'player' | 'friendly' | 'neutral' | 'hostile'
+    this.relation = 'none';   // 'none' | 'player' | 'friendly' | 'neutral' | 'hostile' | 'enemy'
     this.ai = null;            // set to { ...AI_TEMPLATES.x } in subclass constructors
     this.shipType = null;
 
@@ -88,6 +88,62 @@ export class Ship extends Entity {
   get hullFill()    { return (RELATION_COLORS[this.relation] ?? RELATION_COLORS.none).fill; }
   get hullStroke()  { return (RELATION_COLORS[this.relation] ?? RELATION_COLORS.none).stroke; }
   get engineColor() { return (RELATION_COLORS[this.relation] ?? RELATION_COLORS.none).engine; }
+
+  // ── Directional armor rendering helpers ─────────────────────────────────────
+  // Used by _drawShape in every ship class to show directional health on the hull.
+  // When relation === 'player': hull fill is health-based color, outline is per-arc color.
+
+  // Returns a health-based rgba fill color for the hull interior.
+  _playerHullFill() {
+    const r = this.hullMax > 0 ? this.hullCurrent / this.hullMax : 1;
+    if (r > 0.75) return 'rgba(0,255,102,0.20)';
+    if (r > 0.50) return 'rgba(200,220,0,0.20)';
+    if (r > 0.25) return 'rgba(255,140,0,0.22)';
+    return 'rgba(255,60,60,0.26)';
+  }
+
+  // Strokes the CURRENT ctx path using the arc health color for arcKey.
+  // Returns true if player (arc color applied). Returns false if NPC (caller should stroke normally).
+  _strokeArcCurrent(ctx, arcKey) {
+    if (this.relation !== 'player') return false;
+    const maxVal = this.armorArcsMax[arcKey] || 1;
+    const curVal = this.armorArcs[arcKey] || 0;
+    const ratio  = curVal / maxVal;
+    const hitAge = Date.now() - (this._arcHitTimestamps[arcKey] || 0);
+    const flash  = hitAge < 150;
+    ctx.strokeStyle = flash ? WHITE : armorArcColor(ratio);
+    ctx.lineWidth   = 1.5;
+    ctx.globalAlpha = flash ? 1.0 : Math.max(0.3, ratio * 0.7 + 0.3);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    return true;
+  }
+
+  // Draws arc-colored open-path outline SEGMENTS of a hull polygon for player ships.
+  // arcSegmentMap: { front: [i0,i1,...], starboard: [...], aft: [...], port: [...] }
+  // Returns true if drawn (player), false otherwise (NPC — caller should ctx.stroke() the full path).
+  _drawHullArcs(ctx, hullPoints, arcSegmentMap) {
+    if (this.relation !== 'player') return false;
+    const now = Date.now();
+    ctx.lineWidth = 1.5;
+    for (const [arcKey, indices] of Object.entries(arcSegmentMap)) {
+      const maxVal = this.armorArcsMax[arcKey] || 1;
+      const curVal = this.armorArcs[arcKey] || 0;
+      const ratio  = curVal / maxVal;
+      const hitAge = now - (this._arcHitTimestamps[arcKey] || 0);
+      const flash  = hitAge < 150;
+      ctx.beginPath();
+      ctx.moveTo(hullPoints[indices[0]].x, hullPoints[indices[0]].y);
+      for (let i = 1; i < indices.length; i++) {
+        ctx.lineTo(hullPoints[indices[i]].x, hullPoints[indices[i]].y);
+      }
+      ctx.strokeStyle = flash ? WHITE : armorArcColor(ratio);
+      ctx.globalAlpha = flash ? 1.0 : Math.max(0.3, ratio * 0.7 + 0.3);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    return true;
+  }
 
   // Backward-compat getters: average of all 4 arcs
   get armorCurrent() {
@@ -217,14 +273,22 @@ export class Ship extends Entity {
 
     for (const mod of this.moduleSlots) {
       if (!mod) continue;
-      if (mod.minimap_stations) this.capabilities.minimap_stations = true;
-      if (mod.minimap_ships)    this.capabilities.minimap_ships    = true;
-      if (mod.sensor_range > this.capabilities.sensor_range) {
-        this.capabilities.sensor_range = mod.sensor_range;
+      const notDestroyed = mod.conditionMultiplier > 0;
+      // Boolean capabilities go offline when module is destroyed
+      if (notDestroyed) {
+        if (mod.minimap_stations) this.capabilities.minimap_stations = true;
+        if (mod.minimap_ships)    this.capabilities.minimap_ships    = true;
+        if (mod.lead_indicators)  this.capabilities.lead_indicators  = true;
+        if (mod.health_pips)      this.capabilities.health_pips      = true;
+        if (mod.salvage_detail)   this.capabilities.salvage_detail   = true;
       }
-      if (mod.lead_indicators) this.capabilities.lead_indicators = true;
-      if (mod.health_pips)     this.capabilities.health_pips     = true;
-      if (mod.salvage_detail)  this.capabilities.salvage_detail  = true;
+      // Sensor range scales with condition (degraded sensors have reduced range)
+      if (mod.sensor_range) {
+        const effective = mod.sensor_range * mod.conditionMultiplier;
+        if (effective > this.capabilities.sensor_range) {
+          this.capabilities.sensor_range = effective;
+        }
+      }
     }
   }
 
@@ -342,7 +406,7 @@ export class Ship extends Entity {
     // Hull degradation — random flags updated once per tick
     const hullRatio = this.hullCurrent / this.hullMax;
     // Fire rate: enemies slow down linearly from 40% hull → 2× cooldown at 0%
-    if (this.relation === 'enemy' && hullRatio <= 0.40) {
+    if ((this.relation === 'enemy' || this.relation === 'hostile') && hullRatio <= 0.40) {
       this._fireCooldownMult = 1.0 + (0.40 - hullRatio) / 0.40;
     } else {
       this._fireCooldownMult = 1.0;
@@ -420,7 +484,7 @@ export class Ship extends Entity {
     }
 
     // Enemy damage overlay — darkens at ≤50% hull
-    if (this.relation === 'enemy') {
+    if (this.relation === 'enemy' || this.relation === 'hostile') {
       const hullRatio = this.hullCurrent / this.hullMax;
       if (hullRatio <= 0.5) {
         const r = this.getBounds().radius;

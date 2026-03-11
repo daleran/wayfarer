@@ -63,6 +63,7 @@ export const RELATION_COLORS = {
   friendly: { fill: FRIENDLY_FILL,  stroke: FRIENDLY_STROKE, engine: BLUE },
   neutral:  { fill: NEUTRAL_FILL,   stroke: NEUTRAL_STROKE,  engine: AMBER },
   enemy:    { fill: ENEMY_FILL,     stroke: ENEMY_STROKE,    engine: RED },
+  hostile:  { fill: ENEMY_FILL,     stroke: ENEMY_STROKE,    engine: RED },
 };
 
 // Pale — ice planet surface colors
