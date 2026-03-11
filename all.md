@@ -224,16 +224,13 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 |---|---|---|
 | AN | Utility Modules | Modules / Equipment |
 | AP | Tribute & Favor System | Economy |
-| AQ | Feudal Obligations | Economy |
 | AR | Black Market & Under-Barter | Economy |
 | AS | Gravewake Zone Features | World / Map |
 | AT | Advanced Scavenging — Multi-Stage Extraction | Scavenging |
 | AU | Scavenging Minigames & Heat System | Scavenging |
 | AV | Specialized Enemy Factions | AI / Enemies |
-| AW | Void Fauna Expansion | AI / Enemies |
 | AX | Named Bosses | AI / Enemies |
 | AY | Officers System | Ship Systems |
-| AZ | Quad-Arc Armor & Internal System Integrity | Ship Systems |
 | BA | Story Threads & Trigger System | Narrative |
 | BB | Mission & Bounty Board | Gameplay |
 | BC | Full Map View | UI |
@@ -263,20 +260,6 @@ Stations have periodic resource "Needs" — scarce goods they want delivered. De
 - Provisioning screen: browse requestable items, see Favor cost and delivery delay
 - Transaction locking: cargo is "locked" during active trades; prevents accidental jettison mid-dock
 - Exotics (isomers/data-cores) as a third commodity — high-density portable wealth, small cargo footprint, used for large-favor transactions and high-tier provisioning
-
----
-
-### AQ: Feudal Obligations
-
-Voluntary commitments the player can make that create meaningful risk/reward tradeoffs.
-
-**Warden's Oath** — pledge to defend a specific station. While within its sensor range, fuel and armor repairs are free. A `[WARDEN STATUS: ACTIVE]` indicator appears on HUD. Fleeing during an attack triggers Oath-Breaker status: friendly stations refuse docking, bounty hunters intercept.
-
-**Blood-Debts** — rescuing escape pods creates Life-Debts from the survivor's family. Debts can be spent to bypass reputation gates, get emergency repairs in hostile space, or recruit high-skill specialists.
-
-**Patronage & Apprenticeships** — a Patron asks you to take a junior crew member into your fleet. Keep them alive through "Lessons" (combat, salvage). Reward: Master-Key ROMs — physical cartridges that unlock pre-Exile ship schematics.
-
-**Hospitality Right (Guest-Friend)** — earn sanctuary at a station. Defensive batteries protect you within docking radius. Initiating combat inside Guest-Friend territory revokes the status immediately.
 
 ---
 
@@ -372,16 +355,6 @@ Four distinct enemy/neutral faction AI types not yet implemented.
 
 ---
 
-### AW: Void Fauna Expansion
-
-Indigenous creatures that evolved in Tyr's harsh environment. Three types beyond current fauna, each with unique spawn zones.
-
-- **Void Wurm** — serpentine, high HP, charges the player for collision damage. Weak to kiting at max range. Body hits cause knockback. Spawn: ice belts and asteroid fields.
-- **Crystal Swarm** — dozens of individually weak units that surround the target and chip armor with micro-shots. Vulnerable to AoE weapons; overwhelm point defense with numbers. Spawn: nebula edges.
-- **Nebula Leviathan** — massive; grabs with tentacles to slow the player, fires bio-electric bolts. Requires sustained damage to multiple weak points. High HP, slow-moving. Spawn: deep nebulae.
-
----
-
 ### AX: Named Bosses
 
 Three unique one-time boss encounters tied to story threads (see BA). Each has major loot and narrative consequences.
@@ -407,25 +380,6 @@ Three officer roles, each boosting a different stat category:
 
 Hull class determines max officer count. Officers recruited at stations (reputation-gated), found in rescued escape pods (Blood-Debt, see AQ), or inherited through Patronage. Officers can be lost permanently if the ship is critically damaged — they are never replaced by anonymous equivalents.
 
----
-
-### AZ: Quad-Arc Armor & Internal System Integrity
-
-Replaces the current single-pool armor system with directional and internal damage models.
-
-**Four Armor Arcs:** Front, Port, Starboard, Aft — each with its own HP value derived from the ship class base. Field repair prioritizes the most-depleted arc. Aft arc has 1.5× hull bleed-through multiplier and 50% chance to damage Engine Integrity on hit.
-
-**Internal System Integrity:** Three systems tracked 0–100: Reactor [R], Engine [E], Sensor [S].
-- Sensor damage: minimap becomes fuzzy/static; phantom contacts appear near Concord ruins
-- Engine damage: sputtering at 50%, frequent cutouts (1–2 sec stalls) at 30%, half speed at 15%
-- Reactor damage: power output degrades, weapons lose fire rate, modules deactivate
-
-**Hull Degradation Thresholds:**
-- 75%: minor flicker (cosmetic)
-- 50%: engines sputter, turrets slow
-- 30%: engine cutouts, weapons misfire ~20%, reduced turn rate
-- 15%: half speed, weapons misfire ~40%, possible loss of a weapon mount
-- 5%: minimal thrust, most weapons offline, sparking/venting visuals
 
 ---
 
