@@ -17,6 +17,16 @@ Project instructions for Claude Code.
 
 No test framework or linter is configured.
 
+## Feature Code Workflow
+
+All features move through three stages:
+
+1. **IDEA.md** — raw concept with a letter code (e.g. `AN`). Not yet planned for implementation. May be vague. Good place for brainstorming.
+2. **NEXT.md** — moved here when the idea is prioritized. "UP NEXT" section = ready to build. Minor tweaks and bugs live in the lower section without codes.
+3. **DEVLOG.md** — one line appended when the feature ships. Code is retired here permanently.
+
+**Assigning codes:** Check IDEA.md for the "next available code" header. Codes are sequential two-letter suffixes after `AM` (the last DEVLOG entry): `AN`, `AO`, `AP`, etc. Assign the next available code to each new idea when you add it to IDEA.md.
+
 ## Documentation Guide
 
 **MANDATORY: Update these files whenever you make a relevant change. Do not skip this step.**
@@ -27,64 +37,48 @@ No test framework or linter is configured.
 | `LORE.md` | Worldbuilding — history, factions, locations, tone | Faction names/traits changed. Location names changed. World tone or setting changed. |
 | `UX.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. |
 | `DEVLOG.md` | Development progress log — major features only | Every session — append one line per major feature completed. |
-| `NEXT.md` | Upcoming features (A/B/C) + minor fix list | Add new planned features. Remove items when completed. |
+| `NEXT.md` | UP NEXT (coded features ready to build) + minor fix list | Promote ideas from IDEA.md. Remove items when completed. |
+| `IDEA.md` | Raw feature concepts with codes — not yet planned | New ideas captured. Move to NEXT.md when prioritized. |
 | `CLAUDE.md` | This file — dev flow, architecture, rules | New systems or patterns introduced. Architecture changes. |
 
-## Test Modes
+## Dev Harnesses
 
-Two test harnesses. Both run on the same `startLoop` — each implements `update(dt)` / `render()`.
+Two harnesses. Both run on the same `startLoop` — each implements `update(dt)` / `render()`.
 
 | URL | Mode | Purpose |
 |---|---|---|
-| `?test` | Playtest map | Full game on compact map with dev spawn controls |
+| `editor.html?map=<name>` | Editor | Full game on a named map with EditorOverlay dev controls |
 | `?designer` | Unified Designer | Browse all ships, POIs, and weapons with stats panels |
 
-### `?test` — Playtest Map
+### `editor.html` — Editor / Playtest
 
-- **Run:** `npm run dev` → `http://localhost:5173/?test`
-- **Map:** `js/data/testMap.js` — compact 8000×5000, all key features nearby
+- **Entry:** `js/editor-main.js`
+- **Maps:** `js/data/maps/` — each file exports `MAP`; pass `?map=<name>` to select
 - **Config:** `js/data/testConfig.js` — `startScrap`, `addRockets`, etc.
-- **Overlay:** magenta-bordered verification steps (bottom-right) + dev controls (top-right)
+- **Default map:** `arena` — Pale at center, six derelicts in a hex ring, clean combat sandbox
 
-**Dev controls (test mode only — shown in top-right HUD panel):**
+**Available maps:**
+
+| Param | File | Purpose |
+|---|---|---|
+| `?map=arena` (default) | `js/data/maps/arena.js` | Combat sandbox around Pale |
+| `?map=blank` | `js/data/maps/blank.js` | Empty 18000×10000 scratch space |
+| `?map=tyr` | `js/data/maps/tyr.js` | Full production map (Tyr) |
+
+**Dev spawn controls (shown in EditorOverlay):**
 - **Z**: Spawn Light Fighter (stalker) at mouse cursor
 - **X**: Spawn Armed Hauler (kiter) at mouse cursor
 - **C**: Spawn Salvage Mothership (standoff) at mouse cursor
 
-**Every development iteration**, update `js/data/testMap.js`:
-1. Add any new entities/features so they're easy to reach
-2. Update `TEST_STEPS` with verification steps for the new features
-3. Tell the user to open `?test` and follow the on-screen steps to validate
+**Every development iteration**, update the relevant map in `js/data/maps/` to include new entities/features so they're easy to reach. Tell the user to open `editor.html?map=<name>` to validate.
 
 ### `?designer` — Unified Designer
 
-- **Run:** `npm run dev:designer` → `http://localhost:5176/designer.html?designer`
 - **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
-- **Navigation:**
-  - `↑/↓` — change category (Ships / Stations / Planets / Derelicts / Environment / Weapons)
-  - `←/→` — cycle item within current category
-  - `T` — toggle auto-rotation (ships only)
-  - `R` — reset view (zoom + pan to item default)
-  - Scroll — zoom
-  - Drag — pan (non-ship categories)
-- **Deep-link:** `?designer&category=<cat>&id=<slug>` — e.g. `?designer&category=weapons&id=railgun`
-- **When working here:**
-  - Ships: edit `js/ships/**` or `js/enemies/**`. Vite HMR reloads on save.
-  - POIs: edit `js/world/**` or `js/data/map.js`.
-  - Weapons: edit `js/weapons/**`. Stats panel reads live from the weapon instance.
+- **Navigation:** `↑/↓` change category, `←/→` cycle item, `T` toggle rotation (ships), `R` reset view, scroll/drag to zoom/pan
+- **Deep-link:** `?designer&category=<cat>&id=<slug>`
 - **In scope:** `js/ships/**`, `js/enemies/**`, `js/world/**`, `js/weapons/**`, `js/ui/colors.js`
-
-### Designer Item `id` Slugs
-
-Every item in `CATEGORIES` in `js/test/designer.js` has a durable `id` — kebab-case, stable even if the display label changes. Used for URL deep-linking.
-
-- **Ships:** `onyx-tug`, `maverick-courier`, `g100-hauler`, `garrison-frigate`, `hullbreaker`, `raider`, `light-fighter`, `armed-hauler`, `salvage-mothership`, `trader-convoy`, `militia-patrol` (driven from `js/ships/registry.js`)
-- **Stations:** `kells-stop`, `the-coil`, `ashveil-anchorage` (driven from `js/world/stationRegistry.js`)
-- **Planets:** `planet-thalassa`, `planet-pale`
-- **Derelicts:** `derelict-hollow-march`
-- **Environment:** `arkship-spine`, `debris-cloud`
-- **Weapons:** `autocannon`, `railgun`, `railgun-f`, `flak-s`, `flak-l`, `lance-s`, `lance-l`, `lance-f`, `plasma-s`, `plasma-l`, `cannon`, `rocket`, `rocket-large`, `wire-msl`, `wire-msl-l`, `heat-msl`, `heat-msl-l`, `torpedo`
-- **Modules:** `onyx-drive-unit`, `chem-rocket-s`, `chem-rocket-l`, `magplasma-torch-s`, `magplasma-torch-l`, `ion-thruster`, `mod-autocannon`, `mod-lance-s`, `mod-cannon`, `mod-heat-msl`, `mod-heat-msl-l`, `h2-fuel-cell`, `fission-s`, `fission-l`, `fusion-l`, `salvaged-sensors`, `standard-sensors`, `combat-computer`, `salvage-scanner`, `long-range-sensors`
+- Item slugs are defined in `js/test/designer.js` — check there for current IDs.
 
 ## Architecture
 
@@ -94,53 +88,30 @@ Every item in `CATEGORIES` in `js/test/designer.js` has a durable `id` — kebab
 
 ### Core Systems
 
-| File | Class | Role |
-|---|---|---|
-| `js/game.js` | `GameManager` | Central orchestrator. Owns entities, camera, renderer, HUD, particle pool, game state. Drives `update(dt)` and `render()`. |
-| `js/loop.js` | — | Fixed-timestep loop (60 ticks/sec), spiral-of-death protection. |
-| `js/camera.js` | `Camera` | World↔screen transform, exponential-lerp follow, visibility culling. |
-| `js/input.js` | `InputHandler` (singleton) | Keyboard hold (`isDown`), just-pressed (`wasJustPressed`), mouse position/buttons, `mouseWorld(camera)`. Flushed each tick via `tick()`. |
-| `js/renderer.js` | `Renderer` | Clears canvas, draws parallax starfield, renders entities, then HUD/UI overlays. |
+- **`js/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, game state; drives `update(dt)` and `render()`
+- **`js/loop.js`** — fixed-timestep loop (60 ticks/sec), spiral-of-death protection
+- **`js/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
+- **`js/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
+- **`js/renderer.js` / `Renderer`** — clears canvas, draws starfield, renders entities, then HUD/UI overlays
 
-### Entity Hierarchy
+### Entity Types
 
-```
-Entity (js/entities/entity.js)               — base: x, y, vx, vy, rotation, active
-  Ship (js/entities/ship.js)                 — armor/hull health, throttle (6 levels), weapons, fuelMax, fuelEfficiency
-    OnyxClassTug (js/ships/classes/onyxTug.js)    — class template: hammerhead tug shape, defaults
-      Hullbreaker (js/ships/player/hullbreaker.js) — player variant: reduced armor, +fuel tank
-    LightFighter      (js/enemies/scavengers/lightFighter.js)      — fast stalker (Maverick Class Courier hull)
-    ArmedHauler       (js/enemies/scavengers/armedHauler.js)       — kiter with autocannon + lance (G100 Class Hauler hull)
-    SalvageMothership (js/enemies/scavengers/salvageMothership.js) — standoff, lobs missiles (Garrison Class Frigate hull)
-    TraderConvoy      (js/ships/neutral/traderConvoy.js)           — neutral hauler, travels trade lanes (G100 hull, no weapons)
-    MilitiaPatrol     (js/ships/neutral/militiaPatrol.js)          — neutral frigate, orbits The Coil (Garrison hull, no weapons)
-  Projectile  (js/entities/projectile.js) — velocity-driven, deactivates on range/hit
-  LootDrop    (js/entities/lootDrop.js)   — auto-pickup, 30s lifetime, types: scrap/fuel/commodity
-  Particle    (js/entities/particle.js)   — short-lived visual effect
-  Station     (js/world/station.js)       — hexagonal, faction-colored, dockable
-  Planet      (js/world/planet.js)        — gradient circle, name label
-  Derelict    (js/world/derelict.js)      — salvageable wreck, loot table, spark particles
-```
+`Entity` is the base class (`js/entities/entity.js`). `Ship` extends it with armor/hull/weapons/fuel. Ship subclasses override `_drawShape(ctx)` and `getBounds()`. Other entity types: `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`, `Derelict`.
 
-Ship subclasses override `_drawShape(ctx)` and `getBounds()`.
+Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, enemies in `js/enemies/`, neutrals in `js/ships/neutral/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there.
 
 ### Key Patterns
 
-- **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically. Inactive entities purged each tick.
-- **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`.
-- **Enemy AI** — `updateRaiderAI()` in `js/ai/raiderAI.js`. Enemies have a `homePosition`, patrol nearby, aggro at 1400u, deaggro at 2000u. Behaviors: `stalker` (LightFighter), `kiter` (ArmedHauler), `standoff` (SalvageMothership). AI distance constants live in `RAIDER_AI` in `js/data/stats.js`.
-- **Neutral AI** — `updateNeutralAI()` in `js/ai/neutralAI.js`. Dispatches on `ship.neutralBehavior`. `'trader'`: state machine between `traveling`/`waiting`, follows `_tradeRouteA`/`_tradeRouteB`. `'militia'`: orbit loop using `_orbitCenter`/`_orbitRadius`/`_orbitAngle`/`_orbitSpeed`. Tuning in `NEUTRAL_AI` in `js/data/stats.js`. Neutral ships tracked in `GameManager.neutralShips[]`, drop no loot on death.
-- **Weapons** — component objects added via `addWeapon()`. Two types:
-  - `Autocannon` (`isAutoFire = false`) — fires on LMB toward mouse cursor
-- **Particle pool** — `js/systems/particlePool.js`, 200 slots, presets: `explosion()`, `engineTrail()`.
-- **Map data** — `js/data/map.js` defines stations, planets, derelicts, raider spawns. `js/data/testMap.js` is the compact playtesting variant.
-- **Centralized stats** — `js/data/stats.js` is the single source of truth for all base stats and tuning knobs. Each ship/weapon file defines its own multiplier constants (e.g. `HULL_MULT`, `SPEED_MULT`) and computes final values as `BASE_* × multiplier`. `SPEED_FACTOR` and `PROJECTILE_SPEED_FACTOR` are global pacing knobs. Never hardcode raw stat numbers in ship/weapon constructors — define a multiplier instead.
-- **Ship registry** — `js/ships/registry.js` is the single import point for all ships. `game.js` and `designer.js` both use it. To add a new ship: create the file, add one entry to `SHIP_REGISTRY`. `BASE_FUEL_MAX` and `BASE_FUEL_EFFICIENCY` are per-ship tank/drain tuning knobs on `ship.fuelMax` / `ship.fuelEfficiency`. `game.fuelMax` is set from `player.fuelMax` on init.
-- **UI overlays** — drawn on canvas, handle their own input. Docking sets `isDocked = true`, skipping the simulation loop.
-- **Color palette** — `js/ui/colors.js` exports all color constants. Never use inline hex strings.
-- **Economy** — `game.scrap` is the sole currency (no credits). `game.fuel` / `game.fuelMax` drive movement. Trade, repairs, and refueling all cost scrap.
-- **Field repair** — press R to toggle armor repair when stopped. 1.5 armor/sec, 1 scrap per armor point. Auto-cancels when full, out of scrap, or ship moves. Press R again to cancel manually.
-- **Salvage state machine** — `isSalvaging`, `salvageProgress`, `salvageTarget` on `GameManager`. Player frozen during salvage; E or Esc cancels.
+- **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically; inactive purged each tick
+- **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`
+- **Raider AI** — `updateRaiderAI()` in `js/ai/raiderAI.js`; home position + patrol; aggro/deaggro range; behaviors: stalker, kiter, standoff, lurker, flee
+- **Neutral AI** — `updateNeutralAI()` in `js/ai/neutralAI.js`; dispatches on `ship.neutralBehavior` ('trader' or 'militia')
+- **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
+- **Particle pool** — `js/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
+- **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
+- **Centralized stats** — `js/data/stats.js` is the single source of truth for all base stats. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
+- **UI overlays** — drawn on canvas, handle their own input; docking sets `isDocked = true`, skipping the simulation loop
+- **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
 
 ### Coordinate System
 
@@ -153,7 +124,7 @@ Ship subclasses override `_drawShape(ctx)` and `getBounds()`.
 - **A/D or ←/→**: Rotate (continuous while held)
 - **LMB or Space**: Fire primary weapon toward mouse cursor
 - **RMB**: Fire secondary weapon (missiles/torpedoes) toward mouse cursor
-- **R**: Toggle field armor repair (must be stopped; 1.5 armor/sec, 1 scrap/pt)
+- **R**: Toggle field armor/module repair (must be stopped)
 - **E**: Dock at nearby station / begin salvage on nearby derelict
 - **I**: Toggle Ship Status screen (paper doll, modules, stats, cargo)
 - **Esc**: Cancel salvage / close station screen / close ship screen
@@ -171,8 +142,9 @@ Never use inline hex strings anywhere in the codebase. Import named constants fr
 - Visual/UI changed → `UX.md`
 - Lore/names changed → `LORE.md`
 - Major feature completed → append one line to `DEVLOG.md`
-- Feature planned or completed → update `NEXT.md`
+- New idea → add to `IDEA.md` with next available code
+- Feature ready to build → move from `IDEA.md` to `NEXT.md`
 
 ### Commits: Log to DEVLOG.md
-Format: `YYYY-MMM-DD-HHMM: Feature name (one-line description)`
+Format: `CODE. YYYY-MMM-DD-HHMM: Feature name (one-line description)`
 Major features only — no tuning passes, no small fixes.
