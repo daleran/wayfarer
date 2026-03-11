@@ -92,14 +92,14 @@ export class StationScreen {
     this._drawCornerBrackets(ctx, px, py, panelW, panelH, CYAN);
 
     // Station name header
-    ctx.font = 'bold 25px monospace';
+    ctx.font = 'bold 15px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = CYAN;
     ctx.fillText(this.station.name, W / 2, py + 28);
 
     // Faction accent marker
-    ctx.font = '14px monospace';
+    ctx.font = '13px monospace';
     ctx.fillStyle = accent;
     ctx.fillText(`[ ${this.station.faction} ]`, W / 2, py + 58);
 
@@ -109,7 +109,7 @@ export class StationScreen {
       const level = game.reputation.getLevel(repFaction);
       const standing = game.reputation.getStanding(repFaction);
       const sign = standing >= 0 ? '+' : '';
-      ctx.font = '12px monospace';
+      ctx.font = '13px monospace';
       ctx.fillStyle = standingColor(level);
       ctx.fillText(`${level.toUpperCase()}  [${sign}${standing}]`, W / 2, py + 76);
     }
@@ -140,13 +140,13 @@ export class StationScreen {
     const closeBtnX = px + 50;
     const closeBtnY = py + panelH - 75;
     const closeBtnW = panelW - 100;
-    const closeBtnH = 50;
+    const closeBtnH = 30;
 
     ctx.strokeStyle = DIM_OUTLINE;
     ctx.lineWidth = 1;
     ctx.strokeRect(closeBtnX, closeBtnY, closeBtnW, closeBtnH);
 
-    ctx.font = '19px monospace';
+    ctx.font = '11px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = DIM_TEXT;
@@ -195,18 +195,18 @@ export class StationScreen {
       ...(hasBounties ? [{ id: 'bounties', label: 'Bounties' }] : []),
       ...(haslore ? [{ id: 'intel', label: 'Intel' }] : []),
     ];
-    const tabW = 110;
-    const tabH = 30;
+    const tabW = 90;
+    const tabH = 18;
     const tabY = py + 106;
     const startX = px + 35;
 
     this._tabRects = {};
-    ctx.font = '18px monospace';
+    ctx.font = '11px monospace';
     ctx.textBaseline = 'middle';
 
     for (let i = 0; i < tabs.length; i++) {
       const tab = tabs[i];
-      const tx = startX + i * (tabW + 20);
+      const tx = startX + i * (tabW + 12);
       const active = this._activeTab === tab.id;
 
       this._tabRects[tab.id] = { x: tx, y: tabY, w: tabW, h: tabH };
@@ -230,7 +230,7 @@ export class StationScreen {
     const contentY = py + 151;
 
     // Credits readout
-    ctx.font = '19px monospace';
+    ctx.font = '11px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = AMBER;
@@ -244,7 +244,7 @@ export class StationScreen {
     const isAllied = game.reputation?.isAllied(this.station.reputationFaction) ?? false;
     const discount = isAllied ? (1 - REPUTATION.DISCOUNT_RATE) : 1;
     if (isAllied) {
-      ctx.font = '12px monospace';
+      ctx.font = '13px monospace';
       ctx.textAlign = 'right';
       ctx.fillStyle = CYAN;
       ctx.fillText('ALLIED — 15% discount', px + panelW - 45, contentY + 2);
@@ -259,13 +259,13 @@ export class StationScreen {
       const btnX = px + 45;
       const btnY = btnYOffset;
       const btnW = panelW - 90;
-      const btnH = 50;
+      const btnH = 30;
 
       ctx.strokeStyle = canAfford ? GREEN : VERY_DIM;
       ctx.lineWidth = 1;
       ctx.strokeRect(btnX, btnY, btnW, btnH);
 
-      ctx.font = '19px monospace';
+      ctx.font = '11px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = canAfford ? GREEN : DIM_TEXT;
@@ -283,7 +283,7 @@ export class StationScreen {
       const barX = px + 45;
       const barY = btnYOffset;
       const barW = panelW - 90;
-      const barH = 50;
+      const barH = 30;
 
       ctx.strokeStyle = CYAN;
       ctx.lineWidth = 1;
@@ -293,7 +293,7 @@ export class StationScreen {
       ctx.fillStyle = CYAN;
       ctx.fillRect(barX + 2, barY + 2, (barW - 4) * ratio, barH - 4);
 
-      ctx.font = '16px monospace';
+      ctx.font = '10px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = WHITE;
@@ -306,13 +306,13 @@ export class StationScreen {
       const btnX = px + 45;
       const btnY = btnYOffset;
       const btnW = panelW - 90;
-      const btnH = 50;
+      const btnH = 30;
 
       ctx.strokeStyle = canAfford ? CYAN : VERY_DIM;
       ctx.lineWidth = 1;
       ctx.strokeRect(btnX, btnY, btnW, btnH);
 
-      ctx.font = '19px monospace';
+      ctx.font = '11px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = canAfford ? CYAN : DIM_TEXT;
@@ -322,12 +322,12 @@ export class StationScreen {
       btnYOffset += btnH + 15;
     } else {
       this._repairBtn = null;
-      ctx.font = '19px monospace';
+      ctx.font = '11px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = GREEN;
       ctx.fillText('Hull at full integrity', px + panelW / 2, btnYOffset);
-      btnYOffset += 45;
+      btnYOffset += 27;
     }
 
     // Refuel button
@@ -338,13 +338,13 @@ export class StationScreen {
       const btnX = px + 45;
       const btnY = btnYOffset;
       const btnW = panelW - 90;
-      const btnH = 50;
+      const btnH = 30;
 
       ctx.strokeStyle = canAfford ? AMBER : VERY_DIM;
       ctx.lineWidth = 1;
       ctx.strokeRect(btnX, btnY, btnW, btnH);
 
-      ctx.font = '19px monospace';
+      ctx.font = '11px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = canAfford ? AMBER : DIM_TEXT;
@@ -354,12 +354,12 @@ export class StationScreen {
       btnYOffset += btnH + 15;
     } else {
       this._refuelBtn = null;
-      ctx.font = '19px monospace';
+      ctx.font = '11px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = GREEN;
       ctx.fillText('Fuel tanks full', px + panelW / 2, btnYOffset);
-      btnYOffset += 45;
+      btnYOffset += 27;
     }
 
     // Reactor overhaul — only at stations with canOverhaulReactor
@@ -382,14 +382,14 @@ export class StationScreen {
           const btnX = px + 45;
           const btnY = btnYOffset;
           const btnW = panelW - 90;
-          const btnH = 50;
+          const btnH = 30;
 
           const labelColor = mod.isOverdue ? MAGENTA : (canAfford ? CYAN : DIM_TEXT);
           ctx.strokeStyle = mod.isOverdue ? MAGENTA : (canAfford ? CYAN : VERY_DIM);
           ctx.lineWidth = 1;
           ctx.strokeRect(btnX, btnY, btnW, btnH);
 
-          ctx.font = '17px monospace';
+          ctx.font = '10px monospace';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = labelColor;
@@ -414,7 +414,7 @@ export class StationScreen {
     const cargoCap = game.totalCargoCapacity;
 
     // Scrap & cargo header
-    ctx.font = '18px monospace';
+    ctx.font = '11px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = AMBER;
@@ -423,7 +423,7 @@ export class StationScreen {
     ctx.fillText(`Cargo: ${cargoUsed}/${cargoCap}`, px + 338, contentY);
 
     // Shift hint
-    ctx.font = '14px monospace';
+    ctx.font = '13px monospace';
     ctx.fillStyle = DIM_TEXT;
     ctx.fillText('Hold Shift to trade x10', px + 45, contentY + 24);
 
@@ -432,7 +432,7 @@ export class StationScreen {
 
     // Column headers
     const headerY = contentY + 54;
-    ctx.font = '15px monospace';
+    ctx.font = '9px monospace';
     ctx.fillStyle = DIM_TEXT;
     ctx.textAlign = 'left';
     ctx.fillText('ITEM', px + 45, headerY);
@@ -440,7 +440,7 @@ export class StationScreen {
     ctx.fillText('QTY', px + 300, headerY);
 
     // Commodity rows (scrap is the currency, not traded here)
-    const rowH = 35;
+    const rowH = 21;
     const commodityIds = Object.keys(COMMODITIES).filter(id => {
       const supply = this.station.commodities?.[id] ?? 'none';
       const qty = game.cargo[id] ?? 0;
@@ -458,7 +458,7 @@ export class StationScreen {
       const rowY = startRowY + i * rowH;
 
       // Item name
-      ctx.font = '18px monospace';
+      ctx.font = '11px monospace';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = CYAN;
@@ -524,7 +524,7 @@ export class StationScreen {
     ctx.rect(px, contentY, panelW, clipH);
     ctx.clip();
 
-    ctx.font = '14px monospace';
+    ctx.font = '13px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
@@ -573,7 +573,7 @@ export class StationScreen {
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, w, h);
 
-    ctx.font = '15px monospace';
+    ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = enabled ? CYAN : DIM_TEXT;
@@ -724,7 +724,7 @@ export class StationScreen {
     const contentX = px + 45;
     const contentW = panelW - 90;
     const contentY = py + 151;
-    const scrollStartY = contentY + 30;
+    const scrollStartY = contentY + 45;
     const closeAreaH = 90;
     const clipH = panelH - (scrollStartY - py) - closeAreaH;
     this._bountyButtons = [];
@@ -732,7 +732,7 @@ export class StationScreen {
     this._bountyClipBottom = scrollStartY + clipH;
 
     // Scrap header
-    ctx.font = '19px monospace';
+    ctx.font = '11px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = AMBER;
@@ -748,7 +748,7 @@ export class StationScreen {
     // ── Available ──────────────────────────────────────────────────────────
     const available = this.station.bounties ?? [];
     if (available.length > 0) {
-      ctx.font = '12px monospace';
+      ctx.font = '13px monospace';
       ctx.fillStyle = DIM_TEXT;
       ctx.textBaseline = 'top';
       ctx.textAlign = 'left';
@@ -761,11 +761,11 @@ export class StationScreen {
         ctx.lineWidth = 1;
         ctx.strokeRect(contentX, y, contentW, cardH);
 
-        ctx.font = '15px monospace';
+        ctx.font = '9px monospace';
         ctx.fillStyle = CYAN;
         ctx.textBaseline = 'top';
         ctx.textAlign = 'left';
-        ctx.fillText(contract.title, contentX + 10, y + 8);
+        ctx.fillText(contract.title, contentX + 10, y + 10);
 
         ctx.font = '13px monospace';
         ctx.fillStyle = AMBER;
@@ -775,12 +775,12 @@ export class StationScreen {
         ctx.fillText(`Reward: ${contract.reward} scrap`, contentX + 10, y + 46);
 
         // Accept button
-        const btnW = 80; const btnH = 28;
+        const btnW = 80; const btnH = 24;
         const btnX = contentX + contentW - btnW - 10;
         const btnY = y + (cardH - btnH) / 2;
         ctx.strokeStyle = CYAN;
         ctx.strokeRect(btnX, btnY, btnW, btnH);
-        ctx.font = '14px monospace';
+        ctx.font = '13px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = CYAN;
@@ -800,7 +800,7 @@ export class StationScreen {
     // ── Your contracts ─────────────────────────────────────────────────────
     const mine = (game.activeBounties ?? []).filter(b => b.stationId === this.station.id);
     if (mine.length > 0) {
-      ctx.font = '12px monospace';
+      ctx.font = '13px monospace';
       ctx.fillStyle = DIM_TEXT;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
@@ -808,7 +808,7 @@ export class StationScreen {
       y += 20;
 
       for (const bounty of mine) {
-        const cardH = 56;
+        const cardH = 48;
         const borderColor = bounty.status === 'completed' ? GREEN
                           : bounty.status === 'expired'   ? RED
                           : AMBER;
@@ -818,7 +818,7 @@ export class StationScreen {
         ctx.strokeRect(contentX, y, contentW, cardH);
         ctx.globalAlpha = 1;
 
-        ctx.font = '14px monospace';
+        ctx.font = '13px monospace';
         ctx.fillStyle = CYAN;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
@@ -840,7 +840,7 @@ export class StationScreen {
         }
         ctx.font = '13px monospace';
         ctx.fillStyle = statusColor;
-        ctx.fillText(statusText, contentX + 10, y + 32);
+        ctx.fillText(statusText, contentX + 10, y + 28);
 
         y += cardH + 8;
       }
@@ -870,9 +870,9 @@ export class StationScreen {
   _renderRelationsTab(ctx, px, py, panelW, panelH, game, accent) {
     const contentX = px + 45;
     const contentY = py + 151;
-    const rowH = 38;
+    const rowH = 23;
 
-    ctx.font = '12px monospace';
+    ctx.font = '13px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
@@ -887,7 +887,7 @@ export class StationScreen {
       const rowY = contentY + 22 + i * rowH;
       const sign = standing >= 0 ? '+' : '';
 
-      ctx.font = '16px monospace';
+      ctx.font = '10px monospace';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = WHITE;

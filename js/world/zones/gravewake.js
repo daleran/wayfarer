@@ -88,7 +88,8 @@ export const DERELICT_PLACEMENTS = [
 
 export const GRAVEWAKE_ZONE = {
   id: 'gravewake',
-  bounds: { center: { x: 10000, y: 5000 }, radius: 9500 },
+  center: { x: 10000, y: 5000 },
+  radius: 9500,
 
   // Stations — descriptor objects used by createStationEntity
   stations: STATION_PLACEMENTS.map(p => ({ ...p.entity, x: p.x, y: p.y })),
