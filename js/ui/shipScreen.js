@@ -743,7 +743,7 @@ export class ShipScreen {
       if (w.blastRadius) lines.push({ label: 'BLAST',    value: `${w.blastRadius} u radius`,         color: AMBER });
       if (w.maxRange && w.maxRange < 50000)
                          lines.push({ label: 'RANGE',    value: `${Math.round(w.maxRange)} u`,       color: DIM_TEXT });
-      if (w.ammoMax)     lines.push({ label: 'AMMO',     value: `${w.ammo} / ${w.ammoMax}`,          color: AMBER });
+      if (w.magSize)     lines.push({ label: 'AMMO',     value: `${w.ammo} / ${w.magSize}`,          color: AMBER });
       const cd = w.cooldownMax ?? 0;
       if (cd)            lines.push({ label: 'COOLDOWN', value: `${cd.toFixed(2)} s`,                color: DIM_TEXT });
     }

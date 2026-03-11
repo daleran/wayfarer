@@ -1,0 +1,169 @@
+# New Ship — Full Creation Workflow
+
+The user wants to add a new ship to Wayfarer. Follow every step in order. Do not skip the docs update at the end.
+
+## Step 1 — Gather requirements
+
+Ask the user (or infer from their description) for:
+- **Display name** — e.g. "Sentinel Class Corvette"
+- **Ship type slug** — kebab-case, e.g. `sentinel-corvette` (used as `shipType` field)
+- **Role** — player ship, enemy, or neutral (trader/militia)
+- **Base class** — must extend one of:
+  - `MaverickCourier` (`js/ships/classes/maverickCourier.js`) — fast, light, personal craft
+  - `G100ClassHauler` (`js/ships/classes/g100Hauler.js`) — boxy medium hauler
+  - `GarrisonFrigate` (`js/ships/classes/garrisonFrigate.js`) — H-beam heavy frigate
+  - `OnyxClassTug` (`js/ships/classes/onyxTug.js`) — wide hammerhead tug/capital
+  - Or create a new base class if the hull profile doesn't fit any existing class
+- **Visual identity** — hull shape description (used in `_drawShape`)
+- **Weapons** — pick from `shipModule.js` exports (see `new-enemy.md` for full list)
+- **Flavor text** — one paragraph tactical/lore description
+
+## Step 2 — Decide on stats
+
+All stats use the multiplier pattern. Import from `js/data/stats.js`:
+```js
+import {
+  BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
+  BASE_HULL, BASE_ARMOR, BASE_FUEL
+} from '../../data/stats.js';
+```
+
+Define multiplier constants at the top of the file:
+```js
+const SPEED_MULT = 1.0;   // comment: expected u/s
+const ACCEL_MULT = 1.0;
+const TURN_MULT  = 1.0;
+const HULL_MULT  = 1.0;   // comment: expected hp
+const FUEL_MULT  = 1.0;   // comment: expected fuel units
+const FUEL_EFF   = 1.0;   // drain rate multiplier (1.0 = standard)
+```
+
+Armor arc multipliers (base = 100 per arc):
+```js
+const ARMOR_FRONT = 1.0;
+const ARMOR_SIDE  = 0.8;
+const ARMOR_AFT   = 0.6;
+```
+
+**Balance guidelines by role:**
+- Light/fast (Maverick base): SPEED 1.0–1.4, HULL 0.5–0.8, thin armor
+- Haulers (G100 base): SPEED 0.5–0.8, HULL 1.2–2.0, moderate armor
+- Frigates (Garrison base): SPEED 0.35–0.55, HULL 2.0–3.5, heavy front
+- Capitals/tugs (Onyx base): SPEED 0.25–0.45, HULL 3.0–6.0, heavy all-round
+
+## Step 3 — Create the ship file
+
+**File locations:**
+- Base/template ships → `js/ships/classes/<name>.js`
+- Player variants → `js/ships/player/<name>.js`
+- Enemy variants → `js/enemies/<faction>/<name>.js`
+- Neutral traffic → `js/ships/neutral/<name>.js`
+
+Template for a new base class:
+```js
+import { Ship } from '../ship.js';   // adjust path for depth
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/stats.js';
+
+const SPEED_MULT = 1.0;
+const ACCEL_MULT = 1.0;
+const TURN_MULT  = 1.0;
+const HULL_MULT  = 1.0;
+const ARMOR_FRONT = 1.0;
+const ARMOR_SIDE  = 0.8;
+const ARMOR_AFT   = 0.6;
+
+export class SentinelCorvette extends Ship {
+  constructor(x, y) {
+    super(x, y);
+
+    this.shipType    = 'sentinel-corvette';
+    this.displayName = 'Sentinel Class Corvette';
+
+    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
+    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
+    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
+
+    this.hullMax     = BASE_HULL * HULL_MULT;
+    this.hullCurrent = this.hullMax;
+
+    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
+
+    // Optional: fuel tank
+    // this.fuelMax        = BASE_FUEL * FUEL_MULT;
+    // this.fuelEfficiency = FUEL_EFF;
+    // this.fuelCurrent    = this.fuelMax;
+
+    // Module slots (player/enemy only — not bare base classes)
+    // this.moduleSlots = [new WeaponModule()];
+    // this._applyModules();
+  }
+
+  _drawShape(ctx) {
+    // Draw hull centered at (0,0), pointing up (rotation 0 = north)
+    // Use colors from js/ui/colors.js — NEVER inline hex
+    // ctx is pre-translated to ship position and rotated
+  }
+
+  getBounds() {
+    // Return { x: this.x, y: this.y, radius: NN } — used for collision/visibility
+    return { x: this.x, y: this.y, radius: 20 };
+  }
+}
+```
+
+For player ships, also add:
+```js
+this.flavorText = 'One paragraph. What the ship is, who built it, its role, strengths, weaknesses.';
+```
+
+## Step 4 — Register in ship registry
+
+Open `js/ships/registry.js`. Add:
+1. An import at the top
+2. An entry in `SHIP_REGISTRY`:
+```js
+{
+  id: 'sentinel-corvette',
+  label: 'Sentinel Class Corvette',
+  create: (x, y) => new SentinelCorvette(x, y),
+  designerZoom: 0.4,
+  faction: 'settlements',   // or 'scavengers', 'concord', etc.
+  role: 'player',           // 'player', 'enemy', or 'neutral'
+}
+```
+
+## Step 5 — Add designer entry
+
+Open `js/test/designer.js`. Add to the correct category (Ships, Enemies, or Neutrals):
+```js
+{
+  id: 'sentinel-corvette',
+  label: 'Sentinel Class Corvette',
+  create: (x, y) => new SentinelCorvette(x, y),
+  designerZoom: 0.4,
+  statsPanel: (ship) => [
+    { label: 'HULL',  value: ship.hullMax },
+    { label: 'SPEED', value: ship.speedMax.toFixed(1) },
+    { label: 'TURN',  value: ship.turnRate.toFixed(2) },
+  ],
+}
+```
+
+Verify: `?designer&category=Ships&id=sentinel-corvette`
+
+## Step 6 — Add to arena map
+
+Open `js/data/maps/arena.js`. For enemy/neutral ships, add a spawn entry to the relevant array (`raiders[]`, `tradeConvoys[]`, `militiaPatrols[]`). Place it close to the player start for easy testing.
+
+## Step 7 — Update MECHANICS.md
+
+Find the relevant section (Player Ships, Enemies, or Neutral Traffic). Add:
+- Ship name, file path, base class
+- Key stats (SPEED_MULT, HULL_MULT, weapons if applicable)
+- Role summary (one sentence)
+
+## Step 8 — Done
+
+Tell the user to:
+1. Open `?designer&category=Ships&id=<slug>` to verify the visual and stats panel
+2. Open `?test` and follow TEST_STEPS to verify in-game behavior

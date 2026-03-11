@@ -36,12 +36,14 @@ export function updateRaiderAI(raider, player, entities, dt) {
   }
 
   if (!raider._aggro) {
+    raider.aiState = 'patrol';
     _patrol(raider, dt);
     return;
   }
 
   // Flee at low hull regardless of behavior type
   if (raider.hullCurrent / raider.hullMax < FLEE_HULL_RATIO) {
+    raider.aiState = 'flee';
     const fleeAngle = Math.atan2(-dx, dy);
     const diff = angleDiff(raider.rotation, fleeAngle);
     raider.rotationInput = Math.sign(diff);
@@ -49,6 +51,7 @@ export function updateRaiderAI(raider, player, entities, dt) {
     return;
   }
 
+  raider.aiState = 'aggro';
   switch (raider.behaviorType) {
     case 'interceptor': _doInterceptor(raider, player, entities, dist); break;
     case 'kiter':       _doKiter(raider, player, entities, dist);       break;
@@ -115,12 +118,13 @@ function _doKiter(raider, player, entities, dist) {
   const dy = player.y - raider.y;
 
   if (dist < KITE_RANGE) {
-    // Back away
+    raider.aiState = 'kite-back';
     const fleeAngle = Math.atan2(-dx, dy);
     const diff = angleDiff(raider.rotation, fleeAngle);
     raider.rotationInput = Math.sign(diff);
     raider.throttleLevel = 4;
   } else {
+    raider.aiState = 'kite-orbit';
     // Slow orbit at kite distance
     const angleToPlayer = Math.atan2(dx, -dy);
     const orbitAngle = angleToPlayer + Math.PI / 2;
@@ -180,12 +184,13 @@ function _doStandoff(raider, player, entities, dist) {
   const dy = player.y - raider.y;
 
   if (dist < STANDOFF_RANGE - 100) {
-    // Too close — back away (face away from player and thrust)
+    raider.aiState = 'standoff-back';
     const fleeAngle = Math.atan2(-dx, dy);
     const diff = angleDiff(raider.rotation, fleeAngle);
     raider.rotationInput = Math.sign(diff);
     raider.throttleLevel = 4;
   } else {
+    raider.aiState = 'standoff-hold';
     // At range or approaching — face player
     const angleToPlayer = Math.atan2(dx, -dy);
     const diff = angleDiff(raider.rotation, angleToPlayer);
@@ -203,6 +208,7 @@ function _doStandoff(raider, player, entities, dist) {
 function _doLurker(raider, player, entities, dt) {
   // Initialise lurker state on first call
   if (raider._lurkerState === undefined) raider._lurkerState = 'hiding';
+  raider.aiState = `lurk-${raider._lurkerState}`;
 
   const dxP = player.x - raider.x;
   const dyP = player.y - raider.y;

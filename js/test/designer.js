@@ -4,8 +4,8 @@
 
 import { input } from '../input.js';
 
-// Ships — imported from central registry
-import { SHIP_REGISTRY } from '../ships/registry.js';
+// Ships and NPCs — imported from central registry
+import { SHIP_REGISTRY, NPC_REGISTRY } from '../ships/registry.js';
 
 // Stations — imported from central registry
 import { STATION_REGISTRY } from '../world/stationRegistry.js';
@@ -51,16 +51,29 @@ import {
 // Reorders the flat registry so each variant follows its parent class.
 
 function _buildShipItems() {
-  const flat = SHIP_REGISTRY.map(s => ({
-    id:          s.id,
-    label:       s.label,
-    file:        s.file,
-    type:        'ship',
-    zoom:        7,
-    parentClass: s.parentClass ?? null,
-    isVariant:   false,
-    create:      () => s.create(0, 0),
-  }));
+  // Hulls first (no parent), then NPCs grouped under their hull via shipClass.
+  const flat = [
+    ...SHIP_REGISTRY.map(s => ({
+      id:          s.id,
+      label:       s.label,
+      file:        s.file,
+      type:        'ship',
+      zoom:        7,
+      parentClass: null,
+      isVariant:   false,
+      create:      () => s.create(0, 0),
+    })),
+    ...NPC_REGISTRY.map(n => ({
+      id:          n.id,
+      label:       n.label,
+      file:        n.file,
+      type:        'ship',
+      zoom:        7,
+      parentClass: n.shipClass,
+      isVariant:   false,
+      create:      () => n.create(0, 0),
+    })),
+  ];
 
   const result  = [];
   const added   = new Set();
@@ -1318,7 +1331,7 @@ export class Designer {
         { label: 'RANGE u',   get: (_, e) => v(e.maxRange != null ? Math.round(e.maxRange) : '—', e.maxRange != null ? 'cmp-amber' : 'cmp-dim') },
         { label: 'PROJ u/s',  get: (_, e) => v(e.projectileSpeed != null ? Math.round(e.projectileSpeed) : '—', e.projectileSpeed != null ? 'cmp-amber' : 'cmp-dim') },
         { label: 'BLAST R',   get: (_, e) => v(e.blastRadius ?? '—',          e.blastRadius != null ? 'cmp-mag' : 'cmp-dim') },
-        { label: 'AMMO',      get: (_, e) => v(e.ammoMax ?? '—',              e.ammoMax != null ? 'cmp-white' : 'cmp-dim') },
+        { label: 'AMMO',      get: (_, e) => v(e.magSize ?? '—',              e.magSize != null ? 'cmp-white' : 'cmp-dim') },
         { label: 'FLAGS',     get: (d)    => v((d.flags ?? []).join(' '),      'cmp-dim') },
       ];
     }

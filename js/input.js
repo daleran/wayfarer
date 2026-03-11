@@ -17,7 +17,7 @@ class InputHandler {
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
       // Prevent browser default for keys the game uses
-      if (['arrowleft','arrowright','arrowup','arrowdown',' '].includes(key)) {
+      if (['arrowleft','arrowright','arrowup','arrowdown',' ','alt','-','=','backspace','[',']','{','}'].includes(key)) {
         e.preventDefault();
       }
       if (!this.keysDown.has(key)) {

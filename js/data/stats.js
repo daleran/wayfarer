@@ -30,6 +30,12 @@ export const BASE_DAMAGE = 19;         // armor damage per hit
 export const BASE_HULL_DAMAGE = 12;    // hull bleed per hit (after armor)
 export const BASE_COOLDOWN = 0.9;      // seconds between shots (standard single-shot weapon)
 
+// --- Magazine & reload ---
+export const AUTOCANNON_MAG_SIZE    = 60;   // rounds per magazine
+export const AUTOCANNON_RELOAD_TIME = 10.0; // seconds to reload a full magazine
+export const ROCKET_MAG_SIZE        = 2;    // rockets in launcher (2 tubes)
+export const ROCKET_RELOAD_TIME     = 13.0; // seconds to reload both tubes
+
 // --- Fuel & economy ---
 export const DEFAULT_SCRAP = 20;
 export const DEFAULT_FUEL = 100;

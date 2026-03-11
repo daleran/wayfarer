@@ -2,7 +2,7 @@ import { Camera } from './camera.js';
 import { Renderer } from './renderer.js';
 import { HUD } from './hud.js';
 import { input } from './input.js';
-import { MAP } from './data/map.js';
+import { MAP } from './data/maps/tyr.js';
 import { createHullbreaker } from './ships/player/hullbreaker.js';
 import { RAIDER_REGISTRY } from './enemies/raiderRegistry.js';
 import { createGraveClanAmbusher } from './enemies/scavengers/graveClanAmbusher.js';
@@ -76,6 +76,7 @@ export class GameManager {
     this.modules = [];  // uninstalled ShipModule instances
     this.weapons = [];  // unequipped weapon instances from loot
     this.ammo    = {};  // { autocannon: N, rocket: N, ... } reserve pool
+    this.isPaused = false;
     this.isDocked = false;
     this.stationScreen = null;
     this.shipScreen = null;
@@ -158,6 +159,11 @@ export class GameManager {
       this.player.addWeapon(new MissileWire('large'));
       this.player.addWeapon(new MissileHeat('small'));
       this.player.addWeapon(new Torpedo());
+
+      // Seed cargo ammo reserves for test mode
+      this.ammo['autocannon'] = 300;
+      this.ammo['rocket']     = 20;
+      this.ammo['missile']    = 12;
     }
     // Normal mode: weapons come from installed modules (set up in ship constructor)
 
@@ -261,6 +267,9 @@ export class GameManager {
 
     if (this.isSalvaging) this._updateSalvage(dt);
 
+    // Pause toggle — space bar; checked before processInput so fire is skipped
+    if (input.wasJustPressed(' ')) this.isPaused = !this.isPaused;
+
     this._processInput(dt);
 
     // Ship screen pauses simulation (but still ticks its own state)
@@ -269,6 +278,8 @@ export class GameManager {
       this.shipScreen.handleInput(input, this);
       return;
     }
+
+    if (this.isPaused) return;
 
     this._updateModules(dt);
     this._consumeFuel(dt);
@@ -317,6 +328,7 @@ export class GameManager {
     }
 
     if (this.isRepairing) this._updateRepair(dt);
+    this._updateWeaponReloads(dt);
 
     // Update guided projectile targets
     this._updateGuidedProjectiles();
@@ -404,6 +416,39 @@ export class GameManager {
 
   _startRepair() { this.isRepairing = true; this._repairAccum = 0; this._moduleRepairAccum = 0; }
   _cancelRepair() { this.isRepairing = false; this._repairAccum = 0; this._moduleRepairAccum = 0; }
+
+  // Weapon magazine reload — counts down timers and pulls rounds from cargo when complete
+  _updateWeaponReloads(dt) {
+    if (!this.player) return;
+    for (const w of this.player.weapons) {
+      if (!(w._reloadTimer > 0)) continue;
+      w._reloadTimer -= dt;
+      if (w._reloadTimer <= 0) {
+        w._reloadTimer = 0;
+        if (w.ammoType && w.magSize !== undefined) {
+          const available = this.ammo[w.ammoType] ?? 0;
+          if (available > 0) {
+            const needed = w.magSize - w.ammo;
+            const take   = Math.min(needed, available);
+            w.ammo += take;
+            this.ammo[w.ammoType] -= take;
+          }
+        }
+      }
+    }
+  }
+
+  // Manually trigger reload for all weapons that are not already reloading and have cargo supply
+  _manualReloadWeapons() {
+    if (!this.player) return;
+    for (const w of this.player.weapons) {
+      if (w.ammoType === undefined || w.magSize === undefined) continue;
+      if (w._reloadTimer > 0) continue;
+      if (w.ammo >= w.magSize) continue;
+      if ((this.ammo[w.ammoType] ?? 0) <= 0) continue;
+      w._reloadTimer = w.reloadTime;
+    }
+  }
 
   _hasModulesToRepair() {
     const slots = this.player?.moduleSlots;
@@ -527,11 +572,6 @@ export class GameManager {
     if (input.wasJustPressed('x')) spawnEnemy(createArmedHauler);
     if (input.wasJustPressed('c')) spawnEnemy(createSalvageMothership);
 
-    // Weapon cycling
-    if (input.wasJustPressed('1')) this.player.cyclePrimary(-1);
-    if (input.wasJustPressed('2')) this.player.cyclePrimary(1);
-    if (input.wasJustPressed('3')) this.player.cycleSecondary(-1);
-    if (input.wasJustPressed('4')) this.player.cycleSecondary(1);
   }
 
   _processInput(dt) {
@@ -566,6 +606,9 @@ export class GameManager {
       return;
     }
 
+    // R always triggers weapon reload (regardless of movement/repair state)
+    if (input.wasJustPressed('r')) this._manualReloadWeapons();
+
     if (this.isRepairing) {
       const stillValid = p.throttleLevel === 0 && (p.armorCurrent < p.armorMax || this._hasModulesToRepair()) && this.scrap > 0;
       if (!stillValid || input.wasJustPressed('escape')) {
@@ -590,14 +633,16 @@ export class GameManager {
     if (input.isDown('a') || input.isDown('arrowleft'))  p.rotationInput = -1;
     if (input.isDown('d') || input.isDown('arrowright')) p.rotationInput = 1;
 
-    // LMB / space fires active primary (onlyActive=true for player)
-    if (input.mouseButtons.left || input.isDown(' ')) {
-      p.fireWeapons(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
-    }
+    if (!this.isPaused) {
+      // LMB / space fires active primary (onlyActive=true for player)
+      if (input.mouseButtons.left || input.isDown(' ')) {
+        p.fireWeapons(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
+      }
 
-    // RMB fires active secondary
-    if (rightJustPressed) {
-      p.fireSecondary(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
+      // RMB fires active secondary
+      if (rightJustPressed) {
+        p.fireSecondary(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
+      }
     }
   }
 

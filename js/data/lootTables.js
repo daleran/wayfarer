@@ -21,7 +21,7 @@ export const LOOT_TABLES = {
     // Old cargo hauler — fuel, commodities, some ammo
     scrap:     { chance: 1.00, min: 20, max: 40 },
     fuel:      { chance: 0.70, min: 10, max: 25 },
-    ammo:      { chance: 0.30, pool: ['autocannon', 'rocket'], min: 10, max: 30 },
+    ammo:      { chance: 0.30, pool: ['autocannon', 'rocket'], min: 60, max: 120 },
     module:    { chance: 0.15, pool: ['HydrogenFuelCell', 'SalvagedSensorSuite'] },
     commodity: {
       chance: 0.60,
@@ -34,7 +34,7 @@ export const LOOT_TABLES = {
     scrap:     { chance: 1.00, min: 15, max: 30 },
     fuel:      { chance: 0.25, min: 5,  max: 15 },
     weapon:    { chance: 0.30, pool: ['Autocannon', 'LanceSmall'] },
-    ammo:      { chance: 0.60, pool: ['autocannon', 'missile'], min: 15, max: 40 },
+    ammo:      { chance: 0.60, pool: ['autocannon', 'missile'], min: 80, max: 180 },
     module:    { chance: 0.10, pool: ['SalvagedSensorSuite', 'StandardSensorSuite'] },
   },
 

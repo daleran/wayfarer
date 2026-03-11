@@ -41,7 +41,8 @@ export class MissileHeat {
   }
 
   fire(ship, tx, ty, entities) {
-    if (this._cooldown > 0 || this.ammo <= 0) return;
+    if (this._cooldown > 0) return;
+    if (ship.relation === 'player' && this.ammo <= 0) return;
     if (this._size === 'large') {
       this._burstShip  = ship;
       this._burstCount = 1; // 1 remaining after first
@@ -50,7 +51,7 @@ export class MissileHeat {
     } else {
       this._fireOneMissile(entities, ship);
     }
-    this.ammo--;
+    if (ship.relation === 'player') this.ammo--;
     this._cooldown = this.cooldownMax * (ship._fireCooldownMult ?? 1);
   }
 

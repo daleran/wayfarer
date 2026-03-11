@@ -28,7 +28,8 @@ export class Torpedo {
   update(dt) { if (this._cooldown > 0) this._cooldown -= dt; }
 
   fire(ship, tx, ty, entities) {
-    if (this._cooldown > 0 || this.ammo <= 0) return;
+    if (this._cooldown > 0) return;
+    if (ship.relation === 'player' && this.ammo <= 0) return;
     const nx = Math.sin(ship.rotation);
     const ny = -Math.cos(ship.rotation);
     const proj = new Projectile(
@@ -44,7 +45,7 @@ export class Torpedo {
     proj.isInterceptable = true;
     proj.blastRadius   = this.blastRadius;
     entities.push(proj);
-    this.ammo--;
+    if (ship.relation === 'player') this.ammo--;
     this._cooldown = this.cooldownMax;
   }
 }

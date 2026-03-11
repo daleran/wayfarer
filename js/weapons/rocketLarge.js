@@ -43,14 +43,15 @@ export class RocketLarge {
   }
 
   fire(ship, tx, ty, entities) {
-    if (this._cooldown > 0 || this.ammo <= 0) return;
+    if (this._cooldown > 0) return;
+    if (ship.relation === 'player' && this.ammo <= 0) return;
     this._burstShip  = ship;
     this._burstTx    = tx;
     this._burstTy    = ty;
     this._burstCount = 4; // 4 remaining after first
     this._burstTimer = 0.18;
     this._fireOneRocket(entities); // fire first immediately
-    this.ammo--;
+    if (ship.relation === 'player') this.ammo--;
     this._cooldown = this.cooldownMax;
   }
 

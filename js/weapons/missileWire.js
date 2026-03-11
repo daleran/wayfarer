@@ -32,7 +32,8 @@ export class MissileWire {
   update(dt) { if (this._cooldown > 0) this._cooldown -= dt; }
 
   fire(ship, tx, ty, entities) {
-    if (this._cooldown > 0 || this.ammo <= 0) return;
+    if (this._cooldown > 0) return;
+    if (ship.relation === 'player' && this.ammo <= 0) return;
     const dx = tx - ship.x;
     const dy = ty - ship.y;
     const baseAngle = Math.atan2(dy, dx);
@@ -55,7 +56,7 @@ export class MissileWire {
       proj.blastRadius     = this.blastRadius;
       entities.push(proj);
     }
-    this.ammo--;
+    if (ship.relation === 'player') this.ammo--;
     this._cooldown = this.cooldownMax;
   }
 }

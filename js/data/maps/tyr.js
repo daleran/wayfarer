@@ -2,7 +2,7 @@
 // Map dimensions: 18000×10000 world units (1 world unit = 1 screen pixel, no zoom).
 // Player enters from the west; The Coil is the central hub deep in the zone.
 
-import { STATION_LORE } from './stationLore.js';
+import { STATION_LORE } from '../stationLore.js';
 
 export const MAP = {
   mapSize: { width: 18000, height: 10000 },

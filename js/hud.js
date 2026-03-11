@@ -60,6 +60,7 @@ export class HUD {
     if (!player) return;
     this._renderLeftPanel(ctx, game);
     this._renderThrottle(ctx, player, camera);
+    if (game.isPaused) this._renderPauseIcon(ctx, camera);
     this._renderDockPrompt(ctx, game);
     this._renderDerelictPrompt(ctx, game);
     this._renderRepairPrompt(ctx, game);
@@ -69,7 +70,7 @@ export class HUD {
     this._renderKillLog(ctx, game);
     this._renderAutoFireIndicator(ctx, game);
     this._renderMinimap(ctx, game);
-    if (game.isTestMode) {
+    if (game.isTestMode && !game.isEditorMode) {
       this._renderDevControls(ctx, game);
       if (game.isPanMode) this._renderPanModeBanner(ctx, game);
     }
@@ -194,7 +195,7 @@ export class HUD {
 
     // ── Weapon readout ────────────────────────────────────────────────
     let y = intY + 18;
-    this._renderWeaponReadout(ctx, player, y);
+    this._renderWeaponReadout(ctx, player, y, game.ammo);
     y += 38; // space for up to 2 weapon rows
 
     // ── Reactor readout ───────────────────────────────────────────────
@@ -799,7 +800,7 @@ export class HUD {
     ctx.restore();
   }
 
-  _renderWeaponReadout(ctx, player, startY) {
+  _renderWeaponReadout(ctx, player, startY, ammoReserve = {}) {
     const primaries   = player._primaryWeapons;
     const secondaries = player._secondaryWeapons;
     const activePri   = primaries[player.primaryWeaponIdx];
@@ -819,34 +820,49 @@ export class HUD {
       ctx.fillStyle = CYAN;
       ctx.fillText(name, MARGIN + 26, y + 5);
 
-      // Cooldown bar
-      const cdMax = activePri.cooldownMax ?? 0;
       const bx = MARGIN + 26 + 90;
       const bw = 44;
       const bh = 6;
-      if (cdMax > 0) {
-        const filled = Math.max(0, 1 - (activePri._cooldown || 0) / cdMax);
-        ctx.fillStyle = VERY_DIM;
-        ctx.fillRect(bx, y + 2, bw, bh);
-        ctx.fillStyle = filled >= 1 ? CYAN : AMBER;
-        ctx.fillRect(bx, y + 2, bw * filled, bh);
-      }
 
-      // Beam ramp indicator
       if (activePri.isBeam) {
         const t = Math.min((activePri._rampUp || 0) / activePri.rampTime, 1);
         ctx.fillStyle = VERY_DIM;
         ctx.fillRect(bx, y + 2, bw, bh);
-        ctx.fillStyle = t >= 1 ? '#ffffff' : '#88ffdd';
+        ctx.fillStyle = t >= 1 ? WHITE : CYAN;
         ctx.fillRect(bx, y + 2, bw * t, bh);
-      }
-
-      // Round count for finite-ammo primaries
-      if (activePri.ammo !== undefined) {
+      } else if (activePri.magSize !== undefined) {
+        // Magazine weapon — show reload bar or cooldown bar, then mag/cargo count
+        const reloading = activePri._reloadTimer > 0;
+        if (reloading) {
+          const progress = 1 - activePri._reloadTimer / activePri.reloadTime;
+          ctx.fillStyle = VERY_DIM;
+          ctx.fillRect(bx, y + 2, bw, bh);
+          ctx.fillStyle = AMBER;
+          ctx.fillRect(bx, y + 2, bw * progress, bh);
+        } else {
+          const cdMax = activePri.cooldownMax ?? 0;
+          const filled = cdMax > 0 ? Math.max(0, 1 - (activePri._cooldown || 0) / cdMax) : 1;
+          ctx.fillStyle = VERY_DIM;
+          ctx.fillRect(bx, y + 2, bw, bh);
+          ctx.fillStyle = filled >= 1 ? CYAN : AMBER;
+          ctx.fillRect(bx, y + 2, bw * filled, bh);
+        }
+        // mag / cargo count
+        const cargo = ammoReserve[activePri.ammoType] ?? 0;
         ctx.font = '9px monospace';
-        ctx.fillStyle = activePri.ammo > 0 ? CYAN : RED;
-        ctx.fillText(`${activePri.ammo}`, bx + bw + 5, y + 5);
+        ctx.fillStyle = reloading ? AMBER : (activePri.ammo > 0 ? CYAN : RED);
+        ctx.fillText(`${activePri.ammo} / ${cargo}`, bx + bw + 5, y + 5);
         ctx.font = '10px monospace';
+      } else {
+        // Cooldown bar only (no ammo, e.g. beam)
+        const cdMax = activePri.cooldownMax ?? 0;
+        if (cdMax > 0) {
+          const filled = Math.max(0, 1 - (activePri._cooldown || 0) / cdMax);
+          ctx.fillStyle = VERY_DIM;
+          ctx.fillRect(bx, y + 2, bw, bh);
+          ctx.fillStyle = filled >= 1 ? CYAN : AMBER;
+          ctx.fillRect(bx, y + 2, bw * filled, bh);
+        }
       }
 
       y += 16;
@@ -860,51 +876,60 @@ export class HUD {
       ctx.fillStyle = MAGENTA;
       ctx.fillText(name, MARGIN + 26, y + 5);
 
+      const pipX = MARGIN + 26 + 90;
+
       if (activeSec.pipCount !== undefined) {
-        // Rocket-style: N pips + reload bar + remaining count
-        const pipW = 6;
+        // Rocket-style: tube pips + reload or cooldown bar + mag/cargo count
+        const pipW   = 6;
         const pipGap = 3;
         const pipCount = activeSec.pipCount;
-        const ready = activeSec._cooldown <= 0 && activeSec.ammo > 0;
-        const pipX = MARGIN + 26 + 90;
+        const reloading = activeSec._reloadTimer > 0;
+        const ready     = !reloading && activeSec._cooldown <= 0 && activeSec.ammo > 0;
 
         for (let i = 0; i < pipCount; i++) {
-          ctx.fillStyle = ready ? MAGENTA : VERY_DIM;
+          const filled = i < activeSec.ammo;
+          ctx.fillStyle = filled && ready ? MAGENTA : VERY_DIM;
           ctx.fillRect(pipX + i * (pipW + pipGap), y + 2, pipW, pipW);
         }
 
-        // Reload bar
         const barX = pipX + pipCount * (pipW + pipGap) + 5;
         const barW = 36;
         const barH = 6;
-        const cdMax = activeSec.cooldown || 0;
-        const filled = cdMax > 0 ? Math.max(0, 1 - (activeSec._cooldown || 0) / cdMax) : 1;
         ctx.fillStyle = VERY_DIM;
         ctx.fillRect(barX, y + 2, barW, barH);
-        ctx.fillStyle = filled >= 1 ? MAGENTA : DIM_TEXT;
-        ctx.fillRect(barX, y + 2, barW * filled, barH);
 
-        // Remaining count
+        if (reloading) {
+          const progress = 1 - activeSec._reloadTimer / activeSec.reloadTime;
+          ctx.fillStyle = AMBER;
+          ctx.fillRect(barX, y + 2, barW * progress, barH);
+        } else {
+          const cdMax  = activeSec.cooldownMax || 0;
+          const cdFill = cdMax > 0 ? Math.max(0, 1 - (activeSec._cooldown || 0) / cdMax) : 1;
+          ctx.fillStyle = cdFill >= 1 ? MAGENTA : DIM_TEXT;
+          ctx.fillRect(barX, y + 2, barW * cdFill, barH);
+        }
+
+        const cargo = ammoReserve[activeSec.ammoType] ?? 0;
         ctx.font = '9px monospace';
-        ctx.fillStyle = activeSec.ammo > 0 ? MAGENTA : RED;
-        ctx.fillText(`${activeSec.ammo}`, barX + barW + 5, y + 5);
+        ctx.fillStyle = reloading ? AMBER : (activeSec.ammo > 0 ? MAGENTA : RED);
+        ctx.fillText(`${activeSec.ammo} / ${cargo}`, barX + barW + 5, y + 5);
         ctx.font = '10px monospace';
 
-      } else if (activeSec.ammoMax) {
-        // Missile-style: pip-per-ammo display
-        const pipW = 8;
-        const pipH = 8;
+      } else if (activeSec.magSize !== undefined) {
+        // Missile-style with mag tracking: pip-per-ammo + cargo count
+        const pipW   = 8;
+        const pipH   = 8;
         const pipGap = 2;
-        const pipX = MARGIN + 26 + 90;
-        const maxPips = Math.min(activeSec.ammoMax, 10);
+        const maxPips = Math.min(activeSec.magSize, 10);
         for (let i = 0; i < maxPips; i++) {
           ctx.fillStyle = i < activeSec.ammo ? MAGENTA : VERY_DIM;
           ctx.fillRect(pipX + i * (pipW + pipGap), y + 1, pipW, pipH);
         }
-        if (activeSec._cooldown > 0) {
-          ctx.fillStyle = DIM_TEXT;
-          ctx.fillText('...', pipX + maxPips * (pipW + pipGap) + 4, y + 5);
-        }
+        const cargo = ammoReserve[activeSec.ammoType] ?? 0;
+        ctx.font = '9px monospace';
+        ctx.fillStyle = activeSec.ammo > 0 ? MAGENTA : RED;
+        ctx.fillText(`/ ${cargo}`, pipX + maxPips * (pipW + pipGap) + 4, y + 5);
+        ctx.font = '10px monospace';
       }
     }
   }
@@ -962,6 +987,22 @@ export class HUD {
       pipY - 8
     );
 
+    ctx.restore();
+  }
+
+  _renderPauseIcon(ctx, camera) {
+    const pipY = camera.height - PIP_BOTTOM_MARGIN - PIP_H;
+    const cx   = camera.width / 2;
+    const flash = Math.sin(Date.now() * 0.006) > 0;
+    if (!flash) return;
+
+    ctx.save();
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = AMBER;
+    // Two vertical bars as a pause symbol, then label
+    ctx.fillText('II  PAUSED', cx, pipY - 34);
     ctx.restore();
   }
 }
