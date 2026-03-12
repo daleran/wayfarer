@@ -1,8 +1,5 @@
 import { Ship } from '../../entities/ship.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL, BASE_CARGO,
-         BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../../data/tuning/shipTuning.js';
-import { drawEngineGlow } from '../../systems/engineGlow.js';
+import { engineGlow, lines, polygonStroke } from '../../rendering/draw.js';
 
 const SPEED_MULT = 0.85;  // ~71 u/s — reliable workhorse
 const ACCEL_MULT = 0.85;  // moderate acceleration
@@ -99,18 +96,12 @@ export class G100ClassHauler extends Ship {
       'redundancy, solid all-around armor for a civilian hull. Weakness: no speed, ' +
       'no finesse — getting cornered means relying on whatever you bolted to the hardpoints.';
 
-    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
-
-    this.hullMax     = BASE_HULL * HULL_MULT;
-    this.hullCurrent = this.hullMax;
-
-    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
-    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
-    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
-
-    this.cargoCapacity  = BASE_CARGO * CARGO_MULT;
-    this.fuelMax        = BASE_FUEL_MAX * FUEL_MAX_MULT;
-    this.fuelEfficiency = BASE_FUEL_EFFICIENCY * FUEL_EFF_MULT;
+    this._initStats({
+      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
+      hull: HULL_MULT, cargo: CARGO_MULT,
+      fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
+      armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
+    });
   }
 
   get _engineOffsets() {
@@ -143,12 +134,7 @@ export class G100ClassHauler extends Ship {
     }
 
     // Main cargo platform
-    buildAndFill(HULL_POINTS);
-    if (!this._drawHullArcs(ctx, HULL_POINTS, HULL_ARC_MAP)) {
-      ctx.strokeStyle = this.hullStroke;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
+    this._fillAndStrokeHull(ctx, HULL_POINTS, HULL_ARC_MAP);
 
     // Cab module — drawn over hull to appear raised
     buildAndFill(CAB);
@@ -159,44 +145,15 @@ export class G100ClassHauler extends Ship {
     }
 
     // Cab window frame and dividers
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(CAB_WINDOW[0].x, CAB_WINDOW[0].y);
-    for (let i = 1; i < CAB_WINDOW.length; i++) ctx.lineTo(CAB_WINDOW[i].x, CAB_WINDOW[i].y);
-    ctx.closePath();
-    ctx.stroke();
-    for (const seg of [WIN_DIV_L, WIN_DIV_R]) {
-      ctx.beginPath();
-      ctx.moveTo(seg[0].x, seg[0].y);
-      ctx.lineTo(seg[1].x, seg[1].y);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
+    polygonStroke(ctx, CAB_WINDOW, this.hullStroke, 1, 0.55);
+    lines(ctx, [WIN_DIV_L, WIN_DIV_R], this.hullStroke, 1, 0.55);
 
     // Structural seam lines on deck and engine pods
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-    const primarySeams = [SEAM_CAB_BASE, SEAM_MID_DECK, SPINE_LINE, ENGINE_GAP];
-    ctx.globalAlpha = 0.28;
-    for (const s of primarySeams) {
-      ctx.beginPath();
-      ctx.moveTo(s[0].x, s[0].y);
-      ctx.lineTo(s[1].x, s[1].y);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 0.22;
-    for (const s of [ENG_SEAM_S, ENG_SEAM_P]) {
-      ctx.beginPath();
-      ctx.moveTo(s[0].x, s[0].y);
-      ctx.lineTo(s[1].x, s[1].y);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
+    lines(ctx, [SEAM_CAB_BASE, SEAM_MID_DECK, SPINE_LINE, ENGINE_GAP], this.hullStroke, 1, 0.28);
+    lines(ctx, [ENG_SEAM_S, ENG_SEAM_P], this.hullStroke, 1, 0.22);
 
     // Engine glows — twin pods
-    drawEngineGlow(ctx, ENGINE_POS, this.engineColor, 3 + this.throttleLevel * 0.65, 2.5, 2.5, 0.28);
+    engineGlow(ctx, ENGINE_POS, this.engineColor, 3 + this.throttleLevel * 0.65, 2.5, 2.5, 0.28);
   }
 
   getBounds() {

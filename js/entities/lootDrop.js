@@ -4,10 +4,10 @@ import {
   SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
   SalvageScannerModule, LongRangeScannerModule,
   HydrogenFuelCell, SmallFissionReactor, LargeFusionReactor,
-} from '../systems/shipModule.js';
-import { Autocannon } from '../weapons/autocannon.js';
-import { Cannon }     from '../weapons/cannon.js';
-import { Lance }      from '../weapons/lance.js';
+} from '../modules/shipModule.js';
+import { Autocannon } from '../modules/weapons/autocannon.js';
+import { Cannon }     from '../modules/weapons/cannon.js';
+import { Lance }      from '../modules/weapons/lance.js';
 import { LOOT_TABLES, DEFAULT_LOOT_TABLE } from '../data/lootTables.js';
 import { COMMODITIES } from '../data/commodities.js';
 

@@ -10,9 +10,9 @@ Scan the codebase for hardcoded numeric stats and inline color strings that viol
 
 **Files to scan:**
 - `js/ships/**/*.js`
-- `js/enemies/**/*.js`
-- `js/weapons/**/*.js`
-- `js/systems/shipModule.js` (for weapon module damage values)
+- `js/npcs/**/*.js`
+- `js/modules/weapons/**/*.js`
+- `js/modules/shipModule.js` (for weapon module damage values)
 
 **Properties that must use the multiplier pattern:**
 - `this.speedMax`
@@ -81,7 +81,7 @@ Group violations by file. For each file, list all violations. End with a summary
 
 [Hardcoded Stats]
   js/ships/classes/someShip.js:42 — this.speedMax = 180
-  js/enemies/scavengers/raider.js:55 — this.damage = 25
+  js/npcs/scavengers/lightFighter.js:55 — this.damage = 25
 
 [Inline Colors]
   js/world/someRenderer.js:88 — ctx.strokeStyle = '#ff4422'

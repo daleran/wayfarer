@@ -1,6 +1,9 @@
 import { Entity } from './entity.js';
 import { RELATION_COLORS, RED, WHITE, armorArcColor } from '../ui/colors.js';
-import { BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
+import { trail as drawTrail } from '../rendering/draw.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
+         BASE_HULL, BASE_CARGO,
+         BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
          THROTTLE_LEVELS, THROTTLE_RATIOS } from '../data/tuning/shipTuning.js';
 
 const TRAIL_MAX_POINTS = 120;
@@ -145,6 +148,28 @@ export class Ship extends Entity {
     return true;
   }
 
+  // Fills and strokes a hull polygon with player arc coloring or NPC flat style.
+  // Traces the hull path, fills, then either draws arc-colored segments (player) or a plain stroke (NPC).
+  _fillAndStrokeHull(ctx, hullPoints, arcMap) {
+    ctx.beginPath();
+    ctx.moveTo(hullPoints[0].x, hullPoints[0].y);
+    for (let i = 1; i < hullPoints.length; i++) {
+      ctx.lineTo(hullPoints[i].x, hullPoints[i].y);
+    }
+    ctx.closePath();
+    if (this.relation === 'player') {
+      ctx.fillStyle = this._playerHullFill();
+      ctx.fill();
+      this._drawHullArcs(ctx, hullPoints, arcMap);
+    } else {
+      ctx.fillStyle = this.hullFill;
+      ctx.fill();
+      ctx.strokeStyle = this.hullStroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
   // Backward-compat getters: average of all 4 arcs
   get armorCurrent() {
     const { front, port, starboard, aft } = this.armorArcs;
@@ -242,6 +267,20 @@ export class Ship extends Entity {
     };
     this.armorArcs    = { ...fa };
     this.armorArcsMax = { ...fa };
+  }
+
+  // Initialize all stat fields from multiplier config.
+  // Each value is base × mult × SPEED_FACTOR (for movement) or base × mult (for health/cargo/fuel).
+  _initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft }) {
+    this.speedMax      = BASE_SPEED        * speed * SPEED_FACTOR;
+    this.acceleration  = BASE_ACCELERATION * accel * SPEED_FACTOR;
+    this.turnRate      = BASE_TURN_RATE    * turn  * SPEED_FACTOR;
+    this.hullMax       = BASE_HULL * hull;
+    this.hullCurrent   = this.hullMax;
+    if (cargo !== undefined)  this.cargoCapacity  = BASE_CARGO * cargo;
+    if (fuelMax !== undefined) this.fuelMax        = BASE_FUEL_MAX * fuelMax;
+    if (fuelEff !== undefined) this.fuelEfficiency = BASE_FUEL_EFFICIENCY * fuelEff;
+    if (armorFront !== undefined) this._initArmorArcs(armorFront, armorSide, armorAft);
   }
 
   // Call at the end of any ship constructor that uses module-based weapons.
@@ -502,23 +541,13 @@ export class Ship extends Entity {
   }
 
   _renderTrails(ctx, camera) {
-    for (const trail of this._trails) {
-      if (trail.length < 2) continue;
-      ctx.save();
-      ctx.lineCap = 'round';
-      for (let i = 1; i < trail.length; i++) {
-        const p0 = camera.worldToScreen(trail[i - 1].x, trail[i - 1].y);
-        const p1 = camera.worldToScreen(trail[i].x, trail[i].y);
-        const t = i / trail.length;
-        ctx.strokeStyle = this.engineColor;
-        ctx.globalAlpha = t * 0.6;
-        ctx.lineWidth = 1 + t * 1.5;
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
+    for (const t of this._trails) {
+      if (t.length < 2) continue;
+      const screenPoints = new Array(t.length);
+      for (let i = 0; i < t.length; i++) {
+        screenPoints[i] = camera.worldToScreen(t[i].x, t[i].y);
       }
-      ctx.restore();
+      drawTrail(ctx, screenPoints, this.engineColor, 0.6, 2.5);
     }
   }
 

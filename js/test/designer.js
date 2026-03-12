@@ -26,18 +26,18 @@ import {
   HydrogenFuelCell, SmallFissionReactor, LargeFissionReactor, LargeFusionReactor,
   SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
   SalvageScannerModule, LongRangeScannerModule,
-} from '../systems/shipModule.js';
+} from '../modules/shipModule.js';
 
 // Weapons
-import { Autocannon }     from '../weapons/autocannon.js';
-import { GatlingGun }     from '../weapons/gatlingGun.js';
-import { Railgun }        from '../weapons/railgun.js';
-import { Lance }          from '../weapons/lance.js';
-import { PlasmaCannon }   from '../weapons/plasmaCannon.js';
-import { Cannon }         from '../weapons/cannon.js';
-import { RocketPodSmall } from '../weapons/rocket.js';
-import { RocketPodLarge } from '../weapons/rocketLarge.js';
-import { Torpedo }        from '../weapons/torpedo.js';
+import { Autocannon }     from '../modules/weapons/autocannon.js';
+import { GatlingGun }     from '../modules/weapons/gatlingGun.js';
+import { Railgun }        from '../modules/weapons/railgun.js';
+import { Lance }          from '../modules/weapons/lance.js';
+import { PlasmaCannon }   from '../modules/weapons/plasmaCannon.js';
+import { Cannon }         from '../modules/weapons/cannon.js';
+import { RocketPodSmall } from '../modules/weapons/rocket.js';
+import { RocketPodLarge } from '../modules/weapons/rocketLarge.js';
+import { Torpedo }        from '../modules/weapons/torpedo.js';
 
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,

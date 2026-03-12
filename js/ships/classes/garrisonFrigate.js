@@ -1,8 +1,5 @@
 import { Ship } from '../../entities/ship.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL, BASE_CARGO,
-         BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../../data/tuning/shipTuning.js';
-import { drawEngineGlow } from '../../systems/engineGlow.js';
+import { engineGlow, lines } from '../../rendering/draw.js';
 
 const SPEED_MULT = 0.85;  // ~71 u/s — decent for its mass
 const ACCEL_MULT = 0.7;   // heavy, slow to spin up
@@ -97,18 +94,12 @@ export class GarrisonFrigate extends Ship {
       'Strengths: heavy armor, long range, nacelles easy to hot-swap in the field. ' +
       'Weaknesses: slow to turn, thirsty on fuel, and no amount of paint hides what it is.';
 
-    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
-
-    this.hullMax     = BASE_HULL * HULL_MULT;
-    this.hullCurrent = this.hullMax;
-
-    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
-    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
-    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
-
-    this.cargoCapacity  = BASE_CARGO * CARGO_MULT;
-    this.fuelMax        = BASE_FUEL_MAX * FUEL_MAX_MULT;
-    this.fuelEfficiency = BASE_FUEL_EFFICIENCY * FUEL_EFF_MULT;
+    this._initStats({
+      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
+      hull: HULL_MULT, cargo: CARGO_MULT,
+      fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
+      armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
+    });
   }
 
   get _engineOffsets() {
@@ -142,45 +133,14 @@ export class GarrisonFrigate extends Ship {
     }
 
     // Main hull
-    ctx.beginPath();
-    ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
-    for (let i = 1; i < HULL_POINTS.length; i++) {
-      ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = fill;
-    ctx.fill();
-    if (!this._drawHullArcs(ctx, HULL_POINTS, ARC_MAP)) {
-      ctx.strokeStyle = this.hullStroke;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
+    this._fillAndStrokeHull(ctx, HULL_POINTS, ARC_MAP);
 
     // Detail lines — structural seams and keel
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-
-    const seams = [KEEL, BOW_RIB_STBD, BOW_RIB_PORT, NACELLE_SEAM_STBD, NACELLE_SEAM_PORT];
-    ctx.globalAlpha = 0.3;
-    for (const s of seams) {
-      ctx.beginPath();
-      ctx.moveTo(s[0].x, s[0].y);
-      ctx.lineTo(s[1].x, s[1].y);
-      ctx.stroke();
-    }
-
-    ctx.globalAlpha = 0.22;
-    for (const s of [SEAM_FWD, SEAM_AFT]) {
-      ctx.beginPath();
-      ctx.moveTo(s[0].x, s[0].y);
-      ctx.lineTo(s[1].x, s[1].y);
-      ctx.stroke();
-    }
-
-    ctx.globalAlpha = 1;
+    lines(ctx, [KEEL, BOW_RIB_STBD, BOW_RIB_PORT, NACELLE_SEAM_STBD, NACELLE_SEAM_PORT], this.hullStroke, 1, 0.3);
+    lines(ctx, [SEAM_FWD, SEAM_AFT], this.hullStroke, 1, 0.22);
 
     // Engine glows — twin nacelle pods
-    drawEngineGlow(ctx, ENGINE_POS, this.engineColor, 4 + this.throttleLevel * 0.8, 3, 3, 0.25);
+    engineGlow(ctx, ENGINE_POS, this.engineColor, 4 + this.throttleLevel * 0.8, 3, 3, 0.25);
   }
 
   getBounds() {

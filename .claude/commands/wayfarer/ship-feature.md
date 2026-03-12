@@ -25,7 +25,7 @@ Do not propose changes based on assumptions. Understand existing patterns first.
 Follow all project conventions:
 - **Stats**: multiplier pattern only — `BASE_X * MULT * FACTOR`. Never hardcode raw numbers.
 - **Colors**: always import from `js/ui/colors.js`. Never use inline hex strings anywhere.
-- **New files**: add imports and registry entries wherever needed (ship registry, station registry, raider registry, designer.js as applicable)
+- **New files**: add imports and registry entries wherever needed (ship registry, station registry, enemy registry, designer.js as applicable)
 - **Minimal scope**: only change what's needed. Don't refactor surrounding code, add extra error handling, or "improve" things you weren't asked to touch.
 
 ## Step 4 — Update NEXT.md

@@ -58,7 +58,7 @@ Rocket Pods support three guidance modes (cycle with key `2`):
 |---|---|
 | DUMBFIRE | Fires at click point; detonates at target or on contact |
 | WIRE | Guided by mouse cursor; interceptable |
-| HEAT | Homes on nearest raider; interceptable |
+| HEAT | Homes on nearest hostile; interceptable |
 
 ### Railgun Variants
 
@@ -84,7 +84,7 @@ Rocket Pods support three guidance modes (cycle with key `2`):
 | `detonatesOnContact` | AoE explosion when hitting any ship |
 | `detonatesOnExpiry` | AoE explosion at target point when range runs out |
 | `isGuided + guidedType='wire'` | Steers toward mouse cursor each frame |
-| `isGuided + guidedType='heat'` | Steers toward nearest raider |
+| `isGuided + guidedType='heat'` | Steers toward nearest hostile |
 | `isInterceptable` | Can be shot down by weapons with `canIntercept` or `canInterceptBeam` |
 | `canIntercept` | Intercepts nearby enemy interceptable projectiles on contact (gatling) |
 | `canInterceptBeam` | Lance small-turret intercepts interceptable projectiles passing within 15px of beam |
@@ -195,7 +195,7 @@ The ship AI loop in `game.js` skips `updateShipAI()` for any ship with `_isLatch
 
 ## Combat AI
 
-All non-player ships — hostile, neutral, or friendly — share the same AI system (`js/ai/shipAI.js`). There are no separate raider vs neutral tracking arrays. Every ship tracks in `GameManager.ships[]`. A ship's `relation` field drives behavior:
+All non-player ships — hostile, neutral, or friendly — share the same AI system (`js/ai/shipAI.js`). There are no separate hostile vs neutral tracking arrays. Every ship tracks in `GameManager.ships[]`. A ship's `relation` field drives behavior:
 
 - `'hostile'` — combat behavior active; counted as an enemy for targeting and loot
 - `'neutral'` — passive behavior active; turns hostile immediately if struck by the player
@@ -203,7 +203,7 @@ All non-player ships — hostile, neutral, or friendly — share the same AI sys
 
 ### Ship AI Profile
 
-Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `js/data/tuning/aiTuning.js`. Characters and spawn overrides can change individual values (e.g. a cautious raider with longer `deaggroRange`) without touching the base template.
+Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `js/data/tuning/aiTuning.js`. Characters and spawn overrides can change individual values (e.g. a cautious enemy with longer `deaggroRange`) without touching the base template.
 
 Two keys define the full behavior:
 

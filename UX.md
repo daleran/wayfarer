@@ -178,9 +178,9 @@ A subtle fullscreen post-processing pass (or overlay) to sell the vector monitor
 
 3. **Glow / Bloom:** Bright UI elements (text, lines, bars) can be drawn twice — once sharp, once slightly larger/blurred at low opacity — to simulate phosphor glow. Keep this subtle; heavy bloom looks modern, not retro.
 
-4. **Flicker (very subtle):** Occasional, barely-perceptible global brightness variation (e.g., `globalAlpha` oscillating between 0.97 and 1.0 at ~30Hz). Optional and should be almost subliminal.
+4. **Flicker (implemented):** A black fullscreen rect with `globalAlpha = 0.03 * Math.random()` drawn after vignette, before crosshair. Dims the frame 0–3% randomly each tick — subliminal brightness variation matching the "0.97–1.0 globalAlpha at ~30Hz" spec.
 
-These effects are **cosmetic polish**, not critical-path. Implement the clean vector look first; add CRT effects as a final pass.
+**Performance:** Scanlines and vignette are pre-rendered to offscreen canvases (rebuilt on resize via `_ensureCaches()`), then composited with a single `drawImage()` call each frame. Starfield layers also use per-layer offscreen canvases with parallax tiling (3–12 `drawImage` calls vs ~350 `fillRect` calls). Edge warning gradients (flank speed amber, hull critical red) are cached as `CanvasGradient` objects and reused each frame with `globalAlpha` for pulsing — eliminates 4–8 `createLinearGradient()` + 8–16 `addColorStop()` per frame.
 
 ---
 
@@ -235,7 +235,9 @@ The HUD has two zones: **ship-anchored UI** (follows the ship at screen center) 
 
 **Minimap:** Top-right corner. 225×225, bracket-corner border. Stations (faction-colored squares), derelicts (amber squares), loot (amber dots), enemies (red dots) when sensor capability is installed. Player dot (green triangle, rotation-aware).
 
-**Kill log:** Right-aligned text below the minimap. Entries fade out over 3 seconds.
+**Kill log:** DOM-based (`#hud-kill-log`), positioned below the minimap via CSS. Entries are `<div class="hud-kill-entry">` elements with a CSS `kill-fade` animation (3s linear fade-out). Removed from canvas on `animationend`.
+
+**Pickup text:** DOM-based (`#hud-pickup-container`), positioned over the ship via JS `transform: translate()` each frame. Entries are `<div class="hud-pickup-entry">` with color-hint CSS classes (`.pickup-breach`, `.pickup-repair`, `.pickup-hostile`, `.pickup-module`, `.pickup-cargo`, `.pickup-default`). 2s fade-out animation. Removed from canvas on `animationend`.
 
 **Contextual prompts:** Centered horizontally at ~62% screen height. Dock/salvage/repair prompts appear here, pulsing slightly.
 

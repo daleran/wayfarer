@@ -78,7 +78,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
 - **Navigation:** `↑/↓` change category, `←/→` cycle item, `T` toggle rotation (ships), `R` reset view, scroll/drag to zoom/pan
 - **Deep-link:** `?designer&category=<cat>&id=<slug>`
-- **In scope:** `js/ships/**`, `js/enemies/**`, `js/world/**`, `js/weapons/**`, `js/ui/colors.js`
+- **In scope:** `js/ships/**`, `js/npcs/**`, `js/world/**`, `js/modules/**`, `js/ui/colors.js`
 - Item slugs are defined in `js/test/designer.js` — check there for current IDs.
 
 ## Architecture
@@ -89,7 +89,13 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 ### Core Systems
 
-- **`js/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, game state; drives `update(dt)` and `render()`
+- **`js/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, subsystems, game state; drives `update(dt)` and `render()`
+- **`js/systems/salvageSystem.js` / `SalvageSystem`** — owns salvage state (`isSalvaging`, `salvageProgress`, `salvageTotal`, `salvageTarget`); `start()`, `update(dt)` → returns loot entities, `cancel()`
+- **`js/systems/repairSystem.js` / `RepairSystem`** — owns repair state (`isRepairing`, `_repairAccum`, `_moduleRepairAccum`); `start()`, `update(dt, player, scrap)` → returns `{ scrapSpent }`, `cancel()`, `hasModulesToRepair(player)`, `maybeBreachModule(ship)` → returns `{ text, colorHint } | null`
+- **`js/systems/collisionSystem.js` / `CollisionSystem`** — projectile interception, beam interception, main collision loop, AoE explosions; `update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled })` → returns `{ newEntities: [] }`
+- **`js/systems/bountySystem.js` / `BountySystem`** — owns `activeBounties[]`; `onEnemyKilled()`, `acceptBounty()`, `collectCompleted()`, `updateExpiry()`
+- **`js/systems/weaponSystem.js` / `WeaponSystem`** — weapon reload ticks, manual reload, ammo/guidance mode cycling, guided projectile targeting; `updateReloads()`, `manualReload()`, `cycleAmmoMode()`, `cycleGuidanceMode()`, `updateGuidance()`
+- **`js/systems/interactionSystem.js` / `InteractionSystem`** — owns `nearbyStation`, `nearbyDerelict`; `updateDerelicts()`, `checkDocking()`, `checkLootPickups()`
 - **`js/loop.js`** — fixed-timestep loop (60 ticks/sec), spiral-of-death protection
 - **`js/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
 - **`js/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
@@ -99,13 +105,13 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 `Entity` is the base class (`js/entities/entity.js`). `Ship` extends it with armor/hull/weapons/fuel. Ship subclasses override `_drawShape(ctx)` and `getBounds()`. Other entity types: `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`, `Derelict`.
 
-Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, enemies in `js/enemies/`, neutrals in `js/ships/neutral/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there.
+Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPCs (enemies + neutrals) in `js/npcs/<faction>/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there.
 
 ### Key Patterns
 
 - **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically; inactive purged each tick
-- **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`
-- **Raider AI** — `js/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `js/data/tuning/aiTuning.js`: stalker, kiter, standoff, lurker, flee
+- **Collision detection** — projectile-vs-ship circle checks in `CollisionSystem.update()`
+- **Enemy AI** — `js/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `js/data/tuning/aiTuning.js`: stalker, kiter, standoff, lurker, flee
 - **Neutral AI** — `js/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia')
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
 - **Particle pool** — `js/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
@@ -137,6 +143,8 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, ene
 
 ### Stats: Multiplier Pattern
 Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `js/data/tuning/` (see Key Patterns above). Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` (in shipTuning.js) and `PROJECTILE_SPEED_FACTOR` (in weaponTuning.js).
+
+Ship classes use `this._initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft })` from `Ship` base to set all stats in one call. Subclasses that only override a subset (e.g. enemies that don't set cargo/fuel) can omit those keys — they'll keep the parent's values.
 
 ### Colors: Always Use `js/ui/colors.js`
 Never use inline hex strings anywhere in the codebase. Import named constants from `js/ui/colors.js`. If a new color is needed, add it there first.

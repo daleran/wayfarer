@@ -16,6 +16,12 @@ export const PLASMA_GREEN    = '#44ff88';
 export const TORPEDO_AMBER   = '#cc8800';
 export const AUTOCANNON_GLOW = '#ffe0a0';
 
+// Renderer / post-processing
+export const STARFIELD_TINT_WHITE = '#cceeee';
+export const BG_CLEAR = '#000005';
+export const BEAM_GLOW_OUTER = '#00ffaa';
+export const BEAM_GLOW_MID = '#88ffdd';
+
 // Panel / background
 export const PANEL_BG = 'rgba(0,8,16,0.85)';
 export const PANEL_BORDER = CYAN;

@@ -7,7 +7,7 @@ export const MAP = {
   stations: [],
   planets: [],
   derelicts: [],
-  raiderSpawns: [],
+  enemies: [],
   tradeConvoys: [],
   militiaPatrols: [],
   zones: [],

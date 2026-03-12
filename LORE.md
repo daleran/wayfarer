@@ -26,7 +26,7 @@ Wayfarer is set in the crumbling remains of a difficult interstellar exodus, whe
 
 **Scrap is the nearest thing to a universal currency.** It's physically portable, universally useful (everything can be repaired with enough scrap), and its value is intrinsic rather than promised. Fuel is also treated as a store of value — it represents freedom of movement, which is power.
 
-There are no prices in credits. When you trade at a station, you pay in scrap. When you repair your hull, you pay in scrap. Raiders fight for fuel and salvage, not cash.
+There are no prices in credits. When you trade at a station, you pay in scrap. When you repair your hull, you pay in scrap. Scavengers fight for fuel and salvage, not cash.
 
 ## Themes
 

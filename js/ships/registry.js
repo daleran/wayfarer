@@ -6,14 +6,14 @@ import { MaverickCourier }      from './classes/maverickCourier.js';
 import { G100ClassHauler }      from './classes/g100Hauler.js';
 import { GarrisonFrigate }      from './classes/garrisonFrigate.js';
 import { createHullbreaker }    from './player/hullbreaker.js';
-import { createLightFighter }   from '../enemies/scavengers/lightFighter.js';
-import { createArmedHauler }    from '../enemies/scavengers/armedHauler.js';
-import { createSalvageMothership } from '../enemies/scavengers/salvageMothership.js';
-import { createGraveClanAmbusher } from '../enemies/scavengers/graveClanAmbusher.js';
-import { createDroneControlFrigate } from '../enemies/concord/droneControlFrigate.js';
-import { createSnatcHerDrone }       from '../enemies/concord/snatcHerDrone.js';
-import { createTraderConvoy }   from './neutral/traderConvoy.js';
-import { createMilitiaPatrol }  from './neutral/militiaPatrol.js';
+import { createLightFighter }   from '../npcs/scavengers/lightFighter.js';
+import { createArmedHauler }    from '../npcs/scavengers/armedHauler.js';
+import { createSalvageMothership } from '../npcs/scavengers/salvageMothership.js';
+import { createGraveClanAmbusher } from '../npcs/scavengers/graveClanAmbusher.js';
+import { createDroneControlFrigate } from '../npcs/concord/droneControlFrigate.js';
+import { createSnatcHerDrone }       from '../npcs/concord/snatcHerDrone.js';
+import { createTraderConvoy }   from '../npcs/settlements/traderConvoy.js';
+import { createMilitiaPatrol }  from '../npcs/settlements/militiaPatrol.js';
 
 // ── Hull templates ─────────────────────────────────────────────────────────────
 // Pure physical vessel definitions: shape, stats, slot layout.
@@ -66,7 +66,7 @@ export const NPC_REGISTRY = [
     faction: 'scavenger',
     behavior: 'stalker',
     shipClass: 'maverick-courier',
-    file: 'js/enemies/scavengers/lightFighter.js',
+    file: 'js/npcs/scavengers/lightFighter.js',
     create: (x, y) => createLightFighter(x, y),
   },
   {
@@ -75,7 +75,7 @@ export const NPC_REGISTRY = [
     faction: 'scavenger',
     behavior: 'kiter',
     shipClass: 'g100-hauler',
-    file: 'js/enemies/scavengers/armedHauler.js',
+    file: 'js/npcs/scavengers/armedHauler.js',
     create: (x, y) => createArmedHauler(x, y),
   },
   {
@@ -84,7 +84,7 @@ export const NPC_REGISTRY = [
     faction: 'scavenger',
     behavior: 'standoff',
     shipClass: 'garrison-frigate',
-    file: 'js/enemies/scavengers/salvageMothership.js',
+    file: 'js/npcs/scavengers/salvageMothership.js',
     create: (x, y) => createSalvageMothership(x, y),
   },
   {
@@ -93,7 +93,7 @@ export const NPC_REGISTRY = [
     faction: 'scavenger',
     behavior: 'lurker',
     shipClass: 'maverick-courier',
-    file: 'js/enemies/scavengers/graveClanAmbusher.js',
+    file: 'js/npcs/scavengers/graveClanAmbusher.js',
     create: (x, y) => createGraveClanAmbusher(x, y),
   },
   {
@@ -102,7 +102,7 @@ export const NPC_REGISTRY = [
     faction: 'neutral',
     behavior: 'trader',
     shipClass: 'g100-hauler',
-    file: 'js/ships/neutral/traderConvoy.js',
+    file: 'js/npcs/settlements/traderConvoy.js',
     create: (x, y) => createTraderConvoy(x, y),
   },
   {
@@ -111,7 +111,7 @@ export const NPC_REGISTRY = [
     faction: 'neutral',
     behavior: 'militia',
     shipClass: 'garrison-frigate',
-    file: 'js/ships/neutral/militiaPatrol.js',
+    file: 'js/npcs/settlements/militiaPatrol.js',
     create: (x, y) => createMilitiaPatrol(x, y),
   },
   {
@@ -120,7 +120,7 @@ export const NPC_REGISTRY = [
     faction: 'concord',
     behavior: 'standoff',
     shipClass: 'garrison-frigate',
-    file: 'js/enemies/concord/droneControlFrigate.js',
+    file: 'js/npcs/concord/droneControlFrigate.js',
     create: (x, y) => createDroneControlFrigate(x, y),
   },
   {
@@ -129,7 +129,7 @@ export const NPC_REGISTRY = [
     faction: 'concord',
     behavior: 'stalker',
     shipClass: 'maverick-courier',
-    file: 'js/enemies/concord/snatcHerDrone.js',
+    file: 'js/npcs/concord/snatcHerDrone.js',
     create: (x, y) => createSnatcHerDrone(x, y),
   },
 ];

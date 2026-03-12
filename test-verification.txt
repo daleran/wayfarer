@@ -12,7 +12,7 @@ WEAPON CYCLING
 
 KINETIC / ENERGY PRIMARIES
  5. AUTOCANNON (cycle to it): LMB — rapid amber bolts, tracer trail, hits at 1500u
- 6. RAILGUN: cycle to it, LMB — 6s pause then brilliant white streak, high damage (use X raider as target)
+ 6. RAILGUN: cycle to it, LMB — 6s pause then brilliant white streak, high damage (use X enemy as target)
  7. FLAK-S: cycle to it, LMB on far point — amber burst at click distance; LMB near missiles — intercepts them
  8. CANNON: cycle to it, LMB — slow heavy shell, AoE blast on ship contact (120u radius)
  9. PLASMA-S: cycle to it, LMB at short vs long range — more hull damage close up (falloff visible)
@@ -21,10 +21,10 @@ LANCE BEAM
 10. LANCE: cycle to it, hold LMB — cyan beam appears toward cursor; brightens over 2s; releases and ramps down
 
 SECONDARY / MISSILES
-11. ROCKETS (RMB): fire at raider — amber blast 280u; RMB again for ROCKET×5 burst of 5
+11. ROCKETS (RMB): fire at enemy — amber blast 280u; RMB again for ROCKET×5 burst of 5
 12. WIRE MISSILE: cycle to WIRE-MSL (RMB), steer missile with mouse; WIRE×3 fires spread of 3
-13. HEAT MISSILE: cycle to HEAT-MSL (RMB) — missile locks onto nearest raider automatically; 10s self-destruct
-14. TORPEDO: cycle to it (RMB) — face raider, fires along heading; slow amber blob; interceptable
+13. HEAT MISSILE: cycle to HEAT-MSL (RMB) — missile locks onto nearest enemy automatically; 10s self-destruct
+14. TORPEDO: cycle to it (RMB) — face enemy, fires along heading; slow amber blob; interceptable
 
 ENEMY WEAPONS
 15. ENEMY WEAPONS: press X — kiter spawns with Railgun (fast blue-white streak). Press C — interceptor with flak

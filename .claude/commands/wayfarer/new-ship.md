@@ -56,8 +56,7 @@ const ARMOR_AFT   = 0.6;
 **File locations:**
 - Base/template ships → `js/ships/classes/<name>.js`
 - Player variants → `js/ships/player/<name>.js`
-- Enemy variants → `js/enemies/<faction>/<name>.js`
-- Neutral traffic → `js/ships/neutral/<name>.js`
+- NPC variants (enemies + neutrals) → `js/npcs/<faction>/<name>.js`
 
 Template for a new base class:
 ```js
@@ -191,7 +190,7 @@ Verify: `?designer&category=Ships&id=sentinel-corvette`
 
 ## Step 6 — Add to arena map
 
-Open `js/data/maps/arena.js`. For enemy/neutral ships, add a spawn entry to the relevant array (`raiders[]`, `tradeConvoys[]`, `militiaPatrols[]`). Place it close to the player start for easy testing.
+Open `js/data/maps/arena.js`. For enemy/neutral ships, add a spawn entry to the `entities` array using `spawnEnemy()` or the appropriate helper. Place it close to the player start for easy testing.
 
 ## Step 7 — Update MECHANICS.md
 

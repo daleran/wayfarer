@@ -1,10 +1,8 @@
 import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
-import { LanceModuleSmall } from '../../systems/shipModule.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { LanceModuleSmall } from '../../modules/shipModule.js';
 import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 import { CONCORD_BLUE, ENEMY_FILL } from '../../ui/colors.js';
-import { drawEngineGlow } from '../../systems/engineGlow.js';
+import { engineGlow } from '../../rendering/draw.js';
 import { SnatcHerDrone } from './snatcHerDrone.js';
 
 const SPEED_MULT = 0.45;
@@ -61,14 +59,10 @@ export class DroneControlFrigate extends GarrisonFrigate {
       'Strength: relentless drone harassment, fortress-grade frontal armor. ' +
       'Weakness: drones are fragile; destroy them before focusing the hull.';
 
-    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
-    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
-    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
-
-    this.hullMax     = BASE_HULL * HULL_MULT;
-    this.hullCurrent = this.hullMax;
-
-    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
+    this._initStats({
+      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
+      hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
+    });
 
     this.moduleSlots = [new LanceModuleSmall(), null];
     this._applyModules();
@@ -142,7 +136,7 @@ export class DroneControlFrigate extends GarrisonFrigate {
     ctx.globalAlpha = 1;
 
     // Engine glows — twin aft corners
-    drawEngineGlow(ctx, ENGINE_POS, this.engineColor, 4 + this.throttleLevel * 0.8, 3, 3, 0.25);
+    engineGlow(ctx, ENGINE_POS, this.engineColor, 4 + this.throttleLevel * 0.8, 3, 3, 0.25);
   }
 
   getBounds() {

@@ -4,37 +4,33 @@ import { HUD } from './hud.js';
 import { input } from './input.js';
 import { MAP } from './data/maps/tyr.js';
 import { createHullbreaker } from './ships/player/hullbreaker.js';
-import { Autocannon } from './weapons/autocannon.js';
-import { RocketPodSmall } from './weapons/rocket.js';
-import { RocketPodLarge } from './weapons/rocketLarge.js';
-import { Railgun } from './weapons/railgun.js';
-import { GatlingGun } from './weapons/gatlingGun.js';
-import { Lance } from './weapons/lance.js';
-import { PlasmaCannon } from './weapons/plasmaCannon.js';
-import { Cannon } from './weapons/cannon.js';
-import { Torpedo } from './weapons/torpedo.js';
+import { Autocannon } from './modules/weapons/autocannon.js';
+import { RocketPodSmall } from './modules/weapons/rocket.js';
+import { RocketPodLarge } from './modules/weapons/rocketLarge.js';
+import { Railgun } from './modules/weapons/railgun.js';
+import { GatlingGun } from './modules/weapons/gatlingGun.js';
+import { Lance } from './modules/weapons/lance.js';
+import { PlasmaCannon } from './modules/weapons/plasmaCannon.js';
+import { Cannon } from './modules/weapons/cannon.js';
+import { Torpedo } from './modules/weapons/torpedo.js';
 import { ParticlePool } from './systems/particlePool.js';
+import { SalvageSystem } from './systems/salvageSystem.js';
+import { RepairSystem } from './systems/repairSystem.js';
+import { CollisionSystem } from './systems/collisionSystem.js';
+import { BountySystem } from './systems/bountySystem.js';
+import { WeaponSystem } from './systems/weaponSystem.js';
+import { InteractionSystem } from './systems/interactionSystem.js';
 import { updateShipAI } from './ai/shipAI.js';
 import { Ship } from './entities/ship.js';
-import { Projectile } from './entities/projectile.js';
-import { LootDrop, generateEnemyLoot, createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from './entities/lootDrop.js';
-import { Station } from './world/station.js';
 import { Derelict } from './world/derelict.js';
 import { LocationOverlay } from './ui/locationOverlay.js';
 import { ShipScreen } from './ui/shipScreen.js';
-import { RocketExplosion } from './entities/rocketExplosion.js';
-
-import { DEFAULT_SCRAP, FUEL_RATES,
-         REPAIR_RATE, REPAIR_COST_PER_PT, BOUNTY, REPUTATION,
-         MODULE_REPAIR_RATE, MODULE_REPAIR_COST,
-       } from './data/tuning/economyTuning.js';
+import {
+  DEFAULT_SCRAP, FUEL_RATES,
+} from './data/tuning/economyTuning.js';
 import { SPAWN } from './data/tuning/shipTuning.js';
-import { MODULE_BREACH_HULL_THRESHOLD, MODULE_BREACH_CHANCE_LOW,
-         MODULE_BREACH_CHANCE_MID, MODULE_BREACH_CHANCE_HIGH,
-       } from './data/tuning/weaponTuning.js';
 import { ReputationSystem } from './systems/reputation.js';
 import { createModuleById } from './modules/registry.js';
-import { CONDITION_DISTRIBUTIONS } from './data/lootTables.js';
 import { COMMODITIES } from './data/commodities.js';
 import { createShip } from './ships/registry.js';
 
@@ -50,8 +46,8 @@ export class GameManager {
     this.hud = null;
     this.particlePool = null;
     this.map = options.map || MAP;
-    this.isTestMode  = options.testMode  || false;
-    this.testSteps   = options.testSteps || [];
+    this.isTestMode = options.testMode || false;
+    this.testSteps = options.testSteps || [];
     this._addRockets = options.addRockets || false;
     this.scrap = options.startScrap ?? DEFAULT_SCRAP;
     this.fuel = 0;    // set from player.fuelMax in init()
@@ -59,35 +55,29 @@ export class GameManager {
     this.cargo = Object.fromEntries(Object.keys(COMMODITIES).map(id => [id, 0]));
     this.modules = [];  // uninstalled ShipModule instances
     this.weapons = [];  // unequipped weapon instances from loot
-    this.ammo    = {};  // { autocannon: N, rocket: N, ... } reserve pool
+    this.ammo = {};  // { autocannon: N, rocket: N, ... } reserve pool
     this.isPaused = false;
     this.isDocked = false;
     this.stationScreen = null;
     this.shipScreen = null;
-    this.nearbyStation = null;
-    this.nearbyDerelict = null;
     this._cachedMouseWorld = null;
-    this._raiderRespawnQueue = [];
+    this._respawnQueue = [];
     this._prevMouseRight = false;
-    this.activeBounties = [];
     this.reputation = new ReputationSystem();
     this.totalTime = 0;
 
-    // Salvage state
-    this.isSalvaging = false;
-    this.salvageProgress = 0;
-    this.salvageTotal = 0;
-    this.salvageTarget = null;
-
-    // Repair state
-    this.isRepairing = false;
-    this._repairAccum = 0;
-    this._moduleRepairAccum = 0;
+    // Subsystems
+    this.salvage = new SalvageSystem();
+    this.repair = new RepairSystem();
+    this.collision = new CollisionSystem();
+    this.bounty = new BountySystem();
+    this.weaponSys = new WeaponSystem();
+    this.interaction = new InteractionSystem();
 
     // Live fuel/power telemetry (updated every tick, read by HUD)
-    this.fuelBurnRate  = 0;  // total fuel/sec consumed, all sources
+    this.fuelBurnRate = 0;  // total fuel/sec consumed, all sources
     this.reactorOutput = 0;  // total watts generated by installed modules
-    this.reactorDraw   = 0;  // total watts consumed by installed modules
+    this.reactorDraw = 0;  // total watts consumed by installed modules
 
     // Pan mode (test only)
     this.isPanMode = false;
@@ -103,7 +93,7 @@ export class GameManager {
     this.canvas = document.getElementById('game');
     this.canvas.style.cursor = 'none';
     this._resizeCanvas();
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d', { alpha: false });
 
     window.addEventListener('resize', () => {
       this._resizeCanvas();
@@ -115,13 +105,13 @@ export class GameManager {
     this.hud = new HUD();
     this.stationScreen = new LocationOverlay();
     this.shipScreen = new ShipScreen();
-    this.renderer = new Renderer(this.ctx, this.map.mapSize, this.map.zones);
+    this.renderer = new Renderer(this.ctx, this.map.mapSize, this.map.background);
     this.particlePool = new ParticlePool();
 
     // Spawn player
     const start = this.map.playerStart || { x: 400, y: 400 };
     this.player = createHullbreaker(start.x, start.y);
-    this.fuel    = this.player.fuelMax;
+    this.fuel = this.player.fuelMax;
     this.fuelMax = this.player.fuelMax;
 
     if (this.isTestMode) {
@@ -150,9 +140,9 @@ export class GameManager {
 
       // Seed cargo ammo reserves for test mode
       this.ammo['autocannon'] = 300;
-      this.ammo['cannon']     = 20;
-      this.ammo['gatling']    = 600;
-      this.ammo['rocket']     = 20;
+      this.ammo['cannon'] = 20;
+      this.ammo['gatling'] = 600;
+      this.ammo['rocket'] = 20;
     }
     // Normal mode: weapons come from installed modules (set up in ship constructor)
 
@@ -184,7 +174,13 @@ export class GameManager {
       return;
     }
 
-    if (this.isSalvaging) this._updateSalvage(dt);
+    if (this.salvage.isSalvaging) {
+      const result = this.salvage.update(dt);
+      if (result) {
+        for (const e of result.lootEntities) this.entities.push(e);
+        this.particlePool.explosion(result.particlePos.x, result.particlePos.y, 10);
+      }
+    }
 
     // Pause toggle — space bar; checked before processInput so fire is skipped
     if (input.wasJustPressed(' ')) this.isPaused = !this.isPaused;
@@ -206,7 +202,7 @@ export class GameManager {
 
     for (const entity of this.entities) {
       if (!entity.active) continue;
-      if ((this.isSalvaging || this.isRepairing) && entity === this.player) continue;
+      if ((this.salvage.isSalvaging || this.repair.isRepairing) && entity === this.player) continue;
       entity.update(dt, this.entities);
     }
 
@@ -236,7 +232,7 @@ export class GameManager {
 
     // Auto-fire turrets
     const enemies = this.ships.filter(s => s.active && s.relation === 'hostile');
-    if (this.player && this.player.active && !this.isSalvaging && !this.isRepairing) {
+    if (this.player && this.player.active && !this.salvage.isSalvaging && !this.repair.isRepairing) {
       this.player.fireAutoWeapons(enemies, this.entities);
 
       // F-key auto-fire mode: active primary also fires at nearest enemy
@@ -255,52 +251,44 @@ export class GameManager {
       }
     }
 
-    if (this.isRepairing) this._updateRepair(dt);
-    this._updateWeaponReloads(dt);
+    if (this.repair.isRepairing) {
+      const { scrapSpent } = this.repair.update(dt, this.player, this.scrap);
+      this.scrap -= scrapSpent;
+    }
+    this.weaponSys.updateReloads(dt, this.player, this.ammo);
 
     // Update guided projectile targets
-    this._updateGuidedProjectiles();
+    this.weaponSys.updateGuidance(this.entities, this.ships, this._cachedMouseWorld);
 
     this.particlePool.update(dt);
-    this._runCollisions();
-    this._checkLootPickups();
-    this._processRaiderRespawns(dt);
-    this._updateBountyExpiry();
+    const collisionResult = this.collision.update(this.entities, this.player, {
+      particlePool: this.particlePool,
+      hud: this.hud,
+      repair: this.repair,
+      reputation: this.reputation,
+      onEnemyKilled: (target) => this.bounty.onEnemyKilled(target, {
+        particlePool: this.particlePool, hud: this.hud, reputation: this.reputation, entities: this.entities,
+      }),
+    });
+    for (const e of collisionResult.newEntities) this.entities.push(e);
+    this.interaction.checkLootPickups(this.entities, this.player, this);
+    this._processRespawns(dt);
+    this.bounty.updateExpiry(this.totalTime);
     this._updateDerelictSparks(dt);
     this._updateDamageEffects(dt);
     this._purgeInactive();
 
-    this._checkDerelictInteraction(dt);
-    if (!this.isSalvaging) this._checkDocking();
+    this.interaction.updateDerelicts(dt, this.entities, this.player, this.salvage, input);
+    if (!this.salvage.isSalvaging) {
+      const dockResult = this.interaction.checkDocking(this.entities, this.player, input, {
+        reputation: this.reputation, hud: this.hud, stationScreen: this.stationScreen,
+        bounty: this.bounty, game: this,
+      });
+      if (dockResult.isDocked) this.isDocked = true;
+    }
 
     if (this.player && this.player.active && !this.isPanMode) {
       this.camera.follow(this.player, dt);
-    }
-  }
-
-  _updateGuidedProjectiles() {
-    const enemies = this.ships.filter(s => s.active && s.relation === 'hostile');
-    for (const entity of this.entities) {
-      if (!(entity instanceof Projectile) || !entity.active || !entity.isGuided) continue;
-      if (entity.guidedType === 'wire') {
-        if (this._cachedMouseWorld) {
-          entity.guidanceTargetX = this._cachedMouseWorld.x;
-          entity.guidanceTargetY = this._cachedMouseWorld.y;
-        }
-      } else if (entity.guidedType === 'heat') {
-        let nearest = null;
-        let nearestDist = Infinity;
-        for (const e of enemies) {
-          const dx = e.x - entity.x;
-          const dy = e.y - entity.y;
-          const d = dx * dx + dy * dy;
-          if (d < nearestDist) { nearestDist = d; nearest = e; }
-        }
-        if (nearest) {
-          entity.guidanceTargetX = nearest.x;
-          entity.guidanceTargetY = nearest.y;
-        }
-      }
     }
   }
 
@@ -335,195 +323,31 @@ export class GameManager {
     let out = 0, draw = 0;
     for (const mod of (this.player.moduleSlots || [])) {
       if (!mod) continue;
-      out  += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
-      draw += mod.powerDraw   || 0;
+      out += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
+      draw += mod.powerDraw || 0;
     }
     this.reactorOutput = out;
-    this.reactorDraw   = draw;
-  }
-
-  _startRepair() { this.isRepairing = true; this._repairAccum = 0; this._moduleRepairAccum = 0; }
-  _cancelRepair() { this.isRepairing = false; this._repairAccum = 0; this._moduleRepairAccum = 0; }
-
-  // Weapon magazine reload — counts down timers and pulls rounds from cargo when complete
-  _updateWeaponReloads(dt) {
-    if (!this.player) return;
-    for (const w of this.player.weapons) {
-      if (!(w._reloadTimer > 0)) continue;
-      w._reloadTimer -= dt;
-      if (w._reloadTimer <= 0) {
-        w._reloadTimer = 0;
-        if (w.ammoType && w.magSize !== undefined) {
-          const available = this.ammo[w.ammoType] ?? 0;
-          if (available > 0) {
-            const needed = w.magSize - w.ammo;
-            const take   = Math.min(needed, available);
-            w.ammo += take;
-            this.ammo[w.ammoType] -= take;
-          }
-        }
-      }
-    }
-  }
-
-  // Manually trigger reload for all weapons that are not already reloading and have cargo supply
-  _manualReloadWeapons() {
-    if (!this.player) return;
-    for (const w of this.player.weapons) {
-      if (w.ammoType === undefined || w.magSize === undefined) continue;
-      if (w._reloadTimer > 0) continue;
-      if (w.ammo >= w.magSize) continue;
-      if ((this.ammo[w.ammoType] ?? 0) <= 0) continue;
-      w._reloadTimer = w.reloadTime;
-    }
-  }
-
-  // Cycle ammo mode on a weapon — dumps current magazine back to reserves and starts reload
-  _cycleAmmoMode(weapon) {
-    const modes = weapon.ammoModes;
-    if (!modes || modes.length < 2) return;
-    const next = modes[(modes.indexOf(weapon.currentAmmoMode) + 1) % modes.length];
-    // Return current ammo to reserves
-    this.ammo[weapon.ammoType] = (this.ammo[weapon.ammoType] ?? 0) + weapon.ammo;
-    weapon.ammo = 0;
-    weapon.currentAmmoMode = next;
-    weapon._reloadTimer = weapon.reloadTime;
-    this.hud.addPickupText('\u2192 ' + next.toUpperCase(), this.player.x, this.player.y, null);
-  }
-
-  // Cycle guidance mode on a rocket pod (no ammo state change needed)
-  _cycleGuidanceMode(weapon) {
-    const modes = weapon.guidanceModes;
-    if (!modes || modes.length < 2) return;
-    weapon.guidanceMode = modes[(modes.indexOf(weapon.guidanceMode) + 1) % modes.length];
-    this.hud.addPickupText('\u2192 ' + weapon.guidanceMode.toUpperCase(), this.player.x, this.player.y, null);
-  }
-
-  _hasModulesToRepair() {
-    const slots = this.player?.moduleSlots;
-    if (!slots) return false;
-    return slots.some(m => m && m.condition && m.condition !== 'good');
-  }
-
-  _updateRepair(dt) {
-    const ship = this.player;
-    if (!ship || !ship.active) return;
-
-    // Armor repair — unchanged
-    this._repairAccum += REPAIR_RATE * dt;
-    const arcOrder = ['front', 'port', 'starboard', 'aft'];
-    while (this._repairAccum >= 1 && this.scrap > 0) {
-      let targetArc = null;
-      let maxDiff = 0;
-      for (const arc of arcOrder) {
-        const diff = ship.armorArcsMax[arc] - ship.armorArcs[arc];
-        if (diff > maxDiff) { maxDiff = diff; targetArc = arc; }
-      }
-      if (!targetArc || maxDiff < 1) break;
-      ship.armorArcs[targetArc] = Math.min(ship.armorArcs[targetArc] + 1, ship.armorArcsMax[targetArc]);
-      this.scrap -= REPAIR_COST_PER_PT;
-      this._repairAccum -= 1;
-    }
-
-    // Module repair — runs in parallel with armor repair
-    if (this._hasModulesToRepair() && this.scrap >= MODULE_REPAIR_COST) {
-      this._moduleRepairAccum += MODULE_REPAIR_RATE * dt;
-      if (this._moduleRepairAccum >= 1) {
-        this._moduleRepairAccum -= 1;
-        if (this.scrap >= MODULE_REPAIR_COST) {
-          const mod = this._worstDamagedModule();
-          if (mod) {
-            this._improveCondition(mod);
-            this.scrap -= MODULE_REPAIR_COST;
-          }
-        }
-      }
-    } else {
-      this._moduleRepairAccum = 0;
-    }
-
-    const armorDone = ship.armorCurrent >= ship.armorMax;
-    const modsDone  = !this._hasModulesToRepair();
-    if ((armorDone && modsDone) || this.scrap <= 0) this._cancelRepair();
-  }
-
-  _worstDamagedModule() {
-    const STEPS = ['good', 'worn', 'faulty', 'damaged', 'destroyed'];
-    const slots = this.player?.moduleSlots ?? [];
-    let worst = null;
-    let worstIdx = 0;
-    for (const mod of slots) {
-      if (!mod || !mod.condition) continue;
-      const idx = STEPS.indexOf(mod.condition);
-      if (idx > worstIdx) { worstIdx = idx; worst = mod; }
-    }
-    return worst;
-  }
-
-  _improveCondition(mod) {
-    const STEPS = ['good', 'worn', 'faulty', 'damaged', 'destroyed'];
-    const idx = STEPS.indexOf(mod.condition);
-    if (idx <= 0) return;
-    mod.condition = STEPS[idx - 1];
-    mod._applyConditionToWeapon();
-    mod._applyConditionToEngine?.();
-    this.player?.refreshCapabilities();
-  }
-
-  _degradeCondition(mod) {
-    const STEPS = ['good', 'worn', 'faulty', 'damaged', 'destroyed'];
-    const idx = STEPS.indexOf(mod.condition);
-    if (idx < 0 || idx >= STEPS.length - 1) return false;
-    mod.condition = STEPS[idx + 1];
-    mod._applyConditionToWeapon();
-    mod._applyConditionToEngine?.();
-    this.player?.refreshCapabilities();
-    return true;
-  }
-
-  _maybeBreachModule(ship) {
-    const ratio = ship.hullCurrent / ship.hullMax;
-    if (ratio >= MODULE_BREACH_HULL_THRESHOLD) return;
-
-    let chance;
-    if (ratio < 0.10)      chance = MODULE_BREACH_CHANCE_HIGH;
-    else if (ratio < 0.30) chance = MODULE_BREACH_CHANCE_MID;
-    else                   chance = MODULE_BREACH_CHANCE_LOW;
-
-    if (Math.random() >= chance) return;
-
-    const slots = ship.moduleSlots ?? [];
-    const candidates = slots.filter(m => m && m.condition !== 'destroyed');
-    if (candidates.length === 0) return;
-
-    const mod = candidates[Math.floor(Math.random() * candidates.length)];
-    const degraded = this._degradeCondition(mod);
-    if (degraded) {
-      this.hud.addPickupText(
-        `${mod.displayName} ${mod.condition.toUpperCase()}`,
-        ship.x, ship.y, 'breach'
-      );
-    }
+    this.reactorDraw = draw;
   }
 
   _handleTestInput() {
     const mx = this._cachedMouseWorld?.x ?? (this.player.x + 300);
     const my = this._cachedMouseWorld?.y ?? this.player.y;
 
-    const spawnEnemy = (factory) => {
-      const r = factory(mx, my);
-      r.homePosition = { x: mx, y: my };
-      r._aggro = true;
-      this.entities.push(r);
-      this.ships.push(r);
+    const spawnTestEnemy = (shipType) => {
+      const ship = createShip(shipType, mx, my);
+      ship.homePosition = { x: mx, y: my };
+      ship._aggro = true;
+      this.entities.push(ship);
+      this.ships.push(ship);
     };
 
     if (input.wasJustPressed('?')) this.isPanMode = !this.isPanMode;
     if (input.wasJustPressed('v')) this.aiDisabled = !this.aiDisabled;
 
-    if (input.wasJustPressed('z')) spawnEnemy(createLightFighter);
-    if (input.wasJustPressed('x')) spawnEnemy(createArmedHauler);
-    if (input.wasJustPressed('c')) spawnEnemy(createSalvageMothership);
+    if (input.wasJustPressed('z')) spawnTestEnemy('light-fighter');
+    if (input.wasJustPressed('x')) spawnTestEnemy('armed-hauler');
+    if (input.wasJustPressed('c')) spawnTestEnemy('salvage-mothership');
 
   }
 
@@ -544,9 +368,9 @@ export class GameManager {
 
     if (this.isPanMode) {
       const speed = 800 * dt;
-      if (input.isDown('w') || input.isDown('arrowup'))    this.camera.y -= speed;
-      if (input.isDown('s') || input.isDown('arrowdown'))  this.camera.y += speed;
-      if (input.isDown('a') || input.isDown('arrowleft'))  this.camera.x -= speed;
+      if (input.isDown('w') || input.isDown('arrowup')) this.camera.y -= speed;
+      if (input.isDown('s') || input.isDown('arrowdown')) this.camera.y += speed;
+      if (input.isDown('a') || input.isDown('arrowleft')) this.camera.x -= speed;
       if (input.isDown('d') || input.isDown('arrowright')) this.camera.x += speed;
       return;
     }
@@ -554,27 +378,27 @@ export class GameManager {
     const rightJustPressed = input.mouseButtons.right && !this._prevMouseRight;
     this._prevMouseRight = input.mouseButtons.right;
 
-    if (this.isSalvaging) {
-      if (input.wasJustPressed('e') || input.wasJustPressed('escape')) this._cancelSalvage();
+    if (this.salvage.isSalvaging) {
+      if (input.wasJustPressed('e') || input.wasJustPressed('escape')) this.salvage.cancel();
       return;
     }
 
     // R always triggers weapon reload (regardless of movement/repair state)
-    if (input.wasJustPressed('r')) this._manualReloadWeapons();
+    if (input.wasJustPressed('r')) this.weaponSys.manualReload(this.player, this.ammo);
 
-    if (this.isRepairing) {
-      const stillValid = p.throttleLevel === 0 && (p.armorCurrent < p.armorMax || this._hasModulesToRepair()) && this.scrap > 0;
+    if (this.repair.isRepairing) {
+      const stillValid = p.throttleLevel === 0 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.scrap > 0;
       if (!stillValid || input.wasJustPressed('escape')) {
-        this._cancelRepair();
+        this.repair.cancel();
       } else if (input.wasJustPressed('r')) {
-        this._cancelRepair();
+        this.repair.cancel();
         return;
       }
       return;
     }
 
-    const canRepair = p.throttleLevel === 0 && (p.armorCurrent < p.armorMax || this._hasModulesToRepair()) && this.scrap > 0;
-    if (input.wasJustPressed('r') && canRepair) { this._startRepair(); return; }
+    const canRepair = p.throttleLevel === 0 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.scrap > 0;
+    if (input.wasJustPressed('r') && canRepair) { this.repair.start(); return; }
 
     if (input.wasJustPressed('f')) this.autoFireMode = !this.autoFireMode;
 
@@ -583,7 +407,7 @@ export class GameManager {
 
     if (this.fuel <= 0 && p.throttleLevel > 1) p.throttleLevel = 1;
 
-    if (input.isDown('a') || input.isDown('arrowleft'))  p.rotationInput = -1;
+    if (input.isDown('a') || input.isDown('arrowleft')) p.rotationInput = -1;
     if (input.isDown('d') || input.isDown('arrowright')) p.rotationInput = 1;
 
     if (!this.isPaused) {
@@ -606,121 +430,14 @@ export class GameManager {
       // Ammo / guidance mode cycling: 1 for active primary, 2 for active secondary
       if (input.wasJustPressed('1')) {
         const w = p._primaryWeapons[p.primaryWeaponIdx];
-        if (w?.ammoModes?.length > 1) this._cycleAmmoMode(w);
+        if (w?.ammoModes?.length > 1) this.weaponSys.cycleAmmoMode(w, this.ammo, this.hud, this.player);
       }
       if (input.wasJustPressed('2')) {
         const w = p._secondaryWeapons[p.secondaryWeaponIdx];
-        if (w?.guidanceModes?.length > 1) this._cycleGuidanceMode(w);
-        else if (w?.ammoModes?.length > 1) this._cycleAmmoMode(w);
+        if (w?.guidanceModes?.length > 1) this.weaponSys.cycleGuidanceMode(w, this.hud, this.player);
+        else if (w?.ammoModes?.length > 1) this.weaponSys.cycleAmmoMode(w, this.ammo, this.hud, this.player);
       }
     }
-  }
-
-  _checkDerelictInteraction(dt) {
-    const LORE_RADIUS = 400;
-    const LORE_FADE_SPEED = 1.2; // alpha units per second
-
-    // Clear previous nearby flag
-    if (this.nearbyDerelict) this.nearbyDerelict.isNearby = false;
-    this.nearbyDerelict = null;
-    if (!this.player || !this.player.active) return;
-
-    for (const entity of this.entities) {
-      if (!(entity instanceof Derelict) || !entity.active || entity.salvaged) continue;
-      const dx = entity.x - this.player.x;
-      const dy = entity.y - this.player.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      // Fade lore alpha toward target
-      const loreTarget = dist < LORE_RADIUS ? 1 : 0;
-      entity._loreAlpha += (loreTarget - entity._loreAlpha) * Math.min(1, LORE_FADE_SPEED * dt);
-
-      if (this.isSalvaging) continue;
-      if (dist < entity.interactionRadius) {
-        this.nearbyDerelict = entity;
-        entity.isNearby = true;
-      }
-    }
-
-    if (this.nearbyDerelict && input.wasJustPressed('e')) this._startSalvage(this.nearbyDerelict);
-  }
-
-  _startSalvage(derelict) {
-    this.isSalvaging = true;
-    this.salvageProgress = 0;
-    this.salvageTotal = derelict.salvageTime;
-    this.salvageTarget = derelict;
-    this.player.throttleLevel = 0;
-  }
-
-  _updateSalvage(dt) {
-    if (!this.salvageTarget || !this.salvageTarget.active || this.salvageTarget.salvaged) {
-      this._cancelSalvage();
-      return;
-    }
-    this.salvageProgress += dt;
-    if (this.salvageProgress >= this.salvageTotal) this._completeSalvage();
-  }
-
-  _completeSalvage() {
-    const derelict = this.salvageTarget;
-    derelict.salvaged = true;
-    derelict.active = false;
-
-    for (const loot of derelict.lootTable) {
-      if (loot.type === 'moduleId') {
-        const mod = this._createModuleById(loot.id);
-        if (mod) {
-          mod.condition = loot.condition || this._rollCondition(derelict.derelictClass);
-          this.entities.push(createModuleDrop(derelict.x, derelict.y, mod));
-        }
-      } else if (loot.type === 'weaponId') {
-        const wep = this._createWeaponById(loot.id);
-        if (wep) this.entities.push(createWeaponDrop(derelict.x, derelict.y, wep));
-      } else if (loot.type === 'ammo') {
-        this.entities.push(createAmmoDrop(derelict.x, derelict.y, loot.ammoType, loot.amount));
-      } else {
-        this.entities.push(createLootDrop(derelict.x, derelict.y, loot.type, loot.amount));
-      }
-    }
-
-    this.particlePool.explosion(derelict.x, derelict.y, 10);
-    this.isSalvaging = false;
-    this.salvageProgress = 0;
-    this.salvageTarget = null;
-  }
-
-  _rollCondition(derelictClass) {
-    const dist = CONDITION_DISTRIBUTIONS[derelictClass] ?? CONDITION_DISTRIBUTIONS.hauler;
-    let roll = Math.random();
-    for (const [condition, weight] of Object.entries(dist)) {
-      roll -= weight;
-      if (roll <= 0) return condition;
-    }
-    return 'worn';
-  }
-
-  _createModuleById(id) {
-    try {
-      return createModuleById(id);
-    } catch {
-      return null;
-    }
-  }
-
-  _createWeaponById(id) {
-    const map = {
-      Autocannon: () => new Autocannon(),
-      Cannon:     () => new Cannon(),
-      LanceSmall: () => new Lance('small'),
-    };
-    return map[id] ? map[id]() : null;
-  }
-
-  _cancelSalvage() {
-    this.isSalvaging = false;
-    this.salvageProgress = 0;
-    this.salvageTarget = null;
   }
 
   _updateDerelictSparks(dt) {
@@ -755,11 +472,11 @@ export class GameManager {
             wx + (Math.random() - 0.5) * 6,
             wy + (Math.random() - 0.5) * 6,
             2, {
-              colors: ['#555555', '#6a6a6a', '#3a3a44'],
-              minSpeed: 4, maxSpeed: 18,
-              life: 1.2 + Math.random() * 0.8,
-              r: 4 + Math.random() * 3,
-            }
+            colors: ['#555555', '#6a6a6a', '#3a3a44'],
+            minSpeed: 4, maxSpeed: 18,
+            life: 1.2 + Math.random() * 0.8,
+            r: 4 + Math.random() * 3,
+          }
           );
         }
       }
@@ -773,239 +490,32 @@ export class GameManager {
             entity.x + (Math.random() - 0.5) * 16,
             entity.y + (Math.random() - 0.5) * 16,
             3, {
-              colors: ['#ffff66', '#ffaa00', '#00ffcc', '#ffffff'],
-              minSpeed: 40, maxSpeed: 110,
-              life: 0.15 + Math.random() * 0.15,
-              r: 1.5,
-            }
+            colors: ['#ffff66', '#ffaa00', '#00ffcc', '#ffffff'],
+            minSpeed: 40, maxSpeed: 110,
+            life: 0.15 + Math.random() * 0.15,
+            r: 1.5,
+          }
           );
         }
       }
     }
   }
 
-  _checkLootPickups() {
-    if (!this.player || !this.player.active) return;
-    const px = this.player.x;
-    const py = this.player.y;
-    for (const entity of this.entities) {
-      if (!(entity instanceof LootDrop) || !entity.active) continue;
-      const dx = entity.x - px;
-      const dy = entity.y - py;
-      if (Math.sqrt(dx * dx + dy * dy) < entity.pickupRadius) {
-        if (entity.lootType === 'scrap') {
-          this.scrap += entity.amount;
-          entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y, 'scrap');
-        } else if (entity.lootType === 'fuel') {
-          this.fuel = Math.min(this.fuelMax, this.fuel + entity.amount);
-          entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y, 'scrap');
-        } else if (entity.lootType === 'module' && entity.moduleData) {
-          this.modules.push(entity.moduleData);
-          entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y, 'module');
-        } else if (entity.lootType === 'weapon' && entity.weaponData) {
-          this.weapons.push(entity.weaponData);
-          entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y, 'module');
-        } else if (entity.lootType === 'ammo' && entity.ammoType) {
-          this.ammo[entity.ammoType] = (this.ammo[entity.ammoType] || 0) + entity.amount;
-          entity.active = false;
-          this.hud.addPickupText(entity.label, entity.x, entity.y, 'module');
-        } else {
-          if (this.totalCargoUsed < this.totalCargoCapacity) {
-            this.cargo[entity.lootType] = (this.cargo[entity.lootType] || 0) + entity.amount;
-            entity.active = false;
-            this.hud.addPickupText(entity.label, entity.x, entity.y, 'cargo');
-          }
-        }
-      }
-    }
-  }
-
-  _processRaiderRespawns(dt) {
-    for (let i = this._raiderRespawnQueue.length - 1; i >= 0; i--) {
-      const entry = this._raiderRespawnQueue[i];
+  _processRespawns(dt) {
+    for (let i = this._respawnQueue.length - 1; i >= 0; i--) {
+      const entry = this._respawnQueue[i];
       entry.timer -= dt;
       if (entry.timer <= 0) {
         const angle = Math.random() * Math.PI * 2;
-        const dist = SPAWN.RAIDER_RADIUS.MIN + Math.random() * SPAWN.RAIDER_RADIUS.MAX;
+        const dist = SPAWN.ENEMY_RADIUS.MIN + Math.random() * SPAWN.ENEMY_RADIUS.MAX;
         const rx = entry.homePosition.x + Math.sin(angle) * dist;
         const ry = entry.homePosition.y - Math.cos(angle) * dist;
-        const factory = entry.shipType === 'armed-hauler'       ? createArmedHauler
-                       : entry.shipType === 'salvage-mothership' ? createSalvageMothership
-                       : createLightFighter;
-        const raider = factory(rx, ry);
-        raider.homePosition = { x: entry.homePosition.x, y: entry.homePosition.y };
-        raider._canRespawn  = true;
-        this.entities.push(raider);
-        this.ships.push(raider);
-        this._raiderRespawnQueue.splice(i, 1);
-      }
-    }
-  }
-
-  _checkDocking() {
-    this.nearbyStation = null;
-    for (const entity of this.entities) {
-      if (!(entity instanceof Station)) continue;
-      const dx = entity.x - this.player.x;
-      const dy = entity.y - this.player.y;
-      if (Math.sqrt(dx * dx + dy * dy) < entity.dockingRadius) {
-        this.nearbyStation = entity;
-        break;
-      }
-    }
-    if (this.nearbyStation && input.wasJustPressed('e')) {
-      if (this.reputation.isHostile(this.nearbyStation.reputationFaction)) {
-        this.hud.addPickupText('DOCKING REFUSED', this.nearbyStation.x, this.nearbyStation.y, 'hostile');
-        return;
-      }
-      this.isDocked = true;
-      this._collectCompletedBounties(this.nearbyStation);
-      this.stationScreen.open(this.nearbyStation, this);
-    }
-  }
-
-  _runCollisions() {
-    // --- Interception pass: canIntercept projectiles vs isInterceptable projectiles ---
-    const interceptors = [];
-    const interceptables = [];
-    for (const e of this.entities) {
-      if (!(e instanceof Projectile) || !e.active) continue;
-      if (e.canIntercept)    interceptors.push(e);
-      if (e.isInterceptable) interceptables.push(e);
-    }
-    for (const inter of interceptors) {
-      const ib = inter.getBounds();
-      for (const tgt of interceptables) {
-        if (!tgt.active) continue;
-        if (inter.owner?.faction === tgt.owner?.faction) continue;
-        const tb = tgt.getBounds();
-        const dx = ib.x - tb.x;
-        const dy = ib.y - tb.y;
-        if (dx * dx + dy * dy < 144) { // (6+6)²
-          inter.active = false;
-          tgt.active = false;
-          tgt.shouldDetonate = false; // prevent AoE on interception
-          this.particlePool.explosion(tgt.x, tgt.y, 3);
-          break;
-        }
-      }
-    }
-
-    // --- Beam interception pass: canInterceptBeam lances vs isInterceptable projectiles ---
-    for (const ship of this.entities) {
-      if (!(ship instanceof Ship) || !ship.active) continue;
-      for (const w of ship.weapons) {
-        if (!w.canInterceptBeam || !w._isFiring) continue;
-        const ox = w._beamOriginX, oy = w._beamOriginY;
-        const ex = w._beamEndX,   ey = w._beamEndY;
-        const blen2 = (ex - ox) ** 2 + (ey - oy) ** 2;
-        if (blen2 === 0) continue;
-        for (const e of this.entities) {
-          if (!(e instanceof Projectile) || !e.active || !e.isInterceptable) continue;
-          if (e.owner?.faction === ship.faction) continue;
-          const t = Math.max(0, Math.min(1, ((e.x - ox) * (ex - ox) + (e.y - oy) * (ey - oy)) / blen2));
-          const dx = e.x - (ox + t * (ex - ox));
-          const dy = e.y - (oy + t * (ey - oy));
-          if (dx * dx + dy * dy < 225) { // 15px radius
-            e.active = false;
-            this.particlePool.explosion(e.x, e.y, 3);
-          }
-        }
-      }
-    }
-
-    // --- Main collision pass ---
-    for (const entity of this.entities) {
-      if (!(entity instanceof Projectile)) continue;
-
-      // AoE expiry detonation (rockets / flak that ran out of range)
-      if ((entity.isRocket || entity.detonatesOnExpiry) && entity.shouldDetonate && !entity.active) {
-        const tx = entity.rocketTargetX ?? entity.x;
-        const ty = entity.rocketTargetY ?? entity.y;
-        const radius = entity.blastRadius || 280;
-        this._aoeExplode(tx, ty, entity.damage, entity.hullDamage ?? 0, radius);
-        this.particlePool.explosion(tx, ty, entity.isRocket ? 20 : 12);
-        if (entity.isRocket) this.entities.push(new RocketExplosion(tx, ty, radius));
-        entity.shouldDetonate = false;
-        continue;
-      }
-
-      if (!entity.active) continue;
-      const proj = entity;
-      const pb = proj.getBounds();
-
-      for (const target of this.entities) {
-        if (!target.active || !(target instanceof Ship)) continue;
-        if (proj.owner === target) continue;
-        if (proj.owner?.faction && target.faction && proj.owner.faction === target.faction) continue;
-
-        const sb = target.getBounds();
-        const dx = pb.x - sb.x;
-        const dy = pb.y - sb.y;
-        if (Math.sqrt(dx * dx + dy * dy) < pb.radius + sb.radius) {
-          // Attacking a neutral ship: turn hostile, apply reputation penalty once
-          if (proj.owner === this.player && target.relation === 'neutral' && !proj._neutralPenaltyApplied) {
-            proj._neutralPenaltyApplied = true;
-            this.reputation.change('settlements', REPUTATION.ATTACK_NEUTRAL_PENALTY);
-            target.relation = 'hostile';
-            target._aggro   = true;
-          }
-          if (proj.isRocket || proj.detonatesOnContact) {
-            // AoE on direct hit
-            proj.active = false;
-            const radius = proj.blastRadius || 280;
-            this._aoeExplode(proj.x, proj.y, proj.damage, proj.hullDamage ?? 0, radius);
-            this.particlePool.explosion(proj.x, proj.y, 20);
-            if (proj.isRocket) this.entities.push(new RocketExplosion(proj.x, proj.y, radius));
-          } else if (proj.isPlasma) {
-            // Plasma falloff — more damage up close
-            const falloff = Math.max(0, 1 - proj.distanceTravelled / proj.maxRange);
-            const armorDmg = proj.damage * falloff;
-            const hullDmg  = (proj.hullDamage ?? proj.damage) * (0.3 + falloff * 0.7);
-            const hullBefore = target.hullCurrent;
-            target.takeDamage(armorDmg, hullDmg, proj.x, proj.y);
-            if (target === this.player && target.hullCurrent < hullBefore) this._maybeBreachModule(target);
-            proj.active = false;
-            this.particlePool.explosion(proj.x, proj.y, 5);
-            if (target.isDestroyed && target !== this.player && target.relation === 'hostile') {
-              this._onEnemyKilled(target);
-            }
-          } else {
-            // Standard direct hit
-            const hullBefore = target.hullCurrent;
-            target.takeDamage(proj.damage, proj.hullDamage, proj.x, proj.y);
-            if (target === this.player && target.hullCurrent < hullBefore) this._maybeBreachModule(target);
-            proj.active = false;
-            this.particlePool.explosion(proj.x, proj.y, 5);
-            if (target.isDestroyed && target !== this.player && target.relation === 'hostile') {
-              this._onEnemyKilled(target);
-            }
-          }
-          break;
-        }
-      }
-    }
-  }
-
-  _aoeExplode(x, y, damage, hullDamage, blastRadius) {
-    for (const entity of this.entities) {
-      if (!entity.active || !(entity instanceof Ship)) continue;
-      const sb = entity.getBounds();
-      const dx = sb.x - x;
-      const dy = sb.y - y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < blastRadius + sb.radius) {
-        const falloff = 1 - (dist / (blastRadius + sb.radius)) * 0.7;
-        const hullBefore = entity.hullCurrent;
-        entity.takeDamage(damage * falloff, (hullDamage || 0) * falloff, x, y);
-        if (entity === this.player && entity.hullCurrent < hullBefore) this._maybeBreachModule(entity);
-        if (entity.isDestroyed && entity !== this.player && entity.relation !== 'neutral') {
-          this._onEnemyKilled(entity);
-        }
+        const ship = createShip(entry.shipType, rx, ry);
+        ship.homePosition = { x: entry.homePosition.x, y: entry.homePosition.y };
+        ship._canRespawn = true;
+        this.entities.push(ship);
+        this.ships.push(ship);
+        this._respawnQueue.splice(i, 1);
       }
     }
   }
@@ -1014,7 +524,7 @@ export class GameManager {
     if (this.isTestMode) {
       for (const s of this.ships) {
         if (!s.active && s._canRespawn && s.homePosition && !s.isBountyTarget) {
-          this._raiderRespawnQueue.push({
+          this._respawnQueue.push({
             timer: 60,
             homePosition: { x: s.homePosition.x, y: s.homePosition.y },
             shipType: s.shipType,
@@ -1023,11 +533,11 @@ export class GameManager {
       }
     }
     this.entities = this.entities.filter(e => e.active);
-    this.ships    = this.ships.filter(s => s.active);
+    this.ships = this.ships.filter(s => s.active);
   }
 
   // Computed view: all ships currently flagged hostile (for renderer/HUD)
-  get raiders() { return this.ships.filter(s => s.relation === 'hostile'); }
+  get hostiles() { return this.ships.filter(s => s.relation === 'hostile'); }
 
   get totalCargoCapacity() { return this.player ? this.player.cargoCapacity : 0; }
   get totalCargoUsed() {
@@ -1055,71 +565,10 @@ export class GameManager {
     }
   }
 
-  _onEnemyKilled(target) {
-    this.particlePool.explosion(target.x, target.y, 20);
-    if (target.displayName) this.hud.addKill(target.displayName);
-    const drops = generateEnemyLoot(target.x, target.y);
-    for (const drop of drops) this.entities.push(drop);
-    if (target.faction) this.reputation.onKill(target.faction);
-    for (const bounty of this.activeBounties) {
-      if (bounty.status === 'active' && bounty.targetEntity === target) {
-        bounty.status = 'completed';
-        this.hud.addPickupText(`Bounty Complete: +${bounty.contract.reward} scrap`, target.x, target.y);
-      }
-    }
-  }
-
-  acceptBounty(station, contract) {
-    if (this.activeBounties.find(b => b.contract.id === contract.id)) return;
-    const target = createShip(contract.targetShipType,
-                               contract.targetPosition.x, contract.targetPosition.y);
-    target.displayName = contract.targetName;
-    target.homePosition = { ...contract.targetPosition };
-    target.isBountyTarget = true;
-    this.entities.push(target);
-    this.ships.push(target);
-    const idx = station.bounties.indexOf(contract);
-    if (idx !== -1) station.bounties.splice(idx, 1);
-    this.activeBounties.push({
-      contract,
-      stationId: station.id,
-      acceptedAt: this.totalTime,
-      expiryTime: this.totalTime + contract.expirySeconds,
-      status: 'active',
-      targetEntity: target,
-    });
-  }
-
-  _collectCompletedBounties(station) {
-    let total = 0;
-    let completedCount = 0;
-    for (const b of this.activeBounties) {
-      if (b.stationId === station.id && b.status === 'completed') {
-        this.scrap += b.contract.reward;
-        total += b.contract.reward;
-        completedCount++;
-      }
-    }
-    if (completedCount > 0) {
-      this.reputation.change(station.reputationFaction, REPUTATION.BOUNTY_BONUS * completedCount);
-    }
-    this.activeBounties = this.activeBounties.filter(
-      b => !(b.stationId === station.id && (b.status === 'completed' || b.status === 'expired'))
-    );
-    if (total > 0) {
-      this.hud.addPickupText(`Bounty Paid: +${total} scrap`, this.player.x, this.player.y);
-    }
-  }
-
-  _updateBountyExpiry() {
-    for (const b of this.activeBounties) {
-      if (b.status !== 'active') continue;
-      if (this.totalTime >= b.expiryTime) {
-        b.status = 'expired';
-        if (b.targetEntity && b.targetEntity.active) b.targetEntity.active = false;
-      }
-    }
-  }
+  // Convenience accessors for external code
+  get nearbyStation() { return this.interaction.nearbyStation; }
+  get nearbyDerelict() { return this.interaction.nearbyDerelict; }
+  get activeBounties() { return this.bounty.activeBounties; }
 
   render() {
     this.renderer.render(this);

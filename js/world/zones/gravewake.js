@@ -14,20 +14,16 @@ import { PlanetPale }        from './gravewake/planetPale.js';
 import { ArkshipSpines }     from './gravewake/arkshipSpines.js';
 import { WallOfWrecks }      from './gravewake/wallOfWrecks.js';
 
-import { RAIDER_REGISTRY }     from '../../enemies/raiderRegistry.js';
-import { createGraveClanAmbusher } from '../../enemies/scavengers/graveClanAmbusher.js';
-import { createTraderConvoy }  from '../../ships/neutral/traderConvoy.js';
-import { createMilitiaPatrol } from '../../ships/neutral/militiaPatrol.js';
+import { createShip }           from '../../ships/registry.js';
 import { SPAWN }               from '../../data/tuning/shipTuning.js';
 
 // ── Spawn helpers ───────────────────────────────────────────────────────────
 
-function raiderGroup(x, y, count, shipType) {
-  const factory = RAIDER_REGISTRY[shipType] ?? RAIDER_REGISTRY['light-fighter'];
+function npcGroup(x, y, count, shipType) {
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
-    const dist = SPAWN.RAIDER_RADIUS.MIN + Math.random() * SPAWN.RAIDER_RADIUS.MAX;
-    const ship = factory(
+    const dist = SPAWN.ENEMY_RADIUS.MIN + Math.random() * SPAWN.ENEMY_RADIUS.MAX;
+    const ship = createShip(shipType,
       x + Math.sin(angle) * dist,
       y - Math.cos(angle) * dist,
     );
@@ -43,7 +39,7 @@ function lurkerGroup(x, y, count) {
     const dist = SPAWN.LURKER_RADIUS.MIN + Math.random() * SPAWN.LURKER_RADIUS.MAX;
     const rx = x + Math.sin(angle) * dist;
     const ry = y - Math.cos(angle) * dist;
-    const ship = createGraveClanAmbusher(rx, ry);
+    const ship = createShip('grave-clan-ambusher', rx, ry);
     ship._coverPoint  = { x: rx, y: ry };
     ship.homePosition = { x, y };
     ship._canRespawn  = true;
@@ -56,7 +52,7 @@ function convoy(routeA, routeB, shipCount) {
     const t = shipCount > 1 ? i / shipCount : 0;
     const sx = routeA.x + (routeB.x - routeA.x) * t;
     const sy = routeA.y + (routeB.y - routeA.y) * t;
-    const ship = createTraderConvoy(sx, sy);
+    const ship = createShip('trader-convoy', sx, sy);
     ship._tradeRouteA = { ...routeA };
     ship._tradeRouteB = { ...routeB };
     return ship;
@@ -68,7 +64,7 @@ function militia(orbitCenter, orbitRadius, orbitSpeed, count) {
     const angle = (i / count) * Math.PI * 2;
     const sx = orbitCenter.x + Math.sin(angle) * orbitRadius;
     const sy = orbitCenter.y - Math.cos(angle) * orbitRadius;
-    const ship = createMilitiaPatrol(sx, sy);
+    const ship = createShip('militia-patrol', sx, sy);
     ship._orbitCenter = { ...orbitCenter };
     ship._orbitRadius = orbitRadius;
     ship._orbitSpeed  = orbitSpeed;
@@ -76,6 +72,70 @@ function militia(orbitCenter, orbitRadius, orbitSpeed, count) {
     return ship;
   });
 }
+
+// ── Atmosphere background layer ──────────────────────────────────────────────
+
+function createGravewakeAtmosphere(zone) {
+  // Pre-generate micro-debris fragments
+  const count = 300;
+  const goldenAngle = 2.399963;
+  const fragments = [];
+  for (let i = 0; i < count; i++) {
+    const r = Math.sqrt(Math.random()) * zone.radius;
+    const theta = i * goldenAngle;
+    fragments.push({
+      wx: zone.center.x + Math.cos(theta) * r,
+      wy: zone.center.y + Math.sin(theta) * r,
+      parallax: 0.15 + (i % 17) * 0.015,
+      size: 2 + (i % 4),
+      angle: theta,
+    });
+  }
+
+  return {
+    type: 'gravewake-atmosphere',
+    render(ctx, camera) {
+      const dx = camera.x - zone.center.x;
+      const dy = camera.y - zone.center.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Fade in over 1000 units inside zone boundary
+      const fadeStart = zone.radius;
+      const fadeEnd = zone.radius - 1000;
+      const t = Math.max(0, Math.min(1, (fadeStart - dist) / (fadeStart - fadeEnd)));
+      const maxAlpha = 0.6 * t;
+      if (maxAlpha <= 0) return;
+
+      ctx.save();
+      ctx.strokeStyle = '#334455';
+      ctx.lineWidth = 1;
+
+      for (const frag of fragments) {
+        const px = frag.wx - camera.x * frag.parallax * camera.zoom;
+        const py = frag.wy - camera.y * frag.parallax * camera.zoom;
+
+        const sw = camera.width;
+        const sh = camera.height;
+        const sx = ((px % sw) + sw) % sw;
+        const sy = ((py % sh) + sh) % sh;
+
+        ctx.globalAlpha = maxAlpha * 0.6;
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(frag.angle);
+        ctx.strokeRect(-frag.size, -frag.size * 0.3, frag.size * 2, frag.size * 0.6);
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    },
+  };
+}
+
+// ── Zone definition ──────────────────────────────────────────────────────────
+
+const GRAVEWAKE_ZONE = { id: 'gravewake', center: { x: 10000, y: 5000 }, radius: 9500 };
 
 // ── Zone export ─────────────────────────────────────────────────────────────
 
@@ -98,11 +158,11 @@ export const GRAVEWAKE = {
     ...ArkshipSpines.instantiate(),
     ...WallOfWrecks.instantiate(),
 
-    // Raiders
-    ...raiderGroup(3200, 2200, 3, 'light-fighter'),
-    ...raiderGroup(2800, 7500, 3, 'light-fighter'),
-    ...raiderGroup(14000, 4200, 1, 'drone-control-frigate'),
-    ...raiderGroup(10500, 2500, 1, 'drone-control-frigate'),
+    // Enemies
+    ...npcGroup(3200, 2200, 3, 'light-fighter'),
+    ...npcGroup(2800, 7500, 3, 'light-fighter'),
+    ...npcGroup(14000, 4200, 1, 'drone-control-frigate'),
+    ...npcGroup(10500, 2500, 1, 'drone-control-frigate'),
 
     // Lurkers
     ...lurkerGroup(4200, 4000, 2),
@@ -120,10 +180,11 @@ export const GRAVEWAKE = {
   ],
 
   zones: [
-    { id: 'gravewake', center: { x: 10000, y: 5000 }, radius: 9500 },
+    GRAVEWAKE_ZONE,
   ],
 
   background: [
+    createGravewakeAtmosphere(GRAVEWAKE_ZONE),
     PlanetPale.backgroundData(),
   ],
 };

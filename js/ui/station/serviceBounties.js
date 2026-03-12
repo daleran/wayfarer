@@ -37,7 +37,11 @@ export function buildBountiesPanel(container, station, game) {
       acceptBtn.className = 'bounty-accept-btn';
       acceptBtn.textContent = 'Accept';
       acceptBtn.addEventListener('click', () => {
-        game.acceptBounty(station, contract);
+        const result = game.bounty.acceptBounty(station, contract, game.totalTime);
+        if (result) {
+          game.entities.push(result.targetEntity);
+          game.ships.push(result.targetEntity);
+        }
         buildBountiesPanel(container, station, game);
       });
 

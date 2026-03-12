@@ -3,12 +3,12 @@
 // Pale at center (4000, 3000). Player spawns south. Six derelicts ring the planet.
 
 import { TheCoil } from '../../world/zones/gravewake/theCoil/index.js';
+import { PlanetPale } from '../../world/zones/gravewake/planetPale.js';
 import { createDerelict } from '../../world/derelict.js';
-import { RAIDER_REGISTRY } from '../../enemies/raiderRegistry.js';
+import { createShip } from '../../ships/registry.js';
 
-function spawnRaider(x, y, shipType) {
-  const factory = RAIDER_REGISTRY[shipType] ?? RAIDER_REGISTRY['light-fighter'];
-  const ship = factory(x, y);
+function spawnEnemy(x, y, shipType) {
+  const ship = createShip(shipType, x, y);
   ship.homePosition = { x, y };
   ship._canRespawn = true;
   return ship;
@@ -19,15 +19,7 @@ export const MAP = {
   playerStart: { x: 4000, y: 4400 },
 
   background: [
-    {
-      type: 'pale',
-      name: 'Pale',
-      x: 4000,
-      y: 3000,
-      radius: 540,
-      colorLimb: '#4a7a9a',
-      colorAtmo: '#1a3a5a',
-    },
+    PlanetPale.backgroundData({ x: 4000, y: 3000 }),
   ],
 
   zones: [
@@ -36,7 +28,7 @@ export const MAP = {
 
   entities: [
     // The Coil — for BH station overlay testing
-    TheCoil.instantiate(4000, 400),
+    TheCoil.instantiate(4000, 5200),
 
     // Six derelicts in a hex ring at r≈1800 around Pale
     createDerelict({
@@ -119,8 +111,8 @@ export const MAP = {
       ],
     }),
 
-    // Raiders
-    spawnRaider(2800, 2000, 'drone-control-frigate'),
+    // Enemies
+    spawnEnemy(2800, 2000, 'drone-control-frigate'),
   ],
 
   asteroidFields: [],

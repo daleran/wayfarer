@@ -1,9 +1,7 @@
 import { MaverickCourier } from '../../ships/classes/maverickCourier.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/tuning/shipTuning.js';
 import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 import { CONCORD_BLUE, ENEMY_FILL } from '../../ui/colors.js';
-import { drawEngineGlow } from '../../systems/engineGlow.js';
+import { engineGlow } from '../../rendering/draw.js';
 
 const SPEED_MULT = 2.0;   // ~196 u/s — extremely fast
 const ACCEL_MULT = 2.2;
@@ -43,14 +41,10 @@ export class SnatcHerDrone extends MaverickCourier {
       'no hesitation. Designed to latch onto a hull and drain it from the outside. ' +
       'Fragile under fire — priority target when latched.';
 
-    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
-    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
-    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
-
-    this.hullMax     = BASE_HULL * HULL_MULT;
-    this.hullCurrent = this.hullMax;
-
-    this._initArmorArcs(ARMOR_ALL, ARMOR_ALL, ARMOR_ALL);
+    this._initStats({
+      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
+      hull: HULL_MULT, armorFront: ARMOR_ALL, armorSide: ARMOR_ALL, armorAft: ARMOR_ALL,
+    });
 
     this.weapons = [];  // no weapons — latch mechanic only
 
@@ -133,7 +127,7 @@ export class SnatcHerDrone extends MaverickCourier {
     ctx.fill();
 
     // Engine glow — aft
-    drawEngineGlow(ctx, ENGINE_POS, this.engineColor, 2 + this.throttleLevel * 0.5, 2, 2, 0.3);
+    engineGlow(ctx, ENGINE_POS, this.engineColor, 2 + this.throttleLevel * 0.5, 2, 2, 0.3);
   }
 
   getBounds() {

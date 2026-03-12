@@ -1,11 +1,11 @@
 // Ship module system — slot-based equipment that tracks power draw/output and passive effects.
 // Weapon modules hold a real weapon instance; onInstall/onRemove wire it into ship.weapons.
 
-import { Autocannon } from '../weapons/autocannon.js';
-import { Lance }      from '../weapons/lance.js';
-import { Cannon }     from '../weapons/cannon.js';
-import { RocketPodSmall } from '../weapons/rocket.js';
-import { RocketPodLarge } from '../weapons/rocketLarge.js';
+import { Autocannon } from './weapons/autocannon.js';
+import { Lance }      from './weapons/lance.js';
+import { Cannon }     from './weapons/cannon.js';
+import { RocketPodSmall } from './weapons/rocket.js';
+import { RocketPodLarge } from './weapons/rocketLarge.js';
 import {
   REACTOR_SMALL_FISSION_INTERVAL,
   REACTOR_LARGE_FISSION_INTERVAL,

@@ -1,0 +1,64 @@
+/* ── HUD DOM Elements — kill log + pickup text ──────────────────────────────── */
+
+/* ── Kill Log (top-left, below minimap) ─────────────────────────────────────── */
+
+#hud-kill-log {
+  position: fixed;
+  top: 257px;   /* MM_MARGIN(24) + MM_PANEL(225) + 8 */
+  left: 24px;   /* MM_MARGIN */
+  z-index: 5;
+  pointer-events: none;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.hud-kill-entry {
+  color: #ff4444;
+  white-space: nowrap;
+  line-height: 14px;
+  animation: kill-fade 3s linear forwards;
+}
+
+@keyframes kill-fade {
+  0%   { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+/* ── Pickup Text (follows ship via JS transform) ────────────────────────────── */
+
+#hud-pickup-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  pointer-events: none;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+}
+
+.hud-pickup-entry {
+  white-space: nowrap;
+  text-align: center;
+  line-height: 14px;
+  padding: 1px 6px;
+  margin-bottom: 2px;
+  border: 1px solid currentColor;
+  animation: pickup-fade 2s linear forwards;
+}
+
+/* Color hint classes */
+.pickup-default  { color: #ffaa00; background: rgba(255,170,0,0.18); border-color: rgba(255,170,0,0.6); }
+.pickup-breach   { color: #cc7700; background: rgba(204,119,0,0.18); border-color: rgba(204,119,0,0.6); }
+.pickup-repair   { color: #00ff66; background: rgba(0,255,102,0.18); border-color: rgba(0,255,102,0.6); }
+.pickup-hostile   { color: #ff4444; background: rgba(255,68,68,0.18); border-color: rgba(255,68,68,0.6); }
+.pickup-module   { color: #00ff66; background: rgba(0,255,102,0.18); border-color: rgba(0,255,102,0.6); }
+.pickup-cargo    { color: #4488ff; background: rgba(68,136,255,0.18); border-color: rgba(68,136,255,0.6); }
+
+@keyframes pickup-fade {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}

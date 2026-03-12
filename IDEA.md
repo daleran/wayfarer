@@ -159,7 +159,7 @@ The inner system sits on the exact opposite side of the system from Gravewake, c
 
 Distinct enemy/neutral faction AI types not yet implemented.
 
-**Grave-Clans (Scavenger Specialty):** Specialized Gravewake raiders adapted to dense debris. Use Lurker behavior — hide behind Arkship Spines, ambush with grapple lines and harpoons. Prefer targeting convoys. Asymmetric salvage-rigged ship designs.
+**Grave-Clans (Scavenger Specialty):** Specialized Gravewake scavengers adapted to dense debris. Use Lurker behavior — hide behind Arkship Spines, ambush with grapple lines and harpoons. Prefer targeting convoys. Asymmetric salvage-rigged ship designs.
 
 **Zealot Pilgrims:** Cultist convoys seeking the oldest Concord wrecks. Neutral by default. Offer large payouts for safe escort or recovered artifacts. Shield-heavy; willing to travel through dangerous debris fields.
 
@@ -167,7 +167,7 @@ Distinct enemy/neutral faction AI types not yet implemented.
 
 **Monastic Order (Techno-Priests):** See BX for the full encounter design. In Gravewake they field a single large expeditionary capital ship — initially inaccessible to the player. Diabolically opposed to the Concord AI; scavenging the graveyard for artifacts or a super-weapon to defeat it. Not aggressive unless provoked.
 
-**General AI Improvement — Enemy Retreat & Repair:** Human enemies (raiders, cultists) should flee at ~30% hull rather than fight to the death. They return to their mothership or base to repair, then re-engage. Makes factions feel persistent and dangerous. See also BE for named captains who remember the player.
+**General AI Improvement — Enemy Retreat & Repair:** Human enemies (scavengers, cultists) should flee at ~30% hull rather than fight to the death. They return to their mothership or base to repair, then re-engage. Makes factions feel persistent and dangerous. See also BE for named captains who remember the player.
 
 ---
 
@@ -190,7 +190,7 @@ A large pirate capital ship flanked by a fleet of smaller escort ships roaming G
 - Generally neutral to the player; does not attack on sight
 - **Opportunistic cargo scan:** if they scan the player and detect highly valuable cargo, they will attack to take it
 - Functions as a rebel faction — enemy of the current Salvage Lord establishment, potential uneasy ally against them
-- Fleet composition: one capital ship + 2–4 escort raiders
+- Fleet composition: one capital ship + 2–4 escort fighters
 
 ---
 
@@ -336,7 +336,7 @@ The player must decide before engaging: do I want this ship dead, or do I want w
 
 ### BB: Mission & Bounty Board
 
-Procedurally generated missions available at stations, cycling on a timer. All bounties are tied to named people and listed crimes — not anonymous "kill 3 raiders."
+Procedurally generated missions available at stations, cycling on a timer. All bounties are tied to named people and listed crimes — not anonymous "kill 3 enemies."
 
 **Mission types:**
 - **Patrol** — "Destroy 3 scavenger skiffs near Keelbreak" — rep + scrap reward
@@ -418,7 +418,7 @@ A collection of non-weapon, non-engine ship modules that add strategic variety t
 3. **Tow Rig** — lets you latch onto and slowly drag a derelict to a station for a large payout
 4. **Auxiliary Tank** — bonus fuel capacity (stackable, weight penalty)
 5. **Fuel Reclaimer** — harvests trace fuel from debris clouds and derelicts
-6. **Cold Thruster** — silent running mode; no engine glow; reduced detection range by raiders
+6. **Cold Thruster** — silent running mode; no engine glow; reduced detection range by enemies
 7. **Reactive Plating** — first hit each fight absorbed, then overloads (limited charges, refillable with scrap)
 8. **Point Defense Burst** — active ability; destroys incoming missiles in a radius; short cooldown; costs power
 9. **Chaff Pod** — breaks missile lock for a few seconds; consumable
@@ -429,7 +429,7 @@ A collection of non-weapon, non-engine ship modules that add strategic variety t
 14. **Emergency Scrap Burn** — converts carried scrap directly into armor in a pinch
 15. **Hull Stress Frame** — lets you push hull below 0 armor briefly without dying; must be repaired soon or ship is lost
 16. **Stripped Weight** — remove non-essentials for +speed/turn; fuel cap and armor drop permanently while installed
-17. **Concord Transponder** — spoofs a Concord Remnant IFF signal; raiders hesitate to engage until they see through it
+17. **Concord Transponder** — spoofs a Concord Remnant IFF signal; enemies hesitate to engage until they see through it
 18. **Black Market Manifest** — hides cargo from station scanners; unlocks restricted trade goods
 19. **Commune Relay Node** — passive; lets Commune settlements send tip-offs about nearby salvage or threats
 20. **Mag-Anchor** — emergency full-stop; instantly kills velocity; strains hull (small armor damage)
@@ -438,7 +438,7 @@ A collection of non-weapon, non-engine ship modules that add strategic variety t
 23. **Debris Scoop** — low-yield magnetized intake; passively vacuums micro-loot while flying through debris fields
 24. **Cracked Void Lens** — Pre-Collapse artifact; warps local space for a short-range blink jump; massive cooldown; unknown side effects
 25. **Pressure Hull Insert** — reinforces internal bulkheads; hull takes damage at a reduced rate when armor is depleted
-26. **Scav Signal Jammer** — disrupts raider coordination; enemies deaggro faster and lose targeting more easily
+26. **Scav Signal Jammer** — disrupts enemy coordination; enemies deaggro faster and lose targeting more easily
 27. **Emergency Fuel Tap** — burns hull integrity directly as fuel when tanks run dry; lets you limp to a station
 28. **Thermal Shroud** — reduces damage taken from plasma weapons and AoE explosions
 29. **Salvager's Intuition Module** — cracked Concord nav-AI fragment; highlights derelicts on the map and estimates salvage yield; occasionally outputs cryptic lore fragments

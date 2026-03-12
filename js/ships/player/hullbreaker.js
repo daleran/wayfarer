@@ -1,5 +1,5 @@
 import { OnyxClassTug } from '../classes/onyxTug.js';
-import { AutocannonModule, OnyxDriveUnit, HydrogenFuelCell, SalvagedSensorSuite } from '../../systems/shipModule.js';
+import { AutocannonModule, OnyxDriveUnit, HydrogenFuelCell, SalvagedSensorSuite } from '../../modules/shipModule.js';
 
 // Hullbreaker — salvage-modified Onyx Class Tug.
 // Armor stripped down to save weight, fuel tank enlarged for longer-range runs.

@@ -47,12 +47,12 @@ const ARMOR_AFT   = 0.6;  //  60
 
 ## Step 3 — Create the enemy file
 
-File goes in `js/enemies/scavengers/` (or appropriate faction subfolder). Filename: camelCase of the display name, e.g. `voidCutter.js`.
+File goes in `js/npcs/<faction>/` (e.g. `js/npcs/scavengers/`, `js/npcs/concord/`). Filename: camelCase of the display name, e.g. `voidCutter.js`.
 
 Template:
 ```js
 import { <BaseClass> } from '../../ships/classes/<baseFile>.js';
-import { <WeaponModule1>, <WeaponModule2> } from '../../systems/shipModule.js';
+import { <WeaponModule1>, <WeaponModule2> } from '../../modules/shipModule.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
 import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
@@ -100,15 +100,15 @@ export function create<ClassName>(x, y) {
 
 **Lurker note:** If `behaviorType === 'lurker'`, the spawn code in map.js must set `enemy._coverPoint = { x, y }` after creation. Add a comment in the file reminding the map author of this.
 
-## Step 4 — Register in raiderRegistry.js
+## Step 4 — Register in NPC_REGISTRY
 
-Open `js/enemies/raiderRegistry.js`. Add:
-1. An import line at the top
-2. An entry in `RAIDER_REGISTRY` using the kebab-slug as the key
+Open `js/ships/registry.js`. Add:
+1. An import line for the factory function from the new NPC file
+2. An entry in `NPC_REGISTRY` with `id`, `label`, `faction`, `behavior`, `shipClass`, `file`, and `create`
 
 ## Step 5 — Add to map data
 
-Open `js/data/maps/tyr.js` and `js/data/maps/arena.js`. Add a spawn entry in the `raiders` array:
+Open `js/data/maps/tyr.js` and `js/data/maps/arena.js`. Add a spawn entry in the `entities` array:
 ```js
 { type: '<kebab-slug>', x: XXXX, y: YYYY, homePosition: { x: XXXX, y: YYYY } }
 ```

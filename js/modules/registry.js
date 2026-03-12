@@ -1,5 +1,5 @@
 // Module registry — maps module ID strings to constructors.
-// Used by game.js _createModuleById. All module classes live in js/systems/shipModule.js.
+// Used by game.js _createModuleById. All module classes live in js/modules/shipModule.js.
 
 import {
   AutocannonModule,
@@ -21,7 +21,7 @@ import {
   CombatComputerModule,
   SalvageScannerModule,
   LongRangeScannerModule,
-} from '../systems/shipModule.js';
+} from './shipModule.js';
 
 export const MODULE_REGISTRY = {
   // Weapons

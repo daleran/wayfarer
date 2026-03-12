@@ -46,24 +46,47 @@ export class HUD {
   constructor() {
     this._pickupTexts = [];
     this._killLog = [];
+
+    // DOM refs for kill log + pickup text
+    this._killLogEl = document.getElementById('hud-kill-log');
+    this._pickupEl = document.getElementById('hud-pickup-container');
   }
 
   addPickupText(text, worldX, worldY, colorHint = null) {
     this._pickupTexts.push({ text, worldX, worldY, createdAt: Date.now(), colorHint });
+
+    // Create DOM element
+    if (this._pickupEl) {
+      const cls = colorHint && ['breach', 'repair', 'hostile', 'module', 'cargo'].includes(colorHint)
+        ? `pickup-${colorHint}` : 'pickup-default';
+      const el = document.createElement('div');
+      el.className = `hud-pickup-entry ${cls}`;
+      el.textContent = text;
+      el.addEventListener('animationend', () => el.remove());
+      this._pickupEl.appendChild(el);
+    }
   }
 
   addKill(displayName) {
     this._killLog.unshift({ text: `${displayName} destroyed`, createdAt: Date.now() });
     if (this._killLog.length > KILL_LOG_MAX) this._killLog.length = KILL_LOG_MAX;
+
+    // Create DOM element
+    if (this._killLogEl) {
+      const el = document.createElement('div');
+      el.className = 'hud-kill-entry';
+      el.textContent = `${displayName} destroyed`;
+      el.addEventListener('animationend', () => el.remove());
+      this._killLogEl.appendChild(el);
+    }
   }
 
   render(ctx, game) {
     const { player, camera } = game;
     if (!player) return;
 
-    // Top-left minimap + kill log below it
+    // Top-left minimap
     this._renderMinimap(ctx, game);
-    this._renderKillLog(ctx, game);
 
     // Ship-anchored UI (follows the ship at screen center)
     this._renderWeaponPanels(ctx, game);
@@ -81,8 +104,8 @@ export class HUD {
     this._renderSalvageBar(ctx, game);
     this._renderRepairBar(ctx, game);
 
-    // World-space floating text
-    this._renderPickupTexts(ctx, game);
+    // Position pickup text container over ship
+    this._updatePickupPosition(game);
 
     this._renderAutoFireIndicator(ctx, game);
 
@@ -203,29 +226,7 @@ export class HUD {
       const hullColor = hullRatio > 0.5 ? GREEN : hullRatio > 0.25 ? AMBER : RED;
       const hullFlash = hullRatio < 0.25 && Math.floor(now / 300) % 2 === 0;
       const color     = hullFlash ? RED : hullColor;
-      const filled    = Math.ceil(hullRatio * SEG);
-      const barX      = leftX + ARMOR_LBL_W;
-
-      ctx.font = '12px monospace';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = color;
-      ctx.fillText('HULL', leftX, row2Y + STRIP_BAR_H / 2);
-
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(barX - 1, row2Y - 1, LEFT_BAR_W + 2, STRIP_BAR_H + 2);
-      ctx.fillStyle = BAR_TRACK;
-      ctx.fillRect(barX, row2Y, LEFT_BAR_W, STRIP_BAR_H);
-      this._drawSegBar(ctx, barX, row2Y, LEFT_BAR_W, STRIP_BAR_H, filled, SEG, color);
-
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = color;
-      ctx.fillText(
-        `${Math.floor(player.hullCurrent)}/${Math.floor(player.hullMax)}`,
-        barX + LEFT_BAR_W + 6, row2Y + STRIP_BAR_H / 2
-      );
+      this._renderLabeledBar(ctx, leftX, row2Y, 'HULL', player.hullCurrent, player.hullMax, color, LEFT_BAR_W, STRIP_BAR_H, SEG, ARMOR_LBL_W);
     }
 
     // ── CENTER: Throttle pips (row1) + Fuel bar (row2) ─────────────────────
@@ -261,35 +262,13 @@ export class HUD {
 
     // Fuel bar (row2)
     {
-      const fuelRatio = game.fuel / game.fuelMax;
-      const fuelLow   = fuelRatio < 0.25;
-      const fuelColor = fuelLow ? RED : AMBER;
-      const filled    = Math.ceil(fuelRatio * SEG);
-      const fuelBarX  = ctrX + FUEL_LBL_W;
-
-      ctx.font = '12px monospace';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = fuelColor;
-      ctx.fillText('FUEL', ctrX, row2Y + STRIP_BAR_H / 2);
-
-      ctx.strokeStyle = fuelColor;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(fuelBarX - 1, row2Y - 1, FUEL_BAR_W + 2, STRIP_BAR_H + 2);
-      ctx.fillStyle = BAR_TRACK;
-      ctx.fillRect(fuelBarX, row2Y, FUEL_BAR_W, STRIP_BAR_H);
-      this._drawSegBar(ctx, fuelBarX, row2Y, FUEL_BAR_W, STRIP_BAR_H, filled, SEG, fuelColor);
-
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = fuelColor;
-      ctx.fillText(
-        `${Math.floor(game.fuel)}/${game.fuelMax}`,
-        fuelBarX + FUEL_BAR_W + 6, row2Y + STRIP_BAR_H / 2
-      );
+      const fuelRatio = game.fuelMax > 0 ? game.fuel / game.fuelMax : 0;
+      const fuelColor = fuelRatio < 0.25 ? RED : AMBER;
+      this._renderLabeledBar(ctx, ctrX, row2Y, 'FUEL', game.fuel, game.fuelMax, fuelColor, FUEL_BAR_W, STRIP_BAR_H, SEG, FUEL_LBL_W);
 
       // Drain rate — below the fuel numerical counter
       if (game.fuelBurnRate > 0) {
+        const fuelBarX = ctrX + FUEL_LBL_W;
         ctx.font = '9px monospace';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
@@ -344,28 +323,8 @@ export class HUD {
       // CARGO bar (row2)
       const cargoUsed  = game.totalCargoUsed;
       const cargoCap   = game.totalCargoCapacity;
-      const cargoRatio = cargoCap > 0 ? cargoUsed / cargoCap : 0;
-      const cargoFull  = cargoUsed >= cargoCap;
-      const cargoColor = cargoFull ? RED : BLUE;
-      const cargoFill  = Math.ceil(cargoRatio * SEG);
-
-      ctx.font = '12px monospace';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = cargoColor;
-      ctx.fillText('CARGO', cargoLblX, row2Y + STRIP_BAR_H / 2);
-
-      ctx.strokeStyle = cargoColor;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(cargoBarX - 1, row2Y - 1, CARGO_BAR_W + 2, STRIP_BAR_H + 2);
-      ctx.fillStyle = BAR_TRACK;
-      ctx.fillRect(cargoBarX, row2Y, CARGO_BAR_W, STRIP_BAR_H);
-      this._drawSegBar(ctx, cargoBarX, row2Y, CARGO_BAR_W, STRIP_BAR_H, cargoFill, SEG, cargoColor);
-
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = cargoColor;
-      ctx.fillText(`${cargoUsed}/${cargoCap}`, cargoBarEnd + 6, row2Y + STRIP_BAR_H / 2);
+      const cargoColor = cargoUsed >= cargoCap ? RED : BLUE;
+      this._renderLabeledBar(ctx, cargoLblX, row2Y, 'CARGO', cargoUsed, cargoCap, cargoColor, CARGO_BAR_W, STRIP_BAR_H, SEG, CARGO_LBL_W);
 
       // SCRAP count — left-aligned immediately after cargo number area
       ctx.font = 'bold 13px monospace';
@@ -588,7 +547,7 @@ export class HUD {
   // ── Contextual prompts ─────────────────────────────────────────────────────
 
   _renderDockPrompt(ctx, game) {
-    if (!game.nearbyStation || game.isSalvaging) return;
+    if (!game.nearbyStation || game.salvage.isSalvaging) return;
     const { camera } = game;
     const alpha   = 0.6 + Math.sin(Date.now() * 0.004) * 0.4;
     const promptY = camera.height * 0.62;
@@ -605,11 +564,11 @@ export class HUD {
 
   _renderRepairPrompt(ctx, game) {
     const { player, camera } = game;
-    if (game.isSalvaging || game.isRepairing || game.isDocked) return;
+    if (game.salvage.isSalvaging || game.repair.isRepairing || game.isDocked) return;
     if (!player || player.throttleLevel !== 0) return;
 
     const armorNeeded   = player.armorCurrent < player.armorMax;
-    const modulesNeeded = game._hasModulesToRepair();
+    const modulesNeeded = game.repair.hasModulesToRepair(player);
     if ((!armorNeeded && !modulesNeeded) || game.scrap <= 0) return;
 
     const alpha   = 0.6 + Math.sin(Date.now() * 0.005) * 0.4;
@@ -631,9 +590,9 @@ export class HUD {
   // ── Active operation bars ──────────────────────────────────────────────────
 
   _renderSalvageBar(ctx, game) {
-    if (!game.isSalvaging) return;
+    if (!game.salvage.isSalvaging) return;
     const { camera } = game;
-    const ratio    = game.salvageProgress / game.salvageTotal;
+    const ratio    = game.salvage.salvageProgress / game.salvage.salvageTotal;
     const barW     = 220;
     const barH     = 16;
     const segCount = 10;
@@ -657,7 +616,7 @@ export class HUD {
   }
 
   _renderRepairBar(ctx, game) {
-    if (!game.isRepairing) return;
+    if (!game.repair.isRepairing) return;
     const { player, camera } = game;
     const barW     = 220;
     const barH     = 16;
@@ -669,9 +628,9 @@ export class HUD {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
 
-    const hasModules = game._hasModulesToRepair();
+    const hasModules = game.repair.hasModulesToRepair(player);
     if (hasModules) {
-      const modAccum = game._moduleRepairAccum ?? 0;
+      const modAccum = game.repair._moduleRepairAccum ?? 0;
       ctx.font = 'bold 13px monospace';
       ctx.fillStyle = CONDITION_FAULTY;
       ctx.fillText('MODULE REPAIR...', camera.width / 2, yOffset - 4);
@@ -704,41 +663,12 @@ export class HUD {
     ctx.restore();
   }
 
-  // ── Kill log (below minimap, top-left) ────────────────────────────────────
-
-  _renderKillLog(ctx, game) {
-    if (this._killLog.length === 0) return;
-    const now = Date.now();
-    ctx.save();
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-
-    const lineH  = 14;
-    const x      = MM_MARGIN;
-    const startY = MM_MARGIN + MM_PANEL + 8;
-
-    for (let i = this._killLog.length - 1; i >= 0; i--) {
-      const entry   = this._killLog[i];
-      const elapsed = (now - entry.createdAt) / 1000;
-      if (elapsed > KILL_DURATION) {
-        this._killLog.splice(i, 1);
-        continue;
-      }
-      const t = elapsed / KILL_DURATION;
-      ctx.globalAlpha = (1 - t) * 0.85;
-      ctx.fillStyle = RED;
-      ctx.fillText(entry.text, x, startY + i * lineH);
-    }
-
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
+  // Kill log is now DOM-based — no canvas rendering needed
 
   // ── Minimap (top-left) ─────────────────────────────────────────────────────
 
   _renderMinimap(ctx, game) {
-    const { camera, player, entities, raiders } = game;
+    const { camera, player, entities, hostiles } = game;
     if (!player.active) return;
 
     const canSeeStations = player.capabilities.minimap_stations;
@@ -827,7 +757,7 @@ export class HUD {
 
     if (canSeeShips) {
       const rangeSq = player.capabilities.sensor_range * player.capabilities.sensor_range;
-      for (const r of raiders) {
+      for (const r of hostiles) {
         if (!r.active) continue;
         const dx = r.x - player.x;
         const dy = r.y - player.y;
@@ -873,67 +803,11 @@ export class HUD {
     ctx.restore();
   }
 
-  _renderPickupTexts(ctx, game) {
+  _updatePickupPosition(game) {
+    if (!this._pickupEl) return;
     const { camera, player } = game;
-    const now = Date.now();
-
-    // Prune expired entries (iterate backwards for safe splice)
-    for (let i = this._pickupTexts.length - 1; i >= 0; i--) {
-      if ((now - this._pickupTexts[i].createdAt) / 1000 > PICKUP_DURATION) {
-        this._pickupTexts.splice(i, 1);
-      }
-    }
-    if (this._pickupTexts.length === 0) return;
-
     const shipScreen = camera.worldToScreen(player.x, player.y);
-    const count = this._pickupTexts.length;
-
-    ctx.save();
-    ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Oldest entries float to the top; newest stays at the bottom of the stack.
-    // slotFromBottom=0 → bottommost (newest), higher slots → upward (older).
-    for (let i = 0; i < count; i++) {
-      const pt          = this._pickupTexts[i];
-      const elapsed     = (now - pt.createdAt) / 1000;
-      const t           = elapsed / PICKUP_DURATION;
-      const slotFromBot = count - 1 - i;
-      const y           = shipScreen.y - PICKUP_ABOVE - slotFromBot * PICKUP_LINE_H;
-
-      const color = pt.colorHint === 'breach'  ? CONDITION_FAULTY
-                  : pt.colorHint === 'repair'   ? GREEN
-                  : pt.colorHint === 'hostile'  ? RED
-                  : pt.colorHint === 'module'   ? GREEN
-                  : pt.colorHint === 'cargo'    ? BLUE
-                  : AMBER;  // scrap, fuel, default
-
-      const alpha     = 1 - t;
-      const textW     = ctx.measureText(pt.text).width;
-      const padX      = 6;
-      const padY      = 3;
-      const boxW      = textW + padX * 2;
-      const boxH      = PICKUP_LINE_H - 2;
-      const boxX      = shipScreen.x - boxW / 2;
-      const boxY      = y - boxH / 2;
-
-      ctx.globalAlpha = alpha * 0.18;
-      ctx.fillStyle   = color;
-      ctx.fillRect(boxX, boxY, boxW, boxH);
-
-      ctx.globalAlpha = alpha * 0.6;
-      ctx.strokeStyle = color;
-      ctx.lineWidth   = 1;
-      ctx.strokeRect(boxX, boxY, boxW, boxH);
-
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle   = color;
-      ctx.fillText(pt.text, shipScreen.x, y);
-    }
-
-    ctx.globalAlpha = 1;
-    ctx.restore();
+    this._pickupEl.style.transform = `translate(${shipScreen.x}px, ${shipScreen.y - PICKUP_ABOVE}px)`;
   }
 
   // ── Dev overlays ───────────────────────────────────────────────────────────
@@ -1015,6 +889,33 @@ export class HUD {
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  _renderLabeledBar(ctx, x, y, label, current, max, color, barW, barH, segments, labelW) {
+    const ratio = max > 0 ? current / max : 0;
+    const filled = Math.ceil(ratio * segments);
+    const barX = x + labelW;
+
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(label, x, y + barH / 2);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX - 1, y - 1, barW + 2, barH + 2);
+    ctx.fillStyle = BAR_TRACK;
+    ctx.fillRect(barX, y, barW, barH);
+    this._drawSegBar(ctx, barX, y, barW, barH, filled, segments, color);
+
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = color;
+    ctx.fillText(
+      `${Math.floor(current)}/${Math.floor(max)}`,
+      barX + barW + 6, y + barH / 2
+    );
+  }
 
   _drawSegBar(ctx, x, y, w, h, filled, total, color) {
     const segW = w / total;

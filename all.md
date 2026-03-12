@@ -80,7 +80,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
 - **Navigation:** `↑/↓` change category, `←/→` cycle item, `T` toggle rotation (ships), `R` reset view, scroll/drag to zoom/pan
 - **Deep-link:** `?designer&category=<cat>&id=<slug>`
-- **In scope:** `js/ships/**`, `js/enemies/**`, `js/world/**`, `js/weapons/**`, `js/ui/colors.js`
+- **In scope:** `js/ships/**`, `js/npcs/**`, `js/world/**`, `js/modules/**`, `js/ui/colors.js`
 - Item slugs are defined in `js/test/designer.js` — check there for current IDs.
 
 ## Architecture
@@ -91,7 +91,13 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 ### Core Systems
 
-- **`js/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, game state; drives `update(dt)` and `render()`
+- **`js/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, subsystems, game state; drives `update(dt)` and `render()`
+- **`js/systems/salvageSystem.js` / `SalvageSystem`** — owns salvage state (`isSalvaging`, `salvageProgress`, `salvageTotal`, `salvageTarget`); `start()`, `update(dt)` → returns loot entities, `cancel()`
+- **`js/systems/repairSystem.js` / `RepairSystem`** — owns repair state (`isRepairing`, `_repairAccum`, `_moduleRepairAccum`); `start()`, `update(dt, player, scrap)` → returns `{ scrapSpent }`, `cancel()`, `hasModulesToRepair(player)`, `maybeBreachModule(ship)` → returns `{ text, colorHint } | null`
+- **`js/systems/collisionSystem.js` / `CollisionSystem`** — projectile interception, beam interception, main collision loop, AoE explosions; `update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled })` → returns `{ newEntities: [] }`
+- **`js/systems/bountySystem.js` / `BountySystem`** — owns `activeBounties[]`; `onEnemyKilled()`, `acceptBounty()`, `collectCompleted()`, `updateExpiry()`
+- **`js/systems/weaponSystem.js` / `WeaponSystem`** — weapon reload ticks, manual reload, ammo/guidance mode cycling, guided projectile targeting; `updateReloads()`, `manualReload()`, `cycleAmmoMode()`, `cycleGuidanceMode()`, `updateGuidance()`
+- **`js/systems/interactionSystem.js` / `InteractionSystem`** — owns `nearbyStation`, `nearbyDerelict`; `updateDerelicts()`, `checkDocking()`, `checkLootPickups()`
 - **`js/loop.js`** — fixed-timestep loop (60 ticks/sec), spiral-of-death protection
 - **`js/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
 - **`js/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
@@ -101,13 +107,13 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 `Entity` is the base class (`js/entities/entity.js`). `Ship` extends it with armor/hull/weapons/fuel. Ship subclasses override `_drawShape(ctx)` and `getBounds()`. Other entity types: `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`, `Derelict`.
 
-Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, enemies in `js/enemies/`, neutrals in `js/ships/neutral/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there.
+Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPCs (enemies + neutrals) in `js/npcs/<faction>/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there.
 
 ### Key Patterns
 
 - **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically; inactive purged each tick
-- **Collision detection** — projectile-vs-ship circle checks in `GameManager._runCollisions()`
-- **Raider AI** — `js/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `js/data/tuning/aiTuning.js`: stalker, kiter, standoff, lurker, flee
+- **Collision detection** — projectile-vs-ship circle checks in `CollisionSystem.update()`
+- **Enemy AI** — `js/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `js/data/tuning/aiTuning.js`: stalker, kiter, standoff, lurker, flee
 - **Neutral AI** — `js/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia')
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
 - **Particle pool** — `js/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
@@ -139,6 +145,8 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, ene
 
 ### Stats: Multiplier Pattern
 Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `js/data/tuning/` (see Key Patterns above). Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` (in shipTuning.js) and `PROJECTILE_SPEED_FACTOR` (in weaponTuning.js).
+
+Ship classes use `this._initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft })` from `Ship` base to set all stats in one call. Subclasses that only override a subset (e.g. enemies that don't set cargo/fuel) can omit those keys — they'll keep the parent's values.
 
 ### Colors: Always Use `js/ui/colors.js`
 Never use inline hex strings anywhere in the codebase. Import named constants from `js/ui/colors.js`. If a new color is needed, add it there first.
@@ -216,6 +224,7 @@ BI. 2026-MAR-10-0000: Game Data Rearchitecture — stats.js split into 5 domain 
 BJ. 2026-MAR-10-0000: Unified Ship AI — raiderAI.js + neutralAI.js replaced by single shipAI.js; raiders[]/neutralShips[] replaced by ships[]; ship.ai object spread from AI_TEMPLATES replaces behaviorType/neutralBehavior; neutral ships turn hostile on player contact (relation='hostile', _aggro=true); militia combatBehavior=stalker, trader combatBehavior=flee.
 BK. 2026-MAR-11-0000: Concord Enemies — DroneControlFrigate (standoff, lance weapon, spawns 3 Snatcher Drones every 12s from lateral bay notches) and SnatcHerDrone (stalker, no weapons, latches at 35px range and drains 8 armor/sec + 2 hull/sec until killed); spawn/pickup-text queue pattern in game.js; CONCORD_BLUE faction stroke override.
 BH. 2026-MAR-11-1500: Station Overhaul — HTML/CSS LocationOverlay replaces canvas StationScreen; zone-map navigation (map → zone → service); The Coil SVG schematic with 5 clickable zones (The Dock, Salvage Yard, Central Market, The Palace rep-gated, The Slums); Kell's Stop and Ashveil Anchorage simple layouts; 6 service modules (repair, trade, bounties, relations, reactor, intel); full-screen modal with scanline/cassette-futurism CSS.
+BL. 2026-MAR-11-1800: Architecture Reorganization — weapons moved js/weapons/ → js/modules/weapons/ (9 files); enemies moved js/enemies/ → js/npcs/<faction>/ (6 files); neutrals moved js/ships/neutral/ → js/npcs/settlements/ (2 files); shipModule moved js/systems/ → js/modules/; 6 systems extracted from game.js into standalone classes (CollisionSystem, WeaponSystem, SalvageSystem, RepairSystem, BountySystem, InteractionSystem); renderer draw helpers extracted to js/rendering/draw.js; ship classes simplified with _initStats() pattern; engineGlow.js deleted; Planet Pale atmospheric rendering added; game.js reduced by ~600 lines.
 
 
 # === IDEA.md ===
@@ -381,7 +390,7 @@ The inner system sits on the exact opposite side of the system from Gravewake, c
 
 Distinct enemy/neutral faction AI types not yet implemented.
 
-**Grave-Clans (Scavenger Specialty):** Specialized Gravewake raiders adapted to dense debris. Use Lurker behavior — hide behind Arkship Spines, ambush with grapple lines and harpoons. Prefer targeting convoys. Asymmetric salvage-rigged ship designs.
+**Grave-Clans (Scavenger Specialty):** Specialized Gravewake scavengers adapted to dense debris. Use Lurker behavior — hide behind Arkship Spines, ambush with grapple lines and harpoons. Prefer targeting convoys. Asymmetric salvage-rigged ship designs.
 
 **Zealot Pilgrims:** Cultist convoys seeking the oldest Concord wrecks. Neutral by default. Offer large payouts for safe escort or recovered artifacts. Shield-heavy; willing to travel through dangerous debris fields.
 
@@ -389,7 +398,7 @@ Distinct enemy/neutral faction AI types not yet implemented.
 
 **Monastic Order (Techno-Priests):** See BX for the full encounter design. In Gravewake they field a single large expeditionary capital ship — initially inaccessible to the player. Diabolically opposed to the Concord AI; scavenging the graveyard for artifacts or a super-weapon to defeat it. Not aggressive unless provoked.
 
-**General AI Improvement — Enemy Retreat & Repair:** Human enemies (raiders, cultists) should flee at ~30% hull rather than fight to the death. They return to their mothership or base to repair, then re-engage. Makes factions feel persistent and dangerous. See also BE for named captains who remember the player.
+**General AI Improvement — Enemy Retreat & Repair:** Human enemies (scavengers, cultists) should flee at ~30% hull rather than fight to the death. They return to their mothership or base to repair, then re-engage. Makes factions feel persistent and dangerous. See also BE for named captains who remember the player.
 
 ---
 
@@ -412,7 +421,7 @@ A large pirate capital ship flanked by a fleet of smaller escort ships roaming G
 - Generally neutral to the player; does not attack on sight
 - **Opportunistic cargo scan:** if they scan the player and detect highly valuable cargo, they will attack to take it
 - Functions as a rebel faction — enemy of the current Salvage Lord establishment, potential uneasy ally against them
-- Fleet composition: one capital ship + 2–4 escort raiders
+- Fleet composition: one capital ship + 2–4 escort fighters
 
 ---
 
@@ -558,7 +567,7 @@ The player must decide before engaging: do I want this ship dead, or do I want w
 
 ### BB: Mission & Bounty Board
 
-Procedurally generated missions available at stations, cycling on a timer. All bounties are tied to named people and listed crimes — not anonymous "kill 3 raiders."
+Procedurally generated missions available at stations, cycling on a timer. All bounties are tied to named people and listed crimes — not anonymous "kill 3 enemies."
 
 **Mission types:**
 - **Patrol** — "Destroy 3 scavenger skiffs near Keelbreak" — rep + scrap reward
@@ -640,7 +649,7 @@ A collection of non-weapon, non-engine ship modules that add strategic variety t
 3. **Tow Rig** — lets you latch onto and slowly drag a derelict to a station for a large payout
 4. **Auxiliary Tank** — bonus fuel capacity (stackable, weight penalty)
 5. **Fuel Reclaimer** — harvests trace fuel from debris clouds and derelicts
-6. **Cold Thruster** — silent running mode; no engine glow; reduced detection range by raiders
+6. **Cold Thruster** — silent running mode; no engine glow; reduced detection range by enemies
 7. **Reactive Plating** — first hit each fight absorbed, then overloads (limited charges, refillable with scrap)
 8. **Point Defense Burst** — active ability; destroys incoming missiles in a radius; short cooldown; costs power
 9. **Chaff Pod** — breaks missile lock for a few seconds; consumable
@@ -651,7 +660,7 @@ A collection of non-weapon, non-engine ship modules that add strategic variety t
 14. **Emergency Scrap Burn** — converts carried scrap directly into armor in a pinch
 15. **Hull Stress Frame** — lets you push hull below 0 armor briefly without dying; must be repaired soon or ship is lost
 16. **Stripped Weight** — remove non-essentials for +speed/turn; fuel cap and armor drop permanently while installed
-17. **Concord Transponder** — spoofs a Concord Remnant IFF signal; raiders hesitate to engage until they see through it
+17. **Concord Transponder** — spoofs a Concord Remnant IFF signal; enemies hesitate to engage until they see through it
 18. **Black Market Manifest** — hides cargo from station scanners; unlocks restricted trade goods
 19. **Commune Relay Node** — passive; lets Commune settlements send tip-offs about nearby salvage or threats
 20. **Mag-Anchor** — emergency full-stop; instantly kills velocity; strains hull (small armor damage)
@@ -660,7 +669,7 @@ A collection of non-weapon, non-engine ship modules that add strategic variety t
 23. **Debris Scoop** — low-yield magnetized intake; passively vacuums micro-loot while flying through debris fields
 24. **Cracked Void Lens** — Pre-Collapse artifact; warps local space for a short-range blink jump; massive cooldown; unknown side effects
 25. **Pressure Hull Insert** — reinforces internal bulkheads; hull takes damage at a reduced rate when armor is depleted
-26. **Scav Signal Jammer** — disrupts raider coordination; enemies deaggro faster and lose targeting more easily
+26. **Scav Signal Jammer** — disrupts enemy coordination; enemies deaggro faster and lose targeting more easily
 27. **Emergency Fuel Tap** — burns hull integrity directly as fuel when tanks run dry; lets you limp to a station
 28. **Thermal Shroud** — reduces damage taken from plasma weapons and AoE explosions
 29. **Salvager's Intuition Module** — cracked Concord nav-AI fragment; highlights derelicts on the map and estimates salvage yield; occasionally outputs cryptic lore fragments
@@ -798,7 +807,7 @@ Wayfarer is set in the crumbling remains of a difficult interstellar exodus, whe
 
 **Scrap is the nearest thing to a universal currency.** It's physically portable, universally useful (everything can be repaired with enough scrap), and its value is intrinsic rather than promised. Fuel is also treated as a store of value — it represents freedom of movement, which is power.
 
-There are no prices in credits. When you trade at a station, you pay in scrap. When you repair your hull, you pay in scrap. Raiders fight for fuel and salvage, not cash.
+There are no prices in credits. When you trade at a station, you pay in scrap. When you repair your hull, you pay in scrap. Scavengers fight for fuel and salvage, not cash.
 
 ## Themes
 
@@ -1118,7 +1127,7 @@ Rocket Pods support three guidance modes (cycle with key `2`):
 |---|---|
 | DUMBFIRE | Fires at click point; detonates at target or on contact |
 | WIRE | Guided by mouse cursor; interceptable |
-| HEAT | Homes on nearest raider; interceptable |
+| HEAT | Homes on nearest hostile; interceptable |
 
 ### Railgun Variants
 
@@ -1144,7 +1153,7 @@ Rocket Pods support three guidance modes (cycle with key `2`):
 | `detonatesOnContact` | AoE explosion when hitting any ship |
 | `detonatesOnExpiry` | AoE explosion at target point when range runs out |
 | `isGuided + guidedType='wire'` | Steers toward mouse cursor each frame |
-| `isGuided + guidedType='heat'` | Steers toward nearest raider |
+| `isGuided + guidedType='heat'` | Steers toward nearest hostile |
 | `isInterceptable` | Can be shot down by weapons with `canIntercept` or `canInterceptBeam` |
 | `canIntercept` | Intercepts nearby enemy interceptable projectiles on contact (gatling) |
 | `canInterceptBeam` | Lance small-turret intercepts interceptable projectiles passing within 15px of beam |
@@ -1255,7 +1264,7 @@ The ship AI loop in `game.js` skips `updateShipAI()` for any ship with `_isLatch
 
 ## Combat AI
 
-All non-player ships — hostile, neutral, or friendly — share the same AI system (`js/ai/shipAI.js`). There are no separate raider vs neutral tracking arrays. Every ship tracks in `GameManager.ships[]`. A ship's `relation` field drives behavior:
+All non-player ships — hostile, neutral, or friendly — share the same AI system (`js/ai/shipAI.js`). There are no separate hostile vs neutral tracking arrays. Every ship tracks in `GameManager.ships[]`. A ship's `relation` field drives behavior:
 
 - `'hostile'` — combat behavior active; counted as an enemy for targeting and loot
 - `'neutral'` — passive behavior active; turns hostile immediately if struck by the player
@@ -1263,7 +1272,7 @@ All non-player ships — hostile, neutral, or friendly — share the same AI sys
 
 ### Ship AI Profile
 
-Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `js/data/tuning/aiTuning.js`. Characters and spawn overrides can change individual values (e.g. a cautious raider with longer `deaggroRange`) without touching the base template.
+Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `js/data/tuning/aiTuning.js`. Characters and spawn overrides can change individual values (e.g. a cautious enemy with longer `deaggroRange`) without touching the base template.
 
 Two keys define the full behavior:
 
@@ -1580,7 +1589,6 @@ See `NEXT.md` for features ready to implement. See `IDEA.md` for raw concepts un
 
 - Grave-Clan Ambusher: confirm heat missile target-lock behavior when multiple enemies are present
 - Universal ship slots need to be small and large variants
-- Expand scavenging
 - Tune damage and health of small ships
 
 
@@ -1766,9 +1774,9 @@ A subtle fullscreen post-processing pass (or overlay) to sell the vector monitor
 
 3. **Glow / Bloom:** Bright UI elements (text, lines, bars) can be drawn twice — once sharp, once slightly larger/blurred at low opacity — to simulate phosphor glow. Keep this subtle; heavy bloom looks modern, not retro.
 
-4. **Flicker (very subtle):** Occasional, barely-perceptible global brightness variation (e.g., `globalAlpha` oscillating between 0.97 and 1.0 at ~30Hz). Optional and should be almost subliminal.
+4. **Flicker (implemented):** A black fullscreen rect with `globalAlpha = 0.03 * Math.random()` drawn after vignette, before crosshair. Dims the frame 0–3% randomly each tick — subliminal brightness variation matching the "0.97–1.0 globalAlpha at ~30Hz" spec.
 
-These effects are **cosmetic polish**, not critical-path. Implement the clean vector look first; add CRT effects as a final pass.
+**Performance:** Scanlines and vignette are pre-rendered to offscreen canvases (rebuilt on resize via `_ensureCaches()`), then composited with a single `drawImage()` call each frame. Starfield layers also use per-layer offscreen canvases with parallax tiling (3–12 `drawImage` calls vs ~350 `fillRect` calls). Edge warning gradients (flank speed amber, hull critical red) are cached as `CanvasGradient` objects and reused each frame with `globalAlpha` for pulsing — eliminates 4–8 `createLinearGradient()` + 8–16 `addColorStop()` per frame.
 
 ---
 
@@ -1823,7 +1831,9 @@ The HUD has two zones: **ship-anchored UI** (follows the ship at screen center) 
 
 **Minimap:** Top-right corner. 225×225, bracket-corner border. Stations (faction-colored squares), derelicts (amber squares), loot (amber dots), enemies (red dots) when sensor capability is installed. Player dot (green triangle, rotation-aware).
 
-**Kill log:** Right-aligned text below the minimap. Entries fade out over 3 seconds.
+**Kill log:** DOM-based (`#hud-kill-log`), positioned below the minimap via CSS. Entries are `<div class="hud-kill-entry">` elements with a CSS `kill-fade` animation (3s linear fade-out). Removed from canvas on `animationend`.
+
+**Pickup text:** DOM-based (`#hud-pickup-container`), positioned over the ship via JS `transform: translate()` each frame. Entries are `<div class="hud-pickup-entry">` with color-hint CSS classes (`.pickup-breach`, `.pickup-repair`, `.pickup-hostile`, `.pickup-module`, `.pickup-cargo`, `.pickup-default`). 2s fade-out animation. Removed from canvas on `animationend`.
 
 **Contextual prompts:** Centered horizontally at ~62% screen height. Dock/salvage/repair prompts appear here, pulsing slightly.
 

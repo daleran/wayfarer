@@ -1,8 +1,5 @@
 import { Ship } from '../../entities/ship.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL, BASE_CARGO,
-         BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY } from '../../data/tuning/shipTuning.js';
-import { drawEngineGlow } from '../../systems/engineGlow.js';
+import { engineGlow, lines } from '../../rendering/draw.js';
 
 const SPEED_MULT = 0.55;  // ~46 u/s — very slow
 const ACCEL_MULT = 0.65;  // ~7 u/s²
@@ -86,18 +83,12 @@ export class OnyxClassTug extends Ship {
       'survivability for its class, reliable in every condition. Weakness: painfully ' +
       'slow, nearly impossible to mount meaningful weapons on without custom work.';
 
-    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
-
-    this.hullMax     = BASE_HULL * HULL_MULT;
-    this.hullCurrent = this.hullMax;
-
-    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
-    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
-    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
-
-    this.cargoCapacity  = BASE_CARGO * CARGO_MULT;
-    this.fuelMax        = BASE_FUEL_MAX * FUEL_MAX_MULT;
-    this.fuelEfficiency = BASE_FUEL_EFFICIENCY * FUEL_EFF_MULT;
+    this._initStats({
+      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
+      hull: HULL_MULT, cargo: CARGO_MULT,
+      fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
+      armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
+    });
   }
 
   get _engineOffsets() {
@@ -115,66 +106,19 @@ export class OnyxClassTug extends Ship {
     };
 
     // Main hull
-    ctx.beginPath();
-    ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
-    for (let i = 1; i < HULL_POINTS.length; i++) {
-      ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
-    }
-    ctx.closePath();
-    if (this.relation === 'player') {
-      ctx.fillStyle = this._playerHullFill();
-      ctx.fill();
-      this._drawHullArcs(ctx, HULL_POINTS, ARC_MAP);
-    } else {
-      ctx.fillStyle = this.hullFill;
-      ctx.fill();
-      ctx.strokeStyle = this.hullStroke;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
+    this._fillAndStrokeHull(ctx, HULL_POINTS, ARC_MAP);
 
     // Cockpit window slit inside hammerhead
-    ctx.beginPath();
-    ctx.moveTo(-8, -24);
-    ctx.lineTo(8, -24);
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.4;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    lines(ctx, [[{x:-8,y:-24},{x:8,y:-24}]], this.hullStroke, 1, 0.4);
 
-    // Engine bay internal frame
-    ctx.beginPath();
-    ctx.moveTo(BAY_FRAME[0].x, BAY_FRAME[0].y);
-    ctx.lineTo(BAY_FRAME[1].x, BAY_FRAME[1].y);
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.3;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // Port bay internal frame
-    ctx.beginPath();
-    ctx.moveTo(PORT_BAY_FRAME[0].x, PORT_BAY_FRAME[0].y);
-    ctx.lineTo(PORT_BAY_FRAME[1].x, PORT_BAY_FRAME[1].y);
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.3;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    // Engine bay + port bay internal frames
+    lines(ctx, [BAY_FRAME, PORT_BAY_FRAME], this.hullStroke, 1, 0.3);
 
     // Weld seam across hull
-    ctx.beginPath();
-    ctx.moveTo(WELD_SEAM[0].x, WELD_SEAM[0].y);
-    ctx.lineTo(WELD_SEAM[1].x, WELD_SEAM[1].y);
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.25;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    lines(ctx, [WELD_SEAM], this.hullStroke, 1, 0.25);
 
     // Engine glow — nacelle engine
-    drawEngineGlow(ctx, ENGINE_POS, this.engineColor, 3 + this.throttleLevel * 0.6, 2, 2, 0.3);
+    engineGlow(ctx, ENGINE_POS, this.engineColor, 3 + this.throttleLevel * 0.6, 2, 2, 0.3);
   }
 
   getBounds() {

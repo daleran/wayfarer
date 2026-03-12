@@ -26,6 +26,6 @@ export const THROTTLE_RATIOS = [0, 0.15, 0.35, 0.55, 0.8, 1.5];
 
 // --- Spawn radii (used in GameManager.init()) ---
 export const SPAWN = {
-  RAIDER_RADIUS: { MIN: 150, MAX: 200 },
+  ENEMY_RADIUS: { MIN: 150, MAX: 200 },
   LURKER_RADIUS: { MIN:  60, MAX:  80 },
 };

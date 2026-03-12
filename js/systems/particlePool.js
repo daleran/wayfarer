@@ -1,4 +1,5 @@
 import { createParticle } from '../entities/particle.js';
+import { DrawBatch } from '../rendering/draw.js';
 
 const POOL_SIZE = 200;
 
@@ -118,31 +119,23 @@ export class ParticlePool {
   }
 
   render(ctx, camera) {
-    ctx.save();
+    const batch = new DrawBatch(ctx);
 
-    // Render expanding rings
-    for (const ring of this._rings) {
-      const screen = camera.worldToScreen(ring.x, ring.y);
-      const alpha = ring.life / ring.maxLife;
-      ctx.strokeStyle = ring.color;
-      ctx.lineWidth = 2;
-      ctx.globalAlpha = alpha * 0.6;
-      ctx.beginPath();
-      ctx.arc(screen.x, screen.y, ring.radius * camera.zoom, 0, Math.PI * 2);
-      ctx.stroke();
+    // Batch expanding rings
+    for (const r of this._rings) {
+      const screen = camera.worldToScreen(r.x, r.y);
+      const alpha = (r.life / r.maxLife) * 0.6;
+      batch.ring(screen.x, screen.y, r.radius * camera.zoom, r.color, 2, alpha);
     }
 
-    // Render particles
+    // Batch particles — grouped by color + alpha band automatically
     for (const p of this._pool) {
       if (!p.active) continue;
       const screen = camera.worldToScreen(p.x, p.y);
-      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(screen.x, screen.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
+      const alpha = Math.max(0, p.life / p.maxLife);
+      batch.disc(screen.x, screen.y, p.r, p.color, alpha);
     }
-    ctx.globalAlpha = 1;
-    ctx.restore();
+
+    batch.flush();
   }
 }

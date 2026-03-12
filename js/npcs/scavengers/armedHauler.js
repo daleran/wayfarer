@@ -1,7 +1,5 @@
 import { G100ClassHauler } from '../../ships/classes/g100Hauler.js';
-import { AutocannonModule, LanceModuleSmall } from '../../systems/shipModule.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
-         BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { AutocannonModule, LanceModuleSmall } from '../../modules/shipModule.js';
 import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
 
 const SPEED_MULT = 1.0;   // ~84 u/s — faster than a stock hauler
@@ -31,14 +29,10 @@ export class ArmedHauler extends G100ClassHauler {
       'Strength: heavy armor in all arcs, kites well at range with lance and ' +
       'autocannon. Weakness: slow, predictable movement pattern.';
 
-    this.speedMax     = BASE_SPEED        * SPEED_MULT * SPEED_FACTOR;
-    this.acceleration = BASE_ACCELERATION * ACCEL_MULT * SPEED_FACTOR;
-    this.turnRate     = BASE_TURN_RATE    * TURN_MULT  * SPEED_FACTOR;
-
-    this.hullMax     = BASE_HULL * HULL_MULT;
-    this.hullCurrent = this.hullMax;
-
-    this._initArmorArcs(ARMOR_FRONT, ARMOR_SIDE, ARMOR_AFT);
+    this._initStats({
+      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
+      hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
+    });
 
     this.moduleSlots = [new AutocannonModule(), new LanceModuleSmall(), null];
     this._applyModules();
