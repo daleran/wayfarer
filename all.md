@@ -91,7 +91,8 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 ### Core Systems
 
-- **`js/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, subsystems, game state; drives `update(dt)` and `render()`
+- **`js/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, subsystems; delegates player inventory state to `PlayerInventory`; drives `update(dt)` and `render()`
+- **`js/systems/playerInventory.js` / `PlayerInventory`** — owns all player inventory state: scrap, fuel, fuelMax, cargo, modules, weapons, ammo, fuelBurnRate, reactorOutput, reactorDraw. GameManager exposes forwarding accessors (`game.scrap`, `game.fuel`, etc.) for external consumers
 - **`js/systems/salvageSystem.js` / `SalvageSystem`** — owns salvage state (`isSalvaging`, `salvageProgress`, `salvageTotal`, `salvageTarget`); `start()`, `update(dt)` → returns loot entities, `cancel()`
 - **`js/systems/repairSystem.js` / `RepairSystem`** — owns repair state (`isRepairing`, `_repairAccum`, `_moduleRepairAccum`); `start()`, `update(dt, player, scrap)` → returns `{ scrapSpent }`, `cancel()`, `hasModulesToRepair(player)`, `maybeBreachModule(ship)` → returns `{ text, colorHint } | null`
 - **`js/systems/collisionSystem.js` / `CollisionSystem`** — projectile interception, beam interception, main collision loop, AoE explosions; `update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled })` → returns `{ newEntities: [] }`
@@ -102,6 +103,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **`js/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
 - **`js/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
 - **`js/renderer.js` / `Renderer`** — clears canvas, draws starfield, renders entities, then HUD/UI overlays
+- **`js/hud.js` / `HUD`** — thin orchestrator; delegates to sub-renderers in `js/hud/`: `minimap.js` (top-right minimap), `bottomStrip.js` (armor/hull/fuel/cargo bars), `shipAnchored.js` (weapon panels, throttle, integrity), `prompts.js` (dock/repair/salvage prompts, dev controls)
 
 ### Entity Types
 
@@ -113,14 +115,15 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPC
 
 - **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically; inactive purged each tick
 - **Collision detection** — projectile-vs-ship circle checks in `CollisionSystem.update()`
-- **Enemy AI** — `js/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `js/data/tuning/aiTuning.js`: stalker, kiter, standoff, lurker, flee
-- **Neutral AI** — `js/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia')
+- **Enemy AI** — `js/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `js/data/tuning/aiTuning.js`: stalker, kiter, standoff, lurker, flee. All AI runtime state lives on `ship.ai.*` (e.g. `ship.ai._aggro`, `ship.ai._patrolAngle`, `ship.ai._lurkerState`). The ship's AI status string is `ship.aiStatus` (not `aiState`).
+- **Neutral AI** — `js/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia'). Trade route fields: `ship.ai._tradeRouteA/B`. Orbit fields: `ship.ai._orbitCenter/Radius/Speed/Angle`.
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
 - **Particle pool** — `js/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
 - **Zone entities** — each world entity (station, derelict, terrain) is self-contained in `js/world/zones/<zone>/`. Every entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity. No factory dispatchers, no type-specific arrays.
 - **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
-- **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
+- **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`, `reputationTuning.js` (reputation constants). Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
+- **Weapon registry** — `js/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
 - **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, designerZoom, flavorText }`. No factory dispatcher — entities self-instantiate.
 - **UI overlays** — drawn on canvas, handle their own input; docking sets `isDocked = true`, skipping the simulation loop
 - **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
@@ -225,6 +228,7 @@ BJ. 2026-MAR-10-0000: Unified Ship AI — raiderAI.js + neutralAI.js replaced by
 BK. 2026-MAR-11-0000: Concord Enemies — DroneControlFrigate (standoff, lance weapon, spawns 3 Snatcher Drones every 12s from lateral bay notches) and SnatcHerDrone (stalker, no weapons, latches at 35px range and drains 8 armor/sec + 2 hull/sec until killed); spawn/pickup-text queue pattern in game.js; CONCORD_BLUE faction stroke override.
 BH. 2026-MAR-11-1500: Station Overhaul — HTML/CSS LocationOverlay replaces canvas StationScreen; zone-map navigation (map → zone → service); The Coil SVG schematic with 5 clickable zones (The Dock, Salvage Yard, Central Market, The Palace rep-gated, The Slums); Kell's Stop and Ashveil Anchorage simple layouts; 6 service modules (repair, trade, bounties, relations, reactor, intel); full-screen modal with scanline/cassette-futurism CSS.
 BL. 2026-MAR-11-1800: Architecture Reorganization — weapons moved js/weapons/ → js/modules/weapons/ (9 files); enemies moved js/enemies/ → js/npcs/<faction>/ (6 files); neutrals moved js/ships/neutral/ → js/npcs/settlements/ (2 files); shipModule moved js/systems/ → js/modules/; 6 systems extracted from game.js into standalone classes (CollisionSystem, WeaponSystem, SalvageSystem, RepairSystem, BountySystem, InteractionSystem); renderer draw helpers extracted to js/rendering/draw.js; ship classes simplified with _initStats() pattern; engineGlow.js deleted; Planet Pale atmospheric rendering added; game.js reduced by ~600 lines.
+BM. 2026-MAR-11-2000: Cohesion Refactor — PlayerInventory extracted from GameManager (scrap/fuel/cargo/modules/weapons/ammo); HUD split into 4 sub-renderers (minimap, bottomStrip, shipAnchored, prompts); AI state consolidated from ship._ to ship.ai._; weapon registry added (js/modules/weapons/registry.js); reputation constants moved to reputationTuning.js.
 
 
 # === IDEA.md ===
@@ -1297,15 +1301,15 @@ Hostile ships with `aggroRange > 0` patrol home when the player is far, then swi
 
 Ships with `passiveBehavior` set follow it when not hostile:
 
-- **Trader** — state machine between `traveling` and `waiting`; follows `_tradeRouteA` / `_tradeRouteB`; reverses route when arriving. Combat fallback: `flee`
-- **Militia** — orbit loop around `_orbitCenter`; steers toward computed point each tick. Combat fallback: `stalker`
+- **Trader** — state machine between `traveling` and `waiting`; follows `ship.ai._tradeRouteA` / `ship.ai._tradeRouteB`; reverses route when arriving. Combat fallback: `flee`
+- **Militia** — orbit loop around `ship.ai._orbitCenter`; steers toward computed point each tick. Combat fallback: `stalker`
 
 ### Relation Transitions
 
 When a player projectile hits a neutral ship:
 1. Reputation penalty applied to Settlements faction
 2. `ship.relation` set to `'hostile'`
-3. `ship._aggro` set to `true` — the ship immediately engages rather than patrolling
+3. `ship.ai._aggro` set to `true` — the ship immediately engages rather than patrolling
 
 Ships with `aggroRange === 0` (traders, militia) never turn hostile proactively — only through being attacked. Ships with `aggroRange > 0` (scavengers) turn hostile when the player enters range.
 

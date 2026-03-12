@@ -10,7 +10,7 @@
 //
 // Relation transitions are handled externally (e.g. in game._runCollisions):
 //   ship.relation = 'hostile';
-//   ship._aggro = true;
+//   ship.ai._aggro = true;
 // After that, this function takes over combat behavior automatically.
 // =============================================================================
 
@@ -37,7 +37,7 @@ function _doHostile(ship, player, entities, dt, ai) {
   }
 
   if (ai.combatBehavior === 'flee') {
-    ship.aiState = 'flee';
+    ship.aiStatus = 'flee';
     _doFlee(ship, player);
     return;
   }
@@ -46,27 +46,27 @@ function _doHostile(ship, player, entities, dt, ai) {
   const dy = player.y - ship.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
-  if (ship._aggro === undefined) ship._aggro = false;
+  if (ship.ai._aggro === undefined) ship.ai._aggro = false;
 
-  if (!ship._aggro && dist < ai.aggroRange) {
-    ship._aggro = true;
-  } else if (ship._aggro && dist > ai.deaggroRange) {
-    ship._aggro = false;
+  if (!ship.ai._aggro && dist < ai.aggroRange) {
+    ship.ai._aggro = true;
+  } else if (ship.ai._aggro && dist > ai.deaggroRange) {
+    ship.ai._aggro = false;
   }
 
-  if (!ship._aggro) {
-    ship.aiState = 'patrol';
+  if (!ship.ai._aggro) {
+    ship.aiStatus = 'patrol';
     _patrol(ship, dt, ai);
     return;
   }
 
   if (ship.hullCurrent / ship.hullMax < ai.fleeHullRatio) {
-    ship.aiState = 'flee';
+    ship.aiStatus = 'flee';
     _doFlee(ship, player);
     return;
   }
 
-  ship.aiState = 'aggro';
+  ship.aiStatus = 'aggro';
   switch (ai.combatBehavior) {
     case 'kiter':    _doKiter(ship, player, entities, dist, ai);    break;
     case 'stalker':  _doStalker(ship, player, entities, dist, ai);  break;
@@ -134,13 +134,13 @@ function _doKiter(ship, player, entities, dist, ai) {
   const dy = player.y - ship.y;
 
   if (dist < ai.kiteRange) {
-    ship.aiState = 'kite-back';
+    ship.aiStatus = 'kite-back';
     const fleeAngle = Math.atan2(-dx, dy);
     const diff = angleDiff(ship.rotation, fleeAngle);
     ship.rotationInput = Math.sign(diff);
     ship.throttleLevel = 4;
   } else {
-    ship.aiState = 'kite-orbit';
+    ship.aiStatus = 'kite-orbit';
     const angleToPlayer = Math.atan2(dx, -dy);
     const orbitAngle = angleToPlayer + Math.PI / 2;
     const orbitX = player.x + Math.sin(orbitAngle) * ai.kiteRange;
@@ -182,13 +182,13 @@ function _doStandoff(ship, player, entities, dist, ai) {
   const dy = player.y - ship.y;
 
   if (dist < ai.standoffRange - 100) {
-    ship.aiState = 'standoff-back';
+    ship.aiStatus = 'standoff-back';
     const fleeAngle = Math.atan2(-dx, dy);
     const diff = angleDiff(ship.rotation, fleeAngle);
     ship.rotationInput = Math.sign(diff);
     ship.throttleLevel = 4;
   } else {
-    ship.aiState = 'standoff-hold';
+    ship.aiStatus = 'standoff-hold';
     const angleToPlayer = Math.atan2(dx, -dy);
     const diff = angleDiff(ship.rotation, angleToPlayer);
     ship.rotationInput = Math.sign(diff);
@@ -218,12 +218,12 @@ function _patrol(ship, dt, ai) {
   const home = ship.homePosition;
   if (!home) { ship.throttleLevel = 0; return; }
 
-  if (ship._patrolAngle === undefined) ship._patrolAngle = Math.random() * Math.PI * 2;
-  ship._patrolAngle += dt * 0.3;
+  if (ship.ai._patrolAngle === undefined) ship.ai._patrolAngle = Math.random() * Math.PI * 2;
+  ship.ai._patrolAngle += dt * 0.3;
 
   const r = ai.patrolRadius ?? 300;
-  const targetX = home.x + Math.sin(ship._patrolAngle) * r;
-  const targetY = home.y - Math.cos(ship._patrolAngle) * r;
+  const targetX = home.x + Math.sin(ship.ai._patrolAngle) * r;
+  const targetY = home.y - Math.cos(ship.ai._patrolAngle) * r;
 
   const pdx = targetX - ship.x;
   const pdy = targetY - ship.y;
@@ -238,28 +238,30 @@ function _patrol(ship, dt, ai) {
 // ── Passive behaviors ─────────────────────────────────────────────────────────
 
 function _doTrader(ship, dt, ai) {
-  if (ship._neutralState === undefined) {
-    ship._neutralState  = 'traveling';
-    ship._neutralTarget = { ...ship._tradeRouteB };
-    ship._neutralWaitTimer = 0;
+  if (!ship.ai._tradeRouteA || !ship.ai._tradeRouteB) { ship.throttleLevel = 0; return; }
+
+  if (ship.ai._neutralState === undefined) {
+    ship.ai._neutralState  = 'traveling';
+    ship.ai._neutralTarget = { ...ship.ai._tradeRouteB };
+    ship.ai._neutralWaitTimer = 0;
   }
 
-  if (ship._neutralState === 'waiting') {
+  if (ship.ai._neutralState === 'waiting') {
     ship.throttleLevel = 0;
     ship.rotationInput = 0;
-    ship._neutralWaitTimer -= dt;
-    if (ship._neutralWaitTimer <= 0) {
-      const tmp = ship._tradeRouteA;
-      ship._tradeRouteA = ship._tradeRouteB;
-      ship._tradeRouteB = tmp;
-      ship._neutralTarget = { ...ship._tradeRouteB };
-      ship._neutralState  = 'traveling';
+    ship.ai._neutralWaitTimer -= dt;
+    if (ship.ai._neutralWaitTimer <= 0) {
+      const tmp = ship.ai._tradeRouteA;
+      ship.ai._tradeRouteA = ship.ai._tradeRouteB;
+      ship.ai._tradeRouteB = tmp;
+      ship.ai._neutralTarget = { ...ship.ai._tradeRouteB };
+      ship.ai._neutralState  = 'traveling';
     }
     return;
   }
 
-  const dx = ship._neutralTarget.x - ship.x;
-  const dy = ship._neutralTarget.y - ship.y;
+  const dx = ship.ai._neutralTarget.x - ship.x;
+  const dy = ship.ai._neutralTarget.y - ship.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
   const targetAngle = Math.atan2(dx, -dy);
@@ -268,10 +270,10 @@ function _doTrader(ship, dt, ai) {
 
   if (dist < (ai.arriveRadius ?? 120)) {
     ship.throttleLevel = 0;
-    ship._neutralState = 'waiting';
+    ship.ai._neutralState = 'waiting';
     const waitMin = ai.waitMin ?? 5;
     const waitMax = ai.waitMax ?? 8;
-    ship._neutralWaitTimer = waitMin + Math.random() * (waitMax - waitMin);
+    ship.ai._neutralWaitTimer = waitMin + Math.random() * (waitMax - waitMin);
   } else if (dist < (ai.slowRadius ?? 400)) {
     ship.throttleLevel = ai.approachThrottle ?? 1;
   } else {
@@ -280,13 +282,14 @@ function _doTrader(ship, dt, ai) {
 }
 
 function _doMilitia(ship, dt, ai) {
-  if (ship._orbitAngle === undefined) ship._orbitAngle = 0;
-  ship._orbitAngle += ship._orbitSpeed * dt;
+  if (!ship.ai._orbitCenter) { ship.throttleLevel = 0; return; }
+  if (ship.ai._orbitAngle === undefined) ship.ai._orbitAngle = 0;
+  ship.ai._orbitAngle += ship.ai._orbitSpeed * dt;
 
-  const cx = ship._orbitCenter.x;
-  const cy = ship._orbitCenter.y;
-  const targetX = cx + Math.sin(ship._orbitAngle) * ship._orbitRadius;
-  const targetY = cy - Math.cos(ship._orbitAngle) * ship._orbitRadius;
+  const cx = ship.ai._orbitCenter.x;
+  const cy = ship.ai._orbitCenter.y;
+  const targetX = cx + Math.sin(ship.ai._orbitAngle) * ship.ai._orbitRadius;
+  const targetY = cy - Math.cos(ship.ai._orbitAngle) * ship.ai._orbitRadius;
 
   const dx = targetX - ship.x;
   const dy = targetY - ship.y;
@@ -301,15 +304,15 @@ function _doMilitia(ship, dt, ai) {
 // ── Lurker ────────────────────────────────────────────────────────────────────
 
 function _doLurker(ship, player, entities, dt, ai) {
-  if (ship._lurkerState === undefined) ship._lurkerState = 'hiding';
-  ship.aiState = `lurk-${ship._lurkerState}`;
+  if (ship.ai._lurkerState === undefined) ship.ai._lurkerState = 'hiding';
+  ship.aiStatus = `lurk-${ship.ai._lurkerState}`;
 
   const dxP = player.x - ship.x;
   const dyP = player.y - ship.y;
   const distToPlayer = Math.sqrt(dxP * dxP + dyP * dyP);
 
-  if (ship._lurkerState === 'hiding') {
-    const cover = ship._coverPoint;
+  if (ship.ai._lurkerState === 'hiding') {
+    const cover = ship.ai._coverPoint;
     if (!cover) { ship.throttleLevel = 0; return; }
 
     const cdx = cover.x - ship.x;
@@ -330,8 +333,8 @@ function _doLurker(ship, player, entities, dt, ai) {
         const edy = e.y - ship.y;
         const eDist = Math.sqrt(edx * edx + edy * edy);
         if (eDist < (ai.lurkerScanRange ?? 700)) {
-          ship._lurkerTarget = e;
-          ship._lurkerState  = 'pouncing';
+          ship.ai._lurkerTarget = e;
+          ship.ai._lurkerState  = 'pouncing';
           break;
         }
       }
@@ -339,28 +342,28 @@ function _doLurker(ship, player, entities, dt, ai) {
     return;
   }
 
-  if (ship._lurkerState === 'pouncing') {
+  if (ship.ai._lurkerState === 'pouncing') {
     if (ship.hullCurrent / ship.hullMax < (ai.fleeHullRatio ?? 0.3)) {
-      ship._lurkerState = 'fleeing';
+      ship.ai._lurkerState = 'fleeing';
       return;
     }
 
     if (distToPlayer < (ai.aggroRange ?? 1400)) {
-      const tgt = ship._lurkerTarget;
+      const tgt = ship.ai._lurkerTarget;
       if (!tgt || !tgt.active) {
-        ship._lurkerTarget = player;
+        ship.ai._lurkerTarget = player;
       } else {
         const tdx = tgt.x - ship.x;
         const tdy = tgt.y - ship.y;
         const distToTarget = Math.sqrt(tdx * tdx + tdy * tdy);
-        if (distToPlayer < distToTarget) ship._lurkerTarget = player;
+        if (distToPlayer < distToTarget) ship.ai._lurkerTarget = player;
       }
     }
 
-    const tgt = ship._lurkerTarget;
+    const tgt = ship.ai._lurkerTarget;
     if (!tgt || !tgt.active) {
-      ship._lurkerTarget = null;
-      ship._lurkerState  = 'hiding';
+      ship.ai._lurkerTarget = null;
+      ship.ai._lurkerState  = 'hiding';
       return;
     }
 
@@ -369,8 +372,8 @@ function _doLurker(ship, player, entities, dt, ai) {
     const distToTarget = Math.sqrt(tdx * tdx + tdy * tdy);
 
     if (distToTarget > (ai.deaggroRange ?? 2000)) {
-      ship._lurkerTarget = null;
-      ship._lurkerState  = 'hiding';
+      ship.ai._lurkerTarget = null;
+      ship.ai._lurkerState  = 'hiding';
       return;
     }
 
@@ -386,8 +389,8 @@ function _doLurker(ship, player, entities, dt, ai) {
     return;
   }
 
-  if (ship._lurkerState === 'fleeing') {
-    const tgt = ship._lurkerTarget;
+  if (ship.ai._lurkerState === 'fleeing') {
+    const tgt = ship.ai._lurkerTarget;
     let fleeAngle;
     if (tgt && tgt.active) {
       const fdx = tgt.x - ship.x;

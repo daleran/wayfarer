@@ -228,15 +228,15 @@ Hostile ships with `aggroRange > 0` patrol home when the player is far, then swi
 
 Ships with `passiveBehavior` set follow it when not hostile:
 
-- **Trader** — state machine between `traveling` and `waiting`; follows `_tradeRouteA` / `_tradeRouteB`; reverses route when arriving. Combat fallback: `flee`
-- **Militia** — orbit loop around `_orbitCenter`; steers toward computed point each tick. Combat fallback: `stalker`
+- **Trader** — state machine between `traveling` and `waiting`; follows `ship.ai._tradeRouteA` / `ship.ai._tradeRouteB`; reverses route when arriving. Combat fallback: `flee`
+- **Militia** — orbit loop around `ship.ai._orbitCenter`; steers toward computed point each tick. Combat fallback: `stalker`
 
 ### Relation Transitions
 
 When a player projectile hits a neutral ship:
 1. Reputation penalty applied to Settlements faction
 2. `ship.relation` set to `'hostile'`
-3. `ship._aggro` set to `true` — the ship immediately engages rather than patrolling
+3. `ship.ai._aggro` set to `true` — the ship immediately engages rather than patrolling
 
 Ships with `aggroRange === 0` (traders, militia) never turn hostile proactively — only through being attacked. Ships with `aggroRange > 0` (scavengers) turn hostile when the player enters range.
 

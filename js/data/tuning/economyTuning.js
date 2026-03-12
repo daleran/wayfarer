@@ -1,6 +1,6 @@
 // =============================================================================
 // WAYFARER — ECONOMY TUNING
-// Scrap, fuel, repair, and reputation constants.
+// Scrap, fuel, repair, and bounty constants.
 // =============================================================================
 
 // --- Fuel & economy ---
@@ -21,15 +21,4 @@ export const MODULE_REPAIR_COST = 15;   // scrap per condition step
 // --- Bounty timers ---
 export const BOUNTY = {
   EXPIRY_WARNING_SECS: 60, // timer flashes RED below this
-};
-
-// --- Reputation ---
-export const REPUTATION = {
-  KILL_PENALTY:          -10,
-  RIVAL_BONUS:             5,
-  BOUNTY_BONUS:           20,
-  ATTACK_NEUTRAL_PENALTY:-25,
-  HOSTILE_THRESHOLD:     -50,  // docking refused
-  ALLIED_THRESHOLD:       50,  // services discounted
-  DISCOUNT_RATE:          0.15, // 15% off when Allied
 };

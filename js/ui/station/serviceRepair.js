@@ -1,4 +1,4 @@
-import { REPUTATION } from '../../data/tuning/economyTuning.js';
+import { REPUTATION } from '../../data/tuning/reputationTuning.js';
 
 const REPAIR_DURATION = 2000; // ms
 

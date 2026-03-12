@@ -1,7 +1,7 @@
 import { Projectile } from '../entities/projectile.js';
 import { Ship } from '../entities/ship.js';
 import { RocketExplosion } from '../entities/rocketExplosion.js';
-import { REPUTATION } from '../data/tuning/economyTuning.js';
+import { REPUTATION } from '../data/tuning/reputationTuning.js';
 
 export class CollisionSystem {
   constructor() {}
@@ -94,7 +94,7 @@ export class CollisionSystem {
             proj._neutralPenaltyApplied = true;
             reputation.change('settlements', REPUTATION.ATTACK_NEUTRAL_PENALTY);
             target.relation = 'hostile';
-            target._aggro = true;
+            target.ai._aggro = true;
           }
           if (proj.isRocket || proj.detonatesOnContact) {
             proj.active = false;

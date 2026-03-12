@@ -1,8 +1,6 @@
 import { createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from '../entities/lootDrop.js';
 import { createModuleById } from '../modules/registry.js';
-import { Autocannon } from '../modules/weapons/autocannon.js';
-import { Cannon } from '../modules/weapons/cannon.js';
-import { Lance } from '../modules/weapons/lance.js';
+import { createWeaponById } from '../modules/weapons/registry.js';
 import { CONDITION_DISTRIBUTIONS } from '../data/lootTables.js';
 
 export class SalvageSystem {
@@ -88,11 +86,6 @@ export class SalvageSystem {
   }
 
   _createWeaponById(id) {
-    const map = {
-      Autocannon: () => new Autocannon(),
-      Cannon: () => new Cannon(),
-      LanceSmall: () => new Lance('small'),
-    };
-    return map[id] ? map[id]() : null;
+    return createWeaponById(id);
   }
 }

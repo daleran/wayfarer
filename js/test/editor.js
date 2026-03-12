@@ -149,7 +149,7 @@ export class EditorOverlay {
     // Register in the unified ships list so AI runs
     if (entity.ai) {
       if (entity.homePosition === undefined) entity.homePosition = { x: world.x, y: world.y };
-      if (entity.relation === 'hostile') entity._aggro = true;
+      if (entity.relation === 'hostile') entity.ai._aggro = true;
       game.ships.push(entity);
     }
 
@@ -218,7 +218,7 @@ export class EditorOverlay {
       const speed   = Math.round(Math.hypot(entity.vx ?? 0, entity.vy ?? 0));
       const speedMax= Math.round(entity.speedMax ?? 0);
       const beh     = entity.ai?.combatBehavior ?? entity.ai?.passiveBehavior ?? '\u2014';
-      const state   = entity.aiState      ?? '\u2014';
+      const state   = entity.aiStatus      ?? '\u2014';
 
       // Armor arcs — show all 4 sides if available, else simple total
       const arcs    = entity.armorArcs    ?? null;

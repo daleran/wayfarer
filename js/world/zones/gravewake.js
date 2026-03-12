@@ -40,9 +40,9 @@ function lurkerGroup(x, y, count) {
     const rx = x + Math.sin(angle) * dist;
     const ry = y - Math.cos(angle) * dist;
     const ship = createShip('grave-clan-ambusher', rx, ry);
-    ship._coverPoint  = { x: rx, y: ry };
-    ship.homePosition = { x, y };
-    ship._canRespawn  = true;
+    ship.ai._coverPoint = { x: rx, y: ry };
+    ship.homePosition   = { x, y };
+    ship._canRespawn    = true;
     return ship;
   });
 }
@@ -53,8 +53,8 @@ function convoy(routeA, routeB, shipCount) {
     const sx = routeA.x + (routeB.x - routeA.x) * t;
     const sy = routeA.y + (routeB.y - routeA.y) * t;
     const ship = createShip('trader-convoy', sx, sy);
-    ship._tradeRouteA = { ...routeA };
-    ship._tradeRouteB = { ...routeB };
+    ship.ai._tradeRouteA = { ...routeA };
+    ship.ai._tradeRouteB = { ...routeB };
     return ship;
   });
 }
@@ -65,10 +65,10 @@ function militia(orbitCenter, orbitRadius, orbitSpeed, count) {
     const sx = orbitCenter.x + Math.sin(angle) * orbitRadius;
     const sy = orbitCenter.y - Math.cos(angle) * orbitRadius;
     const ship = createShip('militia-patrol', sx, sy);
-    ship._orbitCenter = { ...orbitCenter };
-    ship._orbitRadius = orbitRadius;
-    ship._orbitSpeed  = orbitSpeed;
-    ship._orbitAngle  = angle;
+    ship.ai._orbitCenter = { ...orbitCenter };
+    ship.ai._orbitRadius = orbitRadius;
+    ship.ai._orbitSpeed  = orbitSpeed;
+    ship.ai._orbitAngle  = angle;
     return ship;
   });
 }

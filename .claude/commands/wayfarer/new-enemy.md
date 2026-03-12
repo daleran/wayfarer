@@ -11,7 +11,7 @@ Ask the user (or infer from their description) for:
   - `stalker` — flanks to player's aft, fires only when nose-aligned; patient, precise
   - `kiter` — maintains distance, backs off when too close, orbits at max range; hit-and-run
   - `standoff` — holds a long fixed range, fires both primary and secondary; capital-style
-  - `lurker` — hides at a cover point, scans for traders, pounces; ambush predator. Requires a `_coverPoint` set at spawn.
+  - `lurker` — hides at a cover point, scans for traders, pounces; ambush predator. Requires `ship.ai._coverPoint` set at spawn.
   - `flee` — retreat behavior; used as a fallback when hull is critically low
 - **Faction** — `'scavenger'` (most common), `'concord'`, or other lore-appropriate value
 - **Weapons** — pick from `shipModule.js` module exports: `AutocannonModule`, `LanceModuleSmall`, `CannonModule`, `RocketPodModule`, `TorpedoModule`
@@ -98,7 +98,7 @@ export function create<ClassName>(x, y) {
 }
 ```
 
-**Lurker note:** If `behaviorType === 'lurker'`, the spawn code in map.js must set `enemy._coverPoint = { x, y }` after creation. Add a comment in the file reminding the map author of this.
+**Lurker note:** If `behaviorType === 'lurker'`, the spawn code in map.js must set `enemy.ai._coverPoint = { x, y }` after creation. Add a comment in the file reminding the map author of this.
 
 ## Step 4 — Register in NPC_REGISTRY
 
@@ -113,7 +113,7 @@ Open `js/data/maps/tyr.js` and `js/data/maps/arena.js`. Add a spawn entry in the
 { type: '<kebab-slug>', x: XXXX, y: YYYY, homePosition: { x: XXXX, y: YYYY } }
 ```
 
-For lurkers, also set a `_coverPoint` — do this in game.js's spawn loop if needed, or as a post-spawn property on the data object.
+For lurkers, also set `ship.ai._coverPoint` — do this in the spawn helper or as a post-spawn property on the `ship.ai` object.
 
 In `arena.js` place the spawn close enough to the player's start that it's reachable quickly.
 
