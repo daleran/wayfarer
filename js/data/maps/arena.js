@@ -16,7 +16,7 @@ function spawnEnemy(x, y, shipType) {
 
 export const MAP = {
   mapSize: { width: 8000, height: 6000 },
-  playerStart: { x: 4000, y: 4400 },
+  playerStart: { x: 4000, y: 5200 },
 
   background: [
     PlanetPale.backgroundData({ x: 4000, y: 3000 }),
