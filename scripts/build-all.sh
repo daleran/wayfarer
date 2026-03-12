@@ -8,10 +8,10 @@ OUT="$REPO_ROOT/all.md"
 FILES=(
   "CLAUDE.md"
   "DEVLOG.md"
-  "IDEA.md"
+  "PLAN.md"
   "LORE.md"
   "MECHANICS.md"
-  "NEXT.md"
+  "FIXES.md"
   "UX.md"
 )
 

@@ -17,7 +17,11 @@
 
 .location-overlay {
   position: fixed;
-  inset: 0;
+  top: 12px;
+  right: 12px;
+  width: 28%;
+  min-width: 320px;
+  height: calc(100vh - 60px);
   z-index: 10;
   background: var(--loc-bg);
   font-family: monospace;
@@ -26,6 +30,8 @@
   flex-direction: column;
   color: var(--loc-dim);
   overflow: hidden;
+  border: 1px solid var(--loc-border);
+  pointer-events: auto;
 }
 
 /* Scanline effect */
@@ -52,29 +58,12 @@
 .loc-header {
   display: flex;
   align-items: center;
-  padding: 14px 28px 12px;
+  padding: 10px 14px 8px;
   border-bottom: 1px solid var(--loc-border);
   flex-shrink: 0;
-  gap: 16px;
-  min-height: 52px;
-}
-
-.loc-back-btn {
-  font: 11px monospace;
-  color: var(--loc-dim);
-  cursor: pointer;
-  border: 1px solid var(--loc-very-dim);
-  padding: 4px 10px;
-  letter-spacing: 0.1em;
-  transition: color 0.12s, border-color 0.12s;
-  user-select: none;
-  white-space: nowrap;
-  background: transparent;
-}
-
-.loc-back-btn:hover {
-  color: var(--loc-cyan);
-  border-color: var(--loc-cyan);
+  gap: 8px;
+  min-height: 44px;
+  flex-wrap: wrap;
 }
 
 .loc-station-name {
@@ -87,18 +76,6 @@
 .loc-station-faction {
   font: 12px monospace;
   letter-spacing: 0.1em;
-}
-
-.loc-zone-title {
-  font: bold 13px monospace;
-  color: var(--loc-cyan);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.loc-station-sub {
-  font: 11px monospace;
-  color: var(--loc-dim);
 }
 
 .loc-standing-badge {
@@ -122,165 +99,108 @@
   padding-left: 8px;
 }
 
-/* ── Map view ────────────────────────────────────────────────────────────────── */
+/* ── Station flavor text ─────────────────────────────────────────────────────── */
 
-.loc-map-container {
+.loc-flavor {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--loc-border);
+}
+
+.loc-flavor p {
+  font: 11px/1.7 monospace;
+  color: var(--loc-dim);
+  margin: 0;
+}
+
+/* ── Area list (top-level station nav) ──────────────────────────────────────── */
+
+.loc-area-list {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
-  padding: 28px 48px;
-  overflow: auto;
-}
-
-.loc-map-simple {
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 28px 48px;
-  overflow: auto;
-}
-
-.loc-zone-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-  width: 100%;
-  max-width: 900px;
-}
-
-/* ── SVG zone map ────────────────────────────────────────────────────────────── */
-
-.loc-map-svg-wrap {
-  flex-shrink: 0;
-  user-select: none;
-}
-
-.loc-map-svg-wrap svg {
-  display: block;
-}
-
-.loc-zone-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  min-width: 220px;
-  max-width: 280px;
+  gap: 0;
+  overflow-y: auto;
 }
 
-/* SVG zone interactivity */
-.zone-hotspot {
-  cursor: pointer;
-}
-
-.zone-hotspot .zone-area {
-  fill: transparent;
-  transition: fill 0.15s;
-}
-
-.zone-hotspot:hover .zone-area {
-  fill: rgba(255,170,0,0.07);
-}
-
-.zone-hotspot .zone-border {
-  stroke-opacity: 0.2;
-  fill: none;
-  transition: stroke-opacity 0.15s;
-}
-
-.zone-hotspot:hover .zone-border {
-  stroke-opacity: 0.6;
-}
-
-.zone-hotspot .zone-label {
-  fill-opacity: 0.5;
-  transition: fill-opacity 0.15s;
-  pointer-events: none;
-  font: bold 8px monospace;
-  text-anchor: middle;
-}
-
-.zone-hotspot:hover .zone-label {
-  fill-opacity: 1;
-}
-
-.zone-hotspot.locked {
-  pointer-events: none;
-  opacity: 0.28;
-}
-
-/* ── Zone card (sidebar / simple grid) ──────────────────────────────────────── */
-
-.loc-zone-card {
-  background: var(--loc-panel);
-  border: 1px solid var(--loc-very-dim);
+.loc-area-card {
+  background: transparent;
+  border-bottom: 1px solid var(--loc-very-dim);
   padding: 14px 18px;
   cursor: pointer;
-  transition: border-color 0.12s, background 0.12s;
+  transition: background 0.12s;
   user-select: none;
 }
 
-.loc-zone-card:hover {
-  border-color: var(--loc-cyan);
+.loc-area-card:hover {
   background: rgba(0,255,204,0.03);
 }
 
-.loc-zone-card.locked {
+.loc-area-card.locked {
   pointer-events: none;
   opacity: 0.3;
 }
 
-.loc-zone-card-name {
+.loc-area-card-name {
   font: bold 12px monospace;
   color: var(--loc-cyan);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
-.loc-zone-card-desc {
+.loc-area-card-desc {
   font: 11px/1.5 monospace;
   color: var(--loc-dim);
 }
 
-.loc-zone-card-lock {
+.loc-area-card-lock {
   font: 10px monospace;
   color: var(--loc-red);
   margin-top: 6px;
   letter-spacing: 0.06em;
 }
 
-.loc-zone-card-tags {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-  flex-wrap: wrap;
+/* ── Back button ────────────────────────────────────────────────────────────── */
+
+.loc-back-btn {
+  font: 11px monospace;
+  color: var(--loc-dim);
+  cursor: pointer;
+  border: 1px solid var(--loc-very-dim);
+  padding: 4px 10px;
+  letter-spacing: 0.1em;
+  transition: color 0.12s, border-color 0.12s;
+  user-select: none;
+  white-space: nowrap;
+  background: transparent;
 }
 
-.loc-service-tag {
-  font: 9px monospace;
-  color: var(--loc-very-dim);
-  border: 1px solid var(--loc-very-dim);
-  padding: 2px 6px;
-  letter-spacing: 0.05em;
+.loc-back-btn:hover {
+  color: var(--loc-cyan);
+  border-color: var(--loc-cyan);
+}
+
+/* ── Zone detail header ─────────────────────────────────────────────────────── */
+
+.loc-zone-title {
+  font: bold 13px monospace;
+  color: var(--loc-cyan);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-/* ── Zone panel ──────────────────────────────────────────────────────────────── */
-
-.loc-zone-panel {
-  flex: 1;
-  display: flex;
-  gap: 0;
-  overflow: hidden;
+.loc-station-sub {
+  font: 11px monospace;
+  color: var(--loc-dim);
 }
 
+/* ── Zone flavor text ───────────────────────────────────────────────────────── */
+
 .loc-zone-flavor {
-  flex: 0 0 240px;
-  padding: 22px 24px;
-  border-right: 1px solid var(--loc-border);
+  flex-shrink: 0;
+  max-height: 140px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--loc-border);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -305,41 +225,44 @@
   height: 8px;
 }
 
+/* ── Zone service tabs ──────────────────────────────────────────────────────── */
+
 .loc-zone-service-list {
-  flex: 0 0 190px;
-  padding: 22px 0;
-  border-right: 1px solid var(--loc-border);
+  flex-shrink: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--loc-border);
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0;
 }
 
 .loc-service-btn {
   display: block;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
-  border-left: 2px solid transparent;
+  border-bottom: 2px solid transparent;
   color: var(--loc-dim);
-  font: 11px monospace;
-  letter-spacing: 0.08em;
-  padding: 11px 20px;
+  font: 10px monospace;
+  letter-spacing: 0.06em;
+  padding: 8px 10px;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   text-transform: uppercase;
   transition: border-color 0.1s, color 0.1s, background 0.1s;
   user-select: none;
 }
 
 .loc-service-btn:hover {
-  border-left-color: var(--loc-cyan);
+  border-bottom-color: var(--loc-cyan);
   color: var(--loc-cyan);
   background: rgba(0,255,204,0.04);
 }
 
 .loc-service-btn.active {
-  border-left-color: var(--loc-cyan);
+  border-bottom-color: var(--loc-cyan);
   color: var(--loc-cyan);
   background: rgba(0,255,204,0.06);
 }
@@ -348,7 +271,7 @@
 
 .loc-service-panel {
   flex: 1;
-  padding: 22px 28px;
+  padding: 12px 14px;
   overflow-y: auto;
   position: relative;
 }

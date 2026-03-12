@@ -23,13 +23,14 @@ No test framework or linter is configured.
 
 ## Feature Code Workflow
 
-All features move through three stages:
+All features move through two stages:
 
-1. **IDEA.md** — raw concept with a letter code (e.g. `AN`). Not yet planned for implementation. May be vague. Good place for brainstorming.
-2. **NEXT.md** — moved here when the idea is prioritized. "UP NEXT" section = ready to build. Minor tweaks and bugs live in the lower section without codes.
-3. **DEVLOG.md** — one line appended when the feature ships. Code is retired here permanently.
+1. **PLAN.md** — feature concepts with a letter code (e.g. `AN`). Ideas start rough and get refined here. Coded items are ready to build directly from this file.
+2. **DEVLOG.md** — one line appended when the feature ships. Code is retired here permanently.
 
-**Assigning codes:** Check IDEA.md for the "next available code" header. Codes are sequential two-letter suffixes after `AM` (the last DEVLOG entry): `AN`, `AO`, `AP`, etc. Assign the next available code to each new idea when you add it to IDEA.md.
+Small tweaks and bug fixes live in **FIXES.md** (no codes, just a flat bullet list).
+
+**Assigning codes:** Check PLAN.md for the "next available code" header. Codes are sequential two-letter suffixes after `AM` (the last DEVLOG entry): `AN`, `AO`, `AP`, etc. Assign the next available code to each new idea when you add it to PLAN.md.
 
 ## Documentation Guide
 
@@ -41,8 +42,8 @@ All features move through three stages:
 | `LORE.md` | Worldbuilding — history, factions, locations, tone | Faction names/traits changed. Location names changed. World tone or setting changed. |
 | `UX.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. |
 | `DEVLOG.md` | Development progress log — major features only | Every session — append one line per major feature completed. |
-| `NEXT.md` | UP NEXT (coded features ready to build) + minor fix list | Promote ideas from IDEA.md. Remove items when completed. |
-| `IDEA.md` | Raw feature concepts with codes — not yet planned | New ideas captured. Move to NEXT.md when prioritized. |
+| `PLAN.md` | Feature plans & concepts with codes — ready to build | New ideas captured. Remove items when completed. |
+| `FIXES.md` | Small tweaks & bug fixes (no codes) | Add minor fixes. Remove when completed. |
 | `CLAUDE.md` | This file — dev flow, architecture, rules | New systems or patterns introduced. Architecture changes. |
 
 ## Dev Harnesses
@@ -103,7 +104,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **`js/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
 - **`js/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
 - **`js/renderer.js` / `Renderer`** — clears canvas, draws starfield, renders entities, then HUD/UI overlays
-- **`js/hud.js` / `HUD`** — thin orchestrator; delegates to sub-renderers in `js/hud/`: `minimap.js` (top-right minimap), `bottomStrip.js` (armor/hull/fuel/cargo bars), `shipAnchored.js` (weapon panels, throttle, integrity), `prompts.js` (dock/repair/salvage prompts, dev controls)
+- **`js/hud.js` / `HUD`** — thin orchestrator; bottom strip is DOM-based (`#hud-bottom`, `css/hudBottom.css`), updated via `_updateBottomStrip()` each frame; canvas sub-renderers in `js/hud/`: `minimap.js` (top-right minimap), `shipAnchored.js` (weapon panels, throttle, integrity), `prompts.js` (dock/repair/salvage prompts, dev controls). Tooltip system via `showTooltip()`/`hideTooltip()`
 
 ### Entity Types
 
@@ -125,7 +126,7 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPC
 - **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`, `reputationTuning.js` (reputation constants). Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
 - **Weapon registry** — `js/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
 - **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, designerZoom, flavorText }`. No factory dispatcher — entities self-instantiate.
-- **UI overlays** — drawn on canvas, handle their own input; docking sets `isDocked = true`, skipping the simulation loop
+- **UI overlays** — station panel (`#location-overlay`, right 30% DOM panel) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
 - **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
 
 ### Coordinate System
@@ -159,8 +160,8 @@ Never use inline hex strings anywhere in the codebase. Import named constants fr
 - Visual/UI changed → `UX.md`
 - Lore/names changed → `LORE.md`
 - Major feature completed → append one line to `DEVLOG.md`
-- New idea → add to `IDEA.md` with next available code
-- Feature ready to build → move from `IDEA.md` to `NEXT.md`
+- New idea → add to `PLAN.md` with next available code
+- Small fix or tweak → add to `FIXES.md`
 
 ### Commits: Log to DEVLOG.md
 Format: `CODE. YYYY-MMM-DD-HHMM: Feature name (one-line description)`
@@ -229,15 +230,18 @@ BK. 2026-MAR-11-0000: Concord Enemies — DroneControlFrigate (standoff, lance w
 BH. 2026-MAR-11-1500: Station Overhaul — HTML/CSS LocationOverlay replaces canvas StationScreen; zone-map navigation (map → zone → service); The Coil SVG schematic with 5 clickable zones (The Dock, Salvage Yard, Central Market, The Palace rep-gated, The Slums); Kell's Stop and Ashveil Anchorage simple layouts; 6 service modules (repair, trade, bounties, relations, reactor, intel); full-screen modal with scanline/cassette-futurism CSS.
 BL. 2026-MAR-11-1800: Architecture Reorganization — weapons moved js/weapons/ → js/modules/weapons/ (9 files); enemies moved js/enemies/ → js/npcs/<faction>/ (6 files); neutrals moved js/ships/neutral/ → js/npcs/settlements/ (2 files); shipModule moved js/systems/ → js/modules/; 6 systems extracted from game.js into standalone classes (CollisionSystem, WeaponSystem, SalvageSystem, RepairSystem, BountySystem, InteractionSystem); renderer draw helpers extracted to js/rendering/draw.js; ship classes simplified with _initStats() pattern; engineGlow.js deleted; Planet Pale atmospheric rendering added; game.js reduced by ~600 lines.
 BM. 2026-MAR-11-2000: Cohesion Refactor — PlayerInventory extracted from GameManager (scrap/fuel/cargo/modules/weapons/ammo); HUD split into 4 sub-renderers (minimap, bottomStrip, shipAnchored, prompts); AI state consolidated from ship._ to ship.ai._; weapon registry added (js/modules/weapons/registry.js); reputation constants moved to reputationTuning.js.
+CC. 2026-MAR-11-2200: Station Map Detail & Scale — AshveilStation custom renderer (colony ship hull, ~200px span, dockingRadius=180, docked ships, running lights, approach beam); context-dependent station sizes across 3 Gravewake stations.
+CB. 2026-MAR-11-2200: Station UI → Right Panel — LocationOverlay from full-screen to 30% right-side panel; world visible behind; camera centers on docked station; zone panel stacks vertically; service buttons as horizontal tab row.
+CA. 2026-MAR-11-2200: Ship Inventory + HUD-to-HTML — bottom HUD strip moved to DOM (#hud-bottom, 48px fixed bar); ship screen rewritten as DOM left panel (#ship-panel, 30% width); stats grid, module slots with install flow, cargo bay with filters; station panel height adjusted for bottom bar.
 
 
-# === IDEA.md ===
+# === PLAN.md ===
 
-# IDEA.md — Feature Ideas & Concepts
+# PLAN.md — Feature Plans & Concepts
 
-Raw concepts under consideration. Not yet planned for implementation. Ideas move to `NEXT.md` when prioritized for a build session.
+Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CA**
+**Next available code: CD**
 
 ---
 
@@ -275,6 +279,9 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BY | Expanded Debug Overlay | Dev Tools |
 | BZ | Systemic Narrative Engine | Narrative |
+| CA | Ship Inventory + HUD Overhaul | UI |
+| CB | Station UI → Right Panel | UI |
+| CC | Station Map Detail & Scale | World / Map |
 
 ---
 
@@ -778,7 +785,7 @@ All audio generated via Web Audio API — no asset files required.
 
 ## Code Architecture
 
-*(BI promoted to NEXT.md)*
+*(BI promoted and shipped)*
 
 
 # === LORE.md ===
@@ -1576,20 +1583,12 @@ A 240px panel slides in from the right edge. Categories are generated from `SHIP
 
 ## Planned (Next Up)
 
-See `NEXT.md` for features ready to implement. See `IDEA.md` for raw concepts under consideration.
+See `PLAN.md` for features ready to implement. See `FIXES.md` for small tweaks and bug fixes.
 
 
-# === NEXT.md ===
+# === FIXES.md ===
 
-# NEXT.md — Upcoming Features
-
-## UP NEXT
-
-
-
----
-
-## Minor fixes / polish
+# FIXES.md — Small Tweaks & Fixes
 
 - Grave-Clan Ambusher: confirm heat missile target-lock behavior when multiple enemies are present
 - Universal ship slots need to be small and large variants
@@ -1798,40 +1797,42 @@ A subtle fullscreen post-processing pass (or overlay) to sell the vector monitor
 
 ## Specific UI Components
 
-### Ship Screen (`js/ui/shipScreen.js`)
-- Full-screen overlay, same dark backdrop (`rgba(0,6,14,0.93)`) and `DIM_OUTLINE` border.
-- Three equal columns divided by thin `VERY_DIM` lines.
-- **Left column:** Hull HP, per-arc armor (F/P/S/A), drive stats, scrap readout, module slot list. Module slots are outlined boxes with name + power annotation (`+W` green / `-W` amber).
-- **Center column:** Paper doll — `HULL_POINTS` silhouette scaled ×4, colored by hull health (green/amber/red) with arc-colored outline segments matching the ship's in-game directional armor rendering. Arc direction labels F/S/A/P around the silhouette. Hull ratio bar + numeric below.
-- **Right column:** Cargo bay quantities, capacity bar, active weapon list (PRI in cyan, SEC in magenta).
-- Close hint centered at bottom: `[I] or [ESC] — close` in dim text.
-- Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open.
+### Ship Panel (`js/ui/shipScreen.js`, `css/ship.css`)
+- **DOM-based left 30% panel** (`#ship-panel`), `height: calc(100vh - 48px)` to sit above the bottom HUD bar. Near-black background with scanline overlay, left border in cyan.
+- Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open. World remains visible in the remaining viewport.
+- **Header:** Ship name (HULLBREAKER), class description, `[I] / [Esc]` hint.
+- **Stats section:** 2-column grid of stat rows (HULL, ARM-F/P/S/A, SPEED, FUEL, SCRAP). Values colored by status (green=good, amber=normal, red=critical).
+- **Module slots:** Numbered list `[1]...[N]`. Each slot shows module name, power annotation (`+W` green / `-W` amber), condition badge. Click filled slot to remove. Select cargo module → click empty slot to install (1.5s progress bar).
+- **Cargo bay:** Header with used/capacity count. Filter buttons (ALL | MODULES | COMMODITIES | AMMO). Scrollable list: scrap always first, then commodities, modules (clickable for install), weapons, ammo reserves.
+- **When docked with station open:** ship panel (left 30%) + station panel (right 30%) + world (middle 40%).
+- Input gating: `stopPropagation` on panel mousedown/click prevents canvas weapon fire.
 
-### Station Screen
-- Dark backdrop overlay (near-black, 85% opacity — the game world should barely ghost through).
-- Central panel with cyan border and corner brackets.
-- Station name in large monospace text, centered, cyan.
-- Tab bar: text-only tabs with an underline indicator on the active tab. No tab "boxes."
-- Content area: clean rows of data. Commodity lists, ship stats, etc. in aligned monospace columns.
-- Buttons: outlined rectangles. Buy/Sell in green/amber.
-- Close prompt at bottom: dim text, "[Esc] Close".
+### Station Panel (`js/ui/locationOverlay.js`, `css/location.css`)
+- **DOM-based right 30% panel** (`#location-overlay`), `height: calc(100vh - 48px)`, left border in cyan. World visible in remaining viewport. Camera centers on docked station.
+- Navigation: map view → zone view → service view. Back button and Esc navigate up.
+- **Map view:** Zone grid (single-column for narrow panel) or SVG schematic + zone list (stacked vertically).
+- **Zone view:** Flavor text (max 120px collapsed), horizontal service tab row, scrollable service content below.
+- **Services:** Repair/refuel, trade table, bounty cards, faction relations, reactor overhaul, intel lore.
+- Zone gating by reputation standing (locked zones dimmed with red LOCKED text).
 
 ### HUD (In-Flight)
 
-The HUD has two zones: **ship-anchored UI** (follows the ship at screen center) and **bottom strip** (fixed screen-space panel at the bottom edge). All elements are projected onto a transparent display — no heavy panel backgrounds.
+The HUD has three zones: **ship-anchored UI** (canvas, follows ship), **bottom strip** (DOM, fixed bar), and **minimap** (canvas, top-right).
 
-**Ship-anchored UI (centered on the ship):**
+**Ship-anchored UI (canvas, centered on the ship):**
 - **Weapon readout** — directly above the ship. Two rows: `PRI` (cyan) and `SEC` (magenta). Name + cooldown/reload bar + ammo count. Anchored ~85px above ship center in screen space.
 - **Throttle pips** — directly below the ship. Six labeled pips (`Stop/1/4/1/2/3/4/Full/Flank`), active pip filled cyan. Speed and throttle label above the pips. System integrity symbols `[R][E][S]` below the pips in dim text (red if low).
 
-**Bottom strip (fixed, 32px from screen edges):**
-- Two rows. Row 1 (upper): ARMOR pips + Power. Row 2 (lower): HULL bar + FUEL bar + CARGO bar + SCRAP.
-- **ARMOR pips (row 1, left):** Same total width as hull bar below it. 4 equal sections labeled `F/P/S/A`, each independently filled green→amber→red by that arc's health ratio. Arc total `current/max` shown to the right.
-- **HULL bar (row 2, left):** Red segmented bar. Color shifts green→amber→red by hull health. Flashes red below 25%. `current/max` to the right.
-- **FUEL bar (row 2, center):** Amber segmented bar, centered. Burns red below 25%. Burn rate shown above bar at low opacity.
-- **POWER readout (row 1, right):** `PWR +300W [+50W]` — dim label, green gross output, net in green/red brackets.
-- **CARGO bar (row 2, right):** Blue segmented bar. Turns red when full. `used/capacity` to the right.
-- **SCRAP count (row 2, far right):** `⚙ 123` in bold amber to the right of cargo.
+**Bottom strip (DOM, `#hud-bottom`, `css/hudBottom.css`):**
+- Fixed 48px bar at bottom of viewport, z-index 20. Near-black background with top cyan border. `pointer-events: none`.
+- Single row with centered segments: ARMOR pips | HULL bar | FUEL bar | PWR readout | CARGO bar | SCRAP count.
+- **ARMOR pips:** 4 small boxes labeled `F/P/S/A`, each with colored fill bar by arc health (green→amber→red via `armorArcColor`). `current/max` text to the right.
+- **HULL bar:** 110px wide bar, green fill, border turns red below 25%. `current/max` text.
+- **FUEL bar:** Amber bar, border turns red below 25%. `current/max` text.
+- **POWER readout:** `PWR +300W [+50W]` — green gross output, net in green/red. Flashing `! OVERHAUL` warning when fission reactor is overdue.
+- **CARGO bar:** Blue bar, turns red when full. `used/capacity` text.
+- **SCRAP count:** `⚙ 123` in bold amber.
+- All bars and values updated via DOM manipulation in `HUD._updateBottomStrip()` each frame — no canvas rendering.
 
 **Minimap:** Top-right corner. 225×225, bracket-corner border. Stations (faction-colored squares), derelicts (amber squares), loot (amber dots), enemies (red dots) when sensor capability is installed. Player dot (green triangle, rotation-aware).
 
@@ -1982,5 +1983,14 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Ship rendering:** All ships now use directional armor arc rendering when `relation === 'player'`. Hull fill color reflects overall hull health (green→yellow→orange→red). Hull outline is split into 4 arc-colored segments (front/starboard/aft/port) each reflecting that arc's armor health. Helpers `_playerHullFill()`, `_drawHullArcs()`, `_strokeArcCurrent()` on `Ship` base class. All 4 ship base classes updated.
 - **Bottom strip:** Row 1 = ARMOR 4-pip bar (same width as hull bar, labeled F/P/S/A) + PWR text. Row 2 = HULL bar + FUEL bar (centered) + CARGO bar + SCRAP count. 32px edge margins for comfortable screen breathing room.
 - **Rationale:** The old HUD required constant glancing to the top-left corner. Anchoring throttle and weapons near the ship keeps eyes on the action. The bottom strip consolidates critical secondary readouts in one sweep-readable band. Directional health on the ship itself makes hull/armor state immediately obvious in combat without consulting a panel.
+
+### 2026-03-11: UI Overhaul — Panels Replace Overlays (CA/CB/CC)
+- **Decision:** Three-part UI overhaul: (1) Station screen from full-screen overlay to 30% right-side DOM panel, (2) Ship screen from canvas overlay to 30% left-side DOM panel, (3) Bottom HUD strip from canvas to DOM fixed bar.
+- **Station panel (CB):** `#location-overlay` positioned `right:0; width:30%; height:calc(100vh-48px)`. Camera centers on station. Zone sidebar stacks below SVG. Service buttons become horizontal tab row. World remains visible in the remaining 70%.
+- **Ship panel (CA):** `#ship-panel` positioned `left:0; width:30%; height:calc(100vh-48px)`. Four sections: header, 2-column stat grid, module slots (numbered, click-to-remove/install), scrollable cargo with filter buttons. `stopPropagation` on mouse events prevents canvas weapon fire.
+- **Bottom HUD (CA):** `#hud-bottom` fixed 48px bar at bottom. Single row: ARMOR pips, HULL bar, FUEL bar, PWR readout, CARGO bar, SCRAP count. DOM elements updated each frame via `_updateBottomStrip()`.
+- **Docked with ship screen:** Left 30% (ship) + right 30% (station) + middle 40% (world).
+- **Station renderers (CC):** AshveilStation custom renderer (~200px colony ship hull, 10 rectangular sections, docked ships, running lights, approach beam). Kell's Stop unchanged (~120px). The Coil unchanged (~300px).
+- **Rationale:** Full-screen overlays broke immersion. Side panels keep the world visible, reinforce spatial context while docked. DOM-based UI is more maintainable than canvas text rendering and supports proper hover/click interactions. Bottom HUD bar clears the center viewport for combat readability.
 
 

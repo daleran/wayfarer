@@ -306,6 +306,7 @@ const LAYOUT = {
 export const KellsStop = {
   id: 'kells_stop',
   name: "Kell's Stop",
+  flavorText: "A fuel platform bolted to whatever was left of an old survey barge. Kell herself has been dead for eleven years. Nobody's updated the sign.",
   faction: 'neutral',
   renderer: 'fuel_depot',
   services: ['fuel', 'repair'],

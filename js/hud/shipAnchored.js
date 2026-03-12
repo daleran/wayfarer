@@ -1,12 +1,9 @@
 import {
-  CYAN, AMBER, GREEN, RED, WHITE, MAGENTA,
+  CYAN, AMBER, RED, MAGENTA, WHITE,
   VERY_DIM, DIM_TEXT,
-  CONDITION_FAULTY,
 } from '../ui/colors.js';
 
 const GUIDANCE_LABELS = { dumbfire: 'DUMB', wire: 'WIRE', heat: 'HEAT' };
-const THROTTLE_LABELS = ['STOP', '1/4', '1/2', '3/4', 'FULL', 'FLANK'];
-const THROTTLE_BELOW_OFFSET = 55;
 const WEAPON_PANEL_GAP      = 38;
 
 export function renderWeaponPanels(ctx, game) {
@@ -28,46 +25,6 @@ export function renderWeaponPanels(ctx, game) {
   ctx.restore();
 }
 
-export function renderThrottle(ctx, player, camera) {
-  const shipScreen = camera.worldToScreen(player.x, player.y);
-  const speed      = Math.round(player.speed);
-  const label      = THROTTLE_LABELS[player.throttleLevel];
-  const now        = Date.now();
-
-  ctx.save();
-
-  ctx.font = '9px monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = CYAN;
-  ctx.globalAlpha = 0.5;
-  ctx.fillText(`${label}  ${speed} U/S`, shipScreen.x, shipScreen.y + THROTTLE_BELOW_OFFSET);
-  ctx.globalAlpha = 1;
-
-  const intY    = shipScreen.y + THROTTLE_BELOW_OFFSET + 24;
-  const sysList = [
-    { label: 'R', val: player.reactorIntegrity },
-    { label: 'E', val: player.engineIntegrity  },
-    { label: 'S', val: player.sensorIntegrity  },
-  ];
-  ctx.font = '10px monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const intStartX = shipScreen.x - 26;
-  for (let i = 0; i < sysList.length; i++) {
-    const ratio   = sysList[i].val / 100;
-    const flicker = ratio < 0.25 && Math.floor(now / 300) % 2 === 0;
-    const color   = flicker      ? VERY_DIM
-                  : ratio < 0.25 ? RED
-                  : ratio < 0.5  ? CONDITION_FAULTY
-                  : ratio < 0.75 ? AMBER
-                  : DIM_TEXT;
-    ctx.fillStyle = color;
-    ctx.fillText(`[${sysList[i].label}]`, intStartX + i * 26, intY);
-  }
-
-  ctx.restore();
-}
 
 function _renderWeaponPanel(ctx, weapon, type, panelX, panelY, ammoReserve) {
   const isPri     = type === 'pri';

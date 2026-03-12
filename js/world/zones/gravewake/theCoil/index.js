@@ -443,6 +443,7 @@ const LAYOUT = {
 export const TheCoil = {
   id: 'the_coil',
   name: 'The Coil',
+  flavorText: "A salvage lord's court dressed in wreckage and rust. The only law here is the price of docking.",
   faction: 'salvage_lords',
   renderer: 'coil',
   services: ['repair', 'trade'],

@@ -1,0 +1,341 @@
+/* ── Ship Panel — left 30% panel (I key) ────────────────────────────────────── */
+
+:root {
+  --ship-cyan:    #00ffcc;
+  --ship-amber:   #ffaa00;
+  --ship-green:   #00ff66;
+  --ship-red:     #ff4444;
+  --ship-magenta: #ff00aa;
+  --ship-white:   #ffffff;
+  --ship-dim:     #556677;
+  --ship-very-dim:#223344;
+  --ship-bg:      rgba(0,5,20,0.95);
+  --ship-panel:   rgba(0,8,16,0.92);
+  --ship-border:  rgba(0,255,204,0.25);
+}
+
+#ship-panel {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  width: 28%;
+  min-width: 300px;
+  height: calc(100vh - 60px);
+  z-index: 15;
+  background: var(--ship-bg);
+  border: 1px solid var(--ship-border);
+  font-family: monospace;
+  color: var(--ship-dim);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: none;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+#ship-panel.visible {
+  display: flex;
+}
+
+/* Scanline effect */
+#ship-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    transparent 0,
+    transparent 1px,
+    rgba(0,0,0,0.05) 1px,
+    rgba(0,0,0,0.05) 2px
+  );
+  z-index: 100;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────────── */
+
+.ship-header {
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--ship-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.ship-header-name {
+  font: bold 13px monospace;
+  color: var(--ship-cyan);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ship-header-class {
+  font: 10px monospace;
+  color: var(--ship-dim);
+  letter-spacing: 0.06em;
+}
+
+.ship-header-esc {
+  font: 10px monospace;
+  color: var(--ship-very-dim);
+}
+
+/* ── Stats grid ──────────────────────────────────────────────────────────────── */
+
+.ship-stats {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ship-border);
+  flex-shrink: 0;
+}
+
+.ship-stats-title {
+  font: bold 10px monospace;
+  color: var(--ship-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.ship-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+
+.ship-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 10px monospace;
+}
+
+.ship-stat-label {
+  color: var(--ship-dim);
+  letter-spacing: 0.05em;
+}
+
+.ship-stat-value {
+  color: var(--ship-amber);
+}
+
+.ship-stat-value.green { color: var(--ship-green); }
+.ship-stat-value.red   { color: var(--ship-red); }
+.ship-stat-value.cyan  { color: var(--ship-cyan); }
+
+/* ── Module slots ────────────────────────────────────────────────────────────── */
+
+.ship-modules {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ship-border);
+  flex-shrink: 0;
+}
+
+.ship-modules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ship-modules-title {
+  font: bold 10px monospace;
+  color: var(--ship-cyan);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ship-modules-power {
+  font: 10px monospace;
+}
+
+.ship-module-slot {
+  border: 1px solid var(--ship-very-dim);
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: border-color 0.1s;
+  min-height: 32px;
+  position: relative;
+}
+
+.ship-module-slot:hover {
+  border-color: var(--ship-cyan);
+}
+
+.ship-module-slot.empty {
+  border-style: dashed;
+}
+
+.ship-module-slot.empty.can-install {
+  border-color: var(--ship-green);
+  background: rgba(0,255,102,0.03);
+}
+
+.ship-module-slot.installing {
+  border-color: var(--ship-green);
+}
+
+.ship-module-slot-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ship-module-name {
+  font: 10px monospace;
+  color: var(--ship-cyan);
+}
+
+.ship-module-power {
+  font: 10px monospace;
+}
+
+.ship-module-power.positive { color: var(--ship-green); }
+.ship-module-power.negative { color: var(--ship-amber); }
+
+.ship-module-desc {
+  font: 9px monospace;
+  color: var(--ship-very-dim);
+  margin-top: 2px;
+}
+
+.ship-module-condition {
+  font: 9px monospace;
+  margin-top: 1px;
+}
+
+.ship-module-empty-text {
+  font: 10px monospace;
+  color: var(--ship-very-dim);
+}
+
+.ship-module-empty-text.can-install {
+  color: var(--ship-green);
+}
+
+.ship-module-size-badge {
+  font: bold 8px monospace;
+  color: var(--ship-dim);
+  border: 1px solid var(--ship-very-dim);
+  padding: 1px 4px;
+  letter-spacing: 0.05em;
+}
+
+.ship-install-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: rgba(0,255,102,0.08);
+  transition: width 0.1s linear;
+}
+
+/* ── Cargo bay ───────────────────────────────────────────────────────────────── */
+
+.ship-cargo {
+  padding: 10px 14px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ship-cargo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ship-cargo-title {
+  font: bold 10px monospace;
+  color: var(--ship-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ship-cargo-capacity {
+  font: 10px monospace;
+  color: var(--ship-cyan);
+}
+
+.ship-cargo-capacity.full {
+  color: var(--ship-red);
+}
+
+.ship-cargo-filters {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ship-cargo-filter {
+  background: transparent;
+  border: 1px solid var(--ship-very-dim);
+  color: var(--ship-dim);
+  font: 9px monospace;
+  padding: 2px 6px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.ship-cargo-filter:hover {
+  border-color: var(--ship-cyan);
+  color: var(--ship-cyan);
+}
+
+.ship-cargo-filter.active {
+  border-color: var(--ship-cyan);
+  color: var(--ship-cyan);
+  background: rgba(0,255,204,0.06);
+}
+
+.ship-cargo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ship-cargo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 10px monospace;
+  padding: 3px 4px;
+  border: 1px solid transparent;
+  cursor: default;
+}
+
+.ship-cargo-item.module {
+  border: 1px solid var(--ship-very-dim);
+  cursor: pointer;
+}
+
+.ship-cargo-item.module:hover {
+  border-color: var(--ship-cyan);
+}
+
+.ship-cargo-item.module.selected {
+  border-color: var(--ship-green);
+  background: rgba(0,255,102,0.05);
+}
+
+.ship-cargo-item-name {
+  color: var(--ship-dim);
+}
+
+.ship-cargo-item-name.scrap { color: var(--ship-amber); }
+.ship-cargo-item-name.module-name { color: var(--ship-cyan); }
+.ship-cargo-item-name.weapon-name { color: var(--ship-magenta); }
+.ship-cargo-item-name.ammo-name { color: var(--ship-green); }
+
+.ship-cargo-item-value {
+  color: var(--ship-amber);
+}
+
+.ship-cargo-empty {
+  font: 10px monospace;
+  color: var(--ship-very-dim);
+  padding: 6px 4px;
+}

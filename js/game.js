@@ -157,6 +157,13 @@ export class GameManager {
     this.totalTime += dt;
 
     if (this.isDocked) {
+      // Ship screen toggle available while docked
+      const justToggledShip = input.wasJustPressed('i');
+      if (justToggledShip) this.shipScreen.toggle(this);
+      if (this.shipScreen.visible && !justToggledShip) {
+        this.shipScreen.update(dt, this);
+        this.shipScreen.handleInput(input, this);
+      }
       this.stationScreen.update(dt, this);
       this.stationScreen.handleInput(input, this);
       if (!this.stationScreen.visible) this.isDocked = false;
@@ -176,12 +183,16 @@ export class GameManager {
 
     this._processInput(dt);
 
-    // Ship screen pauses simulation (but still ticks its own state)
+    // Ship screen pauses simulation (but still ticks its own state + keeps rendering)
     if (this.shipScreen.visible) {
       this.shipScreen.update(dt, this);
-      this.shipScreen.handleInput(input, this);
+      if (!this._shipScreenJustToggled) {
+        this.shipScreen.handleInput(input, this);
+      }
+      this._shipScreenJustToggled = false;
       return;
     }
+    this._shipScreenJustToggled = false;
 
     if (this.isPaused) return;
 
@@ -347,7 +358,11 @@ export class GameManager {
     this._cachedMouseWorld = input.mouseWorld(this.camera);
 
     // Ship screen toggle — processed before everything else
-    if (input.wasJustPressed('i')) this.shipScreen.toggle();
+    // Set flag so handleInput doesn't close it on the same tick
+    if (input.wasJustPressed('i')) {
+      this.shipScreen.toggle(this);
+      this._shipScreenJustToggled = true;
+    }
     if (this.shipScreen.visible) {
       if (input.wasJustPressed('escape')) this.shipScreen.close();
       return;
@@ -400,8 +415,8 @@ export class GameManager {
     if (input.isDown('d') || input.isDown('arrowright')) p.rotationInput = 1;
 
     if (!this.isPaused) {
-      // LMB / space fires active primary (onlyActive=true for player)
-      if (input.mouseButtons.left || input.isDown(' ')) {
+      // LMB fires active primary (onlyActive=true for player)
+      if (input.mouseButtons.left) {
         p.fireWeapons(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
       }
 

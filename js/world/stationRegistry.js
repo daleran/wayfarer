@@ -21,7 +21,7 @@ export const STATION_REGISTRY = [
   {
     entity: AshveilAnchorage,
     id: 'ashveil-anchorage',
-    designerZoom: 3.5,
+    designerZoom: 1.8,
     flavorText: "Neutral ground by tradition, respected by necessity. The nebula keeps most trouble at bay.",
   },
 ];

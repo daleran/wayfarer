@@ -212,6 +212,108 @@ export class Shape {
     ]);
   }
 
+  /** Cigar / barrel shape — straight left/right sides, arced top/bottom.
+   *  r = arc circle radius (min w/2 = semicircle, larger = flatter).
+   *  Positive r = convex (bulges outward), negative = concave (pinches inward). */
+  static cigar(w, h, r, segments = 16) {
+    if (!r) return Shape.rect(w, h);
+    const hw = w / 2, hh = h / 2;
+    const dir = r > 0 ? 1 : -1;
+    const absR = Math.max(Math.abs(r), hw + 0.001);
+    const d = Math.sqrt(absR * absR - hw * hw);
+    const pts = [];
+
+    // Top arc: left → right
+    for (let i = 0; i <= segments; i++) {
+      const x = -hw + (i / segments) * w;
+      const bulge = -dir * (Math.sqrt(absR * absR - x * x) - d);
+      pts.push({ x, y: -hh + bulge });
+    }
+    // Right side is the implicit edge from last top point to first bottom point
+
+    // Bottom arc: right → left
+    for (let i = 0; i <= segments; i++) {
+      const x = hw - (i / segments) * w;
+      const bulge = dir * (Math.sqrt(absR * absR - x * x) - d);
+      pts.push({ x, y: hh + bulge });
+    }
+    // Left side is the implicit closePath edge
+
+    return new Shape(pts);
+  }
+
+  /** Trapezoid centered on origin. topW/bottomW are the top and bottom edge widths. */
+  static trapezoid(topW, bottomW, h) {
+    const htw = topW / 2, hbw = bottomW / 2, hh = h / 2;
+    return new Shape([
+      { x: -htw, y: -hh }, { x: htw, y: -hh },
+      { x: hbw, y: hh },   { x: -hbw, y: hh },
+    ]);
+  }
+
+  /** Wedge / arrow — flat base at bottom, pointed tip at top.
+   *  tipX offsets the tip horizontally (0 = centered). */
+  static wedge(w, h, tipX = 0) {
+    const hw = w / 2, hh = h / 2;
+    return new Shape([
+      { x: tipX, y: -hh },
+      { x: hw, y: hh },
+      { x: -hw, y: hh },
+    ]);
+  }
+
+  /** Stadium / capsule — rectangle with semicircle caps on left and right.
+   *  Cap radius = h/2. Total width includes caps. */
+  static stadium(w, h, segments = 8) {
+    const hh = h / 2;
+    const bodyHW = (w - h) / 2; // half-width of the straight section
+    const r = hh;
+    const pts = [];
+
+    // Top edge: left to right
+    pts.push({ x: -bodyHW, y: -hh });
+    pts.push({ x: bodyHW, y: -hh });
+
+    // Right cap: semicircle from top-right to bottom-right
+    for (let i = 1; i < segments; i++) {
+      const angle = -Math.PI / 2 + (i / segments) * Math.PI;
+      pts.push({ x: bodyHW + Math.cos(angle) * r, y: Math.sin(angle) * r });
+    }
+
+    // Bottom edge: right to left
+    pts.push({ x: bodyHW, y: hh });
+    pts.push({ x: -bodyHW, y: hh });
+
+    // Left cap: semicircle from bottom-left to top-left
+    for (let i = 1; i < segments; i++) {
+      const angle = Math.PI / 2 + (i / segments) * Math.PI;
+      pts.push({ x: -bodyHW + Math.cos(angle) * r, y: Math.sin(angle) * r });
+    }
+
+    return new Shape(pts);
+  }
+
+  /** Cross / plus shape centered on origin.
+   *  w/h = overall bounding box, armW/armH = width and height of each arm. */
+  static cross(w, h, armW, armH) {
+    const hw = w / 2, hh = h / 2;
+    const haw = armW / 2, hah = armH / 2;
+    return new Shape([
+      { x: -haw, y: -hh },      // top arm
+      { x: haw, y: -hh },
+      { x: haw, y: -hah },      // top-right notch
+      { x: hw, y: -hah },       // right arm
+      { x: hw, y: hah },
+      { x: haw, y: hah },       // bottom-right notch
+      { x: haw, y: hh },        // bottom arm
+      { x: -haw, y: hh },
+      { x: -haw, y: hah },      // bottom-left notch
+      { x: -hw, y: hah },       // left arm
+      { x: -hw, y: -hah },
+      { x: -haw, y: -hah },     // top-left notch
+    ]);
+  }
+
   /** Regular n-gon centered on origin with given radius. */
   static ngon(n, radius) {
     const pts = [];

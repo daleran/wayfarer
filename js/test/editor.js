@@ -453,9 +453,9 @@ export class EditorOverlay {
 
   // ── Bottom HUD bar ────────────────────────────────────────────────────────
 
-  _renderHUDBar(ctx, W, H) {
+  _renderHUDBar(ctx, W, _H) {
     const barH   = 22;
-    const barY   = H - barH;
+    const barY   = 0;
     const barW   = this._barOpen ? W - SIDEBAR_W : W;
 
     ctx.save();
@@ -464,8 +464,8 @@ export class EditorOverlay {
     ctx.strokeStyle = DIM_OUTLINE;
     ctx.lineWidth = 0.5;
     ctx.beginPath();
-    ctx.moveTo(0, barY);
-    ctx.lineTo(barW, barY);
+    ctx.moveTo(0, barY + barH);
+    ctx.lineTo(barW, barY + barH);
     ctx.stroke();
 
     const mapParam = new URLSearchParams(location.search).get('map') ?? 'test';

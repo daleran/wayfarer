@@ -4,6 +4,35 @@ body {
   overflow: hidden;
 }
 
+/* ── Custom scrollbar — vector monitor style ───────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,255,204,0.25) rgba(0,4,10,0.5);
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(0,4,10,0.5);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0,255,204,0.25);
+  border: 1px solid rgba(0,255,204,0.1);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,255,204,0.4);
+}
+
+*::-webkit-scrollbar-corner {
+  background: rgba(0,4,10,0.5);
+}
+
 #game {
   display: block;
   width: 100vw;
