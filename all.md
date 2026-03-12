@@ -1809,11 +1809,12 @@ A subtle fullscreen post-processing pass (or overlay) to sell the vector monitor
 
 ### Station Panel (`js/ui/locationOverlay.js`, `css/location.css`)
 - **DOM-based right 30% panel** (`#location-overlay`), `height: calc(100vh - 48px)`, left border in cyan. World visible in remaining viewport. Camera centers on docked station.
-- Navigation: map view → zone view → service view. Back button and Esc navigate up.
-- **Map view:** Zone grid (single-column for narrow panel) or SVG schematic + zone list (stacked vertically).
-- **Zone view:** Flavor text (max 120px collapsed), horizontal service tab row, scrollable service content below.
+- **Two-level nav:** area list → area detail. No map or SVG schematic.
+- **Area list (top level):** Station name, faction badge + standing, flavor text (`station.flavorText`), then clickable area cards. Each card shows area name + short description. Locked areas dimmed with red LOCKED text.
+- **Area detail:** Back button, area name, zone flavor text, horizontal service tab row, scrollable service content below.
 - **Services:** Repair/refuel, trade table, bounty cards, faction relations, reactor overhaul, intel lore.
-- Zone gating by reputation standing (locked zones dimmed with red LOCKED text).
+- Esc navigates up: service → area list → close.
+- Zone gating by reputation standing (locked areas are non-interactive).
 
 ### HUD (In-Flight)
 

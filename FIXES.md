@@ -1,12 +1,4 @@
-# NEXT.md — Upcoming Features
-
-## UP NEXT
-
-
-
----
-
-## Minor fixes / polish
+# FIXES.md — Small Tweaks & Fixes
 
 - Grave-Clan Ambusher: confirm heat missile target-lock behavior when multiple enemies are present
 - Universal ship slots need to be small and large variants

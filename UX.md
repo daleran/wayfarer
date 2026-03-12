@@ -198,40 +198,43 @@ A subtle fullscreen post-processing pass (or overlay) to sell the vector monitor
 
 ## Specific UI Components
 
-### Ship Screen (`js/ui/shipScreen.js`)
-- Full-screen overlay, same dark backdrop (`rgba(0,6,14,0.93)`) and `DIM_OUTLINE` border.
-- Three equal columns divided by thin `VERY_DIM` lines.
-- **Left column:** Hull HP, per-arc armor (F/P/S/A), drive stats, scrap readout, module slot list. Module slots are outlined boxes with name + power annotation (`+W` green / `-W` amber).
-- **Center column:** Paper doll — `HULL_POINTS` silhouette scaled ×4, colored by hull health (green/amber/red) with arc-colored outline segments matching the ship's in-game directional armor rendering. Arc direction labels F/S/A/P around the silhouette. Hull ratio bar + numeric below.
-- **Right column:** Cargo bay quantities, capacity bar, active weapon list (PRI in cyan, SEC in magenta).
-- Close hint centered at bottom: `[I] or [ESC] — close` in dim text.
-- Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open.
+### Ship Panel (`js/ui/shipScreen.js`, `css/ship.css`)
+- **DOM-based left 30% panel** (`#ship-panel`), `height: calc(100vh - 48px)` to sit above the bottom HUD bar. Near-black background with scanline overlay, left border in cyan.
+- Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open. World remains visible in the remaining viewport.
+- **Header:** Ship name (HULLBREAKER), class description, `[I] / [Esc]` hint.
+- **Stats section:** 2-column grid of stat rows (HULL, ARM-F/P/S/A, SPEED, FUEL, SCRAP). Values colored by status (green=good, amber=normal, red=critical).
+- **Module slots:** Numbered list `[1]...[N]`. Each slot shows module name, power annotation (`+W` green / `-W` amber), condition badge. Click filled slot to remove. Select cargo module → click empty slot to install (1.5s progress bar).
+- **Cargo bay:** Header with used/capacity count. Filter buttons (ALL | MODULES | COMMODITIES | AMMO). Scrollable list: scrap always first, then commodities, modules (clickable for install), weapons, ammo reserves.
+- **When docked with station open:** ship panel (left 30%) + station panel (right 30%) + world (middle 40%).
+- Input gating: `stopPropagation` on panel mousedown/click prevents canvas weapon fire.
 
-### Station Screen
-- Dark backdrop overlay (near-black, 85% opacity — the game world should barely ghost through).
-- Central panel with cyan border and corner brackets.
-- Station name in large monospace text, centered, cyan.
-- Tab bar: text-only tabs with an underline indicator on the active tab. No tab "boxes."
-- Content area: clean rows of data. Commodity lists, ship stats, etc. in aligned monospace columns.
-- Buttons: outlined rectangles. Buy/Sell in green/amber.
-- Close prompt at bottom: dim text, "[Esc] Close".
+### Station Panel (`js/ui/locationOverlay.js`, `css/location.css`)
+- **DOM-based right 30% panel** (`#location-overlay`), `height: calc(100vh - 48px)`, left border in cyan. World visible in remaining viewport. Camera centers on docked station.
+- **Two-level nav:** area list → area detail. No map or SVG schematic.
+- **Area list (top level):** Station name, faction badge + standing, flavor text (`station.flavorText`), then clickable area cards. Each card shows area name + short description. Locked areas dimmed with red LOCKED text.
+- **Area detail:** Back button, area name, zone flavor text, horizontal service tab row, scrollable service content below.
+- **Services:** Repair/refuel, trade table, bounty cards, faction relations, reactor overhaul, intel lore.
+- Esc navigates up: service → area list → close.
+- Zone gating by reputation standing (locked areas are non-interactive).
 
 ### HUD (In-Flight)
 
-The HUD has two zones: **ship-anchored UI** (follows the ship at screen center) and **bottom strip** (fixed screen-space panel at the bottom edge). All elements are projected onto a transparent display — no heavy panel backgrounds.
+The HUD has three zones: **ship-anchored UI** (canvas, follows ship), **bottom strip** (DOM, fixed bar), and **minimap** (canvas, top-right).
 
-**Ship-anchored UI (centered on the ship):**
+**Ship-anchored UI (canvas, centered on the ship):**
 - **Weapon readout** — directly above the ship. Two rows: `PRI` (cyan) and `SEC` (magenta). Name + cooldown/reload bar + ammo count. Anchored ~85px above ship center in screen space.
 - **Throttle pips** — directly below the ship. Six labeled pips (`Stop/1/4/1/2/3/4/Full/Flank`), active pip filled cyan. Speed and throttle label above the pips. System integrity symbols `[R][E][S]` below the pips in dim text (red if low).
 
-**Bottom strip (fixed, 32px from screen edges):**
-- Two rows. Row 1 (upper): ARMOR pips + Power. Row 2 (lower): HULL bar + FUEL bar + CARGO bar + SCRAP.
-- **ARMOR pips (row 1, left):** Same total width as hull bar below it. 4 equal sections labeled `F/P/S/A`, each independently filled green→amber→red by that arc's health ratio. Arc total `current/max` shown to the right.
-- **HULL bar (row 2, left):** Red segmented bar. Color shifts green→amber→red by hull health. Flashes red below 25%. `current/max` to the right.
-- **FUEL bar (row 2, center):** Amber segmented bar, centered. Burns red below 25%. Burn rate shown above bar at low opacity.
-- **POWER readout (row 1, right):** `PWR +300W [+50W]` — dim label, green gross output, net in green/red brackets.
-- **CARGO bar (row 2, right):** Blue segmented bar. Turns red when full. `used/capacity` to the right.
-- **SCRAP count (row 2, far right):** `⚙ 123` in bold amber to the right of cargo.
+**Bottom strip (DOM, `#hud-bottom`, `css/hudBottom.css`):**
+- Fixed 48px bar at bottom of viewport, z-index 20. Near-black background with top cyan border. `pointer-events: none`.
+- Single row with centered segments: ARMOR pips | HULL bar | FUEL bar | PWR readout | CARGO bar | SCRAP count.
+- **ARMOR pips:** 4 small boxes labeled `F/P/S/A`, each with colored fill bar by arc health (green→amber→red via `armorArcColor`). `current/max` text to the right.
+- **HULL bar:** 110px wide bar, green fill, border turns red below 25%. `current/max` text.
+- **FUEL bar:** Amber bar, border turns red below 25%. `current/max` text.
+- **POWER readout:** `PWR +300W [+50W]` — green gross output, net in green/red. Flashing `! OVERHAUL` warning when fission reactor is overdue.
+- **CARGO bar:** Blue bar, turns red when full. `used/capacity` text.
+- **SCRAP count:** `⚙ 123` in bold amber.
+- All bars and values updated via DOM manipulation in `HUD._updateBottomStrip()` each frame — no canvas rendering.
 
 **Minimap:** Top-right corner. 225×225, bracket-corner border. Stations (faction-colored squares), derelicts (amber squares), loot (amber dots), enemies (red dots) when sensor capability is installed. Player dot (green triangle, rotation-aware).
 
@@ -382,3 +385,12 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Ship rendering:** All ships now use directional armor arc rendering when `relation === 'player'`. Hull fill color reflects overall hull health (green→yellow→orange→red). Hull outline is split into 4 arc-colored segments (front/starboard/aft/port) each reflecting that arc's armor health. Helpers `_playerHullFill()`, `_drawHullArcs()`, `_strokeArcCurrent()` on `Ship` base class. All 4 ship base classes updated.
 - **Bottom strip:** Row 1 = ARMOR 4-pip bar (same width as hull bar, labeled F/P/S/A) + PWR text. Row 2 = HULL bar + FUEL bar (centered) + CARGO bar + SCRAP count. 32px edge margins for comfortable screen breathing room.
 - **Rationale:** The old HUD required constant glancing to the top-left corner. Anchoring throttle and weapons near the ship keeps eyes on the action. The bottom strip consolidates critical secondary readouts in one sweep-readable band. Directional health on the ship itself makes hull/armor state immediately obvious in combat without consulting a panel.
+
+### 2026-03-11: UI Overhaul — Panels Replace Overlays (CA/CB/CC)
+- **Decision:** Three-part UI overhaul: (1) Station screen from full-screen overlay to 30% right-side DOM panel, (2) Ship screen from canvas overlay to 30% left-side DOM panel, (3) Bottom HUD strip from canvas to DOM fixed bar.
+- **Station panel (CB):** `#location-overlay` positioned `right:0; width:30%; height:calc(100vh-48px)`. Camera centers on station. Zone sidebar stacks below SVG. Service buttons become horizontal tab row. World remains visible in the remaining 70%.
+- **Ship panel (CA):** `#ship-panel` positioned `left:0; width:30%; height:calc(100vh-48px)`. Four sections: header, 2-column stat grid, module slots (numbered, click-to-remove/install), scrollable cargo with filter buttons. `stopPropagation` on mouse events prevents canvas weapon fire.
+- **Bottom HUD (CA):** `#hud-bottom` fixed 48px bar at bottom. Single row: ARMOR pips, HULL bar, FUEL bar, PWR readout, CARGO bar, SCRAP count. DOM elements updated each frame via `_updateBottomStrip()`.
+- **Docked with ship screen:** Left 30% (ship) + right 30% (station) + middle 40% (world).
+- **Station renderers (CC):** AshveilStation custom renderer (~200px colony ship hull, 10 rectangular sections, docked ships, running lights, approach beam). Kell's Stop unchanged (~120px). The Coil unchanged (~300px).
+- **Rationale:** Full-screen overlays broke immersion. Side panels keep the world visible, reinforce spatial context while docked. DOM-based UI is more maintainable than canvas text rendering and supports proper hover/click interactions. Bottom HUD bar clears the center viewport for combat readability.

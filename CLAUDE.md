@@ -21,13 +21,14 @@ No test framework or linter is configured.
 
 ## Feature Code Workflow
 
-All features move through three stages:
+All features move through two stages:
 
-1. **IDEA.md** — raw concept with a letter code (e.g. `AN`). Not yet planned for implementation. May be vague. Good place for brainstorming.
-2. **NEXT.md** — moved here when the idea is prioritized. "UP NEXT" section = ready to build. Minor tweaks and bugs live in the lower section without codes.
-3. **DEVLOG.md** — one line appended when the feature ships. Code is retired here permanently.
+1. **PLAN.md** — feature concepts with a letter code (e.g. `AN`). Ideas start rough and get refined here. Coded items are ready to build directly from this file.
+2. **DEVLOG.md** — one line appended when the feature ships. Code is retired here permanently.
 
-**Assigning codes:** Check IDEA.md for the "next available code" header. Codes are sequential two-letter suffixes after `AM` (the last DEVLOG entry): `AN`, `AO`, `AP`, etc. Assign the next available code to each new idea when you add it to IDEA.md.
+Small tweaks and bug fixes live in **FIXES.md** (no codes, just a flat bullet list).
+
+**Assigning codes:** Check PLAN.md for the "next available code" header. Codes are sequential two-letter suffixes after `AM` (the last DEVLOG entry): `AN`, `AO`, `AP`, etc. Assign the next available code to each new idea when you add it to PLAN.md.
 
 ## Documentation Guide
 
@@ -39,8 +40,8 @@ All features move through three stages:
 | `LORE.md` | Worldbuilding — history, factions, locations, tone | Faction names/traits changed. Location names changed. World tone or setting changed. |
 | `UX.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. |
 | `DEVLOG.md` | Development progress log — major features only | Every session — append one line per major feature completed. |
-| `NEXT.md` | UP NEXT (coded features ready to build) + minor fix list | Promote ideas from IDEA.md. Remove items when completed. |
-| `IDEA.md` | Raw feature concepts with codes — not yet planned | New ideas captured. Move to NEXT.md when prioritized. |
+| `PLAN.md` | Feature plans & concepts with codes — ready to build | New ideas captured. Remove items when completed. |
+| `FIXES.md` | Small tweaks & bug fixes (no codes) | Add minor fixes. Remove when completed. |
 | `CLAUDE.md` | This file — dev flow, architecture, rules | New systems or patterns introduced. Architecture changes. |
 
 ## Dev Harnesses
@@ -101,7 +102,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **`js/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
 - **`js/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
 - **`js/renderer.js` / `Renderer`** — clears canvas, draws starfield, renders entities, then HUD/UI overlays
-- **`js/hud.js` / `HUD`** — thin orchestrator; delegates to sub-renderers in `js/hud/`: `minimap.js` (top-right minimap), `bottomStrip.js` (armor/hull/fuel/cargo bars), `shipAnchored.js` (weapon panels, throttle, integrity), `prompts.js` (dock/repair/salvage prompts, dev controls)
+- **`js/hud.js` / `HUD`** — thin orchestrator; bottom strip is DOM-based (`#hud-bottom`, `css/hudBottom.css`), updated via `_updateBottomStrip()` each frame; canvas sub-renderers in `js/hud/`: `minimap.js` (top-right minimap), `shipAnchored.js` (weapon panels, throttle, integrity), `prompts.js` (dock/repair/salvage prompts, dev controls). Tooltip system via `showTooltip()`/`hideTooltip()`
 
 ### Entity Types
 
@@ -123,7 +124,7 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPC
 - **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`, `reputationTuning.js` (reputation constants). Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
 - **Weapon registry** — `js/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
 - **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, designerZoom, flavorText }`. No factory dispatcher — entities self-instantiate.
-- **UI overlays** — drawn on canvas, handle their own input; docking sets `isDocked = true`, skipping the simulation loop
+- **UI overlays** — station panel (`#location-overlay`, right 30% DOM panel) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
 - **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
 
 ### Coordinate System
@@ -157,8 +158,8 @@ Never use inline hex strings anywhere in the codebase. Import named constants fr
 - Visual/UI changed → `UX.md`
 - Lore/names changed → `LORE.md`
 - Major feature completed → append one line to `DEVLOG.md`
-- New idea → add to `IDEA.md` with next available code
-- Feature ready to build → move from `IDEA.md` to `NEXT.md`
+- New idea → add to `PLAN.md` with next available code
+- Small fix or tweak → add to `FIXES.md`
 
 ### Commits: Log to DEVLOG.md
 Format: `CODE. YYYY-MMM-DD-HHMM: Feature name (one-line description)`

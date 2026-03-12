@@ -15,7 +15,7 @@ Ask the user (or infer from their description) for:
   - `OnyxClassTug` (`js/ships/classes/onyxTug.js`) — wide hammerhead tug/capital
   - Or create a new base class if the hull profile doesn't fit any existing class
 - **Visual identity** — hull shape description (used in `_drawShape`)
-- **Weapons** — pick from `shipModule.js` exports (see `new-enemy.md` for full list)
+- **Weapons** — pick from `shipModule.js` exports: `AutocannonModule`, `LanceModuleSmall`, `CannonModule`, `RocketPodModule`
 - **Flavor text** — one paragraph tactical/lore description
 
 ## Step 2 — Decide on stats

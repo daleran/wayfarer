@@ -1,8 +1,8 @@
-# IDEA.md — Feature Ideas & Concepts
+# PLAN.md — Feature Plans & Concepts
 
-Raw concepts under consideration. Not yet planned for implementation. Ideas move to `NEXT.md` when prioritized for a build session.
+Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CA**
+**Next available code: CD**
 
 ---
 
@@ -40,6 +40,9 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BY | Expanded Debug Overlay | Dev Tools |
 | BZ | Systemic Narrative Engine | Narrative |
+| CA | Ship Inventory + HUD Overhaul | UI |
+| CB | Station UI → Right Panel | UI |
+| CC | Station Map Detail & Scale | World / Map |
 
 ---
 
@@ -543,4 +546,4 @@ All audio generated via Web Audio API — no asset files required.
 
 ## Code Architecture
 
-*(BI promoted to NEXT.md)*
+*(BI promoted and shipped)*

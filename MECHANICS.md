@@ -503,4 +503,4 @@ A 240px panel slides in from the right edge. Categories are generated from `SHIP
 
 ## Planned (Next Up)
 
-See `NEXT.md` for features ready to implement. See `IDEA.md` for raw concepts under consideration.
+See `PLAN.md` for features ready to implement. See `FIXES.md` for small tweaks and bug fixes.

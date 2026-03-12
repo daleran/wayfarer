@@ -99,7 +99,7 @@ If no violations are found, say so clearly.
 Ask the user: "Which violations would you like me to fix?" Then fix only the ones they confirm.
 
 When fixing a stat violation:
-1. Check `js/data/stats.js` for the appropriate `BASE_*` constant
+1. Check `js/data/tuning/` for the appropriate `BASE_*` constant (shipTuning.js, weaponTuning.js, moduleTuning.js, etc.)
 2. Add a `MULT` constant at the top of the file
 3. Replace the raw number with `BASE_X * MULT` (plus `* SPEED_FACTOR` for movement stats)
 4. Do not change any other code in the file
