@@ -6,7 +6,6 @@ export const ColdRemnant = {
   name: 'Cold Remnant',
   derelictClass: 'fighter',
   salvageTime: 4,
-  lootTableId: 'derelict-fighter',
   lootTable: [
     { type: 'scrap',    amount: 30 },
     { type: 'weaponId', id: 'Autocannon' },

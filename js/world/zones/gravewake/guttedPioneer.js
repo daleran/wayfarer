@@ -6,7 +6,6 @@ export const GuttedPioneer = {
   name: 'Gutted Pioneer',
   derelictClass: 'hauler',
   salvageTime: 4,
-  lootTableId: 'derelict-hauler',
   lootTable: [
     { type: 'scrap',    amount: 28 },
     { type: 'fuel',     amount: 15 },

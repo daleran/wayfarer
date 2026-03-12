@@ -19,12 +19,3 @@ export function normalizeToTarget(fromX, fromY, toX, toY) {
   if (dist === 0) return null;
   return { nx: dx / dist, ny: dy / dist, dist };
 }
-
-/**
- * Euclidean distance between two points.
- */
-export function distanceBetween(a, b) {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}

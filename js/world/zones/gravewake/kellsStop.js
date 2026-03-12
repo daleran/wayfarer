@@ -3,8 +3,6 @@
 
 import { Station } from '../../station.js';
 import { AMBER, WHITE } from '../../../ui/colors.js';
-import { IRONBACK_MAREL } from '../../../npcs/characters/ironbackMarel.js';
-import { GUTSHOT_DREV }   from '../../../npcs/characters/gutshotDrev.js';
 
 // ── FuelDepotStation renderer ───────────────────────────────────────────────
 
@@ -230,8 +228,6 @@ class FuelDepotStation extends Station {
 // ── Layout (simple) ─────────────────────────────────────────────────────────
 
 const LAYOUT = {
-  type:  'simple',
-  theme: 'neutral',
   zones: [
     {
       id:          'dock',
@@ -336,7 +332,6 @@ export const KellsStop = {
     "Don't expect it fast.",
   ],
   layout: LAYOUT,
-  bountyBoard: [ IRONBACK_MAREL, GUTSHOT_DREV ],
   bountyContracts: [
     {
       id: 'kells_b1', type: 'kill',

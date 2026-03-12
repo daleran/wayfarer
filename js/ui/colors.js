@@ -77,9 +77,6 @@ export const RELATION_COLORS = {
 
 // Pale — ice planet surface colors
 export const PALE_ICE     = '#b8ccd8'; // icy blue-grey body
-export const PALE_CAP     = '#deeaf2'; // bright polar ice cap
-export const PALE_PLAINS  = '#2a3848'; // dark nitrogen/methane plains
-export const PALE_CRACK   = '#1e2c3a'; // cryofracture lines
 export const PALE_HAZE    = '#7090a8'; // limb atmospheric haze
 
 // World-space overlays
@@ -92,12 +89,6 @@ export function armorArcColor(ratio) {
   if (ratio > 0)   return RED;
   return VERY_DIM;
 }
-
-// Particle colors (damage smoke, sparks)
-export const SMOKE_GREY  = '#555555';
-export const SMOKE_DARK  = '#6a6a6a';
-export const SPARK_AMBER = '#ffcc00';
-export const SPARK_WHITE = '#ffffff';
 
 // Module condition colors
 export const CONDITION_FAULTY    = '#ff8800';   // orange — between amber and red

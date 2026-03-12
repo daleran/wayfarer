@@ -17,7 +17,7 @@ export const COMMODITIES = {
   void_crystals:     { id: 'void_crystals',     name: 'Void Crystals',      basePrice: 320 },
 };
 
-export const SUPPLY_MULTIPLIERS = {
+const SUPPLY_MULTIPLIERS = {
   surplus: 0.5,
   high:    0.7,
   medium:  1.0,

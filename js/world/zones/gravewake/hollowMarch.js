@@ -6,7 +6,6 @@ export const HollowMarch = {
   name: 'Hollow March',
   derelictClass: 'unknown',
   salvageTime: 6,
-  lootTableId: 'derelict-unknown',
   lootTable: [
     { type: 'scrap',        amount: 50 },
     { type: 'void_crystals', amount: 2 },

@@ -6,7 +6,6 @@ export const FracturedWake = {
   name: 'Fractured Wake',
   derelictClass: 'frigate',
   salvageTime: 5,
-  lootTableId: 'derelict-frigate',
   lootTable: [
     { type: 'scrap',    amount: 40 },
     { type: 'weaponId', id: 'Cannon' },

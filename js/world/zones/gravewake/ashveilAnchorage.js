@@ -3,9 +3,6 @@
 
 import { Station } from '../../station.js';
 import { WHITE } from '../../../ui/colors.js';
-import { PALE_WIDOW }  from '../../../npcs/characters/paleWidow.js';
-import { RUNT_CASSIN } from '../../../npcs/characters/runtCassin.js';
-import { SIX_WIRE_POL } from '../../../npcs/characters/sixWirePol.js';
 
 // ── AshveilStation renderer ────────────────────────────────────────────────
 
@@ -231,8 +228,6 @@ class AshveilStation extends Station {
 // ── Layout (simple) ─────────────────────────────────────────────────────────
 
 const LAYOUT = {
-  type:  'simple',
-  theme: 'neutral',
   zones: [
     {
       id:          'repair-bay',
@@ -329,7 +324,6 @@ export const AshveilAnchorage = {
     'reflect the difficulty of the run.',
   ],
   layout: LAYOUT,
-  bountyBoard: [ PALE_WIDOW, RUNT_CASSIN, SIX_WIRE_POL ],
   bountyContracts: [
     {
       id: 'ashveil_b1', type: 'kill',

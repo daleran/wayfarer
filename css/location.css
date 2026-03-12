@@ -300,13 +300,6 @@
   border-right: 1px solid var(--loc-border);
 }
 
-.loc-service-placeholder {
-  font: 11px monospace;
-  color: var(--loc-very-dim);
-  letter-spacing: 0.08em;
-  padding: 12px 0;
-}
-
 /* ── Service content — common ────────────────────────────────────────────────── */
 
 .svc-stats {

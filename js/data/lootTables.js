@@ -15,7 +15,7 @@ export const LOOT_TABLES = {
   },
 
   // ─── Derelict tables ──────────────────────────────────────────────────────
-  // These are used by _completeSalvage via derelict.lootTableId
+  // Derelict loot tables — referenced by derelictClass in zone files
 
   'derelict-hauler': {
     // Old cargo hauler — fuel, commodities, some ammo

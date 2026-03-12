@@ -24,7 +24,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BE | Named NPC Ships & Persistent World Characters | AI / World |
 | BF | Cloud Save System | Platform |
 | BG | Module Affixes & Randomized Traits | Modules / Equipment |
-| BH | Station Overhaul — Multi-Screen UI | UI |
 | BL | Core Combat Philosophy — Disabling vs. Destroying | Gameplay |
 | BM | Crew System — Named Crew, Health & Performance | Ship Systems |
 | BN | Salvage Bay & Engineering Bay | Scavenging |
@@ -40,9 +39,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BY | Expanded Debug Overlay | Dev Tools |
 | BZ | Systemic Narrative Engine | Narrative |
-| CA | Ship Inventory + HUD Overhaul | UI |
-| CB | Station UI → Right Panel | UI |
-| CC | Station Map Detail & Scale | World / Map |
 
 ---
 
@@ -390,23 +386,6 @@ Toggle with M key. Shows the entire starmap zoomed out:
 - Near Concord ruins: phantom contacts, faint static
 
 ---
-
-### BH: Station Overhaul — Interactive Map-Based Hubs
-
-Replace the current monolithic station screen with full-screen, visually rich station maps unique to each location. Each station has a distinct layout reflecting its character — the sprawling vertical markets of Kell's Stop vs. the cramped, multi-level scrapper decks of The Coil.
-
-**Core design:**
-- **Full-screen interactive map** per station — not a menu list, a place you navigate
-- **Explorable zones** — click distinct areas on the map to access different services; no single consolidated menu
-- **Multiple vendors per station** — different stores and services in different zones, rewarding exploration
-- **Lore & flavor** — ambient text, flavor details, and hidden interactions embedded in the station environment; discovery over presentation
-
-**Zone examples per station type:**
-- *The Coil:* The Dock → Salvage Yard → Central Market (Tavern, Chop Shop, Oddities) → The Palace (rep-gated) → The Slums (see BW)
-- *Kell's Stop:* Repair bay, fuel desk, small trade counter, rumor board — compact and functional
-- *Generic settlement:* Trade Floor, Shipyard (module installs), Repair Bay, Rumor Mill / Mission Board, Faction Liaison
-
-**Note on subsystem targeting:** Confirmed out of scope — real-time combat model makes it unworkable.
 
 ---
 

@@ -5,8 +5,6 @@
 
 // --- Fuel & economy ---
 export const DEFAULT_SCRAP    = 20;
-export const DEFAULT_FUEL     = 100;
-export const DEFAULT_FUEL_MAX = 100;
 // Fuel drain per throttle level (index 0 = idle, index 5 = full boost)
 export const FUEL_RATES = [0, 0, 0.1, 0.2, 0.5, 1];
 

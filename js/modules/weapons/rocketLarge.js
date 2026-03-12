@@ -95,6 +95,3 @@ export class RocketPodLarge {
     this._cooldown = this.cooldownMax;
   }
 }
-
-// Backward-compat alias
-export { RocketPodLarge as RocketLarge };

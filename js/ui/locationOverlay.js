@@ -285,7 +285,7 @@ export class LocationOverlay {
   // ── Zone helpers ──────────────────────────────────────────────────────────────
 
   _getZones(station) {
-    const layout = station.layout ?? { type: 'auto' };
+    const layout = station.layout ?? {};
     if (layout.zones) return layout.zones;
     return this._autoZones(station);
   }

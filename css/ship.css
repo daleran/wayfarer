@@ -214,14 +214,6 @@
   color: var(--ship-green);
 }
 
-.ship-module-size-badge {
-  font: bold 8px monospace;
-  color: var(--ship-dim);
-  border: 1px solid var(--ship-very-dim);
-  padding: 1px 4px;
-  letter-spacing: 0.05em;
-}
-
 .ship-install-progress {
   position: absolute;
   left: 0;

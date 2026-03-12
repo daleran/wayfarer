@@ -33,7 +33,7 @@ export const MAP = {
     // Six derelicts in a hex ring at r≈1800 around Pale
     createDerelict({
       name: 'Drifting Vigil', x: 4000, y: 1200, salvageTime: 4,
-      derelictClass: 'frigate', lootTableId: 'derelict-frigate',
+      derelictClass: 'frigate',
       lootTable: [
         { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'faulty' },
@@ -46,7 +46,7 @@ export const MAP = {
     }),
     createDerelict({
       name: 'Hollow March', x: 5560, y: 2100, salvageTime: 5,
-      derelictClass: 'unknown', lootTableId: 'derelict-unknown',
+      derelictClass: 'unknown',
       lootTable: [
         { type: 'scrap', amount: 40 },
         { type: 'void_crystals', amount: 2 },
@@ -59,7 +59,7 @@ export const MAP = {
     }),
     createDerelict({
       name: 'Cold Remnant', x: 5560, y: 3900, salvageTime: 4,
-      derelictClass: 'fighter', lootTableId: 'derelict-fighter',
+      derelictClass: 'fighter',
       lootTable: [
         { type: 'scrap', amount: 28 },
         { type: 'weaponId', id: 'Autocannon' },
@@ -72,7 +72,7 @@ export const MAP = {
     }),
     createDerelict({
       name: 'Gutted Pioneer', x: 4000, y: 4800, salvageTime: 3,
-      derelictClass: 'hauler', lootTableId: 'derelict-hauler',
+      derelictClass: 'hauler',
       lootTable: [
         { type: 'scrap', amount: 20 },
         { type: 'fuel', amount: 12 },
@@ -86,7 +86,7 @@ export const MAP = {
     }),
     createDerelict({
       name: 'Broken Covenant', x: 2440, y: 3900, salvageTime: 5,
-      derelictClass: 'frigate', lootTableId: 'derelict-frigate',
+      derelictClass: 'frigate',
       lootTable: [
         { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'worn' },
@@ -99,7 +99,7 @@ export const MAP = {
     }),
     createDerelict({
       name: 'Pale Witness', x: 2440, y: 2100, salvageTime: 4,
-      derelictClass: 'unknown', lootTableId: 'derelict-unknown',
+      derelictClass: 'unknown',
       lootTable: [
         { type: 'scrap', amount: 32 },
         { type: 'void_crystals', amount: 1 },

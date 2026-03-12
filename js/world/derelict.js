@@ -29,7 +29,6 @@ export class Derelict extends Entity {
     super(x, y);
     this.name = 'Derelict';
     this.lootTable = [];
-    this.lootTableId = null;
     this.salvageTime = 3;
     this.interactionRadius = INTERACTION_RADIUS;
     this.salvaged = false;
@@ -100,7 +99,6 @@ export function createDerelict(data) {
   const d = new Derelict(data.x, data.y);
   d.name        = data.name        || 'Derelict';
   d.lootTable   = data.lootTable   || [];
-  d.lootTableId = data.lootTableId || null;
   d.salvageTime = data.salvageTime || 3;
   d.derelictClass = data.derelictClass || 'hauler';
   d.loreText    = data.loreText    || [];

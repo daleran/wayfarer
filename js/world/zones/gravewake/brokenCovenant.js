@@ -6,7 +6,6 @@ export const BrokenCovenant = {
   name: 'Broken Covenant',
   derelictClass: 'frigate',
   salvageTime: 5,
-  lootTableId: 'derelict-frigate',
   lootTable: [
     { type: 'scrap',    amount: 35 },
     { type: 'fuel',     amount: 20 },

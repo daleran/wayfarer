@@ -11,7 +11,6 @@ export class Station extends Entity {
     this.reputationFaction = FACTION_MAP[this.faction] ?? 'settlements';
     this.services = data.services ?? [];
     this.commodities = data.commodities ?? {};
-    this.shipyard = data.shipyard ?? [];
     this.lore = data.lore ?? null;
     this.bounties = [...(data.bountyContracts ?? [])];
     this.canOverhaulReactor = data.canOverhaulReactor ?? false;
@@ -122,6 +121,3 @@ export class Station extends Entity {
   }
 }
 
-export function createStation(data) {
-  return new Station(data.x, data.y, data);
-}

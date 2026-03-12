@@ -6,7 +6,6 @@ export const PaleWitness = {
   name: 'Pale Witness',
   derelictClass: 'hauler',
   salvageTime: 3,
-  lootTableId: 'derelict-hauler',
   lootTable: [
     { type: 'scrap',    amount: 22 },
     { type: 'fuel',     amount: 18 },
