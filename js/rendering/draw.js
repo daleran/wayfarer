@@ -136,6 +136,22 @@ export function trail(ctx, screenPoints, color, maxAlpha = 0.6, maxWidth = 2.5) 
   ctx.restore();
 }
 
+/** World-space text.
+ *  Coordinates are in whatever space ctx is currently transformed to.
+ *  Default font is monospace to match project aesthetic. */
+export function text(ctx, str, x, y, color, {
+  size = 12, weight = 'normal', align = 'center', baseline = 'middle',
+  alpha = 1, font = 'monospace',
+} = {}) {
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px ${font}`;
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+  ctx.fillText(str, x, y);
+  ctx.globalAlpha = 1;
+}
+
 /** Sine-based pulse oscillation value. */
 export function pulse(freq = 0.008, min = 0.6, max = 1.0) {
   const range = max - min;
@@ -526,6 +542,17 @@ export class DrawBatch {
     this._getGroup('ring', stroke, lineWidth, alpha).ops.push({ x, y, r });
   }
 
+  text(str, x, y, color, { size = 12, weight = 'normal', align = 'center', baseline = 'middle', font = 'monospace', alpha = 1 } = {}) {
+    const fontStr = `${weight} ${size}px ${font}`;
+    const key = `text|${color}|${fontStr}|${align}|${baseline}|${_alphaKey(alpha)}`;
+    let group = this._groups.get(key);
+    if (!group) {
+      group = { type: 'text', color, font: fontStr, align, baseline, lineWidth: 0, alpha: _alphaKey(alpha) / 15, ops: [] };
+      this._groups.set(key, group);
+    }
+    group.ops.push({ str, x, y });
+  }
+
   rect(x, y, w, h, fill, stroke, lineWidth = 1, alpha = 1) {
     if (fill) this._getGroup('fillRect', fill, 0, alpha).ops.push({ x, y, w, h });
     if (stroke) this._getGroup('strokeRect', stroke, lineWidth, alpha).ops.push({ x, y, w, h });
@@ -614,6 +641,17 @@ export class DrawBatch {
           ctx.lineWidth = lineWidth;
           for (const op of ops) {
             ctx.strokeRect(op.x, op.y, op.w, op.h);
+          }
+          break;
+        }
+
+        case 'text': {
+          ctx.fillStyle = color;
+          ctx.font = group.font;
+          ctx.textAlign = group.align;
+          ctx.textBaseline = group.baseline;
+          for (const op of ops) {
+            ctx.fillText(op.str, op.x, op.y);
           }
           break;
         }
