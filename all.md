@@ -58,7 +58,6 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 - **Entry:** `js/editor-main.js`
 - **Maps:** `js/data/maps/` — each file exports `MAP`; pass `?map=<name>` to select
-- **Config:** `js/data/testConfig.js` — `startScrap`, `addRockets`, etc.
 - **Default map:** `arena` — Pale at center, six derelicts in a hex ring, clean combat sandbox
 
 **Available maps:**
@@ -112,8 +111,11 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, ene
 - **Neutral AI** — `js/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia')
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
 - **Particle pool** — `js/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
+- **Zone entities** — each world entity (station, derelict, terrain) is self-contained in `js/world/zones/<zone>/`. Every entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity. No factory dispatchers, no type-specific arrays.
+- **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
 - **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
+- **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, designerZoom, flavorText }`. No factory dispatcher — entities self-instantiate.
 - **UI overlays** — drawn on canvas, handle their own input; docking sets `isDocked = true`, skipping the simulation loop
 - **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
 
@@ -222,7 +224,7 @@ BH. 2026-MAR-11-1500: Station Overhaul — HTML/CSS LocationOverlay replaces can
 
 Raw concepts under consideration. Not yet planned for implementation. Ideas move to `NEXT.md` when prioritized for a build session.
 
-**Next available code: BZ**
+**Next available code: CA**
 
 ---
 
@@ -259,6 +261,7 @@ Raw concepts under consideration. Not yet planned for implementation. Ideas move
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BY | Expanded Debug Overlay | Dev Tools |
+| BZ | Systemic Narrative Engine | Narrative |
 
 ---
 
@@ -499,6 +502,43 @@ Three optional story threads discoverable through exploration. No forced storyli
 **"The First Inhabitants"** — Hear legends about a creature in the deepest nebula, older than the arkships. Find clues from ships that tried to hunt it. Confront The Hollow Mind. Discovery: void fauna may be Concord-engineered quarantine measures — the system was locked, not abandoned. Reward: exotic biological materials, unique ship component, world-reframing lore.
 
 **Trigger System Architecture:** Each thread is a JS file exporting an object with `id`, `name`, and `steps[]`. Steps contain trigger conditions (flag checks, location proximity, item possession), text, and outcomes (set flags, grant items, modify rep). `game.storyFlags{}` tracks progression passively.
+
+---
+
+### BZ: Systemic Narrative Engine
+
+A framework for weaving handcrafted narrative threads into the systemic world. Avoids the "random event" feel of pure procedural generation and the *Sunless Sea* problem where strict item requirements stall progression and force backtracking. Narratives are consequence-driven, diegetic, and localized to the player's current situation.
+
+**State Access API (Dot-Notation Interface):**
+- Story files query game state via abstracted string paths, decoupled from internal code
+- Entity proximity: `world.distance.pale < 1000`
+- Inventory/modules: `ship.modules.contains.fission_reactor_faulty`
+- Reputation/stats: `faction.concord.rep <= -50`
+- Combat state: `combat.recent_kills.scavenger > 3`
+- If underlying systems change, only the API translation layer updates — narrative files remain stable
+
+**Multi-Faceted Triggers (Multiple Entry Points):**
+- Story beats accept multiple trigger paths rather than a single specific action
+- Example: a Concord anomaly plotline triggers from salvaging a specific derelict, OR being scanned by Concord while carrying tech, OR docking at Ashveil with a ruined reactor
+- **Systemic Alternatives (The Sunless Sea Fix):** if a beat requires bypassing a lock, the system accepts systemic solutions — high faction rep, OR large scrap payment, OR a specific module installed, OR accepting hull damage to force it
+
+**Diegetic Delivery Methods:**
+- **Comms Queue:** short text transmissions pushed to the existing Pickup Text system
+- **World-Space Anchors:** lore text rendered next to derelicts/stations/anomalies, readable only when the ship is close
+- **Station Service Overrides:** a routine station tab temporarily hijacked by a story interaction (NPC encounter, hacked terminal)
+- **Systemic State Changes:** story physically alters the world — faction hostility flips, unmapped derelicts spawn nearby, player modules forced offline
+
+**Telegraphing & Pacing:**
+- **Breadcrumb System:** before a major systemic shift, the game drops minor hints — a comms whisper (*"He knows what you took."*), then local neutrals flee instead of trading, then the threat spawns
+- **Active Thread Tracking:** the "Intel" tab at stations passively summarizes current entanglements based on active story flags — a diegetic memory aid, not a quest log
+- **Locality Bias:** once a thread is active, subsequent steps heavily favor nearby POIs or the player's current zone; the story comes to the player rather than forcing a twenty-minute fetch trip
+
+**Prototype Story: "The Ghost in the Core":**
+- *Phase 1 — The Hook:* triggered by salvaging a high-tier derelict OR spending 1000+ scrap at The Coil. Delivery: magenta world-space text — *"Unrecognized sub-routine installed. Do not power down."*
+- *Phase 2 — The Escalation:* monitors the player's reactor module for damage or repair attempts. Reactor output halved by the story engine; a Concord drone spawns nearby ignoring normal AI, broadcasts coordinates
+- *Phase 3 — The Resolution:* player goes to the coordinates (spawned locally) and faces a Concord terminal. Solution A: surrender the salvaged data core. Solution B: destroy the terminal (spawns hostile Concord hunters, fixes reactor). Solution C: use an Electronic Warfare module to purge the infection
+
+*Note: supersedes BA's trigger architecture with a more flexible, systemic approach. BA's three story threads remain as content — BZ provides the engine that runs them.*
 
 ---
 

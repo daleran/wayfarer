@@ -53,11 +53,10 @@ Each category is an object with:
 
 ## Adding a New Station
 
-1. Import the station data + `createStationEntity` from `stationRegistry.js`
-2. Add entry to the `Stations` category `items` array
-3. `create: (x, y) => createStationEntity({ ...stationData, x, y })`
-4. Station `statsPanel` should show faction, services, dockingRadius
-5. Verify: `?designer&category=Stations&id=<slug>`
+1. Create the zone entity file in `js/world/zones/<zone>/` with `instantiate(x, y)` method
+2. Add entry to `STATION_REGISTRY` in `js/world/stationRegistry.js`: `{ entity: MyStation, id: 'my-station', designerZoom: 3.5, flavorText: '...' }`
+3. `_buildStationItems()` in designer.js auto-reads from the registry — no manual designer edit needed
+4. Verify: `?designer&category=Stations&id=<slug>`
 
 ## Adding a New Weapon
 

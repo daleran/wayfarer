@@ -99,17 +99,17 @@ function _buildShipItems() {
 function _buildStationItems() {
   return STATION_REGISTRY.map(s => ({
     id:         s.id,
-    label:      s.label,
-    file:       s.file,
+    label:      s.entity.name,
+    file:       null,
     type:       'poi',
     zoom:       s.designerZoom,
     flavorText: s.flavorText ?? null,
-    create:     () => s.create(0, 0),
+    create:     () => s.entity.instantiate(0, 0),
     info: {
-      Type:        s.renderer ? s.renderer : 'Station',
-      Faction:     s.faction,
-      'Docking R': `${s.dockingRadius}u`,
-      Services:    s.services.join(' · '),
+      Type:        s.entity.renderer ? s.entity.renderer : 'Station',
+      Faction:     s.entity.faction,
+      'Docking R': `${s.entity.dockingRadius ?? 150}u`,
+      Services:    s.entity.services.join(' · '),
     },
   }));
 }

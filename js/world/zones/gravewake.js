@@ -1,151 +1,129 @@
-// Gravewake zone — the placement manifest for the Tyr world.
-// Imports all named entities and places them with coordinates.
+// Gravewake zone — placement manifest for the Tyr world.
+// Every entity is pre-instantiated. Maps just spread this into MAP.
 
-import { THE_COIL, KELLS_STOP, ASHVEIL_ANCHORAGE } from '../stations/index.js';
-import { BROKEN_COVENANT, GUTTED_PIONEER, HOLLOW_MARCH,
-         COLD_REMNANT, FRACTURED_WAKE, PALE_WITNESS } from '../../ships/named/index.js';
-import { ARKSHIP_SPINES } from '../terrain/spines.js';
-import { WALL_OF_WRECKS } from '../terrain/wallOfWrecks.js';
+import { TheCoil }           from './gravewake/theCoil/index.js';
+import { KellsStop }         from './gravewake/kellsStop.js';
+import { AshveilAnchorage }  from './gravewake/ashveilAnchorage.js';
+import { BrokenCovenant }    from './gravewake/brokenCovenant.js';
+import { GuttedPioneer }     from './gravewake/guttedPioneer.js';
+import { HollowMarch }       from './gravewake/hollowMarch.js';
+import { ColdRemnant }       from './gravewake/coldRemnant.js';
+import { FracturedWake }     from './gravewake/fracturedWake.js';
+import { PaleWitness }       from './gravewake/paleWitness.js';
+import { PlanetPale }        from './gravewake/planetPale.js';
+import { ArkshipSpines }     from './gravewake/arkshipSpines.js';
+import { WallOfWrecks }      from './gravewake/wallOfWrecks.js';
 
-// Station placement entries — descriptor + position
-export const STATION_PLACEMENTS = [
-  { entity: THE_COIL,          x: 15000, y: 3000 },
-  { entity: KELLS_STOP,        x: 5500,  y: 3800 },
-  { entity: ASHVEIL_ANCHORAGE, x: 16000, y: 5000 },
-];
+import { RAIDER_REGISTRY }     from '../../enemies/raiderRegistry.js';
+import { createGraveClanAmbusher } from '../../enemies/scavengers/graveClanAmbusher.js';
+import { createTraderConvoy }  from '../../ships/neutral/traderConvoy.js';
+import { createMilitiaPatrol } from '../../ships/neutral/militiaPatrol.js';
+import { SPAWN }               from '../../data/tuning/shipTuning.js';
 
-// Derelict placement entries — named ship descriptor + position + gameplay data
-export const DERELICT_PLACEMENTS = [
-  {
-    entity: BROKEN_COVENANT,
-    x: 3800, y: 4200, salvageTime: 5,
-    derelictClass: 'frigate',
-    lootTableId: 'derelict-frigate',
-    lootTable: [
-      { type: 'scrap',    amount: 35 },
-      { type: 'fuel',     amount: 20 },
-      { type: 'moduleId', id: 'SmallFissionReactor', condition: 'faulty' },
-      { type: 'ammo',     ammoType: 'autocannon', amount: 20 },
-    ],
-  },
-  {
-    entity: GUTTED_PIONEER,
-    x: 6500, y: 3000, salvageTime: 4,
-    derelictClass: 'hauler',
-    lootTableId: 'derelict-hauler',
-    lootTable: [
-      { type: 'scrap',    amount: 28 },
-      { type: 'fuel',     amount: 15 },
-      { type: 'moduleId', id: 'HydrogenFuelCell', condition: 'worn' },
-      { type: 'ammo',     ammoType: 'rocket', amount: 3 },
-    ],
-  },
-  {
-    entity: HOLLOW_MARCH,
-    x: 9000, y: 4000, salvageTime: 6,
-    derelictClass: 'unknown',
-    lootTableId: 'derelict-unknown',
-    lootTable: [
-      { type: 'scrap',        amount: 50 },
-      { type: 'void_crystals', amount: 2 },
-      { type: 'moduleId',     id: 'LargeFusionReactor', condition: 'damaged' },
-    ],
-  },
-  {
-    entity: COLD_REMNANT,
-    x: 11500, y: 3200, salvageTime: 4,
-    derelictClass: 'fighter',
-    lootTableId: 'derelict-fighter',
-    lootTable: [
-      { type: 'scrap',    amount: 30 },
-      { type: 'weaponId', id: 'Autocannon' },
-      { type: 'ammo',     ammoType: 'autocannon', amount: 30 },
-    ],
-  },
-  {
-    entity: FRACTURED_WAKE,
-    x: 14500, y: 7000, salvageTime: 5,
-    derelictClass: 'frigate',
-    lootTableId: 'derelict-frigate',
-    lootTable: [
-      { type: 'scrap',    amount: 40 },
-      { type: 'weaponId', id: 'Cannon' },
-      { type: 'ammo',     ammoType: 'rocket-large', amount: 2 },
-    ],
-  },
-  {
-    entity: PALE_WITNESS,
-    x: 7000, y: 7500, salvageTime: 3,
-    derelictClass: 'hauler',
-    lootTableId: 'derelict-hauler',
-    lootTable: [
-      { type: 'scrap',    amount: 22 },
-      { type: 'fuel',     amount: 18 },
-      { type: 'moduleId', id: 'SalvageScanner', condition: 'faulty' },
-    ],
-  },
-];
+// ── Spawn helpers ───────────────────────────────────────────────────────────
 
-export const GRAVEWAKE_ZONE = {
-  id: 'gravewake',
-  center: { x: 10000, y: 5000 },
-  radius: 9500,
+function raiderGroup(x, y, count, shipType) {
+  const factory = RAIDER_REGISTRY[shipType] ?? RAIDER_REGISTRY['light-fighter'];
+  return Array.from({ length: count }, (_, i) => {
+    const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+    const dist = SPAWN.RAIDER_RADIUS.MIN + Math.random() * SPAWN.RAIDER_RADIUS.MAX;
+    const ship = factory(
+      x + Math.sin(angle) * dist,
+      y - Math.cos(angle) * dist,
+    );
+    ship.homePosition = { x, y };
+    ship._canRespawn  = true;
+    return ship;
+  });
+}
 
-  // Stations — descriptor objects used by createStationEntity
-  stations: STATION_PLACEMENTS.map(p => ({ ...p.entity, x: p.x, y: p.y })),
+function lurkerGroup(x, y, count) {
+  return Array.from({ length: count }, (_, i) => {
+    const angle = (i / Math.max(count, 1)) * Math.PI * 2;
+    const dist = SPAWN.LURKER_RADIUS.MIN + Math.random() * SPAWN.LURKER_RADIUS.MAX;
+    const rx = x + Math.sin(angle) * dist;
+    const ry = y - Math.cos(angle) * dist;
+    const ship = createGraveClanAmbusher(rx, ry);
+    ship._coverPoint  = { x: rx, y: ry };
+    ship.homePosition = { x, y };
+    ship._canRespawn  = true;
+    return ship;
+  });
+}
 
-  // Derelicts — merged entity identity + placement + gameplay data
-  derelicts: DERELICT_PLACEMENTS.map(p => ({
-    name:         p.entity.name,
-    derelictClass: p.derelictClass,
-    x:            p.x,
-    y:            p.y,
-    salvageTime:  p.salvageTime,
-    lootTableId:  p.lootTableId,
-    lootTable:    p.lootTable,
-    loreText:     p.entity.lore.split('\n'),
-  })),
+function convoy(routeA, routeB, shipCount) {
+  return Array.from({ length: shipCount }, (_, i) => {
+    const t = shipCount > 1 ? i / shipCount : 0;
+    const sx = routeA.x + (routeB.x - routeA.x) * t;
+    const sy = routeA.y + (routeB.y - routeA.y) * t;
+    const ship = createTraderConvoy(sx, sy);
+    ship._tradeRouteA = { ...routeA };
+    ship._tradeRouteB = { ...routeB };
+    return ship;
+  });
+}
 
-  // Terrain
-  arkshipSpines: ARKSHIP_SPINES,
-  wallOfWrecks:  WALL_OF_WRECKS,
+function militia(orbitCenter, orbitRadius, orbitSpeed, count) {
+  return Array.from({ length: count }, (_, i) => {
+    const angle = (i / count) * Math.PI * 2;
+    const sx = orbitCenter.x + Math.sin(angle) * orbitRadius;
+    const sy = orbitCenter.y - Math.cos(angle) * orbitRadius;
+    const ship = createMilitiaPatrol(sx, sy);
+    ship._orbitCenter = { ...orbitCenter };
+    ship._orbitRadius = orbitRadius;
+    ship._orbitSpeed  = orbitSpeed;
+    ship._orbitAngle  = angle;
+    return ship;
+  });
+}
 
-  // Dynamic spawn points (same format as current map)
-  raiderSpawns: [
-    { x: 3200, y: 2200, count: 3 },
-    { x: 2800, y: 7500, count: 3 },
-    { shipType: 'drone-control-frigate', x: 14000, y: 4200, count: 1 },
-    { shipType: 'drone-control-frigate', x: 10500, y: 2500, count: 1 },
+// ── Zone export ─────────────────────────────────────────────────────────────
+
+export const GRAVEWAKE = {
+  entities: [
+    // Stations
+    TheCoil.instantiate(15000, 3000),
+    KellsStop.instantiate(5500, 3800),
+    AshveilAnchorage.instantiate(16000, 5000),
+
+    // Derelicts
+    BrokenCovenant.instantiate(3800, 4200),
+    GuttedPioneer.instantiate(6500, 3000),
+    HollowMarch.instantiate(9000, 4000),
+    ColdRemnant.instantiate(11500, 3200),
+    FracturedWake.instantiate(14500, 7000),
+    PaleWitness.instantiate(7000, 7500),
+
+    // Terrain
+    ...ArkshipSpines.instantiate(),
+    ...WallOfWrecks.instantiate(),
+
+    // Raiders
+    ...raiderGroup(3200, 2200, 3, 'light-fighter'),
+    ...raiderGroup(2800, 7500, 3, 'light-fighter'),
+    ...raiderGroup(14000, 4200, 1, 'drone-control-frigate'),
+    ...raiderGroup(10500, 2500, 1, 'drone-control-frigate'),
+
+    // Lurkers
+    ...lurkerGroup(4200, 4000, 2),
+    ...lurkerGroup(7500, 3600, 2),
+    ...lurkerGroup(10500, 4200, 1),
+
+    // Trade convoys
+    ...convoy({ x: 2200, y: 5000 }, { x: 5500,  y: 3800 }, 2),
+    ...convoy({ x: 5500, y: 3800 }, { x: 15000, y: 3000 }, 2),
+    ...convoy({ x: 15000, y: 3000 }, { x: 16000, y: 5000 }, 1),
+
+    // Militia patrols
+    ...militia({ x: 15000, y: 3000 }, 600, 0.12, 2),
+    ...militia({ x: 13500, y: 3500 }, 1200, 0.07, 1),
   ],
 
-  lurkerSpawns: [
-    { x: 4200,  y: 4000, count: 2, shipType: 'grave-clan-ambusher' },
-    { x: 7500,  y: 3600, count: 2, shipType: 'grave-clan-ambusher' },
-    { x: 10500, y: 4200, count: 1, shipType: 'grave-clan-ambusher' },
+  zones: [
+    { id: 'gravewake', center: { x: 10000, y: 5000 }, radius: 9500 },
   ],
-
-  tradeConvoys: [
-    { id: 'convoy_west_thorngate', routeA: { x: 2200, y: 5000 }, routeB: { x: 5500,  y: 3800 }, shipCount: 2, shipType: 'trader-convoy' },
-    { id: 'convoy_thorngate_coil', routeA: { x: 5500, y: 3800 }, routeB: { x: 15000, y: 3000 }, shipCount: 2, shipType: 'trader-convoy' },
-    { id: 'convoy_coil_ashveil',   routeA: { x: 15000, y: 3000 }, routeB: { x: 16000, y: 5000 }, shipCount: 1, shipType: 'trader-convoy' },
-  ],
-
-  militiaPatrols: [
-    { id: 'coil_inner_patrol', orbitCenter: { x: 15000, y: 3000 }, orbitRadius: 600,  orbitSpeed: 0.12, count: 2, shipType: 'militia-patrol' },
-    { id: 'coil_outer_patrol', orbitCenter: { x: 13500, y: 3500 }, orbitRadius: 1200, orbitSpeed: 0.07, count: 1, shipType: 'militia-patrol' },
-  ],
-
-  planets: [],
 
   background: [
-    {
-      type: 'pale',
-      name: 'Pale',
-      x: 9000,
-      y: 5000,
-      radius: 540,
-      colorLimb: '#4a7a9a',
-      colorAtmo: '#1a3a5a',
-    },
+    PlanetPale.backgroundData(),
   ],
 };

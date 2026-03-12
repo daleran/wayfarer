@@ -1,18 +1,22 @@
-import { THE_COIL } from '../../world/stations/index.js';
-
 // Arena combat sandbox map.
 // Load with: editor.html?map=arena
 // Pale at center (4000, 3000). Player spawns south. Six derelicts ring the planet.
 
+import { TheCoil } from '../../world/zones/gravewake/theCoil/index.js';
+import { createDerelict } from '../../world/derelict.js';
+import { RAIDER_REGISTRY } from '../../enemies/raiderRegistry.js';
+
+function spawnRaider(x, y, shipType) {
+  const factory = RAIDER_REGISTRY[shipType] ?? RAIDER_REGISTRY['light-fighter'];
+  const ship = factory(x, y);
+  ship.homePosition = { x, y };
+  ship._canRespawn = true;
+  return ship;
+}
+
 export const MAP = {
   mapSize: { width: 8000, height: 6000 },
   playerStart: { x: 4000, y: 4400 },
-
-  // The Coil added for BH station overlay testing
-  stations: [
-    { ...THE_COIL, x: 4000, y: 400 },
-  ],
-  planets: [],
 
   background: [
     {
@@ -30,16 +34,14 @@ export const MAP = {
     { id: 'arena', center: { x: 4000, y: 3000 }, radius: 4000 },
   ],
 
-  arkshipSpines: [],
-  wallOfWrecks: [],
+  entities: [
+    // The Coil — for BH station overlay testing
+    TheCoil.instantiate(4000, 400),
 
-  // Six derelicts in a hex ring at r≈1800 around Pale
-  // Angles: 0° N, 60° NE, 120° SE, 180° S, 240° SW, 300° NW
-  derelicts: [
-    {
+    // Six derelicts in a hex ring at r≈1800 around Pale
+    createDerelict({
       name: 'Drifting Vigil', x: 4000, y: 1200, salvageTime: 4,
-      derelictClass: 'frigate',
-      lootTableId: 'derelict-frigate',
+      derelictClass: 'frigate', lootTableId: 'derelict-frigate',
       lootTable: [
         { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'faulty' },
@@ -49,11 +51,10 @@ export const MAP = {
         'DRIFTING VIGIL — Garrison-class frigate, registry struck.',
         'Reactor unsecured. Drive section intact.',
       ],
-    },
-    {
+    }),
+    createDerelict({
       name: 'Hollow March', x: 5560, y: 2100, salvageTime: 5,
-      derelictClass: 'unknown',
-      lootTableId: 'derelict-unknown',
+      derelictClass: 'unknown', lootTableId: 'derelict-unknown',
       lootTable: [
         { type: 'scrap', amount: 40 },
         { type: 'void_crystals', amount: 2 },
@@ -63,11 +64,10 @@ export const MAP = {
         'HOLLOW MARCH — hull class unidentified. Pre-Collapse origin suspected.',
         'No registry. No crew manifest. Power signature: anomalous.',
       ],
-    },
-    {
+    }),
+    createDerelict({
       name: 'Cold Remnant', x: 5560, y: 3900, salvageTime: 4,
-      derelictClass: 'fighter',
-      lootTableId: 'derelict-fighter',
+      derelictClass: 'fighter', lootTableId: 'derelict-fighter',
       lootTable: [
         { type: 'scrap', amount: 28 },
         { type: 'weaponId', id: 'Autocannon' },
@@ -77,11 +77,10 @@ export const MAP = {
         'COLD REMNANT — Maverick-class courier, combat-modified.',
         'Grave Clan markings. Hardpoint still attached.',
       ],
-    },
-    {
+    }),
+    createDerelict({
       name: 'Gutted Pioneer', x: 4000, y: 4800, salvageTime: 3,
-      derelictClass: 'hauler',
-      lootTableId: 'derelict-hauler',
+      derelictClass: 'hauler', lootTableId: 'derelict-hauler',
       lootTable: [
         { type: 'scrap', amount: 20 },
         { type: 'fuel', amount: 12 },
@@ -92,11 +91,10 @@ export const MAP = {
         'GUTTED PIONEER — G100-class hauler, cargo hold stripped.',
         'Approached the ring and did not clear it.',
       ],
-    },
-    {
+    }),
+    createDerelict({
       name: 'Broken Covenant', x: 2440, y: 3900, salvageTime: 5,
-      derelictClass: 'frigate',
-      lootTableId: 'derelict-frigate',
+      derelictClass: 'frigate', lootTableId: 'derelict-frigate',
       lootTable: [
         { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'worn' },
@@ -106,11 +104,10 @@ export const MAP = {
         'BROKEN COVENANT — Garrison-class frigate, registry struck.',
         'Reactor: unsecured. Drive section intact.',
       ],
-    },
-    {
+    }),
+    createDerelict({
       name: 'Pale Witness', x: 2440, y: 2100, salvageTime: 4,
-      derelictClass: 'unknown',
-      lootTableId: 'derelict-unknown',
+      derelictClass: 'unknown', lootTableId: 'derelict-unknown',
       lootTable: [
         { type: 'scrap', amount: 32 },
         { type: 'void_crystals', amount: 1 },
@@ -120,15 +117,12 @@ export const MAP = {
         "PALE WITNESS — drifting in Pale's shadow for decades.",
         'Whatever it was watching for, it never reported back.',
       ],
-    },
+    }),
+
+    // Raiders
+    spawnRaider(2800, 2000, 'drone-control-frigate'),
   ],
 
-  raiderSpawns: [
-    { shipType: 'drone-control-frigate', x: 2800, y: 2000, count: 1 },
-  ],
-  lurkerSpawns: [],
-  tradeConvoys: [],
-  militiaPatrols: [],
   asteroidFields: [],
   nebulae: [],
 };

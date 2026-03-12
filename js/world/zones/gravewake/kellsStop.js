@@ -1,12 +1,17 @@
-// Kell's Stop — fuel depot. Ops module + platform + two massive round fuel tanks.
+// Kell's Stop — fuel depot station.
+// Renderer (FuelDepotStation) + data + layout + instantiate(), all in one place.
 
-import { Station } from './station.js';
-import { AMBER, WHITE } from '../ui/colors.js';
+import { Station } from '../../station.js';
+import { AMBER, WHITE } from '../../../ui/colors.js';
+import { IRONBACK_MAREL } from '../../../npcs/characters/ironbackMarel.js';
+import { GUTSHOT_DREV }   from '../../../npcs/characters/gutshotDrev.js';
+
+// ── FuelDepotStation renderer ───────────────────────────────────────────────
 
 const HULL_FILL = 'rgba(0,4,8,0.9)';
 const TANK_FILL = 'rgba(0,6,12,0.92)';
 
-export class FuelDepotStation extends Station {
+class FuelDepotStation extends Station {
   constructor(x, y, data) {
     super(x, y, data);
     this.dockingRadius = 150;
@@ -87,7 +92,7 @@ export class FuelDepotStation extends Station {
     }
     ctx.globalAlpha = 1;
 
-    // ── PIPE CONNECTOR (platform right → tanks) ───────────────────────────────
+    // ── PIPE CONNECTOR ───────────────────────────────────────────────────────
     ctx.beginPath();
     ctx.rect(53, -4, 18, 8);
     ctx.fillStyle = HULL_FILL;
@@ -108,7 +113,7 @@ export class FuelDepotStation extends Station {
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // ── FUEL TANKS — always AMBER (hazard marking, not faction) ─────────────────
+    // ── FUEL TANKS — always AMBER ─────────────────────────────────────────────
     const TANK_R = 30;
     const TANK_X = 90;
     const tankCenters = [-36, 28];
@@ -164,7 +169,7 @@ export class FuelDepotStation extends Station {
       }
       ctx.globalAlpha = 1;
 
-      // Safety light on tank outer edge (alternating blink) — always amber
+      // Safety light on tank outer edge
       const isOn = Math.floor((t + i * 1.1) / 1.1) % 2 === 0;
       ctx.beginPath();
       ctx.arc(TANK_X + TANK_R, TCY, 3, 0, Math.PI * 2);
@@ -174,7 +179,7 @@ export class FuelDepotStation extends Station {
       ctx.globalAlpha = 1;
     }
 
-    // ── DOCKING SPAR (extends downward from platform) ─────────────────────────
+    // ── DOCKING SPAR ─────────────────────────────────────────────────────────
     ctx.beginPath();
     ctx.rect(-8, 10, 16, 40);
     ctx.fillStyle = HULL_FILL;
@@ -185,7 +190,7 @@ export class FuelDepotStation extends Station {
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // Docking spar tip — pulsing beacon, accent color signals relation
+    // Docking spar tip beacon
     const sparPulse = 0.35 + 0.55 * Math.sin(t * Math.PI * 1.6);
     ctx.beginPath();
     ctx.arc(0, 52, 4.5, 0, Math.PI * 2);
@@ -199,7 +204,7 @@ export class FuelDepotStation extends Station {
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    // ── CORNER NAV LIGHTS (platform) — accent color signals relation ──────────
+    // ── CORNER NAV LIGHTS ────────────────────────────────────────────────────
     const navLit = Math.floor(t / 0.9) % 2 === 0;
     if (navLit) {
       for (const [lx, ly] of [[-65, -25], [-65, 17], [53, -10], [53, 10]]) {
@@ -222,6 +227,135 @@ export class FuelDepotStation extends Station {
   }
 }
 
-export function createFuelDepotStation(data) {
-  return new FuelDepotStation(data.x, data.y, data);
-}
+// ── Layout (simple) ─────────────────────────────────────────────────────────
+
+const LAYOUT = {
+  type:  'simple',
+  theme: 'neutral',
+  zones: [
+    {
+      id:          'dock',
+      label:       'Fuel Depot & Repairs',
+      description: 'Cheap fuel, rationing enforced. Basic hull work only.',
+      services:    ['repair'],
+      flavor: [
+        "KELL'S STOP — OPEN PORT",
+        '',
+        'A fuel platform bolted to whatever was left of',
+        'an old survey barge. The two tanks on the starboard',
+        'side are older than the platform. Nobody knows',
+        "whose they were. Kell doesn't talk about it.",
+        '',
+        '[ FUEL DEPOT ]',
+        'Cheap fuel. Rationing is enforced.',
+        'First come, first filled.',
+        '',
+        '[ FIELD REPAIRS ]',
+        'Basic hull work only. Expect to pay.',
+        "Don't expect it fast.",
+      ],
+      requiredStanding: null,
+    },
+    {
+      id:          'trade',
+      label:       'Trade Post',
+      description: 'Surplus rations, alloys, machine parts.',
+      services:    ['trade'],
+      flavor: [
+        '[ TRADE POST ]',
+        '',
+        'Outbound cargo accepted.',
+        'Prices reflect the difficulty of the run.',
+      ],
+      requiredStanding: null,
+    },
+    {
+      id:          'bounties',
+      label:       'Bounty Board',
+      description: 'Contracts posted by local operators.',
+      services:    ['bounties'],
+      flavor: [
+        '[ BOUNTY BOARD ]',
+        '',
+        'A single screen, chipped at the corner.',
+        'The contracts are real. The targets are not friendly.',
+      ],
+      requiredStanding: null,
+    },
+    {
+      id:          'intel',
+      label:       'Intel',
+      description: 'Station history and local intelligence.',
+      services:    ['intel'],
+      flavor: [],
+      requiredStanding: null,
+    },
+    {
+      id:          'relations',
+      label:       'Relations',
+      description: 'Faction standings.',
+      services:    ['relations'],
+      flavor: [],
+      requiredStanding: null,
+    },
+  ],
+};
+
+// ── Entity descriptor + instantiate ─────────────────────────────────────────
+
+export const KellsStop = {
+  id: 'kells_stop',
+  name: "Kell's Stop",
+  faction: 'neutral',
+  renderer: 'fuel_depot',
+  services: ['fuel', 'repair'],
+  dockingRadius: 150,
+  commodities: {
+    reactor_fuel: 'high',
+    alloys: 'medium',
+    machine_parts: 'medium',
+    hull_plating: 'low',
+    ration_packs: 'surplus',
+  },
+  lore: [
+    "KELL'S STOP — OPEN PORT",
+    'Classification: Neutral',
+    '',
+    'A fuel platform bolted to whatever was left of',
+    'an old survey barge. The two tanks on the starboard',
+    'side are older than the platform. Nobody knows',
+    "whose they were. Kell doesn't talk about it.",
+    '',
+    '[ FUEL DEPOT ]',
+    'Cheap fuel. Rationing is enforced.',
+    'First come, first filled.',
+    '',
+    '[ FIELD REPAIRS ]',
+    'Basic hull work only. Expect to pay.',
+    "Don't expect it fast.",
+  ],
+  layout: LAYOUT,
+  bountyBoard: [ IRONBACK_MAREL, GUTSHOT_DREV ],
+  bountyContracts: [
+    {
+      id: 'kells_b1', type: 'kill',
+      title: 'Wanted: Grave-Clan Lurker',
+      targetName: '"Ironback" Marel',
+      targetShipType: 'grave-clan-ambusher',
+      targetPosition: { x: 4200, y: 4000 },
+      reward: 90, expirySeconds: 300,
+    },
+    {
+      id: 'kells_b2', type: 'kill',
+      title: 'Clear the Approach',
+      targetName: '"Gutshot" Drev',
+      targetShipType: 'light-fighter',
+      targetPosition: { x: 3500, y: 3200 },
+      reward: 60, expirySeconds: 240,
+    },
+  ],
+
+  instantiate(x, y) {
+    return new FuelDepotStation(x, y, this);
+  },
+};

@@ -56,7 +56,6 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 - **Entry:** `js/editor-main.js`
 - **Maps:** `js/data/maps/` — each file exports `MAP`; pass `?map=<name>` to select
-- **Config:** `js/data/testConfig.js` — `startScrap`, `addRockets`, etc.
 - **Default map:** `arena` — Pale at center, six derelicts in a hex ring, clean combat sandbox
 
 **Available maps:**
@@ -110,8 +109,11 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, ene
 - **Neutral AI** — `js/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia')
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
 - **Particle pool** — `js/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
+- **Zone entities** — each world entity (station, derelict, terrain) is self-contained in `js/world/zones/<zone>/`. Every entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity. No factory dispatchers, no type-specific arrays.
+- **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
 - **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
+- **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, designerZoom, flavorText }`. No factory dispatcher — entities self-instantiate.
 - **UI overlays** — drawn on canvas, handle their own input; docking sets `isDocked = true`, skipping the simulation loop
 - **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
 

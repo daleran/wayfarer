@@ -4,8 +4,6 @@ import { HUD } from './hud.js';
 import { input } from './input.js';
 import { MAP } from './data/maps/tyr.js';
 import { createHullbreaker } from './ships/player/hullbreaker.js';
-import { RAIDER_REGISTRY } from './enemies/raiderRegistry.js';
-import { createGraveClanAmbusher } from './enemies/scavengers/graveClanAmbusher.js';
 import { Autocannon } from './weapons/autocannon.js';
 import { RocketPodSmall } from './weapons/rocket.js';
 import { RocketPodLarge } from './weapons/rocketLarge.js';
@@ -17,18 +15,11 @@ import { Cannon } from './weapons/cannon.js';
 import { Torpedo } from './weapons/torpedo.js';
 import { ParticlePool } from './systems/particlePool.js';
 import { updateShipAI } from './ai/shipAI.js';
-import { AI_TEMPLATES } from './data/tuning/aiTuning.js';
-import { createTraderConvoy }  from './ships/neutral/traderConvoy.js';
-import { createMilitiaPatrol } from './ships/neutral/militiaPatrol.js';
 import { Ship } from './entities/ship.js';
 import { Projectile } from './entities/projectile.js';
 import { LootDrop, generateEnemyLoot, createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from './entities/lootDrop.js';
 import { Station } from './world/station.js';
-import { createStationEntity } from './world/stationRegistry.js';
-import { createArkshipSpine } from './world/arkshipSpine.js';
-import { createDebrisCloud } from './world/debrisCloud.js';
-import { createPlanet } from './world/planet.js';
-import { Derelict, createDerelict } from './world/derelict.js';
+import { Derelict } from './world/derelict.js';
 import { LocationOverlay } from './ui/locationOverlay.js';
 import { ShipScreen } from './ui/shipScreen.js';
 import { RocketExplosion } from './entities/rocketExplosion.js';
@@ -167,86 +158,11 @@ export class GameManager {
 
     this.entities.push(this.player);
 
-    // World entities
-    for (const s of this.map.stations) {
-      const station = createStationEntity(s);
-      this.entities.push(station);
+    // World entities — pre-instantiated by zone manifests / map files
+    for (const entity of this.map.entities ?? []) {
+      this.entities.push(entity);
+      if (entity instanceof Ship) this.ships.push(entity);
     }
-    for (const p of this.map.planets) this.entities.push(createPlanet(p));
-    for (const d of (this.map.derelicts || [])) this.entities.push(createDerelict(d));
-
-    // Raider spawns
-    for (const spawn of (this.map.raiderSpawns || [])) {
-      const station = this.map.stations.find(s => s.id === spawn.stationId);
-      const home = station ? { x: station.x, y: station.y } : { x: spawn.x, y: spawn.y };
-      for (let i = 0; i < spawn.count; i++) {
-        const angle = (i / spawn.count) * Math.PI * 2 + Math.random() * 0.5;
-        const dist = SPAWN.RAIDER_RADIUS.MIN + Math.random() * SPAWN.RAIDER_RADIUS.MAX;
-        const rx = home.x + Math.sin(angle) * dist;
-        const ry = home.y - Math.cos(angle) * dist;
-        const factory = RAIDER_REGISTRY[spawn.shipType] ?? RAIDER_REGISTRY['light-fighter'];
-        const ship = factory(rx, ry);
-        ship.homePosition = { x: home.x, y: home.y };
-        ship._canRespawn  = true;
-        // Spawn-level behavior override — replaces the constructor template
-        if (spawn.behaviorType && AI_TEMPLATES[spawn.behaviorType]) {
-          ship.ai = { ...AI_TEMPLATES[spawn.behaviorType] };
-        }
-        this.entities.push(ship);
-        this.ships.push(ship);
-      }
-    }
-
-    // Lurker spawns — cover point = spawn position
-    for (const spawn of (this.map.lurkerSpawns || [])) {
-      for (let i = 0; i < spawn.count; i++) {
-        const angle = (i / Math.max(spawn.count, 1)) * Math.PI * 2;
-        const dist  = SPAWN.LURKER_RADIUS.MIN + Math.random() * SPAWN.LURKER_RADIUS.MAX;
-        const rx = spawn.x + Math.sin(angle) * dist;
-        const ry = spawn.y - Math.cos(angle) * dist;
-        const ship = createGraveClanAmbusher(rx, ry);
-        ship._coverPoint  = { x: rx, y: ry };
-        ship.homePosition = { x: spawn.x, y: spawn.y };
-        ship._canRespawn  = true;
-        this.entities.push(ship);
-        this.ships.push(ship);
-      }
-    }
-
-    // Trade convoys — stagger ships along route by t = i/shipCount
-    for (const convoy of (this.map.tradeConvoys || [])) {
-      for (let i = 0; i < convoy.shipCount; i++) {
-        const t = convoy.shipCount > 1 ? i / convoy.shipCount : 0;
-        const sx = convoy.routeA.x + (convoy.routeB.x - convoy.routeA.x) * t;
-        const sy = convoy.routeA.y + (convoy.routeB.y - convoy.routeA.y) * t;
-        const ship = createTraderConvoy(sx, sy);
-        ship._tradeRouteA = { ...convoy.routeA };
-        ship._tradeRouteB = { ...convoy.routeB };
-        this.entities.push(ship);
-        this.ships.push(ship);
-      }
-    }
-
-    // Militia patrols — evenly spaced around orbit at spawn
-    for (const patrol of (this.map.militiaPatrols || [])) {
-      for (let i = 0; i < patrol.count; i++) {
-        const angle = (i / patrol.count) * Math.PI * 2;
-        const sx = patrol.orbitCenter.x + Math.sin(angle) * patrol.orbitRadius;
-        const sy = patrol.orbitCenter.y - Math.cos(angle) * patrol.orbitRadius;
-        const ship = createMilitiaPatrol(sx, sy);
-        ship._orbitCenter = { ...patrol.orbitCenter };
-        ship._orbitRadius = patrol.orbitRadius;
-        ship._orbitSpeed  = patrol.orbitSpeed;
-        ship._orbitAngle  = angle;
-        this.entities.push(ship);
-        this.ships.push(ship);
-      }
-    }
-
-    for (const spine of (this.map.arkshipSpines || []))
-      this.entities.push(createArkshipSpine(spine));
-    for (const cloud of (this.map.wallOfWrecks || []))
-      this.entities.push(createDebrisCloud(cloud));
 
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;

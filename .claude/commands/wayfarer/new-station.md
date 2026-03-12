@@ -9,115 +9,131 @@ Ask the user (or infer from their description) for:
 - **Lore name** — same or different from display name; goes into LORE.md
 - **Faction** — `'settlements'`, `'scavengers'`, `'concord'`, `'monastic'`, `'communes'`, or `'zealots'`
 - **Services** — array of strings from: `'repair'`, `'fuel'`, `'trade'`, `'bounty'`, `'overhaul'`
-- **Renderer type** — one of: `'default'` (hex), `'coil'`, `'fuel_depot'`, or `'new'` (needs a new renderer file)
+- **Renderer type** — one of: `'default'` (generic hex from `Station` base), or `'new'` (needs a custom renderer class)
+- **Zone** — which zone does this station belong to? Currently only `gravewake/`
 - **Map position** — world coordinates `{ x, y }` (ask user or pick a thematically fitting region)
 - **Visual identity** — brief description of shape/color/vibe if creating a new renderer
 
-## Step 2 — Create the renderer file (if new renderer type)
+## Step 2 — Create the zone entity file
 
-File goes in `js/world/`. Filename: camelCase of the station name, e.g. `ironveilOutpost.js`.
+File goes in `js/world/zones/<zone>/`. Filename: camelCase of the station name, e.g. `ironveilOutpost.js`.
 
-The renderer class must extend the base `Station` class:
+The file contains: renderer class (if custom) + data descriptor + layout + `instantiate(x, y)`.
 
 ```js
-import { Station } from './station.js';
-import { CYAN, AMBER, RED, MAGENTA, GREEN } from '../ui/colors.js';
+// js/world/zones/gravewake/ironveilOutpost.js
+import { Station } from '../../station.js';
+import { CYAN, AMBER, WHITE } from '../../../ui/colors.js';
 
-export class IronveilOutpost extends Station {
-  constructor(data) {
-    super(data);
-    // Override accent color if needed — defaults to CYAN (friendly), RED (scavenger), AMBER (neutral)
-    // this.accentColor is set by base class based on relation
+// ── Custom renderer (skip if using generic hex) ─────────────────────────────
+
+class IronveilOutpostStation extends Station {
+  constructor(x, y, data) {
+    super(x, y, data);
+    this.dockingRadius = 150;
   }
 
-  _drawShape(ctx) {
-    // ctx is already translated to (0, 0) and scaled by camera zoom
-    // Draw at origin; station center = (0, 0)
-    // Use this.accentColor for primary color
-    // Use this._navPulse (0..1 oscillating) for animations
-    // NEVER use inline hex strings — import all colors from js/ui/colors.js
-
+  render(ctx, camera) {
+    const screen = camera.worldToScreen(this.x, this.y);
     ctx.save();
-    // ... draw station geometry ...
+    ctx.translate(screen.x, screen.y);
+    ctx.scale(camera.zoom, camera.zoom);
+    // ... draw station geometry at origin ...
+    this._renderNameLabel(ctx, camera, 68);
     ctx.restore();
   }
+
+  getBounds() {
+    return { x: this.x, y: this.y, radius: 50 };
+  }
 }
+
+// ── Layout ──────────────────────────────────────────────────────────────────
+
+const LAYOUT = {
+  type:  'simple',   // or 'zone-map' for SVG map layouts
+  theme: 'neutral',
+  zones: [
+    {
+      id: 'dock', label: 'Docking Bay',
+      description: 'Hull repairs and refueling.',
+      services: ['repair'],
+      flavor: ['...'],
+      requiredStanding: null,
+    },
+    // ... more zones
+  ],
+};
+
+// ── Entity descriptor + instantiate ─────────────────────────────────────────
+
+export const IronveilOutpost = {
+  id: 'ironveil_outpost',
+  name: 'Ironveil Outpost',
+  faction: 'scavengers',
+  renderer: 'ironveil_outpost',  // null for generic hex
+  services: ['repair', 'trade'],
+  dockingRadius: 150,
+  commodities: { /* ... */ },
+  lore: [ /* ... */ ],
+  layout: LAYOUT,
+  bountyBoard: [],
+  bountyContracts: [],
+
+  instantiate(x, y) {
+    return new IronveilOutpostStation(x, y, this);
+    // For generic hex: return createStation({ ...this, x, y });
+  },
+};
 ```
 
 **Available base class fields:**
 - `this.accentColor` — CYAN (settlements/neutral), RED (scavengers), AMBER (others) — set by relation
-- `this._navPulse` — oscillates 0→1→0 each second; use for blinking lights, pulse rings
+- `this._navPulse` — increments each second; use for blinking lights, pulse rings
 - `this._renderNameLabel(ctx, camera, yOffset)` — draws the station name label below the shape
 - `this.name` — display name string
-- `this.dockingRadius` — default 80; override if needed
+- `this.dockingRadius` — default 150; override in constructor
 
 **Renderer conventions:**
 - Use `ctx.save()` / `ctx.restore()` around all draw calls
 - ctx is already in local space (translated + scaled by camera); draw around (0, 0)
 - Keep the silhouette readable at small zoom levels
-- Existing examples: `js/world/coilStation.js`, `js/world/fuelDepot.js`
+- Existing examples: `js/world/zones/gravewake/theCoil/index.js`, `js/world/zones/gravewake/kellsStop.js`
 
-## Step 3 — Register in stationRegistry.js
+## Step 3 — Register in stationRegistry.js (for designer)
 
-Open `js/world/stationRegistry.js`. Make two changes:
-
-**1. Add import at the top:**
+Open `js/world/stationRegistry.js`. Add an import and entry:
 ```js
-import { IronveilOutpost } from './ironveilOutpost.js';
-```
+import { IronveilOutpost } from './zones/gravewake/ironveilOutpost.js';
 
-**2. Add a case to `createStationEntity`:**
-```js
-case 'ironveil_outpost':
-  entity = new IronveilOutpost(data);
-  break;
-```
-
-**3. Add entry to `STATION_REGISTRY` array:**
-```js
+// In STATION_REGISTRY array:
 {
+  entity: IronveilOutpost,
   id: 'ironveil-outpost',
-  label: 'Ironveil Outpost',
-  renderer: 'ironveil_outpost',
-  faction: 'scavengers',
-  designerZoom: 0.4,
-}
+  designerZoom: 3.5,
+  flavorText: 'A sentence of flavor text.',
+},
 ```
 
-## Step 4 — Add to map data
+## Step 4 — Add to zone manifest
 
-Open `js/data/maps/tyr.js`. Add to the `stations` array:
+Open `js/world/zones/gravewake.js` (or the relevant zone manifest). Add the import and place in the `entities` array:
 ```js
-{
-  id: 'ironveil_outpost',
-  name: 'Ironveil Outpost',
-  renderer: 'ironveil_outpost',       // must match the switch case key
-  x: XXXX, y: YYYY,
-  faction: 'scavengers',
-  services: ['repair', 'trade'],
-  commodities: { fuel: 120, scrap: 200 },
-  // canOverhaulReactor: true,          // only for reactor overhaul stations
-  reputationFaction: 'scavengers',    // drives standing checks and docking refusal
-}
+import { IronveilOutpost } from './gravewake/ironveilOutpost.js';
+
+// In GRAVEWAKE.entities:
+IronveilOutpost.instantiate(XXXX, YYYY),
 ```
 
-Also add to `js/data/maps/arena.js` with coordinates reachable from player start.
-
-## Step 5 — Add a designer entry
-
-Open `js/test/designer.js`. Find the `Stations` category array and add:
+Also add to `js/data/maps/arena.js` for testing:
 ```js
-{
-  id: 'ironveil-outpost',
-  label: 'Ironveil Outpost',
-  create: (x, y) => createStationEntity({ ...ironveilOutpostData, x, y }),
-  designerZoom: 0.4,
-}
+import { IronveilOutpost } from '../../world/zones/gravewake/ironveilOutpost.js';
+
+// In MAP.entities:
+IronveilOutpost.instantiate(XXXX, YYYY),
 ```
 
-Verify with `?designer&category=Stations&id=ironveil-outpost`.
-
-## Step 6 — Update LORE.md
+## Step 5 — Update LORE.md
 
 Find the "Stations & Locations" section in `LORE.md`. Add an entry:
 - Station name and world coordinates
@@ -125,13 +141,13 @@ Find the "Stations & Locations" section in `LORE.md`. Add an entry:
 - Services available
 - Any story hooks or notable NPCs
 
-## Step 7 — Update MECHANICS.md
+## Step 6 — Update MECHANICS.md
 
 Find the "Stations" section in `MECHANICS.md`. Add:
 - Station name, renderer type, faction
 - Services list
 - Any special behavior (e.g. reactor overhaul, Allied discount)
 
-## Step 8 — Done
+## Step 7 — Done
 
 Tell the user to open `?designer&category=Stations&id=<slug>` to verify the renderer, and `editor.html?map=arena` to verify docking and services in-game.
