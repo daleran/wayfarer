@@ -18,8 +18,13 @@ Project instructions for Claude Code.
 - **Dev server:** `npm run dev` (Vite, hot-reload)
 - **Build:** `npm run build` (output to `dist/`)
 - **Preview build:** `npm run preview`
+- **Lint:** `npm run lint` (ESLint)
+- **Type check:** `npm run check` (TypeScript `checkJs`, no emit)
+- **Both:** `npm run validate` (lint + check)
 
-No test framework or linter is configured.
+### Validate After Every Change
+
+**MANDATORY:** After completing any feature, fix, or unit of work, run `npm run validate` before considering the work done. Fix any new errors or warnings your changes introduced. Do not leave lint violations or type errors behind — the codebase should stay clean after every change.
 
 ## Feature Code Workflow
 
@@ -173,6 +178,9 @@ Never use inline hex strings anywhere in the codebase. Import named constants fr
 Format: `CODE. YYYY-MMM-DD-HHMM: Feature name (one-line description)`
 Major features only — no tuning passes, no small fixes.
 
+### Dead Code: Run `/dead-code` After Major Refactors
+After any major refactor (file moves, system extractions, renderer rewrites, UI overhauls), run `/dead-code` to scan for orphaned files, unused exports/imports, stale data fields, and dead CSS. Clean up before moving on.
+
 ### Skills: Keep `.claude/commands/` in Sync
 After any architectural change (new file paths, renamed systems, changed patterns, new module types, new behaviors), scan the skill files in `.claude/commands/wayfarer/` and update any instructions that reference the changed paths or APIs. Specifically watch for:
 - File path changes (e.g. `js/data/stats.js` → `js/data/tuning/*.js`)
@@ -269,7 +277,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BE | Named NPC Ships & Persistent World Characters | AI / World |
 | BF | Cloud Save System | Platform |
 | BG | Module Affixes & Randomized Traits | Modules / Equipment |
-| BH | Station Overhaul — Multi-Screen UI | UI |
 | BL | Core Combat Philosophy — Disabling vs. Destroying | Gameplay |
 | BM | Crew System — Named Crew, Health & Performance | Ship Systems |
 | BN | Salvage Bay & Engineering Bay | Scavenging |
@@ -285,9 +292,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BY | Expanded Debug Overlay | Dev Tools |
 | BZ | Systemic Narrative Engine | Narrative |
-| CA | Ship Inventory + HUD Overhaul | UI |
-| CB | Station UI → Right Panel | UI |
-| CC | Station Map Detail & Scale | World / Map |
 
 ---
 
@@ -635,23 +639,6 @@ Toggle with M key. Shows the entire starmap zoomed out:
 - Near Concord ruins: phantom contacts, faint static
 
 ---
-
-### BH: Station Overhaul — Interactive Map-Based Hubs
-
-Replace the current monolithic station screen with full-screen, visually rich station maps unique to each location. Each station has a distinct layout reflecting its character — the sprawling vertical markets of Kell's Stop vs. the cramped, multi-level scrapper decks of The Coil.
-
-**Core design:**
-- **Full-screen interactive map** per station — not a menu list, a place you navigate
-- **Explorable zones** — click distinct areas on the map to access different services; no single consolidated menu
-- **Multiple vendors per station** — different stores and services in different zones, rewarding exploration
-- **Lore & flavor** — ambient text, flavor details, and hidden interactions embedded in the station environment; discovery over presentation
-
-**Zone examples per station type:**
-- *The Coil:* The Dock → Salvage Yard → Central Market (Tavern, Chop Shop, Oddities) → The Palace (rep-gated) → The Slums (see BW)
-- *Kell's Stop:* Repair bay, fuel desk, small trade counter, rumor board — compact and functional
-- *Generic settlement:* Trade Floor, Shipyard (module installs), Repair Bay, Rumor Mill / Mission Board, Faction Liaison
-
-**Note on subsystem targeting:** Confirmed out of scope — real-time combat model makes it unworkable.
 
 ---
 

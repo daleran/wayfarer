@@ -138,7 +138,7 @@ export class CollisionSystem {
     return { newEntities };
   }
 
-  _aoeExplode(x, y, damage, hullDamage, blastRadius, entities, player, { particlePool, hud, repair, reputation, onEnemyKilled }) {
+  _aoeExplode(x, y, damage, hullDamage, blastRadius, entities, player, { particlePool: _particlePool, hud, repair, reputation: _reputation, onEnemyKilled }) {
     for (const entity of entities) {
       if (!entity.active || !(entity instanceof Ship)) continue;
       const sb = entity.getBounds();

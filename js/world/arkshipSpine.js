@@ -9,7 +9,7 @@ export class ArkshipSpine extends Entity {
     this.rotation = data.rotation ?? 0;
   }
 
-  update(dt) {
+  update(_dt) {
     // Static terrain — no update
   }
 

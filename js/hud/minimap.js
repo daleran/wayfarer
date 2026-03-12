@@ -13,7 +13,7 @@ const MM_MARGIN = 24;
 const MM_PANEL  = 225;
 
 export function renderMinimap(ctx, game) {
-  const { camera, player, entities, hostiles } = game;
+  const { player, entities, hostiles } = game;
   if (!player.active) return;
 
   const canSeeStations = player.capabilities.minimap_stations;

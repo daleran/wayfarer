@@ -10,7 +10,7 @@ export class Planet extends Entity {
     this.colorOuter = data.colorOuter ?? '#1a3a1a';
   }
 
-  update(dt) {}
+  update(_dt) {}
 
   render(ctx, camera) {
     const screen = camera.worldToScreen(this.x, this.y);

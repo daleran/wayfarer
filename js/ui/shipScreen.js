@@ -208,7 +208,7 @@ export class ShipScreen {
         slot.classList.add('installing');
         const prog = document.createElement('div');
         prog.className = 'ship-install-progress';
-        prog.dataset.slotIdx = i;
+        prog.dataset.slotIdx = String(i);
         prog.style.width = `${Math.min(this._installProgress / 1.5, 1) * 100}%`;
         slot.appendChild(prog);
 
@@ -438,7 +438,7 @@ export class ShipScreen {
 
   _updateInstallProgress() {
     if (!this._el) return;
-    const prog = this._el.querySelector('.ship-install-progress');
+    const prog = /** @type {HTMLElement} */ (this._el.querySelector('.ship-install-progress'));
     if (prog) {
       prog.style.width = `${Math.min(this._installProgress / 1.5, 1) * 100}%`;
     }

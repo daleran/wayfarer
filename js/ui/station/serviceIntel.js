@@ -1,4 +1,4 @@
-export function buildIntelPanel(container, station, game) {
+export function buildIntelPanel(container, station, _game) {
   container.innerHTML = '';
 
   const lore = station.lore;

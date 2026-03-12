@@ -88,7 +88,7 @@ export class EditorOverlay {
 
   // ── Update ────────────────────────────────────────────────────────────────
 
-  update(dt) {
+  update(_dt) {
     const game = this._game;
     const cam  = game.camera;
 

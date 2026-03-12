@@ -8,11 +8,11 @@ export class Entity {
     this.active = true;
   }
 
-  update(dt) {
+  update(_dt) {
     // Override in subclasses
   }
 
-  render(ctx, camera) {
+  render(_ctx, _camera) {
     // Override in subclasses
   }
 

@@ -16,8 +16,13 @@ Project instructions for Claude Code.
 - **Dev server:** `npm run dev` (Vite, hot-reload)
 - **Build:** `npm run build` (output to `dist/`)
 - **Preview build:** `npm run preview`
+- **Lint:** `npm run lint` (ESLint)
+- **Type check:** `npm run check` (TypeScript `checkJs`, no emit)
+- **Both:** `npm run validate` (lint + check)
 
-No test framework or linter is configured.
+### Validate After Every Change
+
+**MANDATORY:** After completing any feature, fix, or unit of work, run `npm run validate` before considering the work done. Fix any new errors or warnings your changes introduced. Do not leave lint violations or type errors behind — the codebase should stay clean after every change.
 
 ## Feature Code Workflow
 
@@ -170,6 +175,9 @@ Never use inline hex strings anywhere in the codebase. Import named constants fr
 ### Commits: Log to DEVLOG.md
 Format: `CODE. YYYY-MMM-DD-HHMM: Feature name (one-line description)`
 Major features only — no tuning passes, no small fixes.
+
+### Dead Code: Run `/dead-code` After Major Refactors
+After any major refactor (file moves, system extractions, renderer rewrites, UI overhauls), run `/dead-code` to scan for orphaned files, unused exports/imports, stale data fields, and dead CSS. Clean up before moving on.
 
 ### Skills: Keep `.claude/commands/` in Sync
 After any architectural change (new file paths, renamed systems, changed patterns, new module types, new behaviors), scan the skill files in `.claude/commands/wayfarer/` and update any instructions that reference the changed paths or APIs. Specifically watch for:

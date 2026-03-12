@@ -409,7 +409,7 @@ export class Shape {
  */
 class TransformedShape extends Shape {
   constructor(srcPoints, tx, ty, sx, sy, angle) {
-    super(null);
+    super([]);
     this._src = srcPoints;
     this._tx = tx;
     this._ty = ty;
@@ -417,18 +417,18 @@ class TransformedShape extends Shape {
     this._sy = sy;
     this._angle = angle;
     this._resolved = null;
+    Object.defineProperty(this, 'points', {
+      get() {
+        if (!this._resolved) {
+          this._resolved = _transformPoints(
+            this._src, this._tx, this._ty, this._sx, this._sy, this._angle
+          );
+        }
+        return this._resolved;
+      },
+      configurable: true,
+    });
   }
-
-  get points() {
-    if (!this._resolved) {
-      this._resolved = _transformPoints(
-        this._src, this._tx, this._ty, this._sx, this._sy, this._angle
-      );
-    }
-    return this._resolved;
-  }
-
-  set points(_) { /* ignore — points are computed */ }
 
   // Override transform methods to chain: apply new transform on top of resolved points
   at(tx, ty) {

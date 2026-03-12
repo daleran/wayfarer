@@ -1,6 +1,6 @@
 import {
   CYAN, AMBER, GREEN, RED, MAGENTA,
-  BAR_TRACK, VERY_DIM,
+  BAR_TRACK, DIM_TEXT,
   CONDITION_FAULTY,
 } from '../ui/colors.js';
 
@@ -135,7 +135,6 @@ export function renderRepairBar(ctx, game) {
 
 export function renderAutoFireIndicator(ctx, game) {
   if (!game.autoFireMode) return;
-  const { camera } = game;
   const pulse = 0.75 + Math.sin(Date.now() * 0.008) * 0.25;
   ctx.save();
   ctx.font = 'bold 11px monospace';

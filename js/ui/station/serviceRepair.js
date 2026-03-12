@@ -94,7 +94,7 @@ export function buildRepairPanel(container, station, game) {
 
       const ticker = setInterval(() => {
         const pct = Math.min(100, ((Date.now() - start) / REPAIR_DURATION) * 100);
-        fill.style.width = pct + '%';
+        /** @type {HTMLElement} */ (fill).style.width = pct + '%';
         label.textContent = `Repairing…  ${Math.floor(pct)}%`;
         if (pct >= 100) clearInterval(ticker);
       }, 50);

@@ -371,7 +371,8 @@ export class Designer {
   // ── Init ────────────────────────────────────────────────────────────────────
 
   init() {
-    this.canvas = document.getElementById('game');
+    /** @type {HTMLCanvasElement} */
+    this.canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('game'));
     this.canvas.width  = window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.ctx = this.canvas.getContext('2d');
@@ -445,9 +446,9 @@ export class Designer {
 
     // Reset viewport to item default
     if (def.type === 'ship') {
-      this._shipScale = def.zoom ?? 7;
+      this._shipScale = /** @type {any} */ (def).zoom ?? 7;
     } else {
-      this._zoom = def.zoom ?? 1.0;
+      this._zoom = /** @type {any} */ (def).zoom ?? 1.0;
       this._panX = 0;
       this._panY = 0;
     }
@@ -514,10 +515,10 @@ export class Designer {
       this._panX = 0;
       this._panY = 0;
       if (def.type === 'ship') {
-        this._shipScale = def.zoom ?? 7;
+        this._shipScale = /** @type {any} */ (def).zoom ?? 7;
         this._angle = 0;
       } else {
-        this._zoom = def.zoom ?? 1.0;
+        this._zoom = /** @type {any} */ (def).zoom ?? 1.0;
       }
     }
 
@@ -916,13 +917,13 @@ export class Designer {
 
     // Type-specific stats
     if (def.type === 'ship') {
-      y = this._renderShipStats(ctx, y, def);
+      this._renderShipStats(ctx, y, def);
     } else if (def.type === 'weapon') {
-      y = this._renderWeaponStats(ctx, y, def);
+      this._renderWeaponStats(ctx, y, def);
     } else if (def.type === 'module') {
-      y = this._renderModuleStats(ctx, y, def);
+      this._renderModuleStats(ctx, y, def);
     } else {
-      y = this._renderPoiStats(ctx, y, def);
+      this._renderPoiStats(ctx, y, def);
     }
 
     ctx.restore();
@@ -1188,7 +1189,7 @@ export class Designer {
 
     // Clicking a row navigates to that item
     this._compareTable.addEventListener('click', (e) => {
-      const row = e.target.closest('tr[data-idx]');
+      const row = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest('tr[data-idx]'));
       if (!row) return;
       const idx = parseInt(row.dataset.idx, 10);
       this._itemIdx = idx;
@@ -1214,7 +1215,7 @@ export class Designer {
     table.innerHTML = '';
 
     const cols  = this._compareColumns(cat);
-    const thead = table.createTHead();
+    const thead = /** @type {HTMLTableElement} */ (table).createTHead();
     const hrow  = thead.insertRow();
 
     // Name column header
@@ -1228,7 +1229,7 @@ export class Designer {
       hrow.appendChild(th);
     }
 
-    const tbody = table.createTBody();
+    const tbody = /** @type {HTMLTableElement} */ (table).createTBody();
     cat.items.forEach((def, idx) => {
       const entity = def.create();
       const vals   = cols.map(col => col.get(def, entity));
@@ -1244,8 +1245,9 @@ export class Designer {
 
       for (let c = 0; c < cols.length; c++) {
         const td = tr.insertCell();
-        td.textContent = vals[c].text ?? vals[c];
-        if (vals[c].cls) td.classList.add(vals[c].cls);
+        const val = vals[c];
+        td.textContent = typeof val === 'object' ? val.text : val;
+        if (typeof val === 'object' && val.cls) td.classList.add(val.cls);
       }
     });
 
@@ -1256,7 +1258,7 @@ export class Designer {
     if (!this._compareTable) return;
     const rows = this._compareTable.querySelectorAll('tbody tr[data-idx]');
     rows.forEach(row => {
-      row.classList.toggle('cmp-current', parseInt(row.dataset.idx, 10) === this._itemIdx);
+      row.classList.toggle('cmp-current', parseInt(/** @type {HTMLElement} */ (row).dataset.idx, 10) === this._itemIdx);
     });
     // Scroll current row into view
     const cur = this._compareTable.querySelector('tr.cmp-current');

@@ -80,7 +80,7 @@ export function buildTradePanel(container, station, game) {
 
   // Event delegation — shift-click for ×10
   table.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-action]');
+    const btn = /** @type {HTMLButtonElement} */ (/** @type {Element} */ (e.target).closest('button[data-action]'));
     if (!btn || btn.disabled) return;
 
     const action = btn.dataset.action;

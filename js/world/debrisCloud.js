@@ -27,7 +27,7 @@ export class DebrisCloud extends Entity {
     return frags;
   }
 
-  update(dt) {
+  update(_dt) {
     // Static terrain — no update
   }
 

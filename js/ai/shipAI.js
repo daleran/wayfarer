@@ -281,7 +281,7 @@ function _doTrader(ship, dt, ai) {
   }
 }
 
-function _doMilitia(ship, dt, ai) {
+function _doMilitia(ship, dt, _ai) {
   if (!ship.ai._orbitCenter) { ship.throttleLevel = 0; return; }
   if (ship.ai._orbitAngle === undefined) ship.ai._orbitAngle = 0;
   ship.ai._orbitAngle += ship.ai._orbitSpeed * dt;

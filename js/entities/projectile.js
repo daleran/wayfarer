@@ -50,6 +50,9 @@ export class Projectile extends Entity {
 
     // Plasma
     this.isPlasma = false;
+
+    // Reputation tracking
+    this._neutralPenaltyApplied = false;
   }
 
   update(dt) {

@@ -76,10 +76,24 @@ export class Ship extends Entity {
     // Input state (set by game each frame)
     this.rotationInput = 0; // -1 left, +1 right, 0 none
 
+    // Collision / visual radius (overridden by subclasses via getBounds)
+    this.radius = 20;
+
+    // Modules (set by subclass constructors)
+    this.moduleSlots = null;
+
     // Weapons
     this.weapons = [];
     this.primaryWeaponIdx   = 0;
     this.secondaryWeaponIdx = 0;
+
+    // Display / bounty metadata (set dynamically)
+    this.displayName = null;
+    this.isBountyTarget = false;
+
+    // Spawn/respawn metadata (set dynamically by map loaders)
+    this.homePosition = null;
+    this._canRespawn = false;
 
     // Engine trail — array of arrays, one per engine
     this._trails     = [];
@@ -269,8 +283,10 @@ export class Ship extends Entity {
     this.armorArcsMax = { ...fa };
   }
 
-  // Initialize all stat fields from multiplier config.
-  // Each value is base × mult × SPEED_FACTOR (for movement) or base × mult (for health/cargo/fuel).
+  /**
+   * Initialize all stat fields from multiplier config.
+   * @param {{ speed: number, accel: number, turn: number, hull: number, cargo?: number, fuelMax?: number, fuelEff?: number, armorFront?: number, armorSide?: number, armorAft?: number }} opts
+   */
   _initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft }) {
     this.speedMax      = BASE_SPEED        * speed * SPEED_FACTOR;
     this.acceleration  = BASE_ACCELERATION * accel * SPEED_FACTOR;
@@ -396,7 +412,7 @@ export class Ship extends Entity {
 
     this._arcHitTimestamps[arc] = Date.now();
 
-    let hullDmg = 0;
+    let hullDmg;
     const arcCurrent = this.armorArcs[arc];
 
     if (arcCurrent > 0) {

@@ -47,9 +47,9 @@ export class ShipModule {
     if (w._baseHullDamage !== undefined) w.hullDamage = Math.round(w._baseHullDamage * mult);
   }
 
-  onInstall(ship) {}
-  onRemove(ship)  {}
-  update(ship, dt, game) {}
+  onInstall(_ship) {}
+  onRemove(_ship)  {}
+  update(_ship, _dt, _game) {}
 }
 
 // ─── Weapon modules ──────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ export class SmallFissionReactor extends ShipModule {
     this.isOverdue         = false;
     this.isFissionReactor  = true;
   }
-  update(ship, dt, game) {
+  update(_ship, dt, _game) {
     this.timeSinceOverhaul += dt;
     this.isOverdue = this.timeSinceOverhaul >= this._overhaulInterval;
   }
@@ -285,7 +285,7 @@ export class LargeFissionReactor extends ShipModule {
     this.isOverdue         = false;
     this.isFissionReactor  = true;
   }
-  update(ship, dt, game) {
+  update(_ship, dt, _game) {
     this.timeSinceOverhaul += dt;
     this.isOverdue = this.timeSinceOverhaul >= this._overhaulInterval;
   }

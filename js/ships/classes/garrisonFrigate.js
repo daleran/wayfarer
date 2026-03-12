@@ -118,7 +118,7 @@ export class GarrisonFrigate extends Ship {
     const fill = isPlayer ? this._playerHullFill() : this.hullFill;
 
     // Nacelles first so hull overlaps the pylon roots cleanly
-    for (const [nacelle, arc] of [[NACELLE_PORT, 'port'], [NACELLE_STBD, 'starboard']]) {
+    for (const [nacelle, arc] of /** @type {[Array<{x:number,y:number}>, string][]} */ ([[NACELLE_PORT, 'port'], [NACELLE_STBD, 'starboard']])) {
       ctx.beginPath();
       ctx.moveTo(nacelle[0].x, nacelle[0].y);
       for (let i = 1; i < nacelle.length; i++) ctx.lineTo(nacelle[i].x, nacelle[i].y);

@@ -79,7 +79,8 @@ export class GameManager {
   }
 
   init() {
-    this.canvas = document.getElementById('game');
+    /** @type {HTMLCanvasElement} */
+    this.canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('game'));
     this.canvas.style.cursor = 'none';
     this._resizeCanvas();
     this.ctx = this.canvas.getContext('2d', { alpha: false });
@@ -323,7 +324,7 @@ export class GameManager {
     let out = 0, draw = 0;
     for (const mod of (this.player.moduleSlots || [])) {
       if (!mod) continue;
-      out += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
+      out += (/** @type {any} */ (mod).effectivePowerOutput ?? mod.powerOutput) || 0;
       draw += mod.powerDraw || 0;
     }
     this.inventory.reactorOutput = out;

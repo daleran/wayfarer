@@ -41,7 +41,7 @@ export class BountySystem {
     return { targetEntity: target };
   }
 
-  collectCompleted(station, { scrap, reputation, hud, player }) {
+  collectCompleted(station, { scrap: _scrap, reputation, hud, player }) {
     let total = 0;
     let completedCount = 0;
     for (const b of this.activeBounties) {
