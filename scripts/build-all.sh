@@ -30,4 +30,20 @@ for FILE in "${FILES[@]}"; do
   fi
 done
 
+# Append CSV data files
+echo "# === DATA (CSV) ===" >> "$OUT"
+echo "" >> "$OUT"
+
+for CSV in "$REPO_ROOT"/data/*.csv; do
+  if [ -f "$CSV" ]; then
+    BASENAME="$(basename "$CSV")"
+    echo "## $BASENAME" >> "$OUT"
+    echo "" >> "$OUT"
+    echo '```csv' >> "$OUT"
+    cat "$CSV" >> "$OUT"
+    echo '```' >> "$OUT"
+    echo "" >> "$OUT"
+  fi
+done
+
 echo "Generated $OUT"
