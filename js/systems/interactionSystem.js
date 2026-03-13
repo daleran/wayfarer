@@ -1,6 +1,5 @@
-import { Derelict } from '../world/derelict.js';
-import { Station } from '../world/station.js';
-import { LootDrop } from '../entities/lootDrop.js';
+import { Station } from '@/world/station.js';
+import { LootDrop } from '@/entities/lootDrop.js';
 
 export class InteractionSystem {
   constructor() {
@@ -17,7 +16,7 @@ export class InteractionSystem {
     if (!player || !player.active) return;
 
     for (const entity of entities) {
-      if (!(entity instanceof Derelict) || !entity.active || entity.salvaged) continue;
+      if (!entity.isDerelict || !entity.active || entity.salvaged) continue;
       const dx = entity.x - player.x;
       const dy = entity.y - player.y;
       const dist = Math.sqrt(dx * dx + dy * dy);

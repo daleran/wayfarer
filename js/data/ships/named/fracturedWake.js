@@ -1,6 +1,6 @@
 // Fractured Wake — named derelict (Garrison-class frigate, hull split).
 
-import { createDerelict } from '../../derelict.js';
+import { createDerelict } from '@/world/derelict.js';
 
 export const FracturedWake = {
   name: 'Fractured Wake',

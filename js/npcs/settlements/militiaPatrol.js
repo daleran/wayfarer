@@ -1,5 +1,6 @@
-import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
+import { GarrisonFrigate } from '@/ships/classes/garrisonFrigate.js';
+import { OnyxDriveUnit } from '@/modules/shipModule.js';
+import { AI_TEMPLATES } from '@data/compiledData.js';
 
 const SPEED_MULT = 0.5;   // ~42 u/s — steady patrol speed
 const ACCEL_MULT = 0.6;
@@ -30,6 +31,9 @@ export class MilitiaPatrol extends GarrisonFrigate {
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
+
+    this.moduleSlots = [new OnyxDriveUnit()];
+    this._applyModules();
   }
 }
 

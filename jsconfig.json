@@ -11,7 +11,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "/*": ["./*"]
+      "@/*": ["./js/*"],
+      "@data/*": ["./data/*"]
     }
   },
   "include": ["js/**/*.js"],

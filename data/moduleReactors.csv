@@ -1,0 +1,5 @@
+id,displayName,size,powerOutput,fuelDrainRate,overhaulInterval,overhaulCost,degradedOutput,weight
+hydrogen-fuel-cell,H2 FUEL CELL (S),S,80,0.025,,,0,20
+fission-reactor-s,FISSION REACTOR (S),S,160,0,10800,800,0.6,40
+fission-reactor-l,FISSION REACTOR (L),L,300,0,14400,1500,0.6,80
+fusion-reactor-l,FUSION REACTOR (L),L,500,0.005,,,0,100

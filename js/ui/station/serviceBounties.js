@@ -1,4 +1,4 @@
-import { BOUNTY } from '../../data/tuning/economyTuning.js';
+import { BOUNTY } from '@data/compiledData.js';
 
 export function buildBountiesPanel(container, station, game) {
   container.innerHTML = '';

@@ -1,11 +1,12 @@
-import { Ship } from '../../entities/ship.js';
-import { polygonFill, polygonStroke, lines, pulse } from '../../rendering/draw.js';
+import { Ship } from '@/entities/ship.js';
+import { polygonFill, polygonStroke, lines, pulse } from '@/rendering/draw.js';
 
-const SPEED_MULT = 1.3;   // ~109 u/s — fast but not a racer
-const ACCEL_MULT = 1.2;   // responsive, not twitchy
-const TURN_MULT = 1.15;  // handles well, not a sports car
-const HULL_MULT = 0.85;  // 170 hp — solid everyday frame
-const CARGO_MULT = 0.3;   // 15 units — small trunk
+const SPEED_MULT  = 1.3;   // ~109 u/s — fast but not a racer
+const ACCEL_MULT  = 1.2;   // responsive, not twitchy
+const TURN_MULT   = 1.15;  // handles well, not a sports car
+const HULL_MULT   = 0.85;  // 170 hp — solid everyday frame
+const WEIGHT_MULT = 0.5;   // 500 mass — light courier frame
+const CARGO_MULT  = 0.3;   // 15 units — small trunk
 
 // Armor arc multipliers (× BASE_ARMOR = 100)
 const ARMOR_FRONT = 1.0;  // 100 — standard nose
@@ -118,7 +119,7 @@ export class MaverickCourier extends Ship {
 
     this._initStats({
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
-      hull: HULL_MULT, cargo: CARGO_MULT,
+      hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,
       fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
       armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });

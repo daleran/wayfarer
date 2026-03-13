@@ -1,10 +1,10 @@
-import { Projectile } from '../../entities/projectile.js';
-import { AMBER, TORPEDO_AMBER } from '../../rendering/colors.js';
+import { Projectile } from '@/entities/projectile.js';
+import { AMBER, TORPEDO_AMBER } from '@/rendering/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          CANNON_MAG_SIZE, CANNON_RELOAD_TIME,
-         HE_CANNON_BLAST } from '../../data/tuning/weaponTuning.js';
-import { normalizeToTarget } from '../../utils/math.js';
+         HE_CANNON_BLAST } from '@data/compiledData.js';
+import { normalizeToTarget } from '@/utils/math.js';
 
 const DAMAGE_MULT      = 3.24;  // ~55 armor
 const HULL_DAMAGE_MULT = 4.5;   // 45 hull

@@ -1,9 +1,10 @@
 import { renderMinimap } from './hud/minimap.js';
+import { renderMapView } from './hud/mapView.js';
+import { renderNavIndicator } from './hud/navIndicator.js';
 import { renderThrottle, renderCursorWeapons } from './hud/shipAnchored.js';
 import {
   renderPauseIcon, renderDockPrompt, renderRepairPrompt,
-  renderSalvageBar, renderRepairBar, renderAutoFireIndicator,
-  renderDevControls, renderPanModeBanner,
+  renderSalvageBar, renderRepairBar,
 } from './hud/prompts.js';
 import { armorArcColor } from './rendering/colors.js';
 
@@ -61,7 +62,16 @@ export class HUD {
     const { player, camera } = game;
     if (!player) return;
 
+    // Full-screen map overlay — skip all other HUD, hide DOM elements
+    if (game.navigation?.mapOpen) {
+      if (this._bottomEl) this._bottomEl.style.display = 'none';
+      renderMapView(ctx, game);
+      return;
+    }
+    if (this._bottomEl) this._bottomEl.style.display = '';
+
     renderMinimap(ctx, game);
+    renderNavIndicator(ctx, game);
     renderThrottle(ctx, game);
     renderCursorWeapons(ctx, game);
 
@@ -75,12 +85,6 @@ export class HUD {
     renderRepairBar(ctx, game);
 
     this._updatePickupPosition(game);
-    renderAutoFireIndicator(ctx, game);
-
-    if (game.isTestMode && !game.isEditorMode) {
-      renderDevControls(ctx, game);
-      if (game.isPanMode) renderPanModeBanner(ctx, game);
-    }
 
     if (game.shipScreen) game.shipScreen.render(ctx, game);
   }

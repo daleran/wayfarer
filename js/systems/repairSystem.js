@@ -1,11 +1,11 @@
 import {
   REPAIR_RATE, REPAIR_COST_PER_PT,
   MODULE_REPAIR_RATE, MODULE_REPAIR_COST,
-} from '../data/tuning/economyTuning.js';
+} from '@data/compiledData.js';
 import {
   MODULE_BREACH_HULL_THRESHOLD, MODULE_BREACH_CHANCE_LOW,
   MODULE_BREACH_CHANCE_MID, MODULE_BREACH_CHANCE_HIGH,
-} from '../data/tuning/weaponTuning.js';
+} from '@data/compiledData.js';
 
 const CONDITION_STEPS = ['good', 'worn', 'faulty', 'damaged', 'destroyed'];
 
@@ -123,7 +123,7 @@ export class RepairSystem {
     if (idx <= 0) return;
     mod.condition = CONDITION_STEPS[idx - 1];
     mod._applyConditionToWeapon();
-    mod._applyConditionToEngine?.();
+    player?.recalcTW?.();
     player?.refreshCapabilities();
   }
 
@@ -132,7 +132,7 @@ export class RepairSystem {
     if (idx < 0 || idx >= CONDITION_STEPS.length - 1) return false;
     mod.condition = CONDITION_STEPS[idx + 1];
     mod._applyConditionToWeapon();
-    mod._applyConditionToEngine?.();
+    player?.recalcTW?.();
     player?.refreshCapabilities();
     return true;
   }

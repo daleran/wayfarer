@@ -1,4 +1,6 @@
-import { conditionColor } from '../rendering/colors.js';
+import { conditionColor } from '@/rendering/colors.js';
+import { THROTTLE_RATIOS } from '@data/compiledData.js';
+import { createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from '@/entities/lootDrop.js';
 
 // ── Ship Screen — left 30% HTML panel (I key) ──────────────────────────────
 // Replaces the old canvas-based 3-column overlay with a DOM panel.
@@ -52,6 +54,7 @@ export class ShipScreen {
       const mod = game.modules.splice(this._installModuleIdx, 1)[0];
       game.player.moduleSlots[this._installTargetSlot] = mod;
       if (mod.onInstall) mod.onInstall(game.player);
+      game.player.recalcTW?.(game.fuel, game.totalCargoUsed);
       this._cancelInstall();
       this._render();
     } else {
@@ -66,6 +69,65 @@ export class ShipScreen {
     if (input.wasJustPressed('escape') || input.wasJustPressed('i') || input.wasJustPressed('tab')) {
       this.close();
     }
+  }
+
+  // ── Jettison ──────────────────────────────────────────────────────────────
+
+  _jettison(type, key) {
+    const game = this._game;
+    if (!game || !game.player) return;
+    const player = game.player;
+
+    // Spawn point: behind the ship
+    const JETTISON_DIST = 80;
+    const jx = player.x - Math.sin(player.rotation) * JETTISON_DIST;
+    const jy = player.y + Math.cos(player.rotation) * JETTISON_DIST;
+
+    /** @type {import('@/entities/lootDrop.js').LootDrop | null} */
+    let drop = null;
+
+    if (type === 'scrap') {
+      const amount = Math.min(game.scrap, 20);
+      if (amount <= 0) return;
+      game.scrap -= amount;
+      drop = createLootDrop(jx, jy, 'scrap', amount);
+    } else if (type === 'commodity') {
+      if (!game.cargo[key] || game.cargo[key] <= 0) return;
+      game.cargo[key]--;
+      drop = createLootDrop(jx, jy, key, 1);
+    } else if (type === 'module') {
+      const idx = key;
+      const mod = game.modules[idx];
+      if (!mod) return;
+      game.modules.splice(idx, 1);
+      if (this._selectedCargoModIdx === idx) this._selectedCargoModIdx = null;
+      else if (this._selectedCargoModIdx !== null && this._selectedCargoModIdx > idx) this._selectedCargoModIdx--;
+      drop = createModuleDrop(jx, jy, mod);
+    } else if (type === 'weapon') {
+      const idx = key;
+      const wep = game.weapons[idx];
+      if (!wep) return;
+      game.weapons.splice(idx, 1);
+      drop = createWeaponDrop(jx, jy, wep);
+    } else if (type === 'ammo') {
+      const amt = game.ammo[key];
+      if (!amt || amt <= 0) return;
+      const jettAmt = Math.min(amt, 10);
+      game.ammo[key] -= jettAmt;
+      if (game.ammo[key] <= 0) delete game.ammo[key];
+      drop = createAmmoDrop(jx, jy, key, jettAmt);
+    }
+
+    if (drop) {
+      // Override scatter velocity — eject straight behind the ship
+      const ejectSpeed = 30;
+      drop.vx = -Math.sin(player.rotation) * ejectSpeed;
+      drop.vy =  Math.cos(player.rotation) * ejectSpeed;
+      game.entities.push(drop);
+      player.recalcTW?.(game.fuel, game.totalCargoUsed);
+    }
+
+    this._render();
   }
 
   // Canvas render stub — no-op, everything is DOM now
@@ -91,6 +153,9 @@ export class ShipScreen {
 
     // Stats
     this._el.appendChild(this._buildStats(player, game));
+
+    // Mass & Thrust
+    this._el.appendChild(this._buildThrustWeight(player, game));
 
     // Modules
     this._el.appendChild(this._buildModules(player, game));
@@ -147,7 +212,8 @@ export class ShipScreen {
       this._addStatRow(grid, label, `${Math.round(cur)}/${Math.round(max)}`, cls);
     }
 
-    this._addStatRow(grid, 'SPEED', `${Math.round(player.speedMax)} u/s`, 'cyan');
+    const cruiseSpeed = Math.round(player.speedMax * THROTTLE_RATIOS[4]);
+    this._addStatRow(grid, 'SPEED', `${cruiseSpeed} u/s`, 'cyan');
 
     const fuelRatio = game.fuelMax > 0 ? game.fuel / game.fuelMax : 0;
     const fuelCls = fuelRatio < 0.25 ? 'red' : '';
@@ -171,6 +237,52 @@ export class ShipScreen {
     row.appendChild(l);
     row.appendChild(v);
     grid.appendChild(row);
+  }
+
+  _buildThrustWeight(player, game) {
+    const section = document.createElement('div');
+    section.className = 'ship-stats';
+
+    const title = document.createElement('div');
+    title.className = 'ship-stats-title';
+    title.textContent = 'MASS & THRUST';
+    section.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'ship-stats-grid';
+
+    // Weight breakdown
+    const totalWeight = player._totalWeight ?? 0;
+    const baseWeight = player.baseWeight ?? 0;
+    let moduleWeight = 0;
+    for (const mod of (player.moduleSlots || [])) {
+      if (mod) moduleWeight += mod.weight || 0;
+    }
+    const fuelWeight = Math.round((game.fuel ?? 0) * 0.5);  // FUEL_WEIGHT_PER_UNIT
+    const cargoWeight = Math.round((game.totalCargoUsed ?? 0) * 1.5);  // CARGO_WEIGHT_PER_UNIT
+
+    this._addStatRow(grid, 'HULL MASS', `${baseWeight}`, '');
+    this._addStatRow(grid, 'MODULES', `+${moduleWeight}`, '');
+    this._addStatRow(grid, 'FUEL', `+${fuelWeight}`, '');
+    this._addStatRow(grid, 'CARGO', `+${cargoWeight}`, cargoWeight > 0 ? 'amber' : '');
+    this._addStatRow(grid, 'TOTAL', `${Math.round(totalWeight)}`, 'cyan');
+
+    // Thrust and T/W
+    const totalThrust = player._totalThrust ?? 0;
+    const twRatio = player._twRatio ?? 0;
+    const refTW = player._refTwRatio ?? 0;
+    const twPct = refTW > 0 ? Math.round((twRatio / refTW) * 100) : 0;
+    const twCls = twPct >= 100 ? 'green' : twPct >= 80 ? '' : twPct >= 60 ? 'amber' : 'red';
+    this._addStatRow(grid, 'THRUST', `${Math.round(totalThrust)}`, 'green');
+    this._addStatRow(grid, 'T/W', `${twRatio.toFixed(2)} (${twPct}%)`, twCls);
+
+    // Derived stats
+    this._addStatRow(grid, 'ACCEL', `${Math.round(player.acceleration)} u/s²`, 'cyan');
+    this._addStatRow(grid, 'TOP SPD', `${Math.round(player.speedMax * THROTTLE_RATIOS[4])} u/s`, 'cyan');
+    this._addStatRow(grid, 'TURN', `${(player.turnRate * (180 / Math.PI)).toFixed(0)}°/s`, 'cyan');
+
+    section.appendChild(grid);
+    return section;
   }
 
   _buildModules(player, game) {
@@ -265,6 +377,7 @@ export class ShipScreen {
           if (mod.onRemove) mod.onRemove(game.player);
           game.modules.push(mod);
           game.player.moduleSlots[i] = null;
+          game.player.recalcTW?.(game.fuel, game.totalCargoUsed);
           this._render();
         });
       } else {
@@ -339,7 +452,8 @@ export class ShipScreen {
     // Scrap (always first, under 'all' or 'commodities')
     if (game.scrap > 0 && (this._cargoFilter === 'all' || this._cargoFilter === 'commodities')) {
       const scrapUnits = Math.floor(game.scrap / 20);
-      this._addCargoItem(list, 'SCRAP', `${game.scrap} (${scrapUnits}u)`, 'scrap');
+      this._addCargoItem(list, 'SCRAP', `${game.scrap} (${scrapUnits}u)`, 'scrap',
+        () => this._jettison('scrap'));
       hasItems = true;
     }
 
@@ -347,7 +461,8 @@ export class ShipScreen {
     if (this._cargoFilter === 'all' || this._cargoFilter === 'commodities') {
       for (const [key, amt] of Object.entries(game.cargo)) {
         if (amt > 0) {
-          this._addCargoItem(list, key.toUpperCase(), `${amt}`, '');
+          this._addCargoItem(list, key.toUpperCase(), `${amt}`, '',
+            () => this._jettison('commodity', key));
           hasItems = true;
         }
       }
@@ -382,9 +497,14 @@ export class ShipScreen {
         }
         item.appendChild(right);
 
+        // Jettison button
+        const jBtn = this._makeJettisonBtn(() => this._jettison('module', mi));
+        item.appendChild(jBtn);
+
         this._attachModuleTooltip(item, m);
         if (hasEmptySlot) {
-          item.addEventListener('click', () => {
+          item.addEventListener('click', (e) => {
+            if (/** @type {HTMLElement} */ (e.target).closest('.ship-cargo-jettison')) return;
             this._hideTooltip();
             this._selectedCargoModIdx = isSelected ? null : mi;
             this._render();
@@ -397,9 +517,11 @@ export class ShipScreen {
 
     // Weapons in cargo
     if ((this._cargoFilter === 'all' || this._cargoFilter === 'modules') && game.weapons?.length > 0) {
-      for (const wep of game.weapons) {
+      for (let wi = 0; wi < game.weapons.length; wi++) {
+        const wep = game.weapons[wi];
         const wepItem = this._addCargoItem(list, wep.displayName || wep.constructor.name,
-          wep.isSecondary ? 'SEC' : 'PRI', 'weapon');
+          wep.isSecondary ? 'SEC' : 'PRI', 'weapon',
+          () => this._jettison('weapon', wi));
         this._attachWeaponTooltip(wepItem, wep);
         hasItems = true;
       }
@@ -409,7 +531,8 @@ export class ShipScreen {
     if ((this._cargoFilter === 'all' || this._cargoFilter === 'ammo') && game.ammo) {
       for (const [type, amt] of Object.entries(game.ammo)) {
         if (amt > 0) {
-          this._addCargoItem(list, type.toUpperCase(), `${amt}`, 'ammo');
+          this._addCargoItem(list, type.toUpperCase(), `${amt}`, 'ammo',
+            () => this._jettison('ammo', type));
           hasItems = true;
         }
       }
@@ -426,7 +549,7 @@ export class ShipScreen {
     return section;
   }
 
-  _addCargoItem(list, name, value, type) {
+  _addCargoItem(list, name, value, type, onJettison) {
     const item = document.createElement('div');
     item.className = 'ship-cargo-item';
 
@@ -437,13 +560,35 @@ export class ShipScreen {
     nameEl.textContent = glyph + name;
     item.appendChild(nameEl);
 
+    const right = document.createElement('span');
+    right.className = 'ship-cargo-item-right';
+
     const valEl = document.createElement('span');
     valEl.className = 'ship-cargo-item-value';
     valEl.textContent = value;
-    item.appendChild(valEl);
+    right.appendChild(valEl);
+
+    if (onJettison) {
+      right.appendChild(this._makeJettisonBtn(onJettison));
+    }
+
+    item.appendChild(right);
 
     list.appendChild(item);
     return item;
+  }
+
+  _makeJettisonBtn(onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'ship-cargo-jettison';
+    btn.textContent = 'JETTISON';
+    btn.title = 'Eject from cargo bay';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._hideTooltip();
+      onClick();
+    });
+    return btn;
   }
 
   _updateInstallProgress() {
@@ -517,9 +662,9 @@ export class ShipScreen {
     if (effOut > 0) rows.push({ label: 'POWER', value: `+${effOut}W`, cls: 'green' });
     if (mod.powerDraw > 0) rows.push({ label: 'DRAW', value: `-${mod.powerDraw}W`, cls: 'amber' });
     if (mod.fuelDrainRate > 0) rows.push({ label: 'FUEL DRAIN', value: `${mod.fuelDrainRate.toFixed(3)}/s`, cls: 'amber' });
-    if (mod.speedMult) rows.push({ label: 'SPEED', value: `×${mod.speedMult.toFixed(2)}`, cls: '' });
-    if (mod.accelMult) rows.push({ label: 'ACCEL', value: `×${mod.accelMult.toFixed(2)}`, cls: '' });
-    if (mod.fuelEffMult) rows.push({ label: 'FUEL EFF', value: `×${mod.fuelEffMult.toFixed(2)}`, cls: '' });
+    if (mod.thrust) rows.push({ label: 'THRUST', value: `${mod.thrust}`, cls: 'green' });
+    if (mod.weight) rows.push({ label: 'WEIGHT', value: `${mod.weight}`, cls: '' });
+    if (mod.fuelEffMult && mod.fuelEffMult !== 1.0) rows.push({ label: 'FUEL EFF', value: `×${mod.fuelEffMult.toFixed(2)}`, cls: '' });
     if (mod.isFissionReactor) {
       const interval = mod._overhaulInterval || 0;
       const elapsed = mod.timeSinceOverhaul || 0;

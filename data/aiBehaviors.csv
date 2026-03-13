@@ -1,0 +1,8 @@
+id,combatBehavior,passiveBehavior,aggroRange,deaggroRange,fireRange,orbitRadius,kiteRange,standoffRange,standoffFireRange,patrolRadius,fleeHullRatio,aftDistance,aimTolerance,orbitHoldThreshold,lurkerScanRange,lurkerHideRadius,travelThrottle,approachThrottle,arriveRadius,slowRadius,waitMin,waitMax
+stalker,stalker,,1400,2000,800,550,,,,300,0.3,300,0.4,80,,,,,,,,
+kiter,kiter,,1400,2000,800,,750,,,300,0.3,,,80,,,,,,,,
+standoff,standoff,,1400,2000,,,,1200,1400,300,0.3,,,,,,,,,,,,
+latch,latch,,1800,2400,,,,,,200,0,,,,,,,,,,,,
+lurker,lurker,,1400,2000,,,,,1400,,0.3,,,,700,150,,,,,,
+trader,flee,trader,0,,,,,,,,0.3,,,,,,3,1,120,400,5,8
+militia,stalker,militia,0,2000,800,550,,,,300,0.3,300,0.4,80,,,,,,,,

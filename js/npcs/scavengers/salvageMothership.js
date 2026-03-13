@@ -1,6 +1,6 @@
-import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
-import { CannonModule, RocketPodModule } from '../../modules/shipModule.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
+import { GarrisonFrigate } from '@/ships/classes/garrisonFrigate.js';
+import { CannonModule, RocketPodModule, OnyxDriveUnit } from '@/modules/shipModule.js';
+import { AI_TEMPLATES } from '@data/compiledData.js';
 
 const SPEED_MULT = 0.6;   // ~50 u/s — slow, hangs back
 const ACCEL_MULT = 0.6;
@@ -35,7 +35,7 @@ export class SalvageMothership extends GarrisonFrigate {
       hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
 
-    this.moduleSlots = [new CannonModule(), new RocketPodModule('large', 'heat'), null, null];
+    this.moduleSlots = [new OnyxDriveUnit(), new CannonModule(), new RocketPodModule('large', 'heat'), null, null];
     this._applyModules();
   }
 }

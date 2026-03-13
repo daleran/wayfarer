@@ -1,4 +1,4 @@
-import { GREEN, RED, RANGE_CIRCLE, AMBER, VERY_DIM, CYAN, WHITE, STARFIELD_TINT_WHITE, BG_CLEAR, BEAM_GLOW_OUTER, BEAM_GLOW_MID } from './rendering/colors.js';
+import { GREEN, RED, RANGE_CIRCLE, AMBER, VERY_DIM, CYAN, WHITE, STARFIELD_TINT_WHITE, BG_CLEAR, BEAM_GLOW_OUTER, BEAM_GLOW_MID, conditionColor } from './rendering/colors.js';
 import { PROMPT } from './rendering/draw.js';
 import { input } from './input.js';
 
@@ -60,11 +60,17 @@ export class Renderer {
     this._renderStarfield(camera);
     this._renderBackground(camera);
     this._renderEntities(entities, camera);
+    if (game.isDocked && game.stationScreen?.visible) {
+      game.stationScreen.renderWorldLabels(ctx, camera);
+    }
     this._renderTacticalUI(game, camera);
     this._renderWeaponRangeCircle(game, camera);
     this._renderBeams(game, camera);
     game.particlePool.render(ctx, camera);
     game.hud.render(ctx, game);
+
+    // Combat mode border
+    if (game.combatMode) this._renderCombatBorder(camera);
 
     // Flank speed warning — pulsing amber edge glow
     if (game.player && game.player.throttleLevel === 5) {
@@ -101,6 +107,15 @@ export class Renderer {
 
     if (player.capabilities.lead_indicators) {
       this._renderLeadIndicators(game, camera);
+    }
+
+    const caps = player.capabilities;
+    if (caps.enemy_telemetry || caps.module_inspection) {
+      const target = this._findMouseTarget(hostiles, camera);
+      if (target) {
+        if (caps.enemy_telemetry)   this._renderEnemyTelemetry(target, camera);
+        if (caps.module_inspection) this._renderModuleInspection(target, camera);
+      }
     }
   }
 
@@ -140,6 +155,9 @@ export class Renderer {
     const weapon = primaries[player.primaryWeaponIdx];
     if (!weapon || !weapon.projectileSpeed) return;
 
+    const showTrajectory = player.capabilities.trajectory_line;
+    const playerScreen = showTrajectory ? camera.worldToScreen(player.x, player.y) : null;
+
     ctx.save();
     ctx.strokeStyle = AMBER;
     ctx.lineWidth = 1;
@@ -160,9 +178,87 @@ export class Renderer {
       const leadY = r.y + tvy * travelTime;
 
       const screen = camera.worldToScreen(leadX, leadY);
+
+      // Trajectory line from player to lead point
+      if (showTrajectory) {
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(playerScreen.x, playerScreen.y);
+        ctx.lineTo(screen.x, screen.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
       ctx.beginPath();
       ctx.arc(screen.x, screen.y, 4 * camera.zoom, 0, Math.PI * 2);
       ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  _findMouseTarget(hostiles, camera) {
+    let best = null;
+    let bestDist = 200; // max pixel distance to consider
+    const mx = input.mouseScreen.x;
+    const my = input.mouseScreen.y;
+    for (const r of hostiles) {
+      if (!r.active) continue;
+      const bounds = r.getBounds();
+      if (!camera.isVisible(bounds.x, bounds.y, bounds.radius)) continue;
+      const s = camera.worldToScreen(r.x, r.y);
+      const dx = s.x - mx;
+      const dy = s.y - my;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestDist) { bestDist = d; best = r; }
+    }
+    return best;
+  }
+
+  _renderEnemyTelemetry(target, camera) {
+    const { ctx } = this;
+    const screen = camera.worldToScreen(target.x, target.y);
+    const bounds = target.getBounds();
+    const baseY = screen.y + bounds.radius * camera.zoom + 14 * camera.zoom;
+
+    // Speed (units/s)
+    const speed = Math.round(target.speed);
+    // Heading (compass degrees — 0=N, 90=E, 180=S, 270=W)
+    const headingRad = ((target.rotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const headingDeg = Math.round(headingRad * 180 / Math.PI);
+    // Hull %
+    const hullPct = Math.round((target.hullCurrent / target.hullMax) * 100);
+
+    ctx.save();
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = CYAN;
+    ctx.globalAlpha = 0.85;
+
+    ctx.fillText(`SPD ${speed}  HDG ${headingDeg}\u00B0  HULL ${hullPct}%`, screen.x, baseY);
+    ctx.restore();
+  }
+
+  _renderModuleInspection(target, camera) {
+    if (!target.moduleSlots || target.moduleSlots.length === 0) return;
+    const { ctx } = this;
+    const screen = camera.worldToScreen(target.x, target.y);
+    const bounds = target.getBounds();
+    // Position below telemetry line (or below ship if no telemetry)
+    const hasTelemAbove = target.speed !== undefined; // always true for ships
+    const baseY = screen.y + bounds.radius * camera.zoom + (hasTelemAbove ? 28 : 14) * camera.zoom;
+
+    ctx.save();
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.globalAlpha = 0.75;
+
+    for (let i = 0; i < target.moduleSlots.length; i++) {
+      const mod = target.moduleSlots[i];
+      if (!mod) continue;
+      ctx.fillStyle = conditionColor(mod.condition);
+      ctx.fillText(mod.displayName, screen.x, baseY + i * 13);
     }
     ctx.restore();
   }
@@ -172,7 +268,20 @@ export class Renderer {
     const mx = input.mouseScreen.x;
     const my = input.mouseScreen.y;
 
-    // Determine range status
+    // Standard mode: simple hollow circle cursor
+    if (!game.combatMode) {
+      ctx.save();
+      ctx.strokeStyle = CYAN;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.arc(mx, my, 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
+    // Combat mode: full crosshair with range check
     let inRange = true;
     const player = game.player;
     if (player && player.active) {
@@ -447,6 +556,47 @@ export class Renderer {
         ctx.restore();
       }
     }
+  }
+
+  _renderCombatBorder(camera) {
+    const { ctx } = this;
+    const w = camera.width;
+    const h = camera.height;
+    const inset = 8;
+    const armLen = 40;
+
+    ctx.save();
+    ctx.strokeStyle = RED;
+    ctx.globalAlpha = 0.85;
+
+    // Solid inset frame
+    ctx.lineWidth = 2;
+    ctx.strokeRect(inset, inset, w - inset * 2, h - inset * 2);
+
+    // L-shaped corner brackets (drawn over the frame, thicker)
+    ctx.lineWidth = 3;
+    const corners = [
+      [inset, inset, 1, 1],
+      [w - inset, inset, -1, 1],
+      [inset, h - inset, 1, -1],
+      [w - inset, h - inset, -1, -1],
+    ];
+    for (const [cx, cy, dx, dy] of corners) {
+      ctx.beginPath();
+      ctx.moveTo(cx + dx * armLen, cy);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(cx, cy + dy * armLen);
+      ctx.stroke();
+    }
+
+    // [COMBAT MODE] text top-center
+    ctx.font = PROMPT.font;
+    ctx.fillStyle = RED;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('[COMBAT MODE]', w / 2, inset + 8);
+
+    ctx.restore();
   }
 
   _renderEntities(entities, camera) {

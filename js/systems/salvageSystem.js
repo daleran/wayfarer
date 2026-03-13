@@ -1,7 +1,7 @@
-import { createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from '../entities/lootDrop.js';
-import { createModuleById } from '../modules/registry.js';
-import { createWeaponById } from '../modules/weapons/registry.js';
-import { CONDITION_DISTRIBUTIONS } from '../data/lootTables.js';
+import { createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from '@/entities/lootDrop.js';
+import { createModuleById } from '@/modules/registry.js';
+import { createWeaponById } from '@/modules/weapons/registry.js';
+import { CONDITION_DISTRIBUTIONS } from '@/data/lootTables.js';
 
 export class SalvageSystem {
   constructor() {

@@ -1,10 +1,10 @@
 // The Coil — lawless hub station.
 // Renderer (CoilStation) + data + layout + instantiate(), all in one place.
 
-import { Station } from '../../../station.js';
-import { AMBER, RED, GREEN } from '../../../../rendering/colors.js';
-import { line, disc, ring, text, Shape } from '../../../../rendering/draw.js';
-import { TITLE, SUBTITLE } from '../../../../rendering/draw.js';
+import { Station } from '@/world/station.js';
+import { AMBER, RED, GREEN } from '@/rendering/colors.js';
+import { line, disc, ring, text, Shape } from '@/rendering/draw.js';
+import { TITLE, SUBTITLE } from '@/rendering/draw.js';
 
 // ── CoilStation renderer ────────────────────────────────────────────────────
 
@@ -969,6 +969,7 @@ const LAYOUT = {
       label: 'The Dock',
       description: 'Berths, fuel lines, docking fees. Ships crammed into every slot.',
       services: ['repair'],
+      worldOffset: { x: -75, y: 0 },
       flavor: [
         'Rust-stained gantries.',
         'Ships jammed into every berth.',
@@ -985,6 +986,7 @@ const LAYOUT = {
       label: 'Salvage Yard',
       description: 'Hulk trade, salvaged modules, kill contracts.',
       services: ['trade', 'bounties'],
+      worldOffset: { x: -510, y: 0 },
       flavor: [
         'Hulks arrive in pieces.',
         'They leave the same way,',
@@ -1001,6 +1003,7 @@ const LAYOUT = {
       label: 'Central Market',
       description: 'Black-market goods, fenced salvage, archive contraband.',
       services: ['trade', 'intel'],
+      worldOffset: { x: -1500, y: 0 },
       flavor: [
         'Black-market goods.',
         'Fenced salvage.',
@@ -1017,6 +1020,7 @@ const LAYOUT = {
       label: 'The Palace',
       description: 'Salvage Lord court. Elite trade and faction relations.',
       services: ['trade', 'relations'],
+      worldOffset: { x: 900, y: 0 },
       requiredStanding: 'Trusted',
       requiredFaction: 'scavengers',
       flavor: [
@@ -1036,6 +1040,7 @@ const LAYOUT = {
       label: 'The Slums',
       description: 'The informal quarter. Rumors, gossip, and loose intelligence.',
       services: ['intel'],
+      worldOffset: { x: -1050, y: 0 },
       flavor: [
         'The harbor interior.',
         'People without status',

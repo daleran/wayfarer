@@ -1,7 +1,7 @@
 // Wall of Wrecks — diagonal debris belt creating 2 trade lane chokepoints.
 // Belt runs NW→SE across the mid-zone.
 
-import { createDebrisCloud } from '../../debrisCloud.js';
+import { createDebrisCloud } from '@/world/debrisCloud.js';
 
 const CLUSTERS = [
   { x: 5200,  y: 2800, spreadRadius: 700, fragmentCount: 45 },

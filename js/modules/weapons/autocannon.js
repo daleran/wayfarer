@@ -1,10 +1,10 @@
-import { Projectile } from '../../entities/projectile.js';
-import { AMBER, AUTOCANNON_GLOW } from '../../rendering/colors.js';
+import { Projectile } from '@/entities/projectile.js';
+import { AMBER, AUTOCANNON_GLOW } from '@/rendering/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          AUTOCANNON_MAG_SIZE, AUTOCANNON_RELOAD_TIME,
-         HE_AUTOCANNON_BLAST } from '../../data/tuning/weaponTuning.js';
-import { normalizeToTarget } from '../../utils/math.js';
+         HE_AUTOCANNON_BLAST } from '@data/compiledData.js';
+import { normalizeToTarget } from '@/utils/math.js';
 
 const DAMAGE_MULT  = 1.0;
 const RANGE_MULT   = 1.0;

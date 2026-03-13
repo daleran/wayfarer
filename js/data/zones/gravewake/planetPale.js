@@ -1,8 +1,8 @@
 // Planet Pale — background celestial body (not an interactive entity).
 // Renders as a CRT-style topographic sphere with contour lines.
 
-import { PALE_ICE, PALE_HAZE } from '../../../rendering/colors.js';
-import { TITLE, FONT } from '../../../rendering/draw.js';
+import { PALE_ICE, PALE_HAZE } from '@/rendering/colors.js';
+import { TITLE, FONT } from '@/rendering/draw.js';
 
 // Terrain contour shapes — normalized coords (r=1), closed polygon per entry.
 // Designed to read as topographic ice-surface scan data (Nostromo-style CRT aesthetic).

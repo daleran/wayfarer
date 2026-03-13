@@ -56,21 +56,21 @@ FIX:   import { RED } from '../rendering/colors.js'; ... ctx.strokeStyle = RED;
        (If no matching color exists, add one to js/rendering/colors.js first)
 ```
 
-### 3. Stats defined outside tuning files
+### 3. Stats defined outside compiled data
 
-**The rule:** `BASE_*` constants live only in `js/data/tuning/`. No other file should define a constant named `BASE_*`.
+**The rule:** `BASE_*` constants live only in `data/compiledData.js` (generated from `data/*.csv` by `scripts/compile-data.js`). No other file should define a constant named `BASE_*`.
 
-The tuning files are:
-- `js/data/tuning/shipTuning.js` — movement, health, fuel
-- `js/data/tuning/weaponTuning.js` — damage, range, fire rate, ammo
-- `js/data/tuning/aiTuning.js` — AI behavior templates
-- `js/data/tuning/moduleTuning.js` — module stats
-- `js/data/tuning/economyTuning.js` — economy stats
+The source CSVs are:
+- `data/shipBase.csv` — movement, health, fuel
+- `data/weaponBase.csv` — damage, range, fire rate, ammo
+- `data/aiBehaviors.csv` — AI behavior templates
+- `data/moduleEngines.csv`, `data/moduleReactors.csv`, `data/moduleSensors.csv`, `data/moduleWeapons.csv` — module stats
+- `data/economy.csv` — economy stats
 
-**Files to scan:** All `js/**/*.js` except `js/data/tuning/*.js`
+**Files to scan:** All `js/**/*.js`
 
 **What to flag:**
-- Any `const BASE_` declaration outside `js/data/tuning/`
+- Any `const BASE_` declaration in `js/**/*.js`
 
 ## Audit Output Format
 
@@ -99,7 +99,7 @@ If no violations are found, say so clearly.
 Ask the user: "Which violations would you like me to fix?" Then fix only the ones they confirm.
 
 When fixing a stat violation:
-1. Check `js/data/tuning/` for the appropriate `BASE_*` constant (shipTuning.js, weaponTuning.js, moduleTuning.js, etc.)
+1. Check `data/compiledData.js` for the appropriate `BASE_*` constant (from shipBase.csv, weaponBase.csv, etc.)
 2. Add a `MULT` constant at the top of the file
 3. Replace the raw number with `BASE_X * MULT` (plus `* SPEED_FACTOR` for movement stats)
 4. Do not change any other code in the file

@@ -1,7 +1,7 @@
-import { Projectile } from '../../entities/projectile.js';
+import { Projectile } from '@/entities/projectile.js';
 
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../../data/tuning/weaponTuning.js';
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '@data/compiledData.js';
 
 const VARIANTS = {
   small: { DAMAGE_MULT: 1.47, HULL_MULT: 8.0,  COOLDOWN_MULT: 1.0, RANGE_MULT: 0.27 },

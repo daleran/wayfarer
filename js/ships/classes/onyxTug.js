@@ -1,11 +1,12 @@
-import { Ship } from '../../entities/ship.js';
-import { engineGlow, lines } from '../../rendering/draw.js';
+import { Ship } from '@/entities/ship.js';
+import { engineGlow, lines } from '@/rendering/draw.js';
 
-const SPEED_MULT = 0.55;  // ~46 u/s — very slow
-const ACCEL_MULT = 0.65;  // ~7 u/s²
-const TURN_MULT  = 0.65;  // ~0.43 rad/s — sluggish
-const HULL_MULT  = 1.8;   // 360 hp — heavy frame
-const CARGO_MULT = 2.5;   // 125 units
+const SPEED_MULT  = 0.55;  // ~46 u/s — very slow
+const ACCEL_MULT  = 0.65;  // ~7 u/s²
+const TURN_MULT   = 0.65;  // ~0.43 rad/s — sluggish
+const HULL_MULT   = 1.8;   // 360 hp — heavy frame
+const WEIGHT_MULT = 1.2;   // 1200 mass — heavy tug frame
+const CARGO_MULT  = 2.5;   // 125 units
 
 // Armor arc multipliers (× BASE_ARMOR = 100)
 const ARMOR_FRONT = 2.0;  // 200 — reinforced prow
@@ -85,7 +86,7 @@ export class OnyxClassTug extends Ship {
 
     this._initStats({
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
-      hull: HULL_MULT, cargo: CARGO_MULT,
+      hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,
       fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
       armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });

@@ -19,9 +19,9 @@ Ask the user (or infer from their description) for:
 ## Step 2 — Check tuning constants
 
 If the module has numeric stats that should be globally tunable:
-1. Read `js/data/tuning/moduleTuning.js`
-2. Add new constants there (follow the naming pattern: `MODULE_<TYPE>_<STAT>`)
-3. Import them in the module file
+1. Add a row to the appropriate CSV in `data/` (e.g. `moduleEngines.csv`, `moduleReactors.csv`, `moduleSensors.csv`, `moduleWeapons.csv`)
+2. Run `npm run compile-data` to regenerate `data/compiledData.js`
+3. Import the relevant table from `@data/compiledData.js` (e.g. `ENGINES`, `REACTORS`, `SENSORS`, `WEAPONS`)
 
 If it's a simple module with fixed values, inline constants are acceptable.
 
@@ -69,9 +69,9 @@ export class <ClassName> extends EngineModule {
     this.name          = '<kebab-id>';
     this.displayName   = '<DISPLAY NAME>';
     this.description   = '<One sentence description.>';
-    this.speedMult     = MODULE_<TYPE>_SPEED_MULT;
-    this.accelMult     = MODULE_<TYPE>_ACCEL_MULT;
-    this.fuelEffMult   = MODULE_<TYPE>_FUEL_EFF_MULT;
+    this.weight        = MODULE_WEIGHT_<TYPE>;
+    this.thrust        = ENGINE_<TYPE>_THRUST;
+    this.fuelEffMult   = ENGINE_<TYPE>_FUEL_EFF_MULT;
     this.fuelDrainRate = MODULE_<TYPE>_FUEL_DRAIN; // if applicable
     this.powerDraw     = MODULE_<TYPE>_POWER_DRAW;
   }

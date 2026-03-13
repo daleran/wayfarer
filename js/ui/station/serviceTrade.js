@@ -1,4 +1,4 @@
-import { COMMODITIES, getBuyPrice, getSellPrice } from '../../data/commodities.js';
+import { COMMODITIES, getBuyPrice, getSellPrice } from '@/data/commodities.js';
 
 export function buildTradePanel(container, station, game) {
   container.innerHTML = '';

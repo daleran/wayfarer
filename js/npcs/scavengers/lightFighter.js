@@ -1,6 +1,6 @@
-import { MaverickCourier } from '../../ships/classes/maverickCourier.js';
-import { AutocannonModule } from '../../modules/shipModule.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
+import { MaverickCourier } from '@/ships/classes/maverickCourier.js';
+import { AutocannonModule, OnyxDriveUnit } from '@/modules/shipModule.js';
+import { AI_TEMPLATES } from '@data/compiledData.js';
 
 const SPEED_MULT = 1.55;  // ~130 u/s — fast; slightly slower than base runner for balance
 const ACCEL_MULT = 1.4;
@@ -34,7 +34,7 @@ export class LightFighter extends MaverickCourier {
       hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
 
-    this.moduleSlots = [new AutocannonModule(), null];
+    this.moduleSlots = [new OnyxDriveUnit(), new AutocannonModule(), null];
     this._applyModules();
   }
 }

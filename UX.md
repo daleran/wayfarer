@@ -73,6 +73,25 @@ The entire game screen should feel like a **vector monitor mounted in a 1970s-80
 | Minimap border | Cyan, dim | `#00ffcc` at 40% alpha |
 | Background | Black, translucent | `rgba(0, 4, 8, 0.8)` |
 
+### Map View & Navigation
+
+Full-screen canvas overlay opened with **M**. Own world→screen transform independent of game camera.
+
+| Element | Color | Hex |
+|---|---|---|
+| Map background | Near-black | `rgba(0,4,8,0.92)` |
+| Zone border circles | Dim cyan | `rgba(0,255,204,0.15)` |
+| Waypoint marker | Amber | `#ffaa00` |
+| Course line (dotted) | Amber | `#ffaa00` at 60% |
+| Fuel range circle (dashed) | Amber | `rgba(255,170,0,0.25)` |
+| Station icons | Faction-colored diamond | per `FACTION` map |
+| Player marker | Green triangle | `#00ff66` |
+| Bounty targets | Pulsing red diamond | `#ff4444` |
+
+Nav indicator (in-flight, waypoint set): amber chevron at screen edge with distance text.
+
+Below minimap: zone name (dim text), waypoint destination + distance + ETA (amber).
+
 ### Module Condition Colors
 Used in Ship Screen slot badges, cargo pill badges, and tooltip CONDITION/MULT rows. Helper: `conditionColor(condition)` from `colors.js`.
 
@@ -261,7 +280,11 @@ The HUD has three zones: **ship-anchored UI** (canvas, follows ship), **bottom s
 
 **Contextual prompts:** Centered horizontally at ~62% screen height. Dock/salvage/repair prompts appear here, pulsing slightly.
 
-**Crosshair cursor:** Custom canvas crosshair replaces the OS cursor (`cursor: none` on canvas). Four short arms with a center dot. Green when mouse is within active primary weapon range; red when out of range. Small "OUT OF RANGE" label appears below the crosshair when red.
+**Crosshair cursor:** Custom canvas crosshair replaces the OS cursor (`cursor: none` on canvas). Two modes based on combat state:
+- **Standard mode** (default): Cyan hollow circle (r=6, stroke 1.5px, 75% alpha). No range feedback.
+- **Combat mode** (F key toggle): Four short arms with a center dot. Green when within weapon range; red with "OUT OF RANGE" label when beyond range.
+
+**Combat mode border:** When combat mode is active, a solid 2px red frame is drawn inset 8px from the screen edges. Thicker 3px L-shaped corner brackets (40px arms) overlay the corners. `[COMBAT MODE]` text centered at the top.
 
 **Ship health via ship rendering:** The player ship's hull fill color indicates overall hull health — green (>75%), yellow-green (>50%), orange (>25%), red (critical). The hull outline is split into 4 arc segments (front, starboard, aft, port) each colored by that arc's armor health via `armorArcColor(ratio)`. This applies to **all ships when `relation === 'player'`** — directional damage is readable by looking at the ship itself.
 
@@ -408,7 +431,7 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 ### 2026-03-11: UI Overhaul — Panels Replace Overlays (CA/CB/CC)
 - **Decision:** Three-part UI overhaul: (1) Station screen from full-screen overlay to 30% right-side DOM panel, (2) Ship screen from canvas overlay to 30% left-side DOM panel, (3) Bottom HUD strip from canvas to DOM fixed bar.
 - **Station panel (CB):** `#location-overlay` positioned `right:0; width:30%; height:calc(100vh-48px)`. Camera centers on station. Zone sidebar stacks below SVG. Service buttons become horizontal tab row. World remains visible in the remaining 70%.
-- **Ship panel (CA):** `#ship-panel` positioned `left:0; width:30%; height:calc(100vh-48px)`. Four sections: header, 2-column stat grid, module slots (numbered, click-to-remove/install), scrollable cargo with filter buttons. `stopPropagation` on mouse events prevents canvas weapon fire.
+- **Ship panel (CA):** `#ship-panel` positioned `left:0; width:30%; height:calc(100vh-48px)`. Five sections: header, 2-column stat grid, **MASS & THRUST** section (weight breakdown, thrust, T/W ratio with percentage, derived accel/speed/turn), module slots (numbered, click-to-remove/install), scrollable cargo with filter buttons. `stopPropagation` on mouse events prevents canvas weapon fire. T/W percentage color-coded: green ≥100%, default ≥80%, amber ≥60%, red <60%.
 - **Bottom HUD (CA):** `#hud-bottom` fixed 48px bar at bottom. Single row: ARMOR pips, HULL bar, FUEL bar, PWR readout, CARGO bar, SCRAP count. DOM elements updated each frame via `_updateBottomStrip()`.
 - **Docked with ship screen:** Left 30% (ship) + right 30% (station) + middle 40% (world).
 - **Station renderers (CC):** AshveilStation custom renderer (~200px colony ship hull, 10 rectangular sections, docked ships, running lights, approach beam). Kell's Stop unchanged (~120px). The Coil unchanged (~300px).

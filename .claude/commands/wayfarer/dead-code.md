@@ -62,7 +62,7 @@ UNUSED IMPORT: AMBER from '../../rendering/colors.js'
 
 **Report format:**
 ```
-FILE: js/world/zones/gravewake/theCoil/index.js
+FILE: js/data/zones/gravewake/theCoil.js
 OBJECT: LAYOUT
 FIELD: svg (line 55)
 READ BY: (none)
@@ -135,7 +135,7 @@ Group findings by category:
   js/old/legacy.js — not imported anywhere
 
 [Stale Data Fields]
-  js/world/zones/.../index.js — LAYOUT.svg never read
+  js/data/zones/.../theCoil.js — LAYOUT.svg never read
 
 [Unreferenced CSS]
   css/station.css — .zone-hotspot never referenced

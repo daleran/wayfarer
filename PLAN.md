@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CF**
+**Next available code: CK**
 
 ---
 
@@ -11,7 +11,7 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | Code | Title | Category |
 |---|---|---|
 | AN | Utility Modules | Modules / Equipment |
-| AO | Dynamic Thrust-to-Weight System | Ship Systems |
+| ~~AO~~ | ~~Dynamic Thrust-to-Weight System~~ | ~~Ship Systems~~ *(shipped)* |
 | AP | Tribute & Favor System | Economy |
 | AR | Black Market & Under-Barter | Economy |
 | AS | Gravewake Zone Features & The Coil | World / Map |
@@ -19,7 +19,7 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | AX | Named Bosses | AI / Enemies |
 | BA | Story Threads & Trigger System | Narrative |
 | BB | Mission & Bounty Board | Gameplay |
-| BC | Full Map View & Navigation | UI |
+| ~~BC~~ | ~~Full Map View & Navigation~~ | ~~UI~~ (shipped) |
 | BD | Procedural Audio | Audio |
 | BE | Named NPC Ships & Persistent World Characters | AI / World |
 | BF | Cloud Save System | Platform |
@@ -37,10 +37,11 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BV | Rogue Salvage Lord Fleet | AI / Enemies |
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
-| BY | Expanded Debug Overlay | Dev Tools |
 | BZ | Systemic Narrative Engine | Narrative |
 | CD | Station Interaction Overhaul | UI / Gameplay |
 | CE | Visual Module System | Ship Systems / Modules |
+| ~~CI~~ | ~~Derelicts-as-Ships Unification~~ | ~~Code Architecture~~ *(shipped)* |
+| ~~CJ~~ | ~~CSV-Based Tuning Data~~ | ~~Code Architecture~~ *(shipped)* |
 
 ---
 
@@ -212,31 +213,6 @@ A single massive, heavily armored capital ship belonging to the Monastic Order o
 
 ## Ship Systems
 
-### AO: Dynamic Thrust-to-Weight System
-
-Ship performance is a direct result of the calculated ratio between total **Thrust** (provided by installed Engine modules) and total dynamic **Weight** (hull + modules + cargo + fuel). Performance variables are independently calculated outcomes — not simple flat penalties.
-
-**Weight composition (cumulative):**
-- Base hull weight
-- Weight of all installed modules (armor plating, reactors, utility slots, etc.)
-- Current cargo weight
-- Current fuel level
-
-**Performance variables (all independently derived from thrust-to-weight ratio):**
-- `Acceleration` — how quickly the ship reaches top speed; most sensitive to weight changes
-- `Top Speed` — maximum achievable velocity; less sensitive than acceleration
-- `Turn Radius` — rotational agility; can be selectively improved with specialized maneuvering thrusters even on a heavy hull
-
-**Strategic implications:**
-- Installing extra armor consumes a slot and raises weight, hurting acceleration and top speed — but high-efficiency Engine modules (acquirable via high Faction Favor, e.g. at Kell's Stop) can compensate, enabling specialized heavy-but-maneuverable builds
-- The Stripped Weight utility module (AN) removes non-essentials to shed mass at the cost of armor and fuel cap — pairs with powerful engines for a fragile but extremely fast configuration
-- A heavy freighter can have poor acceleration and top speed but retain a reasonable turn radius via maneuvering thruster specialization, creating distinct ship archetypes
-- Cargo and fuel loads shift performance dynamically mid-flight — a full hold flies differently than an empty one
-
-This framework ties module choice, inventory management, and exploration directly into combat viability.
-
----
-
 ### BM: Crew System — Named Crew, Health & Performance
 
 Ships are operated by small, named crews — 1 to 5 members depending on ship size. Not abstract officer roles; individual people with health that can be directly damaged.
@@ -375,26 +351,6 @@ In The Coil's Slums, the player can eventually purchase their own home — a con
 ---
 
 ## UI
-
-### BC: Full Map View & Navigation
-
-Toggle with M key. Shows the entire starmap zoomed out:
-- All discovered settlements, moons, and POIs as icons (undiscovered locations hidden)
-- Faction territory borders as colored overlay zones
-- Player position and heading indicator
-- Active mission / bounty markers
-- Known hidden route connections as dotted lines
-- In nebulae: map range reduced, staticky/noisy appearance
-- Near Concord ruins: phantom contacts, faint static
-
-**Course Plotting & Navigation:**
-- Click a destination on the map to set a course — draws a heading line and shows distance
-- HUD direction indicator and distance readout while navigating (visible in normal flight, not just map view)
-- Fuel range overlay: a circle or boundary showing how far the player can travel on the current tank
-- Minimap expands into the full system map (M key) rather than being a separate view — same data, zoomed out
-- Estimated travel time at current throttle
-
----
 
 ---
 
@@ -606,4 +562,85 @@ All ship modules are physically drawn on the ship hull. Ships define mount point
 
 ## Code Architecture
 
+### CI: Derelicts-as-Ships Unification
+
+Eliminate the standalone `Derelict` class. Every derelict in the world becomes a `Ship` instance — uncrewed, engines off, drifting. An uncrewed ship **is** a derelict. No separate entity type, no delegate pattern, no parallel code paths.
+
+**Core Principle:** A ship with no crew is a derelict. Any ship that loses its crew mid-combat becomes salvageable in place. Pre-placed "ancient" derelicts are just Ship instances spawned with zero crew and heavy condition degradation.
+
+**What Changes:**
+
+**1. Ship gets a crew flag**
+- Add `this.crew = 1` (alive) / `0` (derelict) to `Ship` base. Not the full BM crew system — just a binary alive/dead flag for now.
+- `ship.isDerelict` — computed getter: `this.crew === 0`
+- Derelict ships: `relation = 'derelict'`, `throttleLevel = 0`, AI skipped, no weapon fire, no fuel burn
+- Random rotation assigned at spawn (like current derelicts)
+
+**2. Derelict data moves onto Ship**
+- `ship.lootTable[]` — loot drops, same format as current `Derelict.lootTable`
+- `ship.salvageTime` — seconds to salvage (default 3)
+- `ship.salvaged` — flag, prevents re-salvage
+- `ship.loreText[]` — flavor text array (generated, see below)
+- `ship.interactionRadius` — approach distance for E-key prompt (120 units)
+- `ship.isNearby` / `ship.canSalvage` — interaction state (set by InteractionSystem)
+- `ship._loreAlpha` — proximity fade for flavor text
+
+**3. Ship renders derelict state natively**
+- When `isDerelict`: hull drawn at reduced alpha (0.55), spark particles emit periodically, lore text fades in on approach, "Press E / Stop to Salvage" prompt renders
+- No delegate ship needed — the ship already knows how to draw itself
+- Remove the green pulsing radar blip from minimap/mapView — derelicts show as grey ship icons (same shape, dimmed) using the existing ship icon rendering
+
+**4. Generated flavor text**
+- Each derelict ship gets auto-generated `loreText` describing how it was disabled or abandoned
+- Templates keyed by ship class and a random cause: "Hull breach amidships. Crew evacuation pods deployed.", "Reactor meltdown — containment failed.", "Scavenger ambush. No survivors.", "Fuel starvation. Drifting since [date].", "Concord interdiction. Registry wiped.", etc.
+- Named derelicts (Broken Covenant, Cold Remnant, etc.) keep their handwritten lore — the generator is for generic/procedural derelicts only
+
+**5. Zone files updated**
+- Each named derelict in `js/world/zones/gravewake/` becomes a Ship instantiation with `crew: 0` and its existing loot table / lore text
+- `createDerelict()` factory replaced by a helper like `createDerelictShip(shipClass, data)` that returns a properly configured Ship
+- Gravewake manifest spawns derelict-ships the same way it spawns NPC ships — via `createShip()` or a thin wrapper
+
+**6. InteractionSystem unified**
+- `updateDerelicts()` stops checking `instanceof Derelict` — instead filters `entity.isShip && entity.isDerelict && !entity.salvaged`
+- Same proximity/lore-fade/E-key logic, just operating on Ship instances
+- A ship killed mid-combat (crew → 0) immediately becomes interactive for salvage without any entity swap
+
+**7. SalvageSystem unchanged (mostly)**
+- `start(target)` / `update()` / `_complete()` work the same — target is now a Ship instead of a Derelict
+- `_rollCondition()` uses `target.shipType` or a new `target.derelictTier` instead of `target.derelictClass`
+- Loot table format stays identical
+
+**8. Minimap & Map View**
+- Remove `instanceof Derelict` checks and the green square icon
+- Derelict-ships render as dimmed grey ship markers (small triangle or dot) — same rendering path as other ships, just colored for `relation: 'derelict'`
+
+**9. Game.js cleanup**
+- Remove `import { Derelict }` and `_updateDerelictSparks()` — spark logic moves into Ship's own `update()` when `isDerelict`
+- Remove `instanceof Derelict` zone boundary check — use `entity.isShip` instead
+- `nearbyDerelict` accessor stays but now returns a Ship
+
+**Files to delete:**
+- `js/world/derelict.js` — entire file
+
+**Files to heavily modify:**
+- `js/entities/ship.js` — crew flag, derelict getters, loot/salvage fields, derelict rendering
+- `js/world/zones/gravewake/brokenCovenant.js` (and all 5 other derelict zone files) — rewrite as Ship instantiations
+- `js/world/zones/gravewake.js` — update spawn calls
+- `js/systems/interactionSystem.js` — replace Derelict type checks with Ship.isDerelict
+- `js/systems/salvageSystem.js` — minor type updates
+- `js/game.js` — remove Derelict import, spark method, instanceof checks
+- `js/hud/minimap.js` — remove Derelict import and green square rendering
+- `js/hud/mapView.js` — remove Derelict import and green square rendering
+- `js/data/maps/arena.js` — rewrite derelict spawns as Ship instances
+- `js/test/editor.js` — update derelict spawn controls
+- `js/test/designer.js` — update derelict category
+
+**Supersedes:** BN's "Derelicts Are Ships (Architecture)" section. BN's Salvage Bay and Engineering Bay concepts remain valid but are separate features.
+
 *(BI promoted and shipped)*
+
+---
+
+### ~~CJ: CSV-Based Tuning Data~~ *(shipped 2026-MAR-13)*
+
+Build-time compilation: CSVs in `data/` → `data/compiledData.js` via `node scripts/compile-data.js`. All 6 tuning JS files deleted, all imports point to `@data/compiledData.js`. No runtime CSV parsing, synchronous imports preserved.

@@ -14,8 +14,8 @@
 // After that, this function takes over combat behavior automatically.
 // =============================================================================
 
-import { angleDiff } from '../utils/math.js';
-import { BASE_PROJECTILE_SPEED, PROJECTILE_SPEED_FACTOR } from '../data/tuning/weaponTuning.js';
+import { angleDiff } from '@/utils/math.js';
+import { BASE_PROJECTILE_SPEED, PROJECTILE_SPEED_FACTOR } from '@data/compiledData.js';
 
 export function updateShipAI(ship, player, entities, dt) {
   const ai = ship.ai;

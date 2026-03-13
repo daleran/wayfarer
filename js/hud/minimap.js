@@ -1,13 +1,13 @@
-import { Station } from '../world/station.js';
-import { LootDrop } from '../entities/lootDrop.js';
-import { Derelict } from '../world/derelict.js';
+import { Station } from '@/world/station.js';
+import { LootDrop } from '@/entities/lootDrop.js';
 import {
   FACTION,
   MINIMAP_BG, MINIMAP_BORDER, MINIMAP_PLANET, MINIMAP_STATION,
   MINIMAP_ENEMY, MINIMAP_PLAYER,
   MINIMAP_LOOT, MINIMAP_DERELICT,
-} from '../rendering/colors.js';
-import { MINIMAP as MINIMAP_TEXT } from '../rendering/draw.js';
+  AMBER,
+} from '@/rendering/colors.js';
+import { MINIMAP as MINIMAP_TEXT, FONT } from '@/rendering/draw.js';
 
 const MM_MARGIN = 24;
 const MM_PANEL  = 225;
@@ -83,7 +83,7 @@ export function renderMinimap(ctx, game) {
     }
 
     for (const e of entities) {
-      if (!(e instanceof Derelict) || !e.active || e.salvaged) continue;
+      if (!e.isDerelict || !e.active || e.salvaged) continue;
       const mx = ox + e.x * SCALE;
       const my = oy + e.y * SCALE;
       ctx.strokeStyle = MINIMAP_DERELICT;
@@ -128,5 +128,64 @@ export function renderMinimap(ctx, game) {
   ctx.fill();
   ctx.restore();
 
+  // ── Waypoint marker on minimap ────────────────────────────────────────
+  const nav = game.navigation;
+  if (nav?.waypoint) {
+    const wmx = ox + nav.waypoint.x * SCALE;
+    const wmy = oy + nav.waypoint.y * SCALE;
+    ctx.fillStyle = AMBER;
+    ctx.beginPath();
+    ctx.moveTo(wmx - 3, wmy - 5);
+    ctx.lineTo(wmx + 3, wmy - 5);
+    ctx.lineTo(wmx, wmy);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   ctx.restore();
+
+  // ── Nav info below minimap ──────────────────────────────────────────────
+  let infoY = oy + MM_PANEL + 10;
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  // Current zone name
+  if (nav && game.mapZones) {
+    const zone = nav.currentZone(player.x, player.y, game.mapZones);
+    const zoneName = zone?.name ?? 'Tyr System';
+    ctx.font = `bold 12px ${FONT}`;
+    ctx.fillStyle = '#88aacc';
+    ctx.fillText(zoneName, ox, infoY);
+    infoY += 16;
+  }
+
+  // Waypoint destination + distance + ETA
+  if (nav?.waypoint) {
+    const dist = nav.distanceTo(player.x, player.y);
+    const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)}ku` : `${Math.round(dist)}u`;
+    const eta = nav.etaSeconds(player.x, player.y, player.speed);
+    const etaStr = eta < Infinity ? _formatEta(eta) : '';
+    const wpName = nav.waypoint.name || 'Waypoint';
+    ctx.font = `normal 12px ${FONT}`;
+    ctx.fillStyle = AMBER;
+    ctx.fillText(`\u25b6 ${wpName}  ${distStr}${etaStr ? '  ' + etaStr : ''}`, ox, infoY);
+    infoY += 16;
+  }
+
+  // Map hint
+  ctx.font = `normal 11px ${FONT}`;
+  ctx.fillStyle = '#88aacc';
+  ctx.globalAlpha = 0.7;
+  ctx.fillText('M \u2014 MAP', ox, infoY);
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+function _formatEta(seconds) {
+  if (seconds > 3600) return '';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `ETA ${m}:${s.toString().padStart(2, '0')}`;
 }

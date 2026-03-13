@@ -1,7 +1,8 @@
 // LocationOverlay — HTML overlay controller for station panel.
-// Two-level nav: area list → area detail (flavor + services).
+// Single-level nav: district bar → zone content (flavor + service tabs + service panel).
 
-import { FACTION, standingColor } from '../rendering/colors.js';
+import { FACTION, CYAN, VERY_DIM, standingColor } from '@/rendering/colors.js';
+import { text } from '@/rendering/draw.js';
 import { buildRepairPanel    } from './station/serviceRepair.js';
 import { buildTradePanel     } from './station/serviceTrade.js';
 import { buildBountiesPanel  } from './station/serviceBounties.js';
@@ -31,7 +32,6 @@ export class LocationOverlay {
   open(station, game) {
     this._station   = station;
     this._game      = game;
-    this._zoneId    = null;
     this._serviceId = null;
     this.visible    = true;
     this._el.classList.remove('hidden');
@@ -40,12 +40,19 @@ export class LocationOverlay {
       game.camera.pushZoom(2.75);
     }
 
+    // Auto-select first unlocked zone
+    const zones = this._getZones(station);
+    const first = zones.find(z => !this._isZoneLocked(z, station));
+    this._zoneId = first?.id ?? zones[0]?.id ?? null;
+
+    this._panToDistrict(zones.find(z => z.id === this._zoneId));
     this._render();
   }
 
   close() {
     if (this._game?.camera) {
       this._game.camera.popZoom();
+      this._game.camera.clearPan();
     }
     this.visible = false;
     this._el.classList.add('hidden');
@@ -62,9 +69,6 @@ export class LocationOverlay {
       if (this._serviceId !== null) {
         this._serviceId = null;
         this._render();
-      } else if (this._zoneId !== null) {
-        this._zoneId = null;
-        this._render();
       } else {
         this.close();
       }
@@ -77,83 +81,53 @@ export class LocationOverlay {
     this._el.innerHTML = '';
 
     const station = this._station;
-    if (this._zoneId) {
-      this._renderZoneView(station);
-    } else {
-      this._renderAreaList(station);
-    }
-  }
-
-  // ── Area list (top level) ─────────────────────────────────────────────────────
-
-  _renderAreaList(station) {
-    this._el.appendChild(this._buildHeader(station));
-
-    // Station flavor text
-    if (station.flavorText) {
-      const flavor = document.createElement('div');
-      flavor.className = 'loc-flavor';
-      const p = document.createElement('p');
-      p.textContent = station.flavorText;
-      flavor.appendChild(p);
-      this._el.appendChild(flavor);
-    }
-
-    // Area cards
-    const list = document.createElement('div');
-    list.className = 'loc-area-list';
-
-    const zones = this._getZones(station);
-    for (const zone of zones) {
-      list.appendChild(this._buildAreaCard(zone, station));
-    }
-
-    this._el.appendChild(list);
-  }
-
-  _buildAreaCard(zone, station) {
-    const locked = this._isZoneLocked(zone, station);
-
-    const card = document.createElement('div');
-    card.className = `loc-area-card${locked ? ' locked' : ''}`;
-
-    const name = document.createElement('div');
-    name.className = 'loc-area-card-name';
-    name.textContent = zone.label;
-    card.appendChild(name);
-
-    if (zone.description) {
-      const desc = document.createElement('div');
-      desc.className = 'loc-area-card-desc';
-      desc.textContent = zone.description;
-      card.appendChild(desc);
-    }
-
-    if (locked) {
-      const lockEl = document.createElement('div');
-      lockEl.className = 'loc-area-card-lock';
-      lockEl.textContent = `LOCKED — ${zone.requiredStanding?.toUpperCase() ?? 'HIGHER'} STANDING REQUIRED`;
-      card.appendChild(lockEl);
-    } else {
-      card.addEventListener('click', () => {
-        this._zoneId    = zone.id;
-        this._serviceId = null;
-        this._render();
-      });
-    }
-
-    return card;
-  }
-
-  // ── Zone detail view ──────────────────────────────────────────────────────────
-
-  _renderZoneView(station) {
     const zones = this._getZones(station);
     const zone  = zones.find(z => z.id === this._zoneId);
-    if (!zone) { this._zoneId = null; this._render(); return; }
 
-    this._el.appendChild(this._buildZoneHeader(station, zone));
+    // Header
+    this._el.appendChild(this._buildHeader(station));
 
+    // District bar
+    this._el.appendChild(this._buildDistrictBar(zones, station));
+
+    // Zone content (if a zone is selected)
+    if (zone) {
+      this._renderZoneContent(zone);
+    }
+  }
+
+  // ── District bar ────────────────────────────────────────────────────────────
+
+  _buildDistrictBar(zones, station) {
+    const bar = document.createElement('div');
+    bar.className = 'loc-district-bar';
+
+    for (const zone of zones) {
+      const locked = this._isZoneLocked(zone, station);
+      const btn = document.createElement('button');
+      btn.className = 'loc-district-btn';
+      if (zone.id === this._zoneId) btn.classList.add('active');
+      if (locked) btn.classList.add('locked');
+      btn.textContent = zone.label;
+
+      if (!locked) {
+        btn.addEventListener('click', () => {
+          this._zoneId    = zone.id;
+          this._serviceId = null;
+          this._panToDistrict(zone);
+          this._render();
+        });
+      }
+
+      bar.appendChild(btn);
+    }
+
+    return bar;
+  }
+
+  // ── Zone content (flavor + service tabs + service panel) ────────────────────
+
+  _renderZoneContent(zone) {
     // Flavor text
     if (zone.flavor?.length > 0) {
       const flavorDiv = document.createElement('div');
@@ -195,12 +169,56 @@ export class LocationOverlay {
     if (this._serviceId) {
       const content = document.createElement('div');
       content.className = 'loc-service-panel';
-      this._buildServiceContent(content, this._serviceId, station);
+      this._buildServiceContent(content, this._serviceId, this._station);
       this._el.appendChild(content);
     }
   }
 
-  // ── Headers ───────────────────────────────────────────────────────────────────
+  // ── Camera pan ──────────────────────────────────────────────────────────────
+
+  _panToDistrict(zone) {
+    if (!zone || !this._game?.camera || !this._station) return;
+    const ox = zone.worldOffset?.x ?? 0;
+    const oy = zone.worldOffset?.y ?? 0;
+    this._game.camera.panTo(this._station.x + ox, this._station.y + oy);
+  }
+
+  // ── World-space district labels ─────────────────────────────────────────────
+
+  renderWorldLabels(ctx, camera) {
+    if (!this._station) return;
+    const zones = this._getZones(this._station);
+
+    for (const zone of zones) {
+      const locked = this._isZoneLocked(zone, this._station);
+      if (locked) continue;
+
+      const ox = zone.worldOffset?.x ?? 0;
+      const oy = zone.worldOffset?.y ?? 0;
+      const wx = this._station.x + ox;
+      const wy = this._station.y + oy;
+      const screen = camera.worldToScreen(wx, wy);
+
+      const isActive = zone.id === this._zoneId;
+      const alpha = isActive ? 0.8 : 0.3;
+
+      text(ctx, zone.label.toUpperCase(), screen.x, screen.y, CYAN, {
+        size: 10, alpha,
+      });
+
+      // Active zone: show first non-empty flavor line below
+      if (isActive && zone.flavor?.length > 0) {
+        const flavorLine = zone.flavor.find(l => l !== '');
+        if (flavorLine) {
+          text(ctx, flavorLine, screen.x, screen.y + 14, VERY_DIM, {
+            size: 8, alpha: alpha * 0.7,
+          });
+        }
+      }
+    }
+  }
+
+  // ── Header ───────────────────────────────────────────────────────────────────
 
   _buildHeader(station) {
     const header = document.createElement('div');
@@ -218,34 +236,6 @@ export class LocationOverlay {
       faction.textContent = `[ ${station.faction} ]`;
       header.appendChild(faction);
     }
-
-    this._appendStandingAndScrap(header, station);
-    return header;
-  }
-
-  _buildZoneHeader(station, zone) {
-    const header = document.createElement('div');
-    header.className = 'loc-header';
-
-    const back = document.createElement('button');
-    back.className = 'loc-back-btn';
-    back.textContent = '< BACK';
-    back.addEventListener('click', () => {
-      this._zoneId    = null;
-      this._serviceId = null;
-      this._render();
-    });
-    header.appendChild(back);
-
-    const zoneTitle = document.createElement('span');
-    zoneTitle.className = 'loc-zone-title';
-    zoneTitle.textContent = zone.label;
-    header.appendChild(zoneTitle);
-
-    const sub = document.createElement('span');
-    sub.className = 'loc-station-sub';
-    sub.textContent = `// ${station.name}`;
-    header.appendChild(sub);
 
     this._appendStandingAndScrap(header, station);
     return header;
@@ -294,6 +284,7 @@ export class LocationOverlay {
         id: 'dock', label: 'Services',
         description: 'Hull repair, armor restoration, and refueling.',
         services: svcList, flavor: [], requiredStanding: null,
+        worldOffset: { x: 0, y: 0 },
       });
     }
 
@@ -302,6 +293,7 @@ export class LocationOverlay {
         id: 'trade', label: 'Trade',
         description: 'Buy and sell commodities.',
         services: ['trade'], flavor: [], requiredStanding: null,
+        worldOffset: { x: 0, y: 0 },
       });
     }
 
@@ -310,6 +302,7 @@ export class LocationOverlay {
         id: 'bounties', label: 'Bounty Board',
         description: 'Contracts and active bounties.',
         services: ['bounties'], flavor: [], requiredStanding: null,
+        worldOffset: { x: 0, y: 0 },
       });
     }
 
@@ -318,6 +311,7 @@ export class LocationOverlay {
         id: 'intel', label: 'Intel',
         description: 'Station intelligence and history.',
         services: ['intel'], flavor: [], requiredStanding: null,
+        worldOffset: { x: 0, y: 0 },
       });
     }
 
@@ -325,6 +319,7 @@ export class LocationOverlay {
       id: 'relations', label: 'Relations',
       description: 'Faction standings.',
       services: ['relations'], flavor: [], requiredStanding: null,
+      worldOffset: { x: 0, y: 0 },
     });
 
     return zones;

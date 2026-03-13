@@ -1,21 +1,21 @@
 // Gravewake zone — placement manifest for the Tyr world.
 // Every entity is pre-instantiated. Maps just spread this into MAP.
 
-import { TheCoil }           from './gravewake/theCoil/index.js';
+import { TheCoil }           from './gravewake/theCoil.js';
 import { KellsStop }         from './gravewake/kellsStop.js';
 import { AshveilAnchorage }  from './gravewake/ashveilAnchorage.js';
-import { BrokenCovenant }    from './gravewake/brokenCovenant.js';
-import { GuttedPioneer }     from './gravewake/guttedPioneer.js';
-import { HollowMarch }       from './gravewake/hollowMarch.js';
-import { ColdRemnant }       from './gravewake/coldRemnant.js';
-import { FracturedWake }     from './gravewake/fracturedWake.js';
-import { PaleWitness }       from './gravewake/paleWitness.js';
+import { BrokenCovenant }    from '@/data/ships/named/brokenCovenant.js';
+import { GuttedPioneer }     from '@/data/ships/named/guttedPioneer.js';
+import { HollowMarch }       from '@/data/ships/named/hollowMarch.js';
+import { ColdRemnant }       from '@/data/ships/named/coldRemnant.js';
+import { FracturedWake }     from '@/data/ships/named/fracturedWake.js';
+import { PaleWitness }       from '@/data/ships/named/paleWitness.js';
 import { PlanetPale }        from './gravewake/planetPale.js';
 import { ArkshipSpines }     from './gravewake/arkshipSpines.js';
 import { WallOfWrecks }      from './gravewake/wallOfWrecks.js';
 
-import { createShip }           from '../../ships/registry.js';
-import { SPAWN }               from '../../data/tuning/shipTuning.js';
+import { createShip }           from '@/ships/registry.js';
+import { SPAWN }               from '@data/compiledData.js';
 
 // ── Spawn helpers ───────────────────────────────────────────────────────────
 
@@ -135,7 +135,7 @@ function createGravewakeAtmosphere(zone) {
 
 // ── Zone definition ──────────────────────────────────────────────────────────
 
-const GRAVEWAKE_ZONE = { id: 'gravewake', center: { x: 10000, y: 5000 }, radius: 9500 };
+const GRAVEWAKE_ZONE = { id: 'gravewake', name: 'Gravewake', center: { x: 10000, y: 5000 }, radius: 9500 };
 
 // ── Zone export ─────────────────────────────────────────────────────────────
 

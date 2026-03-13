@@ -1,4 +1,4 @@
-import { COMMODITIES } from '../data/commodities.js';
+import { COMMODITIES } from '@/data/commodities.js';
 
 export class PlayerInventory {
   constructor({ startScrap = 0, player = null } = {}) {

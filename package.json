@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:designer": "vite --config vite.designer.config.js",
-    "dev:editor": "vite --config vite.editor.config.js",
-    "build": "vite build",
+    "compile-data": "node scripts/compile-data.js",
+    "dev": "node scripts/compile-data.js && vite",
+    "dev:designer": "node scripts/compile-data.js && vite --config vite.designer.config.js",
+    "dev:editor": "node scripts/compile-data.js && vite --config vite.editor.config.js",
+    "build": "node scripts/compile-data.js && vite build",
     "preview": "vite preview",
     "lint": "eslint js/",
     "lint:fix": "eslint js/ --fix",
     "check": "tsc --project jsconfig.json",
-    "validate": "eslint js/ && tsc --project jsconfig.json"
+    "validate": "node scripts/compile-data.js && eslint js/ && tsc --project jsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

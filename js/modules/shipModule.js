@@ -6,18 +6,7 @@ import { Lance }      from './weapons/lance.js';
 import { Cannon }     from './weapons/cannon.js';
 import { RocketPodSmall } from './weapons/rocket.js';
 import { RocketPodLarge } from './weapons/rocketLarge.js';
-import {
-  REACTOR_SMALL_FISSION_INTERVAL,
-  REACTOR_LARGE_FISSION_INTERVAL,
-  REACTOR_SMALL_FISSION_OVERHAUL_COST,
-  REACTOR_LARGE_FISSION_OVERHAUL_COST,
-  REACTOR_FISSION_DEGRADED_OUTPUT,
-  ENGINE_CHEM_S_SPEED_MULT,    ENGINE_CHEM_S_ACCEL_MULT,    ENGINE_CHEM_S_FUEL_EFF_MULT,  ENGINE_CHEM_S_POWER_DRAW,
-  ENGINE_CHEM_L_SPEED_MULT,    ENGINE_CHEM_L_ACCEL_MULT,    ENGINE_CHEM_L_FUEL_EFF_MULT,  ENGINE_CHEM_L_POWER_DRAW,
-  ENGINE_MAGPLASMA_S_SPEED_MULT, ENGINE_MAGPLASMA_S_ACCEL_MULT, ENGINE_MAGPLASMA_S_FUEL_EFF_MULT, ENGINE_MAGPLASMA_S_FUEL_DRAIN, ENGINE_MAGPLASMA_S_POWER_DRAW,
-  ENGINE_MAGPLASMA_L_SPEED_MULT, ENGINE_MAGPLASMA_L_ACCEL_MULT, ENGINE_MAGPLASMA_L_FUEL_EFF_MULT, ENGINE_MAGPLASMA_L_FUEL_DRAIN, ENGINE_MAGPLASMA_L_POWER_DRAW,
-  ENGINE_ION_SPEED_MULT, ENGINE_ION_ACCEL_MULT, ENGINE_ION_FUEL_EFF_MULT, ENGINE_ION_FUEL_DRAIN, ENGINE_ION_POWER_DRAW,
-} from '../data/tuning/moduleTuning.js';
+import { ENGINES, REACTORS, SENSORS, WEAPONS } from '@data/compiledData.js';
 
 export class ShipModule {
   constructor() {
@@ -29,7 +18,18 @@ export class ShipModule {
     this.powerDraw     = 0;  // watts consumed
     this.fuelDrainRate = 0;  // fuel/sec idle (fuel cells only)
     this.weapon        = null; // set by weapon modules
+    this.weight        = 0;  // mass units for T/W calculation
     this.condition     = 'good'; // good | worn | faulty | damaged | destroyed
+    // Sensor capabilities (set by sensor subclasses via _initSensor)
+    this.minimap_stations = false;
+    this.minimap_ships    = false;
+    this.sensor_range     = 0;
+    this.lead_indicators    = false;
+    this.health_pips        = false;
+    this.salvage_detail     = false;
+    this.trajectory_line    = false;
+    this.enemy_telemetry    = false;
+    this.module_inspection  = false;
   }
 
   get conditionMultiplier() {
@@ -57,10 +57,12 @@ export class ShipModule {
 export class AutocannonModule extends ShipModule {
   constructor() {
     super();
+    const W = WEAPONS.autocannon;
     this.name        = 'autocannon';
     this.displayName = 'AUTOCANNON';
     this.description = 'Kinetic hardpoint. Fires on trigger, mouse-aimed.';
-    this.powerDraw   = 20;
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
     this.weapon      = new Autocannon();
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
@@ -70,10 +72,12 @@ export class AutocannonModule extends ShipModule {
 export class LanceModuleSmall extends ShipModule {
   constructor() {
     super();
+    const W = WEAPONS['lance-st'];
     this.name        = 'lance-s';
     this.displayName = 'LANCE (S)';
     this.description = 'Hitscan beam emitter. Continuous fire, high power draw.';
-    this.powerDraw   = 15;
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
     this.weapon      = new Lance('small');
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
@@ -83,10 +87,12 @@ export class LanceModuleSmall extends ShipModule {
 export class CannonModule extends ShipModule {
   constructor() {
     super();
+    const W = WEAPONS.cannon;
     this.name        = 'cannon';
     this.displayName = 'CANNON';
     this.description = 'Heavy slug thrower. Slow fire rate, punishing impact.';
-    this.powerDraw   = 30;
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
     this.weapon      = new Cannon();
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
@@ -96,10 +102,13 @@ export class CannonModule extends ShipModule {
 export class RocketPodModule extends ShipModule {
   constructor(size = 'small', defaultMode = 'heat') {
     super();
+    const id = size === 'large' ? 'rocket-l' : 'rocket-s';
+    const W = WEAPONS[id];
     this.name        = size === 'large' ? 'rocket-pod-l' : 'rocket-pod-s';
     this.displayName = size === 'large' ? 'RPOD-L' : 'RPOD-S';
     this.description = 'Rocket pod. Supports dumbfire, wire, and heat guidance modes.';
-    this.powerDraw   = 10;
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
     this.weapon      = size === 'large' ? new RocketPodLarge() : new RocketPodSmall();
     this.weapon.guidanceMode = defaultMode;
   }
@@ -108,50 +117,44 @@ export class RocketPodModule extends ShipModule {
 }
 
 // ─── Engine modules ──────────────────────────────────────────────────────────
-// Engine modules modify ship speedMax, acceleration, and fuelEfficiency.
-// Base stats are frozen on _baseSpeedMax / _baseAcceleration / _baseFuelEff
-// in Ship._applyModules() before any module onInstall runs.
+// Engine modules provide thrust for the ship's T/W calculation.
+// Movement stats (speedMax, acceleration, turnRate) are derived from the T/W
+// ratio in Ship.recalcTW(). Fuel efficiency is applied there as well.
 
 class EngineModule extends ShipModule {
   constructor() {
     super();
     this.isEngine    = true;
-    this.speedMult   = 1.0;
-    this.accelMult   = 1.0;
-    this.fuelEffMult = 1.0;
+    this.thrust      = 0;    // raw thrust force
+    this.fuelEffMult = 1.0;  // fuel burn multiplier
     this._ship       = null;
-  }
-  // Rescales ship movement stats from frozen base using speedMult × conditionMultiplier.
-  // Call from onInstall and from game._improveCondition/_degradeCondition.
-  _applyConditionToEngine() {
-    const ship = this._ship;
-    if (!ship) return;
-    const mult = this.conditionMultiplier;
-    ship.speedMax       = (ship._baseSpeedMax     ?? ship.speedMax)       * this.speedMult  * mult;
-    ship.acceleration   = (ship._baseAcceleration ?? ship.acceleration)   * this.accelMult  * mult;
-    ship.fuelEfficiency = (ship._baseFuelEff      ?? ship.fuelEfficiency) * this.fuelEffMult * mult;
   }
   onInstall(ship) {
     this._ship = ship;
-    this._applyConditionToEngine();
   }
   onRemove(ship) {
     this._ship = null;
-    if (ship._baseSpeedMax     != null) ship.speedMax     = ship._baseSpeedMax;
-    if (ship._baseAcceleration != null) ship.acceleration = ship._baseAcceleration;
-    if (ship._baseFuelEff      != null) ship.fuelEfficiency = ship._baseFuelEff;
+    ship.recalcTW?.();
   }
+}
+
+/** @param {string} id */
+function _initEngine(mod, id) {
+  const E = ENGINES[id];
+  mod.name          = id;
+  mod.displayName   = E.displayName;
+  mod.weight        = E.weight;
+  mod.thrust        = E.thrust;
+  mod.fuelEffMult   = E.fuelEffMult;
+  mod.fuelDrainRate = E.fuelDrainRate;
+  mod.powerDraw     = E.powerDraw;
 }
 
 export class OnyxDriveUnit extends EngineModule {
   constructor() {
     super();
-    this.name          = 'onyx-drive-unit';
-    this.displayName   = 'ONYX DRIVE UNIT';
-    this.description   = 'Stock single-nacelle drive. Balanced output, minimal fuel overhead.';
-    this.fuelDrainRate = 0.005; // small constant idle drain
-    this.powerDraw     = 1;     // minimal power draw
-    // speedMult / accelMult / fuelEffMult remain 1.0 — no change to base stats
+    _initEngine(this, 'onyx-drive-unit');
+    this.description = 'Stock single-nacelle drive. Balanced output, minimal fuel overhead.';
   }
 }
 
@@ -159,13 +162,8 @@ export class OnyxDriveUnit extends EngineModule {
 export class ChemRocketSmall extends EngineModule {
   constructor() {
     super();
-    this.name          = 'chem-rocket-s';
-    this.displayName   = 'CHEM ROCKET (S)';
-    this.description   = 'Bipropellant chemical rocket. High speed and acceleration. Burns fuel fast. Near-zero power draw.';
-    this.speedMult     = ENGINE_CHEM_S_SPEED_MULT;
-    this.accelMult     = ENGINE_CHEM_S_ACCEL_MULT;
-    this.fuelEffMult   = ENGINE_CHEM_S_FUEL_EFF_MULT;
-    this.powerDraw     = ENGINE_CHEM_S_POWER_DRAW;
+    _initEngine(this, 'chem-rocket-s');
+    this.description = 'Bipropellant chemical rocket. High thrust. Burns fuel fast. Near-zero power draw.';
   }
 }
 
@@ -173,13 +171,8 @@ export class ChemRocketSmall extends EngineModule {
 export class ChemRocketLarge extends EngineModule {
   constructor() {
     super();
-    this.name          = 'chem-rocket-l';
-    this.displayName   = 'CHEM ROCKET (L)';
-    this.description   = 'Heavy bipropellant rocket. Extreme thrust and top speed. Fuel reserves drain rapidly under throttle.';
-    this.speedMult     = ENGINE_CHEM_L_SPEED_MULT;
-    this.accelMult     = ENGINE_CHEM_L_ACCEL_MULT;
-    this.fuelEffMult   = ENGINE_CHEM_L_FUEL_EFF_MULT;
-    this.powerDraw     = ENGINE_CHEM_L_POWER_DRAW;
+    _initEngine(this, 'chem-rocket-l');
+    this.description = 'Heavy bipropellant rocket. Extreme thrust. Fuel reserves drain rapidly under throttle.';
   }
 }
 
@@ -187,14 +180,8 @@ export class ChemRocketLarge extends EngineModule {
 export class MagplasmaTorchSmall extends EngineModule {
   constructor() {
     super();
-    this.name          = 'magplasma-torch-s';
-    this.displayName   = 'MAG-PLASMA TORCH (S)';
-    this.description   = 'Electromagnetic plasma thruster. Moderate speed gain. Draws fuel continuously for plasma generation.';
-    this.speedMult     = ENGINE_MAGPLASMA_S_SPEED_MULT;
-    this.accelMult     = ENGINE_MAGPLASMA_S_ACCEL_MULT;
-    this.fuelEffMult   = ENGINE_MAGPLASMA_S_FUEL_EFF_MULT;
-    this.fuelDrainRate = ENGINE_MAGPLASMA_S_FUEL_DRAIN;
-    this.powerDraw     = ENGINE_MAGPLASMA_S_POWER_DRAW;
+    _initEngine(this, 'magplasma-torch-s');
+    this.description = 'Electromagnetic plasma thruster. Moderate thrust gain. Draws fuel continuously for plasma generation.';
   }
 }
 
@@ -202,42 +189,37 @@ export class MagplasmaTorchSmall extends EngineModule {
 export class MagplasmaTorchLarge extends EngineModule {
   constructor() {
     super();
-    this.name          = 'magplasma-torch-l';
-    this.displayName   = 'MAG-PLASMA TORCH (L)';
-    this.description   = 'Heavy-duty plasma thruster. Solid speed and acceleration. Requires significant fuel and power.';
-    this.speedMult     = ENGINE_MAGPLASMA_L_SPEED_MULT;
-    this.accelMult     = ENGINE_MAGPLASMA_L_ACCEL_MULT;
-    this.fuelEffMult   = ENGINE_MAGPLASMA_L_FUEL_EFF_MULT;
-    this.fuelDrainRate = ENGINE_MAGPLASMA_L_FUEL_DRAIN;
-    this.powerDraw     = ENGINE_MAGPLASMA_L_POWER_DRAW;
+    _initEngine(this, 'magplasma-torch-l');
+    this.description = 'Heavy-duty plasma thruster. Solid thrust. Requires significant fuel and power.';
   }
 }
 
-// Ion Thruster — low speed, terrible acceleration, near-zero fuel, high power draw
+// Ion Thruster — low thrust, terrible acceleration, near-zero fuel, high power draw
 export class IonThruster extends EngineModule {
   constructor() {
     super();
-    this.name          = 'ion-thruster';
-    this.displayName   = 'ION THRUSTER';
-    this.description   = 'Electric ion drive. Extremely poor acceleration. Low top speed. Consumes almost no fuel — but demands heavy electrical draw.';
-    this.speedMult     = ENGINE_ION_SPEED_MULT;
-    this.accelMult     = ENGINE_ION_ACCEL_MULT;
-    this.fuelEffMult   = ENGINE_ION_FUEL_EFF_MULT;
-    this.fuelDrainRate = ENGINE_ION_FUEL_DRAIN;
-    this.powerDraw     = ENGINE_ION_POWER_DRAW;
+    _initEngine(this, 'ion-thruster');
+    this.description = 'Electric ion drive. Extremely low thrust. Consumes almost no fuel — but demands heavy electrical draw.';
   }
 }
 
 // ─── Power generation ────────────────────────────────────────────────────────
 
+/** @param {ShipModule} mod @param {string} id */
+function _initReactor(mod, id) {
+  const R = REACTORS[id];
+  mod.name          = id;
+  mod.displayName   = R.displayName;
+  mod.powerOutput   = R.powerOutput;
+  mod.fuelDrainRate = R.fuelDrainRate;
+  mod.weight        = R.weight;
+}
+
 export class HydrogenFuelCell extends ShipModule {
   constructor() {
     super();
-    this.name          = 'hydrogen-fuel-cell';
-    this.displayName   = 'H2 FUEL CELL (S)';
-    this.description   = 'Small fuel cell. Steady 80W — burns fuel continuously.';
-    this.powerOutput   = 80;
-    this.fuelDrainRate = 0.025;
+    _initReactor(this, 'hydrogen-fuel-cell');
+    this.description = 'Small fuel cell. Steady 80W — burns fuel continuously.';
   }
   get effectivePowerOutput() {
     return Math.round(this.powerOutput * this.conditionMultiplier);
@@ -247,13 +229,12 @@ export class HydrogenFuelCell extends ShipModule {
 export class SmallFissionReactor extends ShipModule {
   constructor() {
     super();
-    this.name              = 'fission-reactor-s';
-    this.displayName       = 'FISSION REACTOR (S)';
+    _initReactor(this, 'fission-reactor-s');
+    const R = REACTORS['fission-reactor-s'];
     this.description       = 'Compact fission core. High output, no fuel burn. Requires periodic overhaul.';
-    this.powerOutput       = 160;
-    this.fuelDrainRate     = 0;
-    this._overhaulInterval = REACTOR_SMALL_FISSION_INTERVAL;
-    this.overhaulCost      = REACTOR_SMALL_FISSION_OVERHAUL_COST;
+    this._overhaulInterval = R.overhaulInterval;
+    this.overhaulCost      = R.overhaulCost;
+    this._degradedOutput   = R.degradedOutput;
     this.timeSinceOverhaul = 0;
     this.isOverdue         = false;
     this.isFissionReactor  = true;
@@ -263,7 +244,7 @@ export class SmallFissionReactor extends ShipModule {
     this.isOverdue = this.timeSinceOverhaul >= this._overhaulInterval;
   }
   get effectivePowerOutput() {
-    const base = this.isOverdue ? Math.round(this.powerOutput * REACTOR_FISSION_DEGRADED_OUTPUT) : this.powerOutput;
+    const base = this.isOverdue ? Math.round(this.powerOutput * this._degradedOutput) : this.powerOutput;
     return Math.round(base * this.conditionMultiplier);
   }
   resetOverhaul() {
@@ -275,13 +256,12 @@ export class SmallFissionReactor extends ShipModule {
 export class LargeFissionReactor extends ShipModule {
   constructor() {
     super();
-    this.name              = 'fission-reactor-l';
-    this.displayName       = 'FISSION REACTOR (L)';
+    _initReactor(this, 'fission-reactor-l');
+    const R = REACTORS['fission-reactor-l'];
     this.description       = 'Heavy fission plant. Maximum fission output. Requires overhaul at certified stations.';
-    this.powerOutput       = 300;
-    this.fuelDrainRate     = 0;
-    this._overhaulInterval = REACTOR_LARGE_FISSION_INTERVAL;
-    this.overhaulCost      = REACTOR_LARGE_FISSION_OVERHAUL_COST;
+    this._overhaulInterval = R.overhaulInterval;
+    this.overhaulCost      = R.overhaulCost;
+    this._degradedOutput   = R.degradedOutput;
     this.timeSinceOverhaul = 0;
     this.isOverdue         = false;
     this.isFissionReactor  = true;
@@ -291,7 +271,7 @@ export class LargeFissionReactor extends ShipModule {
     this.isOverdue = this.timeSinceOverhaul >= this._overhaulInterval;
   }
   get effectivePowerOutput() {
-    const base = this.isOverdue ? Math.round(this.powerOutput * REACTOR_FISSION_DEGRADED_OUTPUT) : this.powerOutput;
+    const base = this.isOverdue ? Math.round(this.powerOutput * this._degradedOutput) : this.powerOutput;
     return Math.round(base * this.conditionMultiplier);
   }
   resetOverhaul() {
@@ -303,11 +283,8 @@ export class LargeFissionReactor extends ShipModule {
 export class LargeFusionReactor extends ShipModule {
   constructor() {
     super();
-    this.name          = 'fusion-reactor-l';
-    this.displayName   = 'FUSION REACTOR (L)';
-    this.description   = 'Pre-Collapse fusion core. Immense output. Consumes trace fuel — no overhaul required.';
-    this.powerOutput   = 500;
-    this.fuelDrainRate = 0.005;
+    _initReactor(this, 'fusion-reactor-l');
+    this.description = 'Pre-Collapse fusion core. Immense output. Consumes trace fuel — no overhaul required.';
   }
   get effectivePowerOutput() {
     return Math.round(this.powerOutput * this.conditionMultiplier);
@@ -316,69 +293,92 @@ export class LargeFusionReactor extends ShipModule {
 
 // ─── Sensors / passive ───────────────────────────────────────────────────────
 
+/** @param {ShipModule} mod @param {string} id */
+function _initSensor(mod, id) {
+  const S = SENSORS[id];
+  mod.name             = id;
+  mod.displayName      = S.displayName;
+  mod.powerDraw        = S.powerDraw;
+  mod.weight           = S.weight;
+  mod.minimap_stations = !!S.minimapStations;
+  mod.minimap_ships    = !!S.minimapShips;
+  mod.sensor_range     = S.sensorRange;
+  mod.lead_indicators    = !!S.leadIndicators;
+  mod.health_pips        = !!S.healthPips;
+  mod.salvage_detail     = !!S.salvageDetail;
+  mod.trajectory_line    = !!S.trajectoryLine;
+  mod.enemy_telemetry    = !!S.enemyTelemetry;
+  mod.module_inspection  = !!S.moduleInspection;
+}
+
 export class SalvagedSensorSuite extends ShipModule {
   constructor() {
     super();
-    this.name        = 'salvaged-sensor-suite';
-    this.displayName = 'SALVAGED SENSORS';
+    _initSensor(this, 'salvaged-sensor-suite');
     this.description = 'Pre-Collapse array. Only detects static landmarks (planets/stations).';
-    this.powerDraw   = 2;
-    this.minimap_stations = true;
   }
 }
 
 export class StandardSensorSuite extends ShipModule {
   constructor() {
     super();
-    this.name        = 'standard-sensor-suite';
-    this.displayName = 'STANDARD SENSORS';
+    _initSensor(this, 'standard-sensor-suite');
     this.description = 'Modern array. Detects ships up to 3000 units.';
-    this.powerDraw   = 8;
-    this.minimap_stations = true;
-    this.minimap_ships    = true;
-    this.sensor_range     = 3000;
   }
 }
 
 export class CombatComputerModule extends ShipModule {
   constructor() {
     super();
-    this.name        = 'combat-computer';
-    this.displayName = 'COMBAT COMPUTER';
+    _initSensor(this, 'combat-computer');
     this.description = 'Displays lead-indicators and ship integrity pips. Range: 2000.';
-    this.powerDraw   = 15;
-    this.minimap_stations = true;
-    this.minimap_ships    = true;
-    this.sensor_range     = 2000;
-    this.lead_indicators  = true;
-    this.health_pips      = true;
   }
 }
 
 export class SalvageScannerModule extends ShipModule {
   constructor() {
     super();
-    this.name        = 'salvage-scanner';
-    this.displayName = 'SALVAGE SCANNER';
+    _initSensor(this, 'salvage-scanner');
     this.description = 'Reveals salvage details in derelicts. Range: 2500.';
-    this.powerDraw   = 12;
-    this.minimap_stations = true;
-    this.minimap_ships    = true;
-    this.sensor_range     = 2500;
-    this.salvage_detail   = true;
   }
 }
 
 export class LongRangeScannerModule extends ShipModule {
   constructor() {
     super();
-    this.name        = 'long-range-scanner';
-    this.displayName = 'LONG-RANGE SENSORS';
+    _initSensor(this, 'long-range-scanner');
     this.description = 'Pulls contacts from deep space. Minimap range: 8000.';
-    this.powerDraw   = 20;
-    this.minimap_stations = true;
-    this.minimap_ships    = true;
-    this.sensor_range     = 8000;
   }
 }
 
+// ─── Module registry ────────────────────────────────────────────────────────
+// Single source of truth for all installable modules.
+// Designer and game systems iterate this instead of maintaining parallel lists.
+// Each entry: { id, category, create() }. All other data comes from the instance.
+
+export const MODULE_REGISTRY = [
+  // Engines
+  { id: 'onyx-drive-unit',    category: 'ENGINE', create: () => new OnyxDriveUnit() },
+  { id: 'chem-rocket-s',      category: 'ENGINE', create: () => new ChemRocketSmall() },
+  { id: 'chem-rocket-l',      category: 'ENGINE', create: () => new ChemRocketLarge() },
+  { id: 'magplasma-torch-s',  category: 'ENGINE', create: () => new MagplasmaTorchSmall() },
+  { id: 'magplasma-torch-l',  category: 'ENGINE', create: () => new MagplasmaTorchLarge() },
+  { id: 'ion-thruster',       category: 'ENGINE', create: () => new IonThruster() },
+  // Weapons
+  { id: 'mod-autocannon',     category: 'WEAPON', create: () => new AutocannonModule() },
+  { id: 'mod-lance-s',        category: 'WEAPON', create: () => new LanceModuleSmall() },
+  { id: 'mod-cannon',         category: 'WEAPON', create: () => new CannonModule() },
+  { id: 'mod-rpod-s',         category: 'WEAPON', create: () => new RocketPodModule('small', 'dumbfire') },
+  { id: 'mod-rpod-l',         category: 'WEAPON', create: () => new RocketPodModule('large', 'dumbfire') },
+  // Power
+  { id: 'h2-fuel-cell',       category: 'POWER',  create: () => new HydrogenFuelCell() },
+  { id: 'fission-s',          category: 'POWER',  create: () => new SmallFissionReactor() },
+  { id: 'fission-l',          category: 'POWER',  create: () => new LargeFissionReactor() },
+  { id: 'fusion-l',           category: 'POWER',  create: () => new LargeFusionReactor() },
+  // Sensors
+  { id: 'salvaged-sensors',   category: 'SENSOR', create: () => new SalvagedSensorSuite() },
+  { id: 'standard-sensors',   category: 'SENSOR', create: () => new StandardSensorSuite() },
+  { id: 'combat-computer',    category: 'SENSOR', create: () => new CombatComputerModule() },
+  { id: 'salvage-scanner',    category: 'SENSOR', create: () => new SalvageScannerModule() },
+  { id: 'long-range-sensors', category: 'SENSOR', create: () => new LongRangeScannerModule() },
+];

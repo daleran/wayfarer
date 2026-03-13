@@ -1,6 +1,6 @@
 # MECHANICS.md — Wayfarer Game Mechanics
 
-> **Stats, item lists, and specific numbers live in the JS source files (`js/data/tuning/`, `js/data/commodities.js`, `js/data/lootTables.js`, etc.). This document describes behavior only.**
+> **Stats, item lists, and specific numbers live in the CSV source files (`data/*.csv`, compiled to `data/compiledData.js`) and JS data files (`js/data/commodities.js`, `js/data/lootTables.js`, etc.). This document describes behavior only.**
 
 This is the source of truth for how game systems behave. No lore, no code architecture. For world/faction context see `LORE.md`. For visual conventions see `UX.md`.
 
@@ -14,15 +14,23 @@ Fuel consumption scales with throttle level. The lowest level is free; consumpti
 
 ---
 
+## Combat Mode
+
+**F key** toggles combat mode. The default state is standard mode — weapons cannot fire and the cursor is a simple navigation reticle. Entering combat mode enables all weapon firing (LMB, RMB, auto-fire turrets) and switches to a tactical crosshair with range feedback.
+
+Ammo/guidance mode cycling (`1`, `2`) is always available regardless of combat mode.
+
+---
+
 ## Weapons
 
 ### Weapon Categories
 
-**Primary weapons** (LMB / Space) — manually aimed toward the mouse cursor. Player fires the currently indexed primary weapon only. AI fires all weapons simultaneously.
+**Primary weapons** (LMB / Space) — manually aimed toward the mouse cursor. Player fires the currently indexed primary weapon only. AI fires all weapons simultaneously. Requires combat mode.
 
-**Secondary weapons** (RMB) — rocket pods and torpedoes. Same targeting logic. Player fires the indexed secondary weapon; AI fires all.
+**Secondary weapons** (RMB) — rocket pods and torpedoes. Same targeting logic. Player fires the indexed secondary weapon; AI fires all. Requires combat mode.
 
-**Weapon cycling** — `[` / `]` cycle primary weapon. `{` / `}` cycle secondary weapon. `1` cycles ammo mode on active primary. `2` cycles guidance mode on active secondary (or ammo mode if applicable).
+**Ammo/guidance cycling** — `1` cycles ammo mode on active primary. `2` cycles guidance mode on active secondary (or ammo mode if applicable).
 
 ### Weapon Families
 
@@ -154,7 +162,7 @@ The four hull classes:
 - **G100 Class Hauler** — wide cargo barge; raised cab, twin square engine pods; large cargo capacity, medium stats
 - **Garrison Class Frigate** — military workhorse; H/I-beam hull profile, rectangular nacelle pods; high hull, large fuel tank
 
-All stat values are computed from base constants in `js/data/tuning/` via per-ship multipliers.
+All stat values are computed from base constants in `data/*.csv` (compiled to `data/compiledData.js`) via per-ship multipliers.
 
 ### Player Ship
 
@@ -203,7 +211,7 @@ All non-player ships — hostile, neutral, or friendly — share the same AI sys
 
 ### Ship AI Profile
 
-Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `js/data/tuning/aiTuning.js`. Characters and spawn overrides can change individual values (e.g. a cautious enemy with longer `deaggroRange`) without touching the base template.
+Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `data/aiBehaviors.csv` (compiled to `data/compiledData.js`). Characters and spawn overrides can change individual values (e.g. a cautious enemy with longer `deaggroRange`) without touching the base template.
 
 Two keys define the full behavior:
 
@@ -240,7 +248,7 @@ When a player projectile hits a neutral ship:
 
 Ships with `aggroRange === 0` (traders, militia) never turn hostile proactively — only through being attacked. Ships with `aggroRange > 0` (scavengers) turn hostile when the player enters range.
 
-All AI tuning constants are in `js/data/tuning/aiTuning.js`.
+All AI tuning constants are in `data/aiBehaviors.csv` (compiled to `data/compiledData.js`).
 
 ---
 
@@ -264,11 +272,29 @@ Rendered as a background element (not an entity) — only the curved atmospheric
 
 Ships have a fixed number of module slots. Slot 0 is always the engine. Other slots are general-purpose. Modules are installed and removed via the Ship Screen (I key).
 
-### Engine Modules
+### Engine Modules & Thrust-to-Weight
 
-Engine modules modify `speedMax`, `acceleration`, and `fuelEfficiency` via multipliers applied at install. The ship's base stats are frozen before any module runs — swapping an engine always reverts to those clean bases first, then applies the new module's multipliers.
+Ship performance is derived from the **thrust-to-weight ratio**. Engine modules provide thrust; all modules, cargo, and fuel contribute weight. Movement stats are computed as:
 
-`fuelEffMult` scales the throttle-based fuel drain. Higher = more fuel burned per throttle level.
+```
+totalWeight = baseHullWeight + sum(module.weight) + cargoUsed × CARGO_WEIGHT_PER_UNIT + fuel × FUEL_WEIGHT_PER_UNIT
+totalThrust = sum(engine.thrust × engine.conditionMultiplier)
+twRatio     = totalThrust / totalWeight
+```
+
+Each ship stores a reference T/W ratio (`_refTwRatio`) computed at construction with stock modules, full fuel, zero cargo. Performance is derived from the ratio of current T/W to reference T/W using power curves with different sensitivities:
+
+- **Acceleration** — most sensitive (exponent 1.4); cargo and engine changes hit accel hardest
+- **Top speed** — moderate sensitivity (exponent 0.6)
+- **Turn rate** — least sensitive (exponent 0.3); heavy ships can still turn reasonably
+
+All derived multipliers are clamped to [0.15, 2.0] — a ship with no engine still crawls at 15% base stats; the best engine caps at 200%.
+
+**Recalculation is event-based** — triggered on module swap, cargo change, salvage completion, dock/undock, and engine condition change. Not computed every tick.
+
+`fuelEffMult` scales the throttle-based fuel drain independently of thrust. Higher = more fuel burned per throttle level.
+
+**All NPC ships carry engine modules** in their `moduleSlots` — consistent with the player, and salvageable on defeat.
 
 ### Weapon Modules
 
@@ -283,7 +309,20 @@ Power modules add wattage to the ship's power budget. Types:
 
 ### Sensor / Passive Modules
 
-Passive modules that extend minimap range, enable ship tracking, add lead indicators, or improve salvage information.
+Passive modules that extend minimap range, enable ship tracking, add lead indicators, improve salvage information, and provide advanced combat telemetry.
+
+**Sensor capabilities:**
+
+| Capability | Effect | Provided by |
+|---|---|---|
+| `minimap_stations` | Show stations on minimap | All sensors |
+| `minimap_ships` | Show ships on minimap | Standard+, Combat Computer, Salvage Scanner, Long-Range |
+| `lead_indicators` | Lead reticles on hostiles | Combat Computer |
+| `health_pips` | Health pip bars above hostiles | Combat Computer |
+| `salvage_detail` | Detailed salvage info on derelicts | Salvage Scanner |
+| `trajectory_line` | Dashed line from player to lead indicator | Combat Computer, Long-Range Scanner |
+| `enemy_telemetry` | Speed/heading/hull text on mouse-nearest hostile | Combat Computer, Long-Range Scanner |
+| `module_inspection` | Module loadout list on mouse-nearest hostile | Long-Range Scanner |
 
 ### Fission Reactor Overhaul
 
@@ -295,7 +334,7 @@ Fission reactors track time since their last overhaul. When overdue:
 
 To overhaul: dock at a station with `canOverhaulReactor: true` (currently Ashveil Anchorage). A button appears in the Services tab. Paying the overhaul cost resets the timer and restores full output. Overhauls can also be performed early to reset the timer proactively.
 
-Overhaul intervals and costs are defined in `js/data/tuning/`.
+Overhaul intervals and costs are defined in `data/*.csv` (compiled to `data/compiledData.js`).
 
 ### Module Condition
 
@@ -320,12 +359,35 @@ Three-column layout:
 - **Left panel** — hull and armor arc health, drive stats, scrap/cargo readout, module slots with power budget, idle fuel burn
 - **Center panel** — paper doll: ship silhouette with armor arc rings; each arc labeled with current/max; hull ratio bar below
 - **Right panel** — cargo bay contents, capacity bar, active weapon list; salvaged weapons in cargo shown separately
+- **Jettison** — each cargo item has a JETTISON button that ejects the item behind the ship as a loot drop (scrap ejects 20 at a time, ammo ejects 10 at a time)
+
+---
+
+## Navigation & Map (M key)
+
+Press **M** to open the full-screen system map overlay. The map uses its own zoom/pan (independent of the game camera). Scroll to zoom, drag to pan. The simulation continues running while the map is open.
+
+**Left-click** a station or derelict on the map to set a navigation waypoint. Left-click empty space to set a freeform waypoint. **Right-click** to clear the waypoint. **M** or **Esc** closes the map.
+
+Map layers (capability-gated — same sensor requirements as minimap):
+- Zone circles with labels
+- Planets, stations (faction-colored with names), derelicts
+- Bounty target markers (pulsing red diamond)
+- Hostile contacts within sensor range
+- Course line from player to waypoint (dotted amber)
+- Fuel range circle (amber dashed — estimated max travel distance at current fuel/burn/speed)
+- Waypoint marker (inverted amber triangle)
+- Player position (green triangle with heading)
+
+**Nav indicator** (when waypoint set and map closed): an amber chevron at the screen edge pointing toward the waypoint, with distance text. If the waypoint is on-screen, an inverted triangle is drawn above it instead.
+
+Below the minimap: current zone name, waypoint destination with distance and ETA.
 
 ---
 
 ## Economy
 
-**Scrap** is the sole currency. No credits. Scrap also takes cargo space — the conversion rate between scrap and cargo units is defined in `js/data/tuning/`.
+**Scrap** is the sole currency. No credits. Scrap also takes cargo space — the conversion rate between scrap and cargo units is defined in `data/*.csv` (compiled to `data/compiledData.js`).
 
 **Fuel** drives movement. Tank size and drain rate are per-ship. Fuel can be purchased at stations.
 
@@ -387,7 +449,7 @@ Expiry timer is shown in YOUR CONTRACTS and flashes red when close to expiry. Bo
 
 ### Standing Levels
 
-Five levels from Hostile through Allied. At Hostile, docking is refused. At Allied, a discount applies to all station services. Exact thresholds and discount rate are in `js/data/tuning/`.
+Five levels from Hostile through Allied. At Hostile, docking is refused. At Allied, a discount applies to all station services. Exact thresholds and discount rate are in `data/*.csv` (compiled to `data/compiledData.js`).
 
 ### Triggers
 
@@ -407,6 +469,8 @@ Press **E** near a derelict to begin salvage. A progress bar fills over several 
 On completion: loot drops spawn from the derelict's loot table; the derelict is removed.
 
 ### Derelict Classes
+
+Derelicts are Ships with `crew = 0`. They use the same ship class constructors (G100, Maverick, Garrison, Onyx) but are inert — no AI, no movement, no weapons. The `isDerelict` getter identifies them.
 
 Four hull classes with distinct polygon shapes and HUD lore text:
 

@@ -4,6 +4,7 @@ import { HUD } from './hud.js';
 import { input } from './input.js';
 import { MAP } from './data/maps/tyr.js';
 import { createHullbreaker } from './ships/player/hullbreaker.js';
+import { createCrashDummy } from './ships/player/crashDummy.js';
 import { Autocannon } from './modules/weapons/autocannon.js';
 import { RocketPodSmall } from './modules/weapons/rocket.js';
 import { RocketPodLarge } from './modules/weapons/rocketLarge.js';
@@ -21,16 +22,15 @@ import { BountySystem } from './systems/bountySystem.js';
 import { WeaponSystem } from './systems/weaponSystem.js';
 import { InteractionSystem } from './systems/interactionSystem.js';
 import { updateShipAI } from './ai/shipAI.js';
-import { Ship } from './entities/ship.js';
-import { Derelict } from './world/derelict.js';
+import { Station } from './world/station.js';
 import { LocationOverlay } from './ui/locationOverlay.js';
 import { ShipScreen } from './ui/shipScreen.js';
 import {
-  DEFAULT_SCRAP, FUEL_RATES,
-} from './data/tuning/economyTuning.js';
-import { SPAWN } from './data/tuning/shipTuning.js';
+  DEFAULT_SCRAP, FUEL_RATES, SPAWN,
+} from '@data/compiledData.js';
 import { ReputationSystem } from './systems/reputation.js';
 import { PlayerInventory } from './systems/playerInventory.js';
+import { NavigationSystem } from './systems/navigationSystem.js';
 import { createModuleById } from './modules/registry.js';
 import { createShip } from './ships/registry.js';
 
@@ -67,15 +67,16 @@ export class GameManager {
     this.bounty = new BountySystem();
     this.weaponSys = new WeaponSystem();
     this.interaction = new InteractionSystem();
+    this.navigation = new NavigationSystem();
 
-    // Pan mode (test only)
+    // Pan mode (editor sets this via EditorOverlay)
     this.isPanMode = false;
 
-    // AI freeze mode (test only) — V key toggle
+    // AI freeze (editor sets this via EditorOverlay)
     this.aiDisabled = false;
 
-    // Auto-fire mode — F key toggle
-    this.autoFireMode = false;
+    // Combat mode — F key toggle
+    this.combatMode = false;
   }
 
   init() {
@@ -98,9 +99,11 @@ export class GameManager {
     this.renderer = new Renderer(this.ctx, this.map.mapSize, this.map.background);
     this.particlePool = new ParticlePool();
 
-    // Spawn player
+    // Spawn player — use Crash Dummy in test/editor mode, Hullbreaker in production
     const start = this.map.playerStart || { x: 400, y: 400 };
-    this.player = createHullbreaker(start.x, start.y);
+    this.player = this.isTestMode
+      ? createCrashDummy(start.x, start.y)
+      : createHullbreaker(start.x, start.y);
     this.inventory.bindPlayer(this.player);
     this.inventory.initFromPlayer(this.player);
 
@@ -141,8 +144,10 @@ export class GameManager {
     // World entities — pre-instantiated by zone manifests / map files
     for (const entity of this.map.entities ?? []) {
       this.entities.push(entity);
-      if (entity instanceof Ship) this.ships.push(entity);
+      if (entity.isShip) this.ships.push(entity);
     }
+
+    this.mapZones = this.map.zones || [];
 
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
@@ -156,7 +161,21 @@ export class GameManager {
   update(dt) {
     input.tick();
     this.totalTime += dt;
-    this.camera.applyWheel(input.wheelDelta);
+
+    // Map toggle — M key (available any time except docked / ship screen)
+    if (input.wasJustPressed('m') && !this.isDocked && !this.shipScreen.visible) {
+      this.navigation.toggleMap(this);
+    }
+
+    // When map is open, consume input for map controls, skip game camera zoom
+    if (this.navigation.mapOpen) {
+      this._handleMapInput();
+      if (input.wasJustPressed('escape')) this.navigation.closeMap();
+    }
+
+    if (!this.navigation.mapOpen) {
+      this.camera.applyWheel(input.wheelDelta);
+    }
     this.camera.updateZoom(dt);
 
     if (this.isDocked) {
@@ -169,7 +188,13 @@ export class GameManager {
       }
       this.stationScreen.update(dt, this);
       this.stationScreen.handleInput(input, this);
-      if (!this.stationScreen.visible) this.isDocked = false;
+      this.camera.updatePan(dt);
+      if (!this.stationScreen.visible) {
+        this.isDocked = false;
+        this.camera.clearPan();
+        // Recalc T/W after undocking — fuel/cargo may have changed at station
+        if (this.player?.active) this.player.recalcTW(this.fuel, this.totalCargoUsed);
+      }
       return;
     }
 
@@ -184,7 +209,7 @@ export class GameManager {
     // Pause toggle — space bar; checked before processInput so fire is skipped
     if (input.wasJustPressed(' ')) this.isPaused = !this.isPaused;
 
-    this._processInput(dt);
+    if (!this.navigation.mapOpen) this._processInput(dt);
 
     if (this.shipScreen.visible && !this.isDocked) {
       this.shipScreen.update(dt, this);
@@ -221,7 +246,7 @@ export class GameManager {
     }
 
     for (const ship of this.ships) {
-      if (!ship.active) continue;
+      if (!ship.active || ship.isDerelict) continue;
       if (this.aiDisabled) {
         ship.throttleLevel = 0;
         ship.rotationInput = 0;
@@ -232,23 +257,8 @@ export class GameManager {
 
     // Auto-fire turrets
     const enemies = this.ships.filter(s => s.active && s.relation === 'hostile');
-    if (this.player && this.player.active && !this.salvage.isSalvaging && !this.repair.isRepairing) {
+    if (this.combatMode && this.player && this.player.active && !this.salvage.isSalvaging && !this.repair.isRepairing) {
       this.player.fireAutoWeapons(enemies, this.entities);
-
-      // F-key auto-fire mode: active primary also fires at nearest enemy
-      if (this.autoFireMode) {
-        let nearest = null;
-        let nearestDist = Infinity;
-        for (const e of enemies) {
-          const dx = e.x - this.player.x;
-          const dy = e.y - this.player.y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < nearestDist) { nearestDist = d; nearest = e; }
-        }
-        if (nearest) {
-          this.player.fireWeapons(nearest.x, nearest.y, this.entities, true);
-        }
-      }
     }
 
     if (this.repair.isRepairing) {
@@ -272,9 +282,10 @@ export class GameManager {
     });
     for (const e of collisionResult.newEntities) this.entities.push(e);
     this.interaction.checkLootPickups(this.entities, this.player, this);
+    // Recalc T/W after loot pickups may have changed cargo weight
+    if (this.player?.active) this.player.recalcTW(this.fuel, this.totalCargoUsed);
     this._processRespawns(dt);
     this.bounty.updateExpiry(this.totalTime);
-    this._updateDerelictSparks(dt);
     this._updateDamageEffects(dt);
     this._purgeInactive();
 
@@ -331,25 +342,77 @@ export class GameManager {
     this.inventory.reactorDraw = draw;
   }
 
-  _handleTestInput() {
-    const mx = this._cachedMouseWorld?.x ?? (this.player.x + 300);
-    const my = this._cachedMouseWorld?.y ?? this.player.y;
+  _handleMapInput() {
+    const nav = this.navigation;
 
-    const spawnTestEnemy = (shipType) => {
-      const ship = createShip(shipType, mx, my);
-      ship.homePosition = { x: mx, y: my };
-      ship.ai._aggro = true;
-      this.entities.push(ship);
-      this.ships.push(ship);
-    };
+    // Scroll to zoom map
+    if (input.wheelDelta !== 0) {
+      nav._mapZoom *= 1 - input.wheelDelta * 0.001;
+      nav._mapZoom = Math.max(0.01, Math.min(0.5, nav._mapZoom));
+    }
 
-    if (input.wasJustPressed('?')) this.isPanMode = !this.isPanMode;
-    if (input.wasJustPressed('v')) this.aiDisabled = !this.aiDisabled;
+    // Drag to pan
+    if (input.mouseButtons.left && !nav._isDragging) {
+      nav._isDragging = true;
+      nav._dragStartX = input.mouseScreen.x;
+      nav._dragStartY = input.mouseScreen.y;
+      nav._dragPanStartX = nav._mapPanX;
+      nav._dragPanStartY = nav._mapPanY;
+    }
+    if (nav._isDragging && input.mouseButtons.left) {
+      const dx = input.mouseScreen.x - nav._dragStartX;
+      const dy = input.mouseScreen.y - nav._dragStartY;
+      nav._mapPanX = nav._dragPanStartX - dx / nav._mapZoom;
+      nav._mapPanY = nav._dragPanStartY - dy / nav._mapZoom;
+    }
+    if (nav._isDragging && !input.mouseButtons.left) {
+      // Check if it was a click (small drag distance) → set waypoint
+      const dx = input.mouseScreen.x - nav._dragStartX;
+      const dy = input.mouseScreen.y - nav._dragStartY;
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+        this._setWaypointFromMap(input.mouseScreen.x, input.mouseScreen.y);
+      }
+      nav._isDragging = false;
+    }
 
-    if (input.wasJustPressed('z')) spawnTestEnemy('light-fighter');
-    if (input.wasJustPressed('x')) spawnTestEnemy('armed-hauler');
-    if (input.wasJustPressed('c')) spawnTestEnemy('salvage-mothership');
+    // Right-click clears waypoint
+    if (input.mouseButtons.right && !this._prevMouseRight) {
+      nav.clearWaypoint();
+    }
+    this._prevMouseRight = input.mouseButtons.right;
+  }
 
+  _setWaypointFromMap(screenX, screenY) {
+    const nav = this.navigation;
+    const screenW = this.canvas.width;
+    const screenH = this.canvas.height;
+
+    // Convert screen → world using map transform
+    const wx = (screenX - screenW / 2) / nav._mapZoom + nav._mapPanX;
+    const wy = (screenY - screenH / 2) / nav._mapZoom + nav._mapPanY;
+
+    // Find nearest clickable entity within 30 screen pixels
+    const threshold = 30 / nav._mapZoom; // world-space threshold
+    let bestDist = threshold;
+    let bestEntity = null;
+
+    for (const e of this.entities) {
+      if (!e.active) continue;
+      if (!(e instanceof Station) && !e.isDerelict) continue;
+      const dx = e.x - wx;
+      const dy = e.y - wy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestEntity = e;
+      }
+    }
+
+    if (bestEntity) {
+      nav.setWaypoint(bestEntity.x, bestEntity.y, bestEntity.name || '', bestEntity);
+    } else {
+      nav.setWaypoint(wx, wy);
+    }
   }
 
   _processInput(dt) {
@@ -368,8 +431,6 @@ export class GameManager {
       if (input.wasJustPressed('escape')) this.shipScreen.close();
       return;
     }
-
-    if (this.isTestMode) this._handleTestInput();
 
     if (this.isPanMode) {
       const speed = 800 * dt;
@@ -405,7 +466,7 @@ export class GameManager {
     const canRepair = p.throttleLevel === 0 && p.speed < 1 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.inventory.scrap > 0;
     if (input.wasJustPressed('r') && canRepair) { this.repair.start(); return; }
 
-    if (input.wasJustPressed('f')) this.autoFireMode = !this.autoFireMode;
+    if (input.wasJustPressed('f')) this.combatMode = !this.combatMode;
 
     if (input.wasJustPressed('w') || input.wasJustPressed('arrowup')) p.increaseThrottle();
     if (input.wasJustPressed('s') || input.wasJustPressed('arrowdown')) p.decreaseThrottle();
@@ -416,21 +477,15 @@ export class GameManager {
     if (input.isDown('d') || input.isDown('arrowright')) p.rotationInput = 1;
 
     if (!this.isPaused) {
-      // LMB fires active primary (onlyActive=true for player)
-      if (input.mouseButtons.left) {
+      // LMB fires active primary (onlyActive=true for player) — combat mode only
+      if (this.combatMode && input.mouseButtons.left) {
         p.fireWeapons(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
       }
 
-      // RMB fires active secondary
-      if (rightJustPressed) {
+      // RMB fires active secondary — combat mode only
+      if (this.combatMode && rightJustPressed) {
         p.fireSecondary(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
       }
-
-      // Weapon cycling: [ ] cycle primary, { } cycle secondary
-      if (input.wasJustPressed('[')) p.cyclePrimary(-1);
-      if (input.wasJustPressed(']')) p.cyclePrimary(1);
-      if (input.wasJustPressed('{')) p.cycleSecondary(-1);
-      if (input.wasJustPressed('}')) p.cycleSecondary(1);
 
       // Ammo / guidance mode cycling: 1 for active primary, 2 for active secondary
       if (input.wasJustPressed('1')) {
@@ -445,20 +500,19 @@ export class GameManager {
     }
   }
 
-  _updateDerelictSparks(dt) {
-    for (const entity of this.entities) {
-      if (!(entity instanceof Derelict) || !entity.active || entity.salvaged) continue;
-      entity._sparkTimer += dt;
-      if (entity._sparkTimer >= 1.0) {
-        entity._sparkTimer -= 1.0;
-        this.particlePool.ping(entity.x, entity.y);
-      }
-    }
-  }
-
   _updateDamageEffects(dt) {
     for (const entity of this.entities) {
       if (!entity.active || !entity.isShip) continue;
+
+      // Derelict sparks — periodic ping effect
+      if (entity.isDerelict && !entity.salvaged) {
+        entity._sparkTimer += dt;
+        if (entity._sparkTimer >= 1.0) {
+          entity._sparkTimer -= 1.0;
+          this.particlePool.ping(entity.x, entity.y);
+        }
+        continue;
+      }
       const ratio = entity.hullCurrent / entity.hullMax;
 
       // Smoke at <30% hull — all ships, emits from engine positions

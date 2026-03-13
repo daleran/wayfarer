@@ -16,14 +16,14 @@ Ask the user (or infer from their description) for:
 
 ## Step 2 — Create the zone entity file
 
-File goes in `js/world/zones/<zone>/`. Filename: camelCase of the station name, e.g. `ironveilOutpost.js`.
+File goes in `js/data/zones/<zone>/`. Filename: camelCase of the station name, e.g. `ironveilOutpost.js`.
 
 The file contains: renderer class (if custom) + data descriptor + layout + `instantiate(x, y)`.
 
 ```js
-// js/world/zones/gravewake/ironveilOutpost.js
-import { Station } from '../../station.js';
-import { CYAN, AMBER, WHITE } from '../../../rendering/colors.js';
+// js/data/zones/gravewake/ironveilOutpost.js
+import { Station } from '@/world/station.js';
+import { CYAN, AMBER, WHITE } from '@/rendering/colors.js';
 
 // ── Custom renderer (skip if using generic hex) ─────────────────────────────
 
@@ -98,13 +98,13 @@ export const IronveilOutpost = {
 - Use `ctx.save()` / `ctx.restore()` around all draw calls
 - ctx is already in local space (translated + scaled by camera); draw around (0, 0)
 - Keep the silhouette readable at small zoom levels
-- Existing examples: `js/world/zones/gravewake/theCoil/index.js`, `js/world/zones/gravewake/kellsStop.js`
+- Existing examples: `js/data/zones/gravewake/theCoil.js`, `js/data/zones/gravewake/kellsStop.js`
 
 ## Step 3 — Register in stationRegistry.js (for designer)
 
 Open `js/world/stationRegistry.js`. Add an import and entry:
 ```js
-import { IronveilOutpost } from './zones/gravewake/ironveilOutpost.js';
+import { IronveilOutpost } from '@/data/zones/gravewake/ironveilOutpost.js';
 
 // In STATION_REGISTRY array:
 {
@@ -116,7 +116,7 @@ import { IronveilOutpost } from './zones/gravewake/ironveilOutpost.js';
 
 ## Step 4 — Add to zone manifest
 
-Open `js/world/zones/gravewake.js` (or the relevant zone manifest). Add the import and place in the `entities` array:
+Open `js/data/zones/gravewake.js` (or the relevant zone manifest). Add the import and place in the `entities` array:
 ```js
 import { IronveilOutpost } from './gravewake/ironveilOutpost.js';
 
@@ -126,7 +126,7 @@ IronveilOutpost.instantiate(XXXX, YYYY),
 
 Also add to `js/data/maps/arena.js` for testing:
 ```js
-import { IronveilOutpost } from '../../world/zones/gravewake/ironveilOutpost.js';
+import { IronveilOutpost } from '@/data/zones/gravewake/ironveilOutpost.js';
 
 // In MAP.entities:
 IronveilOutpost.instantiate(XXXX, YYYY),

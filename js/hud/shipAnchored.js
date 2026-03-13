@@ -1,9 +1,9 @@
 import {
   CYAN, AMBER, RED, MAGENTA, WHITE,
   VERY_DIM, DIM_TEXT,
-} from '../rendering/colors.js';
-import { LABEL } from '../rendering/draw.js';
-import { input } from '../input.js';
+} from '@/rendering/colors.js';
+import { LABEL } from '@/rendering/draw.js';
+import { input } from '@/input.js';
 
 const GUIDANCE_LABELS = { dumbfire: 'DUMB', wire: 'WIRE', heat: 'HEAT' };
 const WEAPON_PANEL_GAP      = 38;
@@ -131,6 +131,7 @@ const CURSOR_BAR_W = 3;
 const CURSOR_BAR_H = 24;
 
 export function renderCursorWeapons(ctx, game) {
+  if (!game.combatMode) return;
   const { player } = game;
   const mx = input.mouseScreen.x;
   const my = input.mouseScreen.y;

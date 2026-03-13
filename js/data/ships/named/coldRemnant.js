@@ -1,6 +1,6 @@
 // Cold Remnant — named derelict (Maverick-class courier, combat-modified).
 
-import { createDerelict } from '../../derelict.js';
+import { createDerelict } from '@/world/derelict.js';
 
 export const ColdRemnant = {
   name: 'Cold Remnant',

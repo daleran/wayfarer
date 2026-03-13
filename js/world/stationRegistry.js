@@ -1,9 +1,9 @@
 // Station registry — designer catalog only.
 // game.js no longer needs a factory dispatcher; entities self-instantiate.
 
-import { TheCoil }          from './zones/gravewake/theCoil/index.js';
-import { KellsStop }        from './zones/gravewake/kellsStop.js';
-import { AshveilAnchorage } from './zones/gravewake/ashveilAnchorage.js';
+import { TheCoil }          from '@/data/zones/gravewake/theCoil.js';
+import { KellsStop }        from '@/data/zones/gravewake/kellsStop.js';
+import { AshveilAnchorage } from '@/data/zones/gravewake/ashveilAnchorage.js';
 
 export const STATION_REGISTRY = [
   {

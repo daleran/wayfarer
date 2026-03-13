@@ -3,19 +3,116 @@
 // This overlay adds pan/zoom, per-entity debug stats, and an object sidebar
 // for temporary entity placement (position scouting — coords logged to console).
 
-import { input } from '../input.js';
-import { SHIP_REGISTRY, NPC_REGISTRY } from '../ships/registry.js';
-import { STATION_REGISTRY } from '../world/stationRegistry.js';
-import { createDerelict } from '../world/derelict.js';
+import { input } from '@/input.js';
+import { SHIP_REGISTRY, NPC_REGISTRY, createShip } from '@/ships/registry.js';
+import { STATION_REGISTRY } from '@/world/stationRegistry.js';
+import { createDerelict } from '@/world/derelict.js';
+import { createModuleById } from '@/modules/registry.js';
+import { WEAPON_REGISTRY } from '@/modules/weapons/registry.js';
+import { COMMODITIES } from '@/data/commodities.js';
 import {
   CYAN, AMBER, GREEN, RED, MAGENTA, WHITE,
   PANEL_BG, DIM_TEXT, DIM_OUTLINE,
-} from '../rendering/colors.js';
+} from '@/rendering/colors.js';
 
 const SIDEBAR_W = 240;
+const ITEM_SIDEBAR_W = 260;
 
 // Map editor category label → designer category id
 const DESIGNER_CAT = { SHIPS: 'ships', NPCS: 'ships', STATIONS: 'stations', DERELICTS: 'derelicts' };
+
+// Module categories for the item menu
+const MODULE_CATEGORIES = {
+  'WEAPONS': ['autocannon-module', 'lance-small', 'cannon-module', 'rocket-pod-s', 'rocket-pod-l'],
+  'ENGINES': ['onyx-drive-unit', 'chem-rocket-s', 'chem-rocket-l', 'magplasma-torch-s', 'magplasma-torch-l', 'ion-thruster'],
+  'POWER':   ['HydrogenFuelCell', 'SmallFissionReactor', 'LargeFissionReactor', 'LargeFusionReactor'],
+  'SENSORS': ['SalvagedSensorSuite', 'StandardSensorSuite', 'CombatComputer', 'SalvageScanner', 'LongRangeScanner'],
+};
+
+function _buildItemCategories() {
+  const cats = [];
+
+  // Scrap & Fuel
+  cats.push({
+    label: 'RESOURCES',
+    items: [
+      { id: 'scrap-50',   label: '+50 Scrap',    stats: 'currency', action: /** @param {*} g */ g => { g.inventory.scrap += 50; } },
+      { id: 'scrap-200',  label: '+200 Scrap',   stats: 'currency', action: /** @param {*} g */ g => { g.inventory.scrap += 200; } },
+      { id: 'scrap-1000', label: '+1000 Scrap',  stats: 'currency', action: /** @param {*} g */ g => { g.inventory.scrap += 1000; } },
+      { id: 'fuel-25',    label: '+25 Fuel',      stats: 'consumable', action: /** @param {*} g */ g => { g.inventory.fuel = Math.min(g.inventory.fuel + 25, g.inventory.fuelMax); } },
+      { id: 'fuel-full',  label: 'Full Fuel',     stats: 'fill to max', action: /** @param {*} g */ g => { g.inventory.fuel = g.inventory.fuelMax; } },
+    ],
+  });
+
+  // Modules — grouped by type
+  for (const [groupLabel, ids] of Object.entries(MODULE_CATEGORIES)) {
+    cats.push({
+      label: `MOD: ${groupLabel}`,
+      items: ids.map(id => {
+        const sample = createModuleById(id);
+        return {
+          id,
+          label: sample.displayName || id,
+          stats: _moduleStats(sample),
+          action: g => { g.inventory.modules.push(createModuleById(id)); },
+        };
+      }),
+    });
+  }
+
+  // Weapons
+  cats.push({
+    label: 'WEAPONS',
+    items: WEAPON_REGISTRY.map(entry => {
+      const sample = /** @type {*} */ (entry.create());
+      return {
+        id: entry.id,
+        label: sample.displayName || entry.label,
+        stats: `DMG:${sample.damage ?? '?'} RNG:${sample.maxRange ?? '?'}`,
+        action: g => { g.inventory.weapons.push(entry.create()); },
+      };
+    }),
+  });
+
+  // Ammo
+  const ammoTypes = [
+    { id: 'autocannon', label: 'Autocannon Ammo', amount: 100 },
+    { id: 'cannon',     label: 'Cannon Ammo',     amount: 20 },
+    { id: 'gatling',    label: 'Gatling Ammo',     amount: 200 },
+    { id: 'rocket',     label: 'Rocket Ammo',      amount: 10 },
+  ];
+  cats.push({
+    label: 'AMMO',
+    items: ammoTypes.map(a => ({
+      id: `ammo-${a.id}`,
+      label: `+${a.amount} ${a.label}`,
+      stats: `type: ${a.id}`,
+      action: g => { g.inventory.ammo[a.id] = (g.inventory.ammo[a.id] || 0) + a.amount; },
+    })),
+  });
+
+  // Commodities
+  cats.push({
+    label: 'COMMODITIES',
+    items: Object.values(COMMODITIES).map(c => ({
+      id: c.id,
+      label: c.name,
+      stats: `base price: ${c.basePrice} scrap`,
+      action: g => { g.inventory.cargo[c.id] = (g.inventory.cargo[c.id] || 0) + 5; },
+    })),
+  });
+
+  return cats;
+}
+
+function _moduleStats(mod) {
+  const parts = [];
+  if (mod.powerOutput) parts.push(`+${mod.powerOutput}W`);
+  if (mod.powerDraw)   parts.push(`-${mod.powerDraw}W`);
+  if (mod.thrust)      parts.push(`thrust:${mod.thrust}`);
+  if (mod.weapon)      parts.push(`wpn:${mod.weapon.displayName}`);
+  return parts.join(' ') || mod.description || '';
+}
 
 export class EditorOverlay {
   constructor(game) {
@@ -27,8 +124,13 @@ export class EditorOverlay {
     this._itemIdx  = 0;
     this._barItems = this._buildBarItems();
 
-    // Suppress the game's test-mode dev panel (top-right) in editor
-    game.isEditorMode = true;
+    // Item menu state
+    this._itemMenuOpen = false;
+    this._itemCatIdx   = 0;
+    this._itemSelIdx   = 0;
+    this._itemCats     = _buildItemCategories();
+    this._itemFlash    = 0; // flash timer for add confirmation
+
   }
 
   // ── Registry ──────────────────────────────────────────────────────────────
@@ -98,11 +200,28 @@ export class EditorOverlay {
       game.isPanMode = this._panMode;
     }
 
+    // Toggle AI freeze (V key)
+    if (input.wasJustPressed('v')) game.aiDisabled = !game.aiDisabled;
+
     // Toggle debug overlay (= key)
     if (input.wasJustPressed('=')) this._debugMode = (this._debugMode + 1) % 3;
 
+    // Quick spawn at mouse cursor
+    if (input.wasJustPressed('z')) this._quickSpawn('light-fighter');
+    if (input.wasJustPressed('x')) this._quickSpawn('armed-hauler');
+    if (input.wasJustPressed('c')) this._quickSpawn('salvage-mothership');
+
     // Toggle object sidebar (- key)
-    if (input.wasJustPressed('-')) this._barOpen = !this._barOpen;
+    if (input.wasJustPressed('-')) {
+      this._barOpen = !this._barOpen;
+      if (this._barOpen) this._itemMenuOpen = false; // close other panel
+    }
+
+    // Toggle item menu ([ key)
+    if (input.wasJustPressed('[')) {
+      this._itemMenuOpen = !this._itemMenuOpen;
+      if (this._itemMenuOpen) this._barOpen = false; // close other panel
+    }
 
     // Sidebar navigation — Left/Right = categories, Up/Down = items
     if (this._barOpen) {
@@ -123,8 +242,40 @@ export class EditorOverlay {
       }
     }
 
+    // Item menu navigation
+    if (this._itemMenuOpen) {
+      const cats = this._itemCats;
+      if (input.wasJustPressed('arrowleft')) {
+        this._itemCatIdx = (this._itemCatIdx - 1 + cats.length) % cats.length;
+        this._itemSelIdx = 0;
+      }
+      if (input.wasJustPressed('arrowright')) {
+        this._itemCatIdx = (this._itemCatIdx + 1) % cats.length;
+        this._itemSelIdx = 0;
+      }
+      const icat = cats[this._itemCatIdx];
+      if (input.wasJustPressed('arrowup')) {
+        this._itemSelIdx = (this._itemSelIdx - 1 + icat.items.length) % icat.items.length;
+      }
+      if (input.wasJustPressed('arrowdown')) {
+        this._itemSelIdx = (this._itemSelIdx + 1) % icat.items.length;
+      }
+      // Add item (Enter key)
+      if (input.wasJustPressed('enter')) {
+        const item = icat.items[this._itemSelIdx];
+        if (item?.action) {
+          item.action(this._game);
+          this._itemFlash = 0.4;
+          console.log(`[editor] added ${item.label} to cargo`);
+        }
+      }
+    }
+
+    // Decay flash timer
+    if (this._itemFlash > 0) this._itemFlash -= _dt;
+
     // Place selected object at mouse cursor (Alt key)
-    if (input.wasJustPressed('alt')) this._placeObject();
+    if (input.wasJustPressed('alt') && !this._itemMenuOpen) this._placeObject();
 
     // Open selected object in designer (Backspace key)
     if (input.wasJustPressed('backspace')) this._openInDesigner();
@@ -156,6 +307,17 @@ export class EditorOverlay {
     console.log(`[editor] placed ${item.label} at (${Math.round(world.x)}, ${Math.round(world.y)})`);
   }
 
+  _quickSpawn(shipType) {
+    const game  = this._game;
+    const world = game.camera.screenToWorld(input.mouseScreen.x, input.mouseScreen.y);
+    const ship  = createShip(shipType, world.x, world.y);
+    ship.homePosition = { x: world.x, y: world.y };
+    ship.ai._aggro = true;
+    game.entities.push(ship);
+    game.ships.push(ship);
+    console.log(`[editor] spawned ${shipType} at (${Math.round(world.x)}, ${Math.round(world.y)})`);
+  }
+
   _openInDesigner() {
     const cat  = this._barItems[this._catIdx];
     const item = cat.items[this._itemIdx];
@@ -176,6 +338,7 @@ export class EditorOverlay {
     if (this._panMode)   this._renderPanBanner(ctx, W);
     if (this._debugMode > 0) this._renderDebugOverlay(ctx, game, this._debugMode);
     if (this._barOpen)   this._renderSidebar(ctx, W, H);
+    if (this._itemMenuOpen) this._renderItemMenu(ctx, W, H);
     this._renderHUDBar(ctx, W, H);
   }
 
@@ -447,6 +610,122 @@ export class EditorOverlay {
     ctx.restore();
   }
 
+  // ── Item menu (left sidebar) ──────────────────────────────────────────────
+
+  _renderItemMenu(ctx, _W, H) {
+    const cats = this._itemCats;
+    const cat  = cats[this._itemCatIdx];
+    const items = cat.items;
+    const x = 0;
+    const w = ITEM_SIDEBAR_W;
+
+    ctx.save();
+
+    // Panel background
+    ctx.fillStyle = 'rgba(0,6,14,0.94)';
+    ctx.fillRect(x, 0, w, H);
+    ctx.strokeStyle = AMBER;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + w, 0);
+    ctx.lineTo(x + w, H);
+    ctx.stroke();
+
+    // Category header
+    ctx.font = "10px 'Fira Mono', monospace";
+    ctx.textAlign = 'left';
+    ctx.fillStyle = DIM_TEXT;
+    ctx.fillText('\u2190/\u2192 CATEGORY', x + 10, 22);
+
+    ctx.font = "bold 13px 'Fira Mono', monospace";
+    ctx.fillStyle = AMBER;
+    ctx.fillText(cat.label, x + 10, 42);
+
+    // Category indicator dots
+    for (let i = 0; i < cats.length; i++) {
+      ctx.fillStyle = i === this._itemCatIdx ? AMBER : DIM_TEXT;
+      ctx.beginPath();
+      ctx.arc(x + 10 + i * 14, 54, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Divider
+    ctx.strokeStyle = DIM_OUTLINE;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x + 8, 64);
+    ctx.lineTo(x + w - 8, 64);
+    ctx.stroke();
+
+    // Item list
+    ctx.font = "11px 'Fira Mono', monospace";
+    const itemH      = 22;
+    const listTop    = 72;
+    const maxVisible = Math.floor((H - listTop - 80) / itemH);
+    const scrollOff  = Math.max(0, this._itemSelIdx - Math.floor(maxVisible / 2));
+
+    for (let i = scrollOff; i < Math.min(items.length, scrollOff + maxVisible); i++) {
+      const item       = items[i];
+      const iy         = listTop + (i - scrollOff) * itemH;
+      const isSelected = i === this._itemSelIdx;
+
+      if (isSelected) {
+        // Flash green briefly on add
+        const flashAlpha = this._itemFlash > 0 ? 0.2 : 0.08;
+        const flashColor = this._itemFlash > 0 ? GREEN : AMBER;
+        ctx.fillStyle = this._itemFlash > 0
+          ? `rgba(0,255,100,${flashAlpha})`
+          : `rgba(255,200,80,${flashAlpha})`;
+        ctx.fillRect(x + 4, iy - 14, w - 8, itemH);
+        ctx.strokeStyle = flashColor;
+        ctx.lineWidth   = 0.5;
+        ctx.strokeRect(x + 4, iy - 14, w - 8, itemH);
+      }
+
+      ctx.fillStyle = isSelected ? AMBER : DIM_TEXT;
+      ctx.textAlign = 'left';
+      ctx.fillText(item.label, x + 12, iy);
+    }
+
+    // Selected item stats
+    const selItem = items[this._itemSelIdx];
+    if (selItem?.stats) {
+      const sy = H - 100;
+      ctx.strokeStyle = DIM_OUTLINE;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x + 8, sy);
+      ctx.lineTo(x + w - 8, sy);
+      ctx.stroke();
+
+      ctx.font = "10px 'Fira Mono', monospace";
+      ctx.fillStyle = DIM_TEXT;
+      ctx.textAlign = 'left';
+      ctx.fillText(selItem.stats, x + 10, sy + 14);
+    }
+
+    // Inventory summary
+    const inv = this._game.inventory;
+    const sumY = H - 66;
+    ctx.font = "10px 'Fira Mono', monospace";
+    ctx.fillStyle = DIM_OUTLINE;
+    ctx.beginPath();
+    ctx.moveTo(x + 8, sumY);
+    ctx.lineTo(x + w - 8, sumY);
+    ctx.stroke();
+    ctx.fillStyle = DIM_TEXT;
+    ctx.fillText(`SCRAP: ${inv.scrap}  FUEL: ${Math.round(inv.fuel)}/${inv.fuelMax}`, x + 10, sumY + 14);
+    ctx.fillText(`MODS: ${inv.modules.length}  WPNS: ${inv.weapons.length}`, x + 10, sumY + 28);
+
+    // Hint row at bottom
+    ctx.font = "10px 'Fira Mono', monospace";
+    ctx.fillStyle = DIM_TEXT;
+    ctx.textAlign = 'left';
+    ctx.fillText('\u2191/\u2193 select   Enter: add to cargo', x + 10, H - 12);
+
+    ctx.restore();
+  }
+
   // ── Bottom HUD bar ────────────────────────────────────────────────────────
 
   _renderHUDBar(ctx, W, _H) {
@@ -465,22 +744,15 @@ export class EditorOverlay {
     ctx.stroke();
 
     const mapParam = new URLSearchParams(location.search).get('map') ?? 'test';
-    const player = this._game.player;
-    const pris   = player ? player._primaryWeapons   : [];
-    const secs   = player ? player._secondaryWeapons : [];
-    const priIdx = player?.primaryWeaponIdx   ?? 0;
-    const secIdx = player?.secondaryWeaponIdx ?? 0;
-    const priName = pris[priIdx]?.displayName ?? '—';
-    const secName = secs[secIdx]?.displayName ?? '—';
-    const priLabel = pris.length > 1 ? `${priIdx + 1}/${pris.length} ${priName}` : priName;
-    const secLabel = secs.length > 1 ? `${secIdx + 1}/${secs.length} ${secName}` : secName;
+    const aiFrozen = this._game.aiDisabled;
     const segments = [
       { text: '[`: PAN]',      active: this._panMode  },
+      { text: '[V: AI]',       active: aiFrozen, color: aiFrozen ? MAGENTA : undefined },
       { text: '[=: DEBUG]',    active: this._debugMode },
       { text: '[-: OBJECTS]',  active: this._barOpen  },
+      { text: '[[: ITEMS]',    active: this._itemMenuOpen, color: this._itemMenuOpen ? AMBER : undefined },
       { text: '[Alt: PLACE]',  active: false },
-      { text: `[PRI: < ${priLabel} >]`, active: false, color: CYAN },
-      { text: `[SEC: < ${secLabel} >]`, active: false, color: CYAN },
+      { text: '[Z/X/C: SPAWN]', active: false },
       { text: `[?map=${mapParam}]`, active: false },
     ];
 

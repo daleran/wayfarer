@@ -1,5 +1,5 @@
-import { createParticle } from '../entities/particle.js';
-import { DrawBatch } from '../rendering/draw.js';
+import { createParticle } from '@/entities/particle.js';
+import { DrawBatch } from '@/rendering/draw.js';
 
 const POOL_SIZE = 200;
 

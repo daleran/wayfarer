@@ -1,7 +1,7 @@
-import { Entity } from '../entities/entity.js';
-import { CYAN, AMBER, RED, GREEN, WHITE } from '../rendering/colors.js';
-import { text, SUBTITLE } from '../rendering/draw.js';
-import { FACTION_MAP } from '../systems/reputation.js';
+import { Entity } from '@/entities/entity.js';
+import { CYAN, AMBER, RED, GREEN, WHITE } from '@/rendering/colors.js';
+import { text, SUBTITLE } from '@/rendering/draw.js';
+import { FACTION_MAP } from '@/systems/reputation.js';
 
 export class Station extends Entity {
   constructor(x, y, data) {

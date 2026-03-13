@@ -1,6 +1,6 @@
-import { generateEnemyLoot } from '../entities/lootDrop.js';
-import { createShip } from '../ships/registry.js';
-import { REPUTATION } from '../data/tuning/reputationTuning.js';
+import { generateEnemyLoot } from '@/entities/lootDrop.js';
+import { createShip } from '@/ships/registry.js';
+import { REPUTATION } from '@data/compiledData.js';
 
 export class BountySystem {
   constructor() {

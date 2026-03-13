@@ -1,7 +1,7 @@
-import { MaverickCourier } from '../../ships/classes/maverickCourier.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
-import { CONCORD_BLUE, ENEMY_FILL } from '../../rendering/colors.js';
-import { engineGlow } from '../../rendering/draw.js';
+import { MaverickCourier } from '@/ships/classes/maverickCourier.js';
+import { AI_TEMPLATES } from '@data/compiledData.js';
+import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
+import { engineGlow } from '@/rendering/draw.js';
 
 const SPEED_MULT = 2.0;   // ~196 u/s — extremely fast
 const ACCEL_MULT = 2.2;

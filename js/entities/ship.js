@@ -1,10 +1,13 @@
 import { Entity } from './entity.js';
-import { RELATION_COLORS, RED, WHITE, armorArcColor } from '../rendering/colors.js';
-import { trail as drawTrail } from '../rendering/draw.js';
+import { RELATION_COLORS, RED, WHITE, AMBER, DIM_TEXT, armorArcColor } from '@/rendering/colors.js';
+import { trail as drawTrail, FLAVOR, PROMPT } from '@/rendering/draw.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL, BASE_CARGO,
          BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
-         THROTTLE_LEVELS, THROTTLE_RATIOS } from '../data/tuning/shipTuning.js';
+         THROTTLE_LEVELS, THROTTLE_RATIOS,
+         BASE_HULL_WEIGHT, CARGO_WEIGHT_PER_UNIT, FUEL_WEIGHT_PER_UNIT,
+         TW_ACCEL_SENSITIVITY, TW_SPEED_SENSITIVITY, TW_TURN_SENSITIVITY,
+         TW_MULT_MIN, TW_MULT_MAX } from '@data/compiledData.js';
 
 const TRAIL_MAX_POINTS = 120;
 
@@ -70,7 +73,10 @@ export class Ship extends Entity {
       sensor_range: 0,
       lead_indicators: false,
       health_pips: false,
-      salvage_detail: false
+      salvage_detail: false,
+      trajectory_line: false,
+      enemy_telemetry: false,
+      module_inspection: false
     };
 
     // Input state (set by game each frame)
@@ -86,6 +92,17 @@ export class Ship extends Entity {
     this.weapons = [];
     this.primaryWeaponIdx   = 0;
     this.secondaryWeaponIdx = 0;
+
+    // Derelict support — when crew === 0 the ship is inert wreckage
+    this.crew = 1;
+    this.lootTable = null;
+    this.salvageTime = 0;
+    this.salvaged = false;
+    this.loreText = null;
+    this.interactionRadius = 0;
+    this.isNearby = false;
+    this.canSalvage = false;
+    this._loreAlpha = 0;
 
     // Display / bounty metadata (set dynamically)
     this.displayName = null;
@@ -222,6 +239,10 @@ export class Ship extends Entity {
     return !this.active;
   }
 
+  get isDerelict() {
+    return this.crew === 0;
+  }
+
   get effectiveSpeedMax() {
     const ratio = this.hullCurrent / this.hullMax;
     if (ratio <= 0.05) return this.speedMax * 0.1;
@@ -249,18 +270,6 @@ export class Ship extends Entity {
     return this.weapons.filter(w => w.isSecondary);
   }
 
-  cyclePrimary(dir = 1) {
-    const arr = this._primaryWeapons;
-    if (arr.length === 0) return;
-    this.primaryWeaponIdx = (this.primaryWeaponIdx + dir + arr.length) % arr.length;
-  }
-
-  cycleSecondary(dir = 1) {
-    const arr = this._secondaryWeapons;
-    if (arr.length === 0) return;
-    this.secondaryWeaponIdx = (this.secondaryWeaponIdx + dir + arr.length) % arr.length;
-  }
-
   addWeapon(weapon) {
     this.weapons.push(weapon);
   }
@@ -285,14 +294,15 @@ export class Ship extends Entity {
 
   /**
    * Initialize all stat fields from multiplier config.
-   * @param {{ speed: number, accel: number, turn: number, hull: number, cargo?: number, fuelMax?: number, fuelEff?: number, armorFront?: number, armorSide?: number, armorAft?: number }} opts
+   * @param {{ speed: number, accel: number, turn: number, hull: number, weight?: number, cargo?: number, fuelMax?: number, fuelEff?: number, armorFront?: number, armorSide?: number, armorAft?: number }} opts
    */
-  _initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft }) {
+  _initStats({ speed, accel, turn, hull, weight, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft }) {
     this.speedMax      = BASE_SPEED        * speed * SPEED_FACTOR;
     this.acceleration  = BASE_ACCELERATION * accel * SPEED_FACTOR;
     this.turnRate      = BASE_TURN_RATE    * turn  * SPEED_FACTOR;
     this.hullMax       = BASE_HULL * hull;
     this.hullCurrent   = this.hullMax;
+    if (weight !== undefined) this.baseWeight    = BASE_HULL_WEIGHT * weight;
     if (cargo !== undefined)  this.cargoCapacity  = BASE_CARGO * cargo;
     if (fuelMax !== undefined) this.fuelMax        = BASE_FUEL_MAX * fuelMax;
     if (fuelEff !== undefined) this.fuelEfficiency = BASE_FUEL_EFFICIENCY * fuelEff;
@@ -301,15 +311,80 @@ export class Ship extends Entity {
 
   // Call at the end of any ship constructor that uses module-based weapons.
   _applyModules() {
-    // Freeze base movement stats so engine modules can apply clean multipliers.
+    // Freeze base movement stats before any module effects.
     this._baseSpeedMax     = this.speedMax;
     this._baseAcceleration = this.acceleration;
+    this._baseTurnRate     = this.turnRate;
     this._baseFuelEff      = this.fuelEfficiency;
 
     for (const mod of (this.moduleSlots || [])) {
       if (mod?.onInstall) mod.onInstall(this);
     }
     this.refreshCapabilities();
+
+    // Compute initial T/W ratio — sets _refTwRatio on first call
+    this.recalcTW();
+  }
+
+  /**
+   * Recalculate movement stats from thrust-to-weight ratio.
+   * Call after: module swap, cargo change, salvage, dock, engine damage.
+   * @param {number} [fuel] - current fuel (defaults to fuelMax)
+   * @param {number} [cargoUsed] - current cargo units used (defaults to 0)
+   */
+  recalcTW(fuel, cargoUsed) {
+    const modules = this.moduleSlots || [];
+
+    // Sum module weights and engine thrust
+    let moduleWeight = 0;
+    let totalThrust = 0;
+    let fuelEffMult = 1.0;
+    let hasEngine = false;
+
+    for (const mod of modules) {
+      if (!mod) continue;
+      moduleWeight += mod.weight || 0;
+      if (mod.isEngine) {
+        totalThrust += (mod.thrust || 0) * mod.conditionMultiplier;
+        fuelEffMult = mod.fuelEffMult * mod.conditionMultiplier;
+        hasEngine = true;
+      }
+    }
+
+    const fuelWeight = (fuel ?? this.fuelMax ?? 0) * FUEL_WEIGHT_PER_UNIT;
+    const cargoWeight = (cargoUsed ?? 0) * CARGO_WEIGHT_PER_UNIT;
+    const totalWeight = (this.baseWeight || BASE_HULL_WEIGHT) + moduleWeight + fuelWeight + cargoWeight;
+    const twRatio = totalThrust > 0 ? totalThrust / totalWeight : 0;
+
+    // Store ref on first call (construction with stock modules, full fuel, zero cargo)
+    if (this._refTwRatio === undefined) {
+      this._refTwRatio = twRatio;
+    }
+
+    // Store current values for UI
+    this._twRatio = twRatio;
+    this._totalWeight = totalWeight;
+    this._totalThrust = totalThrust;
+
+    // Derive movement stats from T/W power curves
+    if (this._refTwRatio > 0 && totalThrust > 0) {
+      const r = twRatio / this._refTwRatio;
+      const clamp = (v) => Math.max(TW_MULT_MIN, Math.min(TW_MULT_MAX, v));
+
+      this.speedMax      = (this._baseSpeedMax     ?? this.speedMax)     * clamp(Math.pow(r, TW_SPEED_SENSITIVITY));
+      this.acceleration  = (this._baseAcceleration ?? this.acceleration) * clamp(Math.pow(r, TW_ACCEL_SENSITIVITY));
+      this.turnRate      = (this._baseTurnRate     ?? this.turnRate)     * clamp(Math.pow(r, TW_TURN_SENSITIVITY));
+    } else if (this._refTwRatio > 0) {
+      // No thrust (engine removed / destroyed) → floor values
+      this.speedMax     = (this._baseSpeedMax     ?? this.speedMax)     * TW_MULT_MIN;
+      this.acceleration = (this._baseAcceleration ?? this.acceleration) * TW_MULT_MIN;
+      this.turnRate     = (this._baseTurnRate     ?? this.turnRate)     * TW_MULT_MIN;
+    }
+
+    // Fuel efficiency from engine
+    if (hasEngine) {
+      this.fuelEfficiency = (this._baseFuelEff ?? BASE_FUEL_EFFICIENCY) * fuelEffMult;
+    }
   }
 
   // Recalculates based on currently installed modules.
@@ -321,7 +396,10 @@ export class Ship extends Entity {
       sensor_range: 0,
       lead_indicators: false,
       health_pips: false,
-      salvage_detail: false
+      salvage_detail: false,
+      trajectory_line: false,
+      enemy_telemetry: false,
+      module_inspection: false
     };
 
     if (!this.moduleSlots) return;
@@ -331,11 +409,14 @@ export class Ship extends Entity {
       const notDestroyed = mod.conditionMultiplier > 0;
       // Boolean capabilities go offline when module is destroyed
       if (notDestroyed) {
-        if (mod.minimap_stations) this.capabilities.minimap_stations = true;
-        if (mod.minimap_ships)    this.capabilities.minimap_ships    = true;
-        if (mod.lead_indicators)  this.capabilities.lead_indicators  = true;
-        if (mod.health_pips)      this.capabilities.health_pips      = true;
-        if (mod.salvage_detail)   this.capabilities.salvage_detail   = true;
+        if (mod.minimap_stations)   this.capabilities.minimap_stations   = true;
+        if (mod.minimap_ships)      this.capabilities.minimap_ships      = true;
+        if (mod.lead_indicators)    this.capabilities.lead_indicators    = true;
+        if (mod.health_pips)        this.capabilities.health_pips        = true;
+        if (mod.salvage_detail)     this.capabilities.salvage_detail     = true;
+        if (mod.trajectory_line)    this.capabilities.trajectory_line    = true;
+        if (mod.enemy_telemetry)    this.capabilities.enemy_telemetry    = true;
+        if (mod.module_inspection)  this.capabilities.module_inspection  = true;
       }
       // Sensor range scales with condition (degraded sensors have reduced range)
       if (mod.sensor_range) {
@@ -455,6 +536,10 @@ export class Ship extends Entity {
   }
 
   update(dt, entities) {
+    if (this.isDerelict) {
+      if (this._hitFlashTimer > 0) this._hitFlashTimer -= dt;
+      return;
+    }
     for (const w of this.weapons) w.update(dt, entities);
     if (this._hitFlashTimer > 0) this._hitFlashTimer -= dt;
 
@@ -518,6 +603,11 @@ export class Ship extends Entity {
   }
 
   render(ctx, camera) {
+    if (this.isDerelict) {
+      if (!this.salvaged) this._renderDerelict(ctx, camera);
+      return;
+    }
+
     this._renderTrails(ctx, camera);
 
     const screen = camera.worldToScreen(this.x, this.y);
@@ -564,6 +654,55 @@ export class Ship extends Entity {
         screenPoints[i] = camera.worldToScreen(t[i].x, t[i].y);
       }
       drawTrail(ctx, screenPoints, this.engineColor, 0.6, 2.5);
+    }
+  }
+
+  _renderDerelict(ctx, camera) {
+    const screen = camera.worldToScreen(this.x, this.y);
+
+    // Draw hull at reduced alpha
+    ctx.save();
+    ctx.translate(screen.x, screen.y);
+    ctx.scale(camera.zoom, camera.zoom);
+    ctx.rotate(this.rotation);
+    ctx.globalAlpha = 0.55;
+    this._drawShape(ctx);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Lore text — fades in as player approaches
+    if (this._loreAlpha > 0 && this.loreText && this.loreText.length > 0) {
+      const loreX = screen.x + 28 * camera.zoom + 10;
+      const loreY = screen.y - (this.loreText.length - 1) * 6;
+      ctx.save();
+      ctx.font = FLAVOR.font;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = DIM_TEXT;
+      ctx.globalAlpha = this._loreAlpha * FLAVOR.alpha;
+      for (let i = 0; i < this.loreText.length; i++) {
+        ctx.fillText(this.loreText[i], loreX, loreY + i * 16);
+      }
+      ctx.restore();
+    }
+
+    // "[E] SALVAGE" / "STOP TO SALVAGE" prompt
+    if (this.isNearby) {
+      const alpha = 0.55 + Math.sin(Date.now() * 0.004) * 0.35;
+      const promptY = screen.y + (this.getBounds().radius + 14) * camera.zoom;
+      ctx.save();
+      ctx.font = PROMPT.font;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.globalAlpha = alpha;
+      if (this.canSalvage) {
+        ctx.fillStyle = AMBER;
+        ctx.fillText('[ E ] SALVAGE', screen.x, promptY);
+      } else {
+        ctx.fillStyle = RED;
+        ctx.fillText('STOP TO SALVAGE', screen.x, promptY);
+      }
+      ctx.restore();
     }
   }
 

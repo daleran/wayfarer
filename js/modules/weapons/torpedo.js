@@ -1,6 +1,6 @@
-import { Projectile } from '../../entities/projectile.js';
+import { Projectile } from '@/entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '../../data/tuning/weaponTuning.js';
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '@data/compiledData.js';
 
 const DAMAGE_MULT      = 17.65;  // ~300 armor — ship-killing AoE
 const HULL_DAMAGE_MULT = 22.0;   // 220 hull

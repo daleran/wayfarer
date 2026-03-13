@@ -20,12 +20,12 @@ Ask the user (or infer from their description) for:
 
 ## Step 2 — Decide on stats
 
-All stats use the multiplier pattern. Import from `js/data/tuning/shipTuning.js`:
+All stats use the multiplier pattern. Import from `@data/compiledData.js`:
 ```js
 import {
   BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
   BASE_HULL, BASE_ARMOR, BASE_FUEL_MAX
-} from '../../data/tuning/shipTuning.js';
+} from '@data/compiledData.js';
 ```
 
 Define multiplier constants at the top of the file:
@@ -61,7 +61,7 @@ const ARMOR_AFT   = 0.6;
 Template for a new base class:
 ```js
 import { Ship } from '../ship.js';   // adjust path for depth
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '@data/compiledData.js';
 
 const SPEED_MULT = 1.0;
 const ACCEL_MULT = 1.0;

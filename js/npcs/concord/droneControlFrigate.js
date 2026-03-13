@@ -1,8 +1,8 @@
-import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
-import { LanceModuleSmall } from '../../modules/shipModule.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
-import { CONCORD_BLUE, ENEMY_FILL } from '../../rendering/colors.js';
-import { engineGlow } from '../../rendering/draw.js';
+import { GarrisonFrigate } from '@/ships/classes/garrisonFrigate.js';
+import { LanceModuleSmall, OnyxDriveUnit } from '@/modules/shipModule.js';
+import { AI_TEMPLATES } from '@data/compiledData.js';
+import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
+import { engineGlow } from '@/rendering/draw.js';
 import { SnatcHerDrone } from './snatcHerDrone.js';
 
 const SPEED_MULT = 0.45;
@@ -64,7 +64,7 @@ export class DroneControlFrigate extends GarrisonFrigate {
       hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
 
-    this.moduleSlots = [new LanceModuleSmall(), null];
+    this.moduleSlots = [new OnyxDriveUnit(), new LanceModuleSmall(), null];
     this._applyModules();
 
     // Drone management

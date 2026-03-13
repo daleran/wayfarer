@@ -71,90 +71,50 @@
   margin: 0;
 }
 
-/* ── Area list (top-level station nav) ────────────────────────────────────────── */
+/* ── District bar (single-level station nav) ─────────────────────────────────── */
 
-.loc-area-list {
-  flex: 1;
+.loc-district-bar {
   display: flex;
-  flex-direction: column;
-  gap: 0;
-  overflow-y: auto;
+  flex-direction: row;
+  border-bottom: 1px solid var(--p-border);
+  flex-shrink: 0;
 }
 
-.loc-area-card {
+.loc-district-btn {
+  flex: 1;
+  min-width: 0;
   background: transparent;
-  border-bottom: 1px solid var(--p-very-dim);
-  padding: 14px 18px;
-  cursor: pointer;
-  transition: background 0.12s;
-  user-select: none;
-}
-
-.loc-area-card:hover {
-  background: rgba(0,255,204,0.03);
-}
-
-.loc-area-card.locked {
-  pointer-events: none;
-  opacity: 0.3;
-}
-
-.loc-area-card-name {
-  font-size: 11px;
-  font-weight: bold;
-  color: var(--p-cyan);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.loc-area-card-desc {
-  font-size: 11px;
-  line-height: 1.5;
+  border: none;
+  border-bottom: 2px solid transparent;
   color: var(--p-dim);
-}
-
-.loc-area-card-lock {
-  font-size: 10px;
-  color: var(--p-red);
-  margin-top: 6px;
+  font: 10px 'Fira Mono', monospace;
   letter-spacing: 0.05em;
-}
-
-/* ── Back button ──────────────────────────────────────────────────────────────── */
-
-.loc-back-btn {
-  font-size: 10px;
-  color: var(--p-dim);
+  padding: 8px 6px;
   cursor: pointer;
-  border: 1px solid var(--p-very-dim);
-  padding: 4px 10px;
-  letter-spacing: 0.08em;
-  transition: color 0.12s, border-color 0.12s;
-  user-select: none;
-  white-space: nowrap;
-  background: transparent;
-}
-
-.loc-back-btn:hover {
-  color: var(--p-cyan);
-  border-color: var(--p-cyan);
-}
-
-/* ── Zone detail header ───────────────────────────────────────────────────────── */
-
-.loc-zone-title {
-  font-size: 11px;
-  font-weight: bold;
-  color: var(--p-cyan);
-  letter-spacing: 0.08em;
+  text-align: center;
   text-transform: uppercase;
+  transition: border-color 0.1s, color 0.1s, background 0.1s;
+  user-select: none;
 }
 
-.loc-station-sub {
-  font-size: 10px;
-  color: var(--p-dim);
+.loc-district-btn:hover {
+  border-bottom-color: var(--p-cyan);
+  color: var(--p-cyan);
+  background: rgba(0,255,204,0.04);
 }
+
+.loc-district-btn.active {
+  border-bottom-color: var(--p-cyan);
+  color: var(--p-cyan);
+  background: rgba(0,255,204,0.06);
+}
+
+.loc-district-btn.locked {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+/* (Back button and zone-detail header removed — single-level district bar now) */
 
 /* ── Zone flavor text ─────────────────────────────────────────────────────────── */
 

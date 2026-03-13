@@ -1,6 +1,6 @@
 // Pale Witness — named derelict (G100-class hauler, running dark).
 
-import { createDerelict } from '../../derelict.js';
+import { createDerelict } from '@/world/derelict.js';
 
 export const PaleWitness = {
   name: 'Pale Witness',

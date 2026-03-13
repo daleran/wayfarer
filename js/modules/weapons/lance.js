@@ -1,4 +1,4 @@
-import { BASE_DAMAGE, BASE_WEAPON_RANGE } from '../../data/tuning/weaponTuning.js';
+import { BASE_DAMAGE, BASE_WEAPON_RANGE } from '@data/compiledData.js';
 
 const OVERHEAT_LIMIT = 5.0;  // seconds at full power before forced shutdown
 const COOLDOWN_TIME  = 4.0;  // seconds required to cool before firing again

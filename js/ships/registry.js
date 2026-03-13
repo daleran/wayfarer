@@ -6,14 +6,14 @@ import { MaverickCourier }      from './classes/maverickCourier.js';
 import { G100ClassHauler }      from './classes/g100Hauler.js';
 import { GarrisonFrigate }      from './classes/garrisonFrigate.js';
 import { createHullbreaker }    from './player/hullbreaker.js';
-import { createLightFighter }   from '../npcs/scavengers/lightFighter.js';
-import { createArmedHauler }    from '../npcs/scavengers/armedHauler.js';
-import { createSalvageMothership } from '../npcs/scavengers/salvageMothership.js';
-import { createGraveClanAmbusher } from '../npcs/scavengers/graveClanAmbusher.js';
-import { createDroneControlFrigate } from '../npcs/concord/droneControlFrigate.js';
-import { createSnatcHerDrone }       from '../npcs/concord/snatcHerDrone.js';
-import { createTraderConvoy }   from '../npcs/settlements/traderConvoy.js';
-import { createMilitiaPatrol }  from '../npcs/settlements/militiaPatrol.js';
+import { createLightFighter }   from '@/npcs/scavengers/lightFighter.js';
+import { createArmedHauler }    from '@/npcs/scavengers/armedHauler.js';
+import { createSalvageMothership } from '@/npcs/scavengers/salvageMothership.js';
+import { createGraveClanAmbusher } from '@/npcs/scavengers/graveClanAmbusher.js';
+import { createDroneControlFrigate } from '@/npcs/concord/droneControlFrigate.js';
+import { createSnatcHerDrone }       from '@/npcs/concord/snatcHerDrone.js';
+import { createTraderConvoy }   from '@/npcs/settlements/traderConvoy.js';
+import { createMilitiaPatrol }  from '@/npcs/settlements/militiaPatrol.js';
 
 // ── Hull templates ─────────────────────────────────────────────────────────────
 // Pure physical vessel definitions: shape, stats, slot layout.

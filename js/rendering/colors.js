@@ -133,6 +133,13 @@ export function standingColor(level) {
   }[level] ?? DIM_TEXT;
 }
 
+// Map view
+export const MAP_BG = 'rgba(0,4,8,0.92)';
+export const MAP_ZONE_BORDER = 'rgba(0,255,204,0.15)';
+export const NAV_WAYPOINT = AMBER;
+export const NAV_COURSE_LINE = AMBER;
+export const NAV_FUEL_RANGE = 'rgba(255,170,0,0.25)';
+
 // Minimap
 export const MINIMAP_BG = 'rgba(0,4,8,0.8)';
 export const MINIMAP_BORDER = 'rgba(0,255,204,0.4)';

@@ -1,5 +1,5 @@
-import { Entity } from '../entities/entity.js';
-import { VERY_DIM } from '../rendering/colors.js';
+import { Entity } from '@/entities/entity.js';
+import { VERY_DIM } from '@/rendering/colors.js';
 
 export class DebrisCloud extends Entity {
   constructor(x, y, data) {

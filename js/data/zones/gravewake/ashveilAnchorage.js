@@ -1,8 +1,8 @@
 // Ashveil Anchorage — neutral repair/trade station (colony ship hull renderer).
 // Data + layout + instantiate(), all in one place.
 
-import { Station } from '../../station.js';
-import { WHITE } from '../../../rendering/colors.js';
+import { Station } from '@/world/station.js';
+import { WHITE } from '@/rendering/colors.js';
 
 // ── AshveilStation renderer ────────────────────────────────────────────────
 
@@ -237,6 +237,7 @@ const LAYOUT = {
       label:       'Repair Bay',
       description: 'Structural and armor work. Engine overhauls available.',
       services:    ['repair', 'reactor'],
+      worldOffset: { x: -50, y: 30 },
       flavor: [
         'ASHVEIL ANCHORAGE — OPEN PORT',
         '',
@@ -255,6 +256,7 @@ const LAYOUT = {
       label:       'Trade Post',
       description: 'Outbound cargo accepted. Inbound prices reflect the run.',
       services:    ['trade'],
+      worldOffset: { x: 42, y: 20 },
       flavor: [
         '[ TRADE POST ]',
         '',
@@ -268,6 +270,7 @@ const LAYOUT = {
       label:       'Bounty Board',
       description: 'Posted contracts from Anchorage operators.',
       services:    ['bounties'],
+      worldOffset: { x: 98, y: -20 },
       flavor: [],
       requiredStanding: null,
     },
@@ -276,6 +279,7 @@ const LAYOUT = {
       label:       'Intel',
       description: 'Station intelligence and local knowledge.',
       services:    ['intel'],
+      worldOffset: { x: -82, y: -40 },
       flavor: [],
       requiredStanding: null,
     },
@@ -284,6 +288,7 @@ const LAYOUT = {
       label:       'Relations',
       description: 'Faction standings.',
       services:    ['relations'],
+      worldOffset: { x: 0, y: -60 },
       flavor: [],
       requiredStanding: null,
     },

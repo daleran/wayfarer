@@ -1,5 +1,6 @@
-import { CompactHauler } from '../../ships/classes/compactHauler.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
+import { CompactHauler } from '@/ships/classes/compactHauler.js';
+import { OnyxDriveUnit } from '@/modules/shipModule.js';
+import { AI_TEMPLATES } from '@data/compiledData.js';
 
 const SPEED_MULT = 0.55;  // ~46 u/s — slow trading hauler
 const ACCEL_MULT = 0.75;
@@ -30,6 +31,9 @@ export class TraderConvoy extends CompactHauler {
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
+
+    this.moduleSlots = [new OnyxDriveUnit()];
+    this._applyModules();
   }
 }
 

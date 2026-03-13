@@ -1,11 +1,12 @@
-import { Ship } from '../../entities/ship.js';
-import { engineGlow, lines, polygonStroke } from '../../rendering/draw.js';
+import { Ship } from '@/entities/ship.js';
+import { engineGlow, lines, polygonStroke } from '@/rendering/draw.js';
 
-const SPEED_MULT = 0.85;  // ~71 u/s — reliable workhorse
-const ACCEL_MULT = 0.85;  // moderate acceleration
-const TURN_MULT  = 0.9;   // decent handling for its size
-const HULL_MULT  = 1.1;   // 220 hp — solid frame
-const CARGO_MULT = 3.5;   // 175 units — the whole point
+const SPEED_MULT  = 0.85;  // ~71 u/s — reliable workhorse
+const ACCEL_MULT  = 0.85;  // moderate acceleration
+const TURN_MULT   = 0.9;   // decent handling for its size
+const HULL_MULT   = 1.1;   // 220 hp — solid frame
+const WEIGHT_MULT = 1.4;   // 1400 mass — heavy hauler frame
+const CARGO_MULT  = 3.5;   // 175 units — the whole point
 
 // Armor arc multipliers (× BASE_ARMOR = 100)
 const ARMOR_FRONT = 1.3;  // 130 — reinforced cab
@@ -98,7 +99,7 @@ export class G100ClassHauler extends Ship {
 
     this._initStats({
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
-      hull: HULL_MULT, cargo: CARGO_MULT,
+      hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,
       fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
       armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });

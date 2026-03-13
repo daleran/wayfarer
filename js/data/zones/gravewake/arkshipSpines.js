@@ -1,7 +1,7 @@
 // Arkship Spines — shattered structural beams from the Exile Fleet.
 // Much larger than ships: 3000–6000 units long, 150–300 wide.
 
-import { createArkshipSpine } from '../../arkshipSpine.js';
+import { createArkshipSpine } from '@/world/arkshipSpine.js';
 
 const SPINES = [
   // Western approach corridor

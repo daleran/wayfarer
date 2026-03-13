@@ -1,7 +1,7 @@
-import { Projectile } from '../../entities/projectile.js';
-import { RAIL_WHITE } from '../../rendering/colors.js';
+import { Projectile } from '@/entities/projectile.js';
+import { RAIL_WHITE } from '@/rendering/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR } from '../../data/tuning/weaponTuning.js';
+         PROJECTILE_SPEED_FACTOR } from '@data/compiledData.js';
 
 // INTER_SHOT: cooldown between shots within a burst (0 = no delay for mag-1 weapons)
 // RELOAD_TIME: time to reload after magazine depleted

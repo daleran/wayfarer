@@ -1,8 +1,8 @@
-import { Projectile } from '../../entities/projectile.js';
+import { Projectile } from '@/entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
-         ROCKET_MAG_SIZE, ROCKET_RELOAD_TIME } from '../../data/tuning/weaponTuning.js';
-import { normalizeToTarget } from '../../utils/math.js';
+         ROCKET_MAG_SIZE, ROCKET_RELOAD_TIME } from '@data/compiledData.js';
+import { normalizeToTarget } from '@/utils/math.js';
 
 const DAMAGE_MULT      = 5.3;   // ~100 armor damage
 const HULL_DAMAGE_MULT = 6.5;   // ~78 hull

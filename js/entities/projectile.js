@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { GREEN, RED, AMBER, PLASMA_GREEN } from '../rendering/colors.js';
+import { GREEN, RED, AMBER, PLASMA_GREEN } from '@/rendering/colors.js';
 
 const ROCKET_TRAIL_MAX = 80;
 const BOLT_TRAIL_MAX   = 18;

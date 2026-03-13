@@ -1,6 +1,6 @@
 // Broken Covenant — named derelict (Garrison-class frigate).
 
-import { createDerelict } from '../../derelict.js';
+import { createDerelict } from '@/world/derelict.js';
 
 export const BrokenCovenant = {
   name: 'Broken Covenant',

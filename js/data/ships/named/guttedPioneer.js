@@ -1,6 +1,6 @@
 // Gutted Pioneer — named derelict (G100-class hauler).
 
-import { createDerelict } from '../../derelict.js';
+import { createDerelict } from '@/world/derelict.js';
 
 export const GuttedPioneer = {
   name: 'Gutted Pioneer',

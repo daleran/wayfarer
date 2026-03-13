@@ -1,5 +1,5 @@
-import { FACTIONS, FACTION_LABELS } from '../../systems/reputation.js';
-import { standingColor } from '../../rendering/colors.js';
+import { FACTIONS, FACTION_LABELS } from '@/systems/reputation.js';
+import { standingColor } from '@/rendering/colors.js';
 
 export function buildRelationsPanel(container, station, game) {
   container.innerHTML = '';

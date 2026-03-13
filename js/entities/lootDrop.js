@@ -1,15 +1,15 @@
 import { Entity } from './entity.js';
-import { AMBER, CYAN, GREEN, MAGENTA } from '../rendering/colors.js';
+import { AMBER, CYAN, GREEN, MAGENTA } from '@/rendering/colors.js';
 import {
   SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
   SalvageScannerModule, LongRangeScannerModule,
   HydrogenFuelCell, SmallFissionReactor, LargeFusionReactor,
-} from '../modules/shipModule.js';
-import { Autocannon } from '../modules/weapons/autocannon.js';
-import { Cannon }     from '../modules/weapons/cannon.js';
-import { Lance }      from '../modules/weapons/lance.js';
-import { LOOT_TABLES, DEFAULT_LOOT_TABLE } from '../data/lootTables.js';
-import { COMMODITIES } from '../data/commodities.js';
+} from '@/modules/shipModule.js';
+import { Autocannon } from '@/modules/weapons/autocannon.js';
+import { Cannon }     from '@/modules/weapons/cannon.js';
+import { Lance }      from '@/modules/weapons/lance.js';
+import { LOOT_TABLES, DEFAULT_LOOT_TABLE } from '@/data/lootTables.js';
+import { COMMODITIES } from '@/data/commodities.js';
 
 const PICKUP_RADIUS = 40;
 const LIFETIME = 30;

@@ -1,7 +1,7 @@
-import { Projectile } from '../entities/projectile.js';
-import { Ship } from '../entities/ship.js';
-import { RocketExplosion } from '../entities/rocketExplosion.js';
-import { REPUTATION } from '../data/tuning/reputationTuning.js';
+import { Projectile } from '@/entities/projectile.js';
+import { Ship } from '@/entities/ship.js';
+import { RocketExplosion } from '@/entities/rocketExplosion.js';
+import { REPUTATION } from '@data/compiledData.js';
 
 export class CollisionSystem {
   constructor() {}
@@ -82,6 +82,7 @@ export class CollisionSystem {
 
       for (const target of entities) {
         if (!target.active || !(target instanceof Ship)) continue;
+        if (target.isDerelict) continue;
         if (proj.owner === target) continue;
         if (proj.owner?.faction && target.faction && proj.owner.faction === target.faction) continue;
 
@@ -141,6 +142,7 @@ export class CollisionSystem {
   _aoeExplode(x, y, damage, hullDamage, blastRadius, entities, player, { particlePool: _particlePool, hud, repair, reputation: _reputation, onEnemyKilled }) {
     for (const entity of entities) {
       if (!entity.active || !(entity instanceof Ship)) continue;
+      if (entity.isDerelict) continue;
       const sb = entity.getBounds();
       const dx = sb.x - x;
       const dy = sb.y - y;

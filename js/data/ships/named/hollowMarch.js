@@ -1,6 +1,6 @@
 // Hollow March — named derelict (unknown hull class, Pre-Collapse).
 
-import { createDerelict } from '../../derelict.js';
+import { createDerelict } from '@/world/derelict.js';
 
 export const HollowMarch = {
   name: 'Hollow March',

@@ -16,6 +16,26 @@ export class Camera {
     this.y += (target.y - this.y) * factor;
   }
 
+  /** Set a world-space position to smoothly pan toward. */
+  panTo(x, y) {
+    this._panTargetX = x;
+    this._panTargetY = y;
+  }
+
+  /** Advance the pan lerp each frame. */
+  updatePan(dt) {
+    if (this._panTargetX == null) return;
+    const factor = 1 - Math.pow(1 - 0.12, dt * 60);
+    this.x += (this._panTargetX - this.x) * factor;
+    this.y += (this._panTargetY - this.y) * factor;
+  }
+
+  /** Cancel any active pan target. */
+  clearPan() {
+    this._panTargetX = null;
+    this._panTargetY = null;
+  }
+
   applyWheel(wheelDelta) {
     if (wheelDelta === 0) return;
     this._targetZoom *= 1 - wheelDelta * 0.001;

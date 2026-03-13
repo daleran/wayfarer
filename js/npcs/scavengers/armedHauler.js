@@ -1,6 +1,6 @@
-import { G100ClassHauler } from '../../ships/classes/g100Hauler.js';
-import { AutocannonModule, LanceModuleSmall } from '../../modules/shipModule.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
+import { G100ClassHauler } from '@/ships/classes/g100Hauler.js';
+import { AutocannonModule, LanceModuleSmall, OnyxDriveUnit } from '@/modules/shipModule.js';
+import { AI_TEMPLATES } from '@data/compiledData.js';
 
 const SPEED_MULT = 1.0;   // ~84 u/s — faster than a stock hauler
 const ACCEL_MULT = 0.9;
@@ -34,7 +34,7 @@ export class ArmedHauler extends G100ClassHauler {
       hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
 
-    this.moduleSlots = [new AutocannonModule(), new LanceModuleSmall(), null];
+    this.moduleSlots = [new OnyxDriveUnit(), new AutocannonModule(), new LanceModuleSmall(), null];
     this._applyModules();
   }
 }

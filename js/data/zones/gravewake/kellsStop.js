@@ -1,8 +1,8 @@
 // Kell's Stop — fuel depot station.
 // Renderer (FuelDepotStation) + data + layout + instantiate(), all in one place.
 
-import { Station } from '../../station.js';
-import { AMBER, WHITE } from '../../../rendering/colors.js';
+import { Station } from '@/world/station.js';
+import { AMBER, WHITE } from '@/rendering/colors.js';
 
 // ── FuelDepotStation renderer ───────────────────────────────────────────────
 
@@ -237,6 +237,7 @@ const LAYOUT = {
       label:       'Fuel Depot & Repairs',
       description: 'Cheap fuel, rationing enforced. Basic hull work only.',
       services:    ['repair'],
+      worldOffset: { x: 0, y: 0 },
       flavor: [
         "KELL'S STOP — OPEN PORT",
         '',
@@ -260,6 +261,7 @@ const LAYOUT = {
       label:       'Trade Post',
       description: 'Surplus rations, alloys, machine parts.',
       services:    ['trade'],
+      worldOffset: { x: 30, y: 0 },
       flavor: [
         '[ TRADE POST ]',
         '',
@@ -273,6 +275,7 @@ const LAYOUT = {
       label:       'Bounty Board',
       description: 'Contracts posted by local operators.',
       services:    ['bounties'],
+      worldOffset: { x: -20, y: 0 },
       flavor: [
         '[ BOUNTY BOARD ]',
         '',
@@ -286,6 +289,7 @@ const LAYOUT = {
       label:       'Intel',
       description: 'Station history and local intelligence.',
       services:    ['intel'],
+      worldOffset: { x: -40, y: 0 },
       flavor: [],
       requiredStanding: null,
     },
@@ -294,6 +298,7 @@ const LAYOUT = {
       label:       'Relations',
       description: 'Faction standings.',
       services:    ['relations'],
+      worldOffset: { x: 0, y: 0 },
       flavor: [],
       requiredStanding: null,
     },

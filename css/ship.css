@@ -298,6 +298,29 @@
   color: var(--p-amber);
 }
 
+.ship-cargo-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ship-cargo-jettison {
+  background: transparent;
+  border: 1px solid var(--p-very-dim);
+  color: var(--p-very-dim);
+  font: 8px 'Fira Mono', monospace;
+  padding: 1px 4px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.ship-cargo-jettison:hover {
+  border-color: var(--p-red);
+  color: var(--p-red);
+}
+
 .ship-cargo-empty {
   font-size: 10px;
   color: var(--p-very-dim);

@@ -27,9 +27,9 @@ Ask the user (or infer from their description) for:
 
 ## Step 2 — Decide on stats
 
-All stats must use the multiplier pattern from `js/data/tuning/shipTuning.js`. Import:
+All stats must use the multiplier pattern from `@data/compiledData.js`. Import:
 ```js
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '@data/compiledData.js';
 ```
 
 Define multiplier constants at the top of the file:
@@ -61,8 +61,7 @@ File goes in `js/npcs/<faction>/` (e.g. `js/npcs/scavengers/`, `js/npcs/settleme
 ```js
 import { <BaseClass> } from '../../ships/classes/<baseFile>.js';
 import { <WeaponModule1> } from '../../modules/shipModule.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL, AI_TEMPLATES } from '@data/compiledData.js';
 
 const SPEED_MULT = X;
 const ACCEL_MULT = X;
@@ -102,8 +101,7 @@ export class <ClassName> extends <BaseClass> {
 ### Neutral NPC template:
 ```js
 import { <BaseClass> } from '../../ships/classes/<baseFile>.js';
-import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL } from '../../data/tuning/shipTuning.js';
-import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
+import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR, BASE_HULL, AI_TEMPLATES } from '@data/compiledData.js';
 
 const SPEED_MULT = X;
 const ACCEL_MULT = X;

@@ -2,49 +2,28 @@
 // Up/Down: change category. Left/Right: cycle item within category.
 // Ships: scaled drawShape(). POIs: mock camera render(). Weapons: projectile/beam visual + stats.
 
-import { input } from '../input.js';
+import { input } from '@/input.js';
 
 // Ships and NPCs — imported from central registry
-import { SHIP_REGISTRY, NPC_REGISTRY } from '../ships/registry.js';
+import { SHIP_REGISTRY, NPC_REGISTRY } from '@/ships/registry.js';
 
 // Stations — imported from central registry
-import { STATION_REGISTRY } from '../world/stationRegistry.js';
+import { STATION_REGISTRY } from '@/world/stationRegistry.js';
+
+// Modules and weapons — from their registries (designer auto-discovers all entries)
+import { MODULE_REGISTRY } from '@/modules/shipModule.js';
+import { WEAPON_REGISTRY } from '@/modules/weapons/registry.js';
 
 // POIs
-import { PlanetPale } from '../world/zones/gravewake/planetPale.js';
-import { MoonThalassa } from '../world/zones/gravewake/moonThalassa.js';
-import { createDerelict } from '../world/derelict.js';
-import { createArkshipSpine } from '../world/arkshipSpine.js';
-import { createDebrisCloud } from '../world/debrisCloud.js';
-
-// Modules
-import {
-  OnyxDriveUnit,
-  ChemRocketSmall, ChemRocketLarge,
-  MagplasmaTorchSmall, MagplasmaTorchLarge,
-  IonThruster,
-  AutocannonModule, LanceModuleSmall, CannonModule, RocketPodModule,
-  HydrogenFuelCell, SmallFissionReactor, LargeFissionReactor, LargeFusionReactor,
-  SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
-  SalvageScannerModule, LongRangeScannerModule,
-} from '../modules/shipModule.js';
-
-// Weapons
-import { Autocannon } from '../modules/weapons/autocannon.js';
-import { GatlingGun } from '../modules/weapons/gatlingGun.js';
-import { Railgun } from '../modules/weapons/railgun.js';
-import { Lance } from '../modules/weapons/lance.js';
-import { PlasmaCannon } from '../modules/weapons/plasmaCannon.js';
-import { Cannon } from '../modules/weapons/cannon.js';
-import { RocketPodSmall } from '../modules/weapons/rocket.js';
-import { RocketPodLarge } from '../modules/weapons/rocketLarge.js';
-import { Torpedo } from '../modules/weapons/torpedo.js';
+import { PlanetPale } from '@/data/zones/gravewake/planetPale.js';
+import { createDerelict } from '@/world/derelict.js';
+import { createArkshipSpine } from '@/world/arkshipSpine.js';
+import { createDebrisCloud } from '@/world/debrisCloud.js';
 
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
-  RAIL_WHITE, PLASMA_GREEN, TORPEDO_AMBER,
   DIM_TEXT, DIM_OUTLINE,
-} from '../rendering/colors.js';
+} from '@/rendering/colors.js';
 
 // ─── SHIP GROUPING ────────────────────────────────────────────────────────────
 // Reorders the flat registry so each variant follows its parent class.
@@ -112,39 +91,41 @@ function _buildStationItems() {
   }));
 }
 
-// ─── MODULE ITEMS ─────────────────────────────────────────────────────────────
+// ─── WEAPON ITEMS (from registry) ─────────────────────────────────────────────
 
-function _mod(id, label, category, createFn) {
-  return { id, label, file: 'js/systems/shipModule.js', type: 'module', category, create: createFn };
+function _buildWeaponItems() {
+  return WEAPON_REGISTRY.map(entry => {
+    const sample = entry.create();
+    return {
+      id: entry.slug,
+      label: entry.label,
+      file: `js/modules/weapons/`,
+      type: 'weapon',
+      flavorText: entry.flavorText ?? null,
+      create: entry.create,
+      isBeam: !!/** @type {*} */ (sample).isBeam,
+      projColor: entry.projColor,
+      projLen: entry.projLen ?? 5,
+      projTrail: entry.projTrail ?? false,
+      flags: entry.flags ?? [],
+    };
+  });
 }
 
+// ─── MODULE ITEMS (from registry) ─────────────────────────────────────────────
+
 function _buildModuleItems() {
-  return [
-    // ── Engines
-    _mod('onyx-drive-unit', 'Onyx Drive Unit', 'ENGINE', () => new OnyxDriveUnit()),
-    _mod('chem-rocket-s', 'Chem Rocket (S)', 'ENGINE', () => new ChemRocketSmall()),
-    _mod('chem-rocket-l', 'Chem Rocket (L)', 'ENGINE', () => new ChemRocketLarge()),
-    _mod('magplasma-torch-s', 'Mag-Plasma Torch (S)', 'ENGINE', () => new MagplasmaTorchSmall()),
-    _mod('magplasma-torch-l', 'Mag-Plasma Torch (L)', 'ENGINE', () => new MagplasmaTorchLarge()),
-    _mod('ion-thruster', 'Ion Thruster', 'ENGINE', () => new IonThruster()),
-    // ── Weapons
-    _mod('mod-autocannon', 'Autocannon Mount', 'WEAPON', () => new AutocannonModule()),
-    _mod('mod-lance-s', 'Lance Mount (S)', 'WEAPON', () => new LanceModuleSmall()),
-    _mod('mod-cannon', 'Cannon Mount', 'WEAPON', () => new CannonModule()),
-    _mod('mod-rpod-s', 'Rocket Pod (S)', 'WEAPON', () => new RocketPodModule('small', 'dumbfire')),
-    _mod('mod-rpod-l', 'Rocket Pod (L)', 'WEAPON', () => new RocketPodModule('large', 'dumbfire')),
-    // ── Power
-    _mod('h2-fuel-cell', 'H2 Fuel Cell (S)', 'POWER', () => new HydrogenFuelCell()),
-    _mod('fission-s', 'Fission Reactor (S)', 'POWER', () => new SmallFissionReactor()),
-    _mod('fission-l', 'Fission Reactor (L)', 'POWER', () => new LargeFissionReactor()),
-    _mod('fusion-l', 'Fusion Reactor (L)', 'POWER', () => new LargeFusionReactor()),
-    // ── Sensors
-    _mod('salvaged-sensors', 'Salvaged Sensors', 'SENSOR', () => new SalvagedSensorSuite()),
-    _mod('standard-sensors', 'Standard Sensors', 'SENSOR', () => new StandardSensorSuite()),
-    _mod('combat-computer', 'Combat Computer', 'SENSOR', () => new CombatComputerModule()),
-    _mod('salvage-scanner', 'Salvage Scanner', 'SENSOR', () => new SalvageScannerModule()),
-    _mod('long-range-sensors', 'Long-Range Sensors', 'SENSOR', () => new LongRangeScannerModule()),
-  ];
+  return MODULE_REGISTRY.map(entry => {
+    const sample = entry.create();
+    return {
+      id: entry.id,
+      label: sample.displayName || entry.id,
+      file: 'js/modules/shipModule.js',
+      type: 'module',
+      category: entry.category,
+      create: entry.create,
+    };
+  });
 }
 
 // ─── CATEGORY DEFINITIONS ─────────────────────────────────────────────────────
@@ -165,13 +146,7 @@ const CATEGORIES = [
     label: 'Planets',
     items: [
       {
-        id: 'moon-thalassa', label: 'Thalassa (moon)', file: 'js/world/zones/gravewake/moonThalassa.js', type: 'poi',
-        flavorText: "A cold green moon, barely breathable. Settlers called it promising once. The second wave never came.",
-        create: () => MoonThalassa.backgroundData({ x: 0, y: 0 }),
-        info: { Type: 'Moon', Radius: '200u', Note: 'Brine seas, dome farms' },
-      },
-      {
-        id: 'planet-pale', label: 'Pale (ice planet)', file: 'js/world/zones/gravewake/planetPale.js', type: 'poi',
+        id: 'planet-pale', label: 'Pale (ice planet)', file: 'js/data/zones/gravewake/planetPale.js', type: 'poi',
         flavorText: "A frozen world of nitrogen plains and fractured ice. Navigation charts list it as uninhabitable — the scavenger clans who've built settlements on its cryo-flats prefer it that way.",
         create: () => PlanetPale.backgroundData({ x: 0, y: 0 }),
         info: { Type: 'Planet (ice)', Radius: '540u', Note: 'Topographic contours' },
@@ -211,113 +186,7 @@ const CATEGORIES = [
   {
     id: 'weapons',
     label: 'Weapons',
-    items: [
-      {
-        id: 'autocannon', label: 'Autocannon', file: 'js/weapons/autocannon.js', type: 'weapon',
-        flavorText: "Rotating breech, medium caseless, point-and-fire. AP or HE mode. Standard issue for anyone who can afford it.",
-        create: () => new Autocannon(),
-        projColor: AMBER, projLen: 3, projTrail: true,
-        flags: ['manual', 'ammo-modes'],
-      },
-      {
-        id: 'gatling', label: 'Gatling', file: 'js/weapons/gatlingGun.js', type: 'weapon',
-        flavorText: "Six barrels, one aim. Shreds at close range. Reloads slow. Point defense capable.",
-        create: () => new GatlingGun(),
-        projColor: GREEN, projLen: 3, projTrail: false,
-        flags: ['manual', 'intercept', 'ammo'],
-      },
-      {
-        id: 'railgun-sf', label: 'Railgun (SF)', file: 'js/weapons/railgun.js', type: 'weapon',
-        flavorText: "Small fixed rail accelerator. No pivot mount — the whole ship is the gun platform.",
-        create: () => new Railgun('small-fixed'),
-        projColor: RAIL_WHITE, projLen: 12, projTrail: true,
-        flags: ['fixed', 'hull-dmg'],
-      },
-      {
-        id: 'railgun-lt', label: 'Railgun (LT)', file: 'js/weapons/railgun.js', type: 'weapon',
-        flavorText: "Two conductive rails, one very fast slug. Accuracy drops before effective range does.",
-        create: () => new Railgun('large-turret'),
-        projColor: RAIL_WHITE, projLen: 12, projTrail: true,
-        flags: ['manual', 'hull-dmg'],
-      },
-      {
-        id: 'railgun-lf', label: 'Railgun (LF)', file: 'js/weapons/railgun.js', type: 'weapon',
-        flavorText: "The full-length rail cannon. Massive penetrator. Hull-mount only. Devastating.",
-        create: () => new Railgun('large-fixed'),
-        projColor: RAIL_WHITE, projLen: 12, projTrail: true,
-        flags: ['fixed', 'hull-dmg'],
-      },
-      {
-        id: 'lance-sf', label: 'Lance (SF)', file: 'js/weapons/lance.js', type: 'weapon',
-        flavorText: "Hull-mounted lance projector. No gimbal. Ramps to high damage. Aim with the ship.",
-        create: () => new Lance('small-fixed'),
-        isBeam: true, projColor: CYAN,
-        flags: ['beam', 'fixed', 'ramp-dmg', 'hull-dmg'],
-      },
-      {
-        id: 'lance-st', label: 'Lance (ST)', file: 'js/weapons/lance.js', type: 'weapon',
-        flavorText: "Point-defense beam. Low power draw. Can intercept missiles passing through the beam.",
-        create: () => new Lance('small-turret'),
-        isBeam: true, projColor: CYAN,
-        flags: ['beam', 'ramp-dmg', 'intercept'],
-      },
-      {
-        id: 'lance-lf', label: 'Lance (LF)', file: 'js/weapons/lance.js', type: 'weapon',
-        flavorText: "Heavy fixed lance. Full hull-damage application. Maximum ramp ceiling.",
-        create: () => new Lance('large-fixed'),
-        isBeam: true, projColor: CYAN,
-        flags: ['beam', 'fixed', 'ramp-dmg', 'hull-dmg'],
-      },
-      {
-        id: 'lance-lt', label: 'Lance (LT)', file: 'js/weapons/lance.js', type: 'weapon',
-        flavorText: "Heavy turret lance. Full hull damage, wide tracking arc. Power hungry.",
-        create: () => new Lance('large-turret'),
-        isBeam: true, projColor: CYAN,
-        flags: ['beam', 'ramp-dmg', 'hull-dmg'],
-      },
-      {
-        id: 'plasma-s', label: 'Plasma (S)', file: 'js/weapons/plasmaCannon.js', type: 'weapon',
-        flavorText: "Superheated bolt, damage falls with distance. Best used close; worst used as a threat.",
-        create: () => new PlasmaCannon('small'),
-        projColor: PLASMA_GREEN, projLen: 5, projTrail: false,
-        flags: ['manual', 'falloff', 'hull-dmg'],
-      },
-      {
-        id: 'plasma-l', label: 'Plasma (L)', file: 'js/weapons/plasmaCannon.js', type: 'weapon',
-        flavorText: "Long-cycle plasma system. More mass, longer burn, further reach.",
-        create: () => new PlasmaCannon('large'),
-        projColor: PLASMA_GREEN, projLen: 5, projTrail: false,
-        flags: ['manual', 'falloff', 'hull-dmg'],
-      },
-      {
-        id: 'cannon', label: 'Cannon', file: 'js/weapons/cannon.js', type: 'weapon',
-        flavorText: "Smoothbore heavy round. AP or HE mode. No electronics. It hits or it doesn't.",
-        create: () => new Cannon(),
-        projColor: '#dd8800', projLen: 7, projTrail: false,
-        flags: ['manual', 'aoe', 'hull-dmg', 'ammo', 'ammo-modes'],
-      },
-      {
-        id: 'rpod-s', label: 'Rocket Pod (S)', file: 'js/weapons/rocket.js', type: 'weapon',
-        flavorText: "Two-tube pod. Dumbfire, wire, or heat guidance. Shared ammo pool with large pod.",
-        create: () => new RocketPodSmall(),
-        projColor: AMBER, projLen: 8, projTrail: true,
-        flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'guidance-modes'],
-      },
-      {
-        id: 'rpod-l', label: 'Rocket Pod (L)', file: 'js/weapons/rocketLarge.js', type: 'weapon',
-        flavorText: "Eight-tube burst pod. Staggered fire. Fills the sky. Same guidance options as small pod.",
-        create: () => new RocketPodLarge(),
-        projColor: AMBER, projLen: 8, projTrail: true,
-        flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'burst', 'guidance-modes'],
-      },
-      {
-        id: 'torpedo', label: 'Torpedo', file: 'js/weapons/torpedo.js', type: 'weapon',
-        flavorText: "Heavy ship-killer. Fixed forward only. Interceptable. Takes commitment.",
-        create: () => new Torpedo(),
-        projColor: TORPEDO_AMBER, projLen: 16, projTrail: true,
-        flags: ['secondary', 'fixed', 'interceptable', 'aoe', 'hull-dmg', 'ammo'],
-      },
-    ],
+    items: _buildWeaponItems(),
   },
   {
     id: 'modules',
@@ -656,8 +525,8 @@ export class Designer {
     };
 
     if (mod.isEngine) {
-      statLine('SPEED MULT', `×${mod.speedMult.toFixed(2)}`, AMBER);
-      statLine('ACCEL MULT', `×${mod.accelMult.toFixed(2)}`, AMBER);
+      statLine('THRUST', `${mod.thrust}`, GREEN);
+      statLine('WEIGHT', `${mod.weight}`, AMBER);
       statLine('FUEL EFF MULT', `×${mod.fuelEffMult.toFixed(2)}`, mod.fuelEffMult > 1 ? RED : GREEN);
       if (mod.fuelDrainRate > 0)
         statLine('FUEL DRAIN', `+${mod.fuelDrainRate.toFixed(3)}/s`, AMBER);
@@ -1064,8 +933,8 @@ export class Designer {
 
     if (mod.isEngine) {
       this._header(ctx, 'DRIVE STATS', y); y += 18;
-      this._row(ctx, 'Speed Mult', `×${mod.speedMult.toFixed(2)}`, AMBER, y); y += 16;
-      this._row(ctx, 'Accel Mult', `×${mod.accelMult.toFixed(2)}`, AMBER, y); y += 16;
+      this._row(ctx, 'Thrust', `${mod.thrust}`, GREEN, y); y += 16;
+      this._row(ctx, 'Weight', `${mod.weight}`, AMBER, y); y += 16;
       this._row(ctx, 'FuelEff Mult', `×${mod.fuelEffMult.toFixed(2)}`, mod.fuelEffMult > 1 ? RED : GREEN, y); y += 20;
     } else if (cat === 'WEAPON' && mod.weapon) {
       this._header(ctx, 'WEAPON STATS', y); y += 18;
@@ -1317,8 +1186,8 @@ export class Designer {
         { label: 'PWR OUT', get: (_, e) => { const o = e.powerOutput ?? 0; return v(o > 0 ? `+${o}W` : '—', o > 0 ? 'cmp-green' : 'cmp-dim'); } },
         { label: 'PWR DRAW', get: (_, e) => { const d = e.powerDraw ?? 0; return v(d > 0 ? `-${d}W` : '—', d > 0 ? 'cmp-mag' : 'cmp-dim'); } },
         { label: 'FUEL/s', get: (_, e) => { const f = e.fuelDrainRate ?? 0; return v(f > 0 ? f.toFixed(3) : '—', f > 0 ? 'cmp-amber' : 'cmp-dim'); } },
-        { label: 'SPD ×', get: (_, e) => v(e.isEngine ? `×${e.speedMult.toFixed(2)}` : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
-        { label: 'ACCEL ×', get: (_, e) => v(e.isEngine ? `×${e.accelMult.toFixed(2)}` : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
+        { label: 'THRUST', get: (_, e) => v(e.isEngine ? `${e.thrust}` : '—', e.isEngine ? 'cmp-green' : 'cmp-dim') },
+        { label: 'WEIGHT', get: (_, e) => v(`${e.weight ?? 0}`, (e.weight ?? 0) > 0 ? 'cmp-amber' : 'cmp-dim') },
         { label: 'FEFF ×', get: (_, e) => v(e.isEngine ? `×${e.fuelEffMult.toFixed(2)}` : '—', e.isEngine ? (e.fuelEffMult > 1 ? 'cmp-red' : 'cmp-green') : 'cmp-dim') },
         { label: 'SENSOR', get: (_, e) => v(e.sensor_range ? `${e.sensor_range}u` : '—', e.sensor_range ? 'cmp-cyan' : 'cmp-dim') },
         { label: 'OVERHAUL', get: (_, e) => v(e.overhaulCost ? `${e.overhaulCost} sc` : '—', e.overhaulCost ? 'cmp-mag' : 'cmp-dim') },
