@@ -77,9 +77,6 @@ export class LocationOverlay {
     this._el.innerHTML = '';
 
     const station = this._station;
-    const accent = FACTION[station.faction] ?? FACTION.neutral;
-    this._el.style.setProperty('--loc-accent', accent);
-
     if (this._zoneId) {
       this._renderZoneView(station);
     } else {

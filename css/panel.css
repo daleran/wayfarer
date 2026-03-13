@@ -1,0 +1,264 @@
+/* ── Panel Foundation — shared styles for station & ship panels ──────────────── */
+/* Both panels inherit from these base variables, typography tiers,
+   scanline effect, tooltip, and button patterns.                                */
+
+/* ── Shared palette ─────────────────────────────────────────────────────────── */
+
+:root {
+  --p-cyan:      #00ffcc;
+  --p-amber:     #ffaa00;
+  --p-green:     #00ff66;
+  --p-red:       #ff4444;
+  --p-magenta:   #ff00aa;
+  --p-blue:      #4488ff;
+  --p-white:     #ffffff;
+  --p-dim:       #556677;
+  --p-very-dim:  #223344;
+  --p-bg:        rgba(0,5,20,0.96);
+  --p-surface:   rgba(0,8,16,0.92);
+  --p-border:    rgba(0,255,204,0.28);
+  --p-accent:    #00ffcc;
+}
+
+/* ── Base panel frame ───────────────────────────────────────────────────────── */
+
+.panel-base {
+  position: fixed;
+  top: 12px;
+  width: 28%;
+  min-width: 300px;
+  height: calc(100vh - 60px);
+  background: var(--p-bg);
+  border: 1px solid var(--p-border);
+  font-family: 'Fira Mono', monospace;
+  color: var(--p-dim);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  cursor: default;
+}
+
+/* ── Scanline overlay ───────────────────────────────────────────────────────── */
+
+.panel-base::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    transparent 0,
+    transparent 1px,
+    rgba(0,0,0,0.06) 1px,
+    rgba(0,0,0,0.06) 2px
+  );
+  z-index: 100;
+}
+
+/* ── Panel header ───────────────────────────────────────────────────────────── */
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--p-border);
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.panel-subtitle {
+  font-size: 10px;
+  color: var(--p-dim);
+  letter-spacing: 0.05em;
+}
+
+.panel-hint {
+  font-size: 10px;
+  color: var(--p-very-dim);
+  white-space: nowrap;
+}
+
+/* ── Section titles ─────────────────────────────────────────────────────────── */
+
+.panel-section-title {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* ── Section divider ────────────────────────────────────────────────────────── */
+
+.panel-section {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--p-border);
+  flex-shrink: 0;
+}
+
+/* ── Tooltip ────────────────────────────────────────────────────────────────── */
+
+.panel-tooltip {
+  position: fixed;
+  z-index: 200;
+  background: rgba(0,4,12,0.95);
+  border: 1px solid var(--p-cyan);
+  padding: 6px 10px;
+  pointer-events: none;
+  font-family: 'Fira Mono', monospace;
+  font-size: 9px;
+  min-width: 140px;
+  max-width: 260px;
+  opacity: 0;
+  transition: opacity 0.08s;
+}
+
+.panel-tooltip.visible {
+  opacity: 1;
+}
+
+.panel-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  line-height: 1.6;
+}
+
+.panel-tooltip-label {
+  color: var(--p-dim);
+  white-space: nowrap;
+}
+
+.panel-tooltip-value {
+  color: var(--p-white);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.panel-tooltip-value.green  { color: var(--p-green); }
+.panel-tooltip-value.red    { color: var(--p-red); }
+.panel-tooltip-value.cyan   { color: var(--p-cyan); }
+.panel-tooltip-value.amber  { color: var(--p-amber); }
+.panel-tooltip-value.dim    { color: var(--p-dim); font-style: italic; white-space: normal; text-align: left; }
+
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
+
+.panel-btn {
+  background: transparent;
+  border: 1px solid var(--p-very-dim);
+  color: var(--p-dim);
+  font: 10px 'Fira Mono', monospace;
+  letter-spacing: 0.05em;
+  padding: 5px 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.1s, color 0.1s;
+  user-select: none;
+}
+
+.panel-btn:hover:not(:disabled) {
+  filter: brightness(1.25);
+  background: rgba(255,255,255,0.02);
+}
+
+.panel-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.panel-btn.cyan    { border-color: rgba(0,255,204,0.35); color: var(--p-cyan); }
+.panel-btn.green   { border-color: rgba(0,255,102,0.35); color: var(--p-green); }
+.panel-btn.amber   { border-color: rgba(255,170,0,0.35); color: var(--p-amber); }
+.panel-btn.magenta { border-color: rgba(255,0,170,0.35); color: var(--p-magenta); }
+
+/* ── Stat row (label / value pair) ──────────────────────────────────────────── */
+
+.panel-stat-label {
+  font-size: 9px;
+  color: var(--p-very-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel-stat-value {
+  font-size: 12px;
+  color: var(--p-amber);
+}
+
+.panel-stat-value.green { color: var(--p-green); }
+.panel-stat-value.red   { color: var(--p-red); }
+.panel-stat-value.cyan  { color: var(--p-cyan); }
+
+/* ── Flavor / body text ─────────────────────────────────────────────────────── */
+
+.panel-flavor {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--p-dim);
+}
+
+/* ── Progress bar ───────────────────────────────────────────────────────────── */
+
+.panel-progress-wrap {
+  border: 1px solid var(--p-cyan);
+  margin-bottom: 8px;
+  height: 34px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-progress-fill {
+  height: 100%;
+  background: var(--p-cyan);
+  opacity: 0.22;
+  transition: width 0.1s linear;
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+}
+
+.panel-progress-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--p-white);
+  letter-spacing: 0.05em;
+}
+
+/* ── Corner bracket decoration ──────────────────────────────────────────────── */
+
+.panel-brackets::before,
+.panel-brackets::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+
+.panel-brackets::before {
+  top: 1px;
+  left: 1px;
+  border-top: 1px solid var(--p-border);
+  border-left: 1px solid var(--p-border);
+}
+
+.panel-brackets::after {
+  bottom: 1px;
+  right: 1px;
+  border-bottom: 1px solid var(--p-border);
+  border-right: 1px solid var(--p-border);
+}

@@ -1,6 +1,6 @@
 import { Entity } from '../entities/entity.js';
 import { CYAN, AMBER, RED, GREEN, WHITE } from '../rendering/colors.js';
-import { SUBTITLE } from '../rendering/draw.js';
+import { text, SUBTITLE } from '../rendering/draw.js';
 import { FACTION_MAP } from '../systems/reputation.js';
 
 export class Station extends Entity {
@@ -156,17 +156,9 @@ export class Station extends Entity {
   }
 
   // Draw station name below the icon. Call inside a render() block after ctx.scale(z, z).
-  // Callers must not have already unscaled — this method handles the 1/z rescale.
+  // Text is world-space — scales with zoom like all other map labels.
   _renderNameLabel(ctx, camera, yOffset = 50) {
-    const z = camera.zoom;
-    ctx.scale(1 / z, 1 / z);
-    ctx.font = SUBTITLE.font;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = this.outlineColor;
-    ctx.globalAlpha = SUBTITLE.alpha;
-    ctx.fillText(this.name.toUpperCase(), 0, yOffset * z);
-    ctx.globalAlpha = 1;
+    text(ctx, this.name.toUpperCase(), 0, yOffset, this.outlineColor, { style: SUBTITLE });
   }
 
   // Can the player dock from this world-space position?

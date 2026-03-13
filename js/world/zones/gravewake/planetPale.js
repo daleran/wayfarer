@@ -2,7 +2,7 @@
 // Renders as a CRT-style topographic sphere with contour lines.
 
 import { PALE_ICE, PALE_HAZE } from '../../../rendering/colors.js';
-import { TITLE } from '../../../rendering/draw.js';
+import { TITLE, FONT } from '../../../rendering/draw.js';
 
 // Terrain contour shapes — normalized coords (r=1), closed polygon per entry.
 // Designed to read as topographic ice-surface scan data (Nostromo-style CRT aesthetic).
@@ -94,13 +94,15 @@ export const PlanetPale = {
         ctx.globalAlpha = 0.65;
         ctx.stroke();
 
-        // Name label
-        ctx.font = TITLE.font;
+        // Name label — scaled by zoom, compensating for parallax so it matches
+        // world-space TITLE size (same as The Coil's label)
+        const labelSize = TITLE.size * camera.zoom / PARALLAX;
+        ctx.font = `${TITLE.weight} ${labelSize}px ${FONT}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = PALE_ICE;
         ctx.globalAlpha = TITLE.alpha;
-        ctx.fillText(this.name.toUpperCase(), cx, cy - r - 24);
+        ctx.fillText(this.name.toUpperCase(), cx, cy - r - 24 * camera.zoom);
 
         ctx.globalAlpha = 1;
         ctx.restore();

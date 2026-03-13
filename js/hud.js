@@ -32,11 +32,13 @@ export class HUD {
     this._pickupTexts.push({ text, worldX, worldY, createdAt: Date.now(), colorHint });
 
     if (this._pickupEl) {
-      const cls = colorHint && ['breach', 'repair', 'hostile', 'module', 'cargo'].includes(colorHint)
+      const PICKUP_GLYPHS = { module: '\u25a1 ', ammo: '\u25c7 ', cargo: '\u2b21 ', scrap: '\u2b21 ' };
+      const cls = colorHint && ['breach', 'repair', 'hostile', 'module', 'cargo', 'ammo', 'scrap'].includes(colorHint)
         ? `pickup-${colorHint}` : 'pickup-default';
+      const glyph = PICKUP_GLYPHS[colorHint] ?? '';
       const el = document.createElement('div');
       el.className = `hud-pickup-entry ${cls}`;
-      el.textContent = text;
+      el.textContent = glyph + text;
       el.addEventListener('animationend', () => el.remove());
       this._pickupEl.appendChild(el);
     }
@@ -308,12 +310,15 @@ export class HUD {
 
     // Throttle pips
     const current = p.throttleLevel ?? 0;
+    const isFlank = current === 5;
     for (let i = 0; i < r.throttlePips.length; i++) {
-      r.throttlePips[i].className = i === current ? 'hud-throttle-pip active' : 'hud-throttle-pip';
+      const cls = i === current ? (isFlank ? 'hud-throttle-pip active flank' : 'hud-throttle-pip active') : 'hud-throttle-pip';
+      r.throttlePips[i].className = cls;
     }
 
     // Speed
     r.speedEl.textContent = `${Math.floor(p.speed)} U/S`;
+    r.speedEl.className = isFlank ? 'hud-speed flank' : 'hud-speed';
 
     // Hull
     const hullRatio = p.hullMax > 0 ? p.hullCurrent / p.hullMax : 0;

@@ -21,8 +21,8 @@ export function renderThrottle(ctx, game) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.globalAlpha = LABEL.alpha;
-  ctx.fillStyle = CYAN;
-  ctx.fillText(`${label}  ${speed} U/S`, screen.x, screen.y + THROTTLE_BELOW_OFFSET);
+  ctx.fillStyle = (player.throttleLevel ?? 0) === 5 ? RED : CYAN;
+  ctx.fillText(`[${label}]  ${speed} U/S`, screen.x, screen.y + THROTTLE_BELOW_OFFSET);
   ctx.restore();
 }
 

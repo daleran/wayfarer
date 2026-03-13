@@ -32,13 +32,13 @@ export function buildReactorPanel(container, station, game) {
     const statusEl = document.createElement('div');
     statusEl.className = 'reactor-status';
     if (mod.isOverdue) {
-      statusEl.style.color = 'var(--loc-magenta)';
+      statusEl.style.color = 'var(--p-magenta)';
       statusEl.textContent = '!! OVERHAUL OVERDUE';
     } else {
       const remaining = mod.overhaulInterval - mod.timeSinceOverhaul;
       const h = Math.floor(remaining / 3600);
       const m = Math.floor((remaining % 3600) / 60);
-      statusEl.style.color = 'var(--loc-dim)';
+      statusEl.style.color = 'var(--p-dim)';
       statusEl.textContent = `Next overhaul in ${h}h ${m}m`;
     }
 

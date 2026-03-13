@@ -1,62 +1,23 @@
-/* ── Ship Panel — left 30% panel (I key) ────────────────────────────────────── */
-
-:root {
-  --ship-cyan:    #00ffcc;
-  --ship-amber:   #ffaa00;
-  --ship-green:   #00ff66;
-  --ship-red:     #ff4444;
-  --ship-magenta: #ff00aa;
-  --ship-white:   #ffffff;
-  --ship-dim:     #556677;
-  --ship-very-dim:#223344;
-  --ship-bg:      rgba(0,5,20,0.95);
-  --ship-panel:   rgba(0,8,16,0.92);
-  --ship-border:  rgba(0,255,204,0.25);
-}
+/* ── Ship Panel — left side panel (I key) ────────────────────────────────────── */
+/* Inherits palette and base patterns from panel.css                             */
 
 #ship-panel {
-  position: fixed;
   left: 12px;
-  top: 12px;
-  width: 28%;
-  min-width: 300px;
-  height: calc(100vh - 60px);
   z-index: 15;
-  background: var(--ship-bg);
-  border: 1px solid var(--ship-border);
-  font-family: 'Fira Mono', monospace;
-  color: var(--ship-dim);
   overflow-y: auto;
   overflow-x: hidden;
   display: none;
-  flex-direction: column;
-  pointer-events: auto;
 }
 
 #ship-panel.visible {
   display: flex;
 }
 
-/* Scanline effect */
-#ship-panel::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    transparent 0,
-    transparent 1px,
-    rgba(0,0,0,0.05) 1px,
-    rgba(0,0,0,0.05) 2px
-  );
-  z-index: 100;
-}
-
 /* ── Header ──────────────────────────────────────────────────────────────────── */
 
 .ship-header {
   padding: 12px 14px 8px;
-  border-bottom: 1px solid var(--ship-border);
+  border-bottom: 1px solid var(--p-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -64,35 +25,37 @@
 }
 
 .ship-header-name {
-  font: bold 13px 'Fira Mono', monospace;
-  color: var(--ship-cyan);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--p-cyan);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .ship-header-class {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--ship-dim);
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  color: var(--p-dim);
+  letter-spacing: 0.05em;
 }
 
 .ship-header-esc {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--ship-very-dim);
+  font-size: 10px;
+  color: var(--p-very-dim);
 }
 
 /* ── Stats grid ──────────────────────────────────────────────────────────────── */
 
 .ship-stats {
   padding: 10px 14px;
-  border-bottom: 1px solid var(--ship-border);
+  border-bottom: 1px solid var(--p-border);
   flex-shrink: 0;
 }
 
 .ship-stats-title {
-  font: bold 10px 'Fira Mono', monospace;
-  color: var(--ship-dim);
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--p-dim);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
@@ -107,27 +70,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font: 10px 'Fira Mono', monospace;
+  font-size: 10px;
 }
 
 .ship-stat-label {
-  color: var(--ship-dim);
+  color: var(--p-dim);
   letter-spacing: 0.05em;
 }
 
 .ship-stat-value {
-  color: var(--ship-amber);
+  color: var(--p-amber);
 }
 
-.ship-stat-value.green { color: var(--ship-green); }
-.ship-stat-value.red   { color: var(--ship-red); }
-.ship-stat-value.cyan  { color: var(--ship-cyan); }
+.ship-stat-value.green { color: var(--p-green); }
+.ship-stat-value.red   { color: var(--p-red); }
+.ship-stat-value.cyan  { color: var(--p-cyan); }
 
 /* ── Module slots ────────────────────────────────────────────────────────────── */
 
 .ship-modules {
   padding: 10px 14px;
-  border-bottom: 1px solid var(--ship-border);
+  border-bottom: 1px solid var(--p-border);
   flex-shrink: 0;
 }
 
@@ -139,18 +102,19 @@
 }
 
 .ship-modules-title {
-  font: bold 10px 'Fira Mono', monospace;
-  color: var(--ship-cyan);
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .ship-modules-power {
-  font: 10px 'Fira Mono', monospace;
+  font-size: 10px;
 }
 
 .ship-module-slot {
-  border: 1px solid var(--ship-very-dim);
+  border: 1px solid var(--p-very-dim);
   padding: 6px 8px;
   margin-bottom: 4px;
   cursor: pointer;
@@ -160,7 +124,7 @@
 }
 
 .ship-module-slot:hover {
-  border-color: var(--ship-cyan);
+  border-color: var(--p-cyan);
 }
 
 .ship-module-slot.empty {
@@ -168,12 +132,12 @@
 }
 
 .ship-module-slot.empty.can-install {
-  border-color: var(--ship-green);
+  border-color: var(--p-green);
   background: rgba(0,255,102,0.03);
 }
 
 .ship-module-slot.installing {
-  border-color: var(--ship-green);
+  border-color: var(--p-green);
 }
 
 .ship-module-slot-top {
@@ -183,20 +147,20 @@
 }
 
 .ship-module-name {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--ship-cyan);
+  font-size: 10px;
+  color: var(--p-cyan);
 }
 
 .ship-module-power {
-  font: 10px 'Fira Mono', monospace;
+  font-size: 10px;
 }
 
-.ship-module-power.positive { color: var(--ship-green); }
-.ship-module-power.negative { color: var(--ship-amber); }
+.ship-module-power.positive { color: var(--p-green); }
+.ship-module-power.negative { color: var(--p-amber); }
 
 .ship-module-desc {
-  font: 9px 'Fira Mono', monospace;
-  color: var(--ship-very-dim);
+  font-size: 9px;
+  color: var(--p-very-dim);
   margin-top: 2px;
 }
 
@@ -208,17 +172,17 @@
 }
 
 .ship-module-condition-badge {
-  font: 9px 'Fira Mono', monospace;
-  letter-spacing: 0.04em;
+  font-size: 9px;
+  letter-spacing: 0.05em;
 }
 
 .ship-module-empty-text {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--ship-very-dim);
+  font-size: 10px;
+  color: var(--p-very-dim);
 }
 
 .ship-module-empty-text.can-install {
-  color: var(--ship-green);
+  color: var(--p-green);
 }
 
 .ship-install-progress {
@@ -246,19 +210,20 @@
 }
 
 .ship-cargo-title {
-  font: bold 10px 'Fira Mono', monospace;
-  color: var(--ship-dim);
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--p-dim);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .ship-cargo-capacity {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--ship-cyan);
+  font-size: 10px;
+  color: var(--p-cyan);
 }
 
 .ship-cargo-capacity.full {
-  color: var(--ship-red);
+  color: var(--p-red);
 }
 
 .ship-cargo-filters {
@@ -269,24 +234,24 @@
 
 .ship-cargo-filter {
   background: transparent;
-  border: 1px solid var(--ship-very-dim);
-  color: var(--ship-dim);
+  border: 1px solid var(--p-very-dim);
+  color: var(--p-dim);
   font: 9px 'Fira Mono', monospace;
   padding: 2px 6px;
   cursor: pointer;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   transition: border-color 0.1s, color 0.1s;
 }
 
 .ship-cargo-filter:hover {
-  border-color: var(--ship-cyan);
-  color: var(--ship-cyan);
+  border-color: var(--p-cyan);
+  color: var(--p-cyan);
 }
 
 .ship-cargo-filter.active {
-  border-color: var(--ship-cyan);
-  color: var(--ship-cyan);
+  border-color: var(--p-cyan);
+  color: var(--p-cyan);
   background: rgba(0,255,204,0.06);
 }
 
@@ -300,52 +265,54 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font: 10px 'Fira Mono', monospace;
+  font-size: 10px;
   padding: 3px 4px;
   border: 1px solid transparent;
   cursor: default;
 }
 
 .ship-cargo-item.module {
-  border: 1px solid var(--ship-very-dim);
+  border: 1px solid var(--p-very-dim);
   cursor: pointer;
 }
 
 .ship-cargo-item.module:hover {
-  border-color: var(--ship-cyan);
+  border-color: var(--p-cyan);
 }
 
 .ship-cargo-item.module.selected {
-  border-color: var(--ship-green);
+  border-color: var(--p-green);
   background: rgba(0,255,102,0.05);
 }
 
 .ship-cargo-item-name {
-  color: var(--ship-dim);
+  color: var(--p-dim);
 }
 
-.ship-cargo-item-name.scrap { color: var(--ship-amber); }
-.ship-cargo-item-name.module-name { color: var(--ship-cyan); }
-.ship-cargo-item-name.weapon-name { color: var(--ship-magenta); }
-.ship-cargo-item-name.ammo-name { color: var(--ship-green); }
+.ship-cargo-item-name.scrap { color: var(--p-amber); }
+.ship-cargo-item-name.module-name { color: var(--p-cyan); }
+.ship-cargo-item-name.weapon-name { color: var(--p-magenta); }
+.ship-cargo-item-name.ammo-name { color: var(--p-green); }
 
 .ship-cargo-item-value {
-  color: var(--ship-amber);
+  color: var(--p-amber);
 }
 
 .ship-cargo-empty {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--ship-very-dim);
+  font-size: 10px;
+  color: var(--p-very-dim);
   padding: 6px 4px;
 }
 
 /* ── Tooltip ──────────────────────────────────────────────────────────────────── */
+/* Uses shared .panel-tooltip from panel.css — ship-specific aliases kept
+   for backwards compat with shipScreen.js DOM class names.                      */
 
 .ship-tooltip {
   position: fixed;
   z-index: 200;
   background: rgba(0,4,12,0.95);
-  border: 1px solid var(--ship-cyan);
+  border: 1px solid var(--p-cyan);
   padding: 6px 10px;
   pointer-events: none;
   font-family: 'Fira Mono', monospace;
@@ -368,18 +335,18 @@
 }
 
 .ship-tooltip-label {
-  color: var(--ship-dim);
+  color: var(--p-dim);
   white-space: nowrap;
 }
 
 .ship-tooltip-value {
-  color: var(--ship-white);
+  color: var(--p-white);
   text-align: right;
   white-space: nowrap;
 }
 
-.ship-tooltip-value.green  { color: var(--ship-green); }
-.ship-tooltip-value.red    { color: var(--ship-red); }
-.ship-tooltip-value.cyan   { color: var(--ship-cyan); }
-.ship-tooltip-value.amber  { color: var(--ship-amber); }
-.ship-tooltip-value.dim    { color: var(--ship-dim); font-style: italic; }
+.ship-tooltip-value.green  { color: var(--p-green); }
+.ship-tooltip-value.red    { color: var(--p-red); }
+.ship-tooltip-value.cyan   { color: var(--p-cyan); }
+.ship-tooltip-value.amber  { color: var(--p-amber); }
+.ship-tooltip-value.dim    { color: var(--p-dim); font-style: italic; white-space: normal; text-align: left; }

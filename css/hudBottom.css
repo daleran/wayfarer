@@ -178,7 +178,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 9px 'Fira Mono', monospace;
+  font: bold 9px 'Fira Mono', monospace;
   color: #334455;
   box-sizing: border-box;
   transition: border-color 0.08s, color 0.08s, background 0.08s;
@@ -190,6 +190,11 @@
   color: #000000;
 }
 
+.hud-throttle-pip.active.flank {
+  border-color: #ff3333;
+  background: #ff3333;
+}
+
 /* ── Speed readout ───────────────────────────────────────────────────────────── */
 
 .hud-speed {
@@ -197,6 +202,10 @@
   color: #00ffcc;
   opacity: 0.65;
   margin-left: 4px;
+}
+
+.hud-speed.flank {
+  color: #ff3333;
 }
 
 /* ── Fuel burn rate ──────────────────────────────────────────────────────────── */

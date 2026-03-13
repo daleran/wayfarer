@@ -65,16 +65,16 @@ export function buildBountiesPanel(container, station, game) {
       let statusText, statusColor;
       if (bounty.status === 'completed') {
         statusText  = 'COMPLETE — collect on dock';
-        statusColor = 'var(--loc-green)';
+        statusColor = 'var(--p-green)';
       } else if (bounty.status === 'expired') {
         statusText  = 'EXPIRED';
-        statusColor = 'var(--loc-red)';
+        statusColor = 'var(--p-red)';
       } else {
         const rem = Math.max(0, bounty.expiryTime - game.totalTime);
         const m   = Math.floor(rem / 60);
         const s   = Math.floor(rem % 60).toString().padStart(2, '0');
         statusText  = `ACTIVE — ${m}:${s} remaining`;
-        statusColor = rem < BOUNTY.EXPIRY_WARNING_SECS ? 'var(--loc-red)' : 'var(--loc-amber)';
+        statusColor = rem < BOUNTY.EXPIRY_WARNING_SECS ? 'var(--p-red)' : 'var(--p-amber)';
       }
 
       const info = document.createElement('div');

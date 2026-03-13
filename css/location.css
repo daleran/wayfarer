@@ -1,52 +1,10 @@
-/* ── Location Overlay — vector monitor / cassette futurism ─────────────────── */
-
-:root {
-  --loc-cyan:    #00ffcc;
-  --loc-amber:   #ffaa00;
-  --loc-green:   #00ff66;
-  --loc-red:     #ff4444;
-  --loc-magenta: #ff00aa;
-  --loc-white:   #ffffff;
-  --loc-dim:     #556677;
-  --loc-very-dim:#223344;
-  --loc-bg:      rgba(0,5,20,0.97);
-  --loc-panel:   rgba(0,8,16,0.92);
-  --loc-border:  rgba(0,255,204,0.3);
-  --loc-accent:  #00ffcc;
-}
+/* ── Location Overlay — station panel (right side) ───────────────────────────── */
+/* Inherits palette and base patterns from panel.css                             */
 
 .location-overlay {
-  position: fixed;
-  top: 12px;
   right: 12px;
-  width: 28%;
   min-width: 320px;
-  height: calc(100vh - 60px);
   z-index: 10;
-  background: var(--loc-bg);
-  font-family: 'Fira Mono', monospace;
-  cursor: default;
-  display: flex;
-  flex-direction: column;
-  color: var(--loc-dim);
-  overflow: hidden;
-  border: 1px solid var(--loc-border);
-  pointer-events: auto;
-}
-
-/* Scanline effect */
-.location-overlay::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    transparent 0,
-    transparent 1px,
-    rgba(0,0,0,0.06) 1px,
-    rgba(0,0,0,0.06) 2px
-  );
-  z-index: 100;
 }
 
 .location-overlay.hidden {
@@ -59,7 +17,7 @@
   display: flex;
   align-items: center;
   padding: 10px 14px 8px;
-  border-bottom: 1px solid var(--loc-border);
+  border-bottom: 1px solid var(--p-border);
   flex-shrink: 0;
   gap: 8px;
   min-height: 44px;
@@ -67,34 +25,34 @@
 }
 
 .loc-station-name {
-  font: bold 15px 'Fira Mono', monospace;
-  color: var(--loc-cyan);
-  letter-spacing: 0.15em;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .loc-station-faction {
-  font: 12px 'Fira Mono', monospace;
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  letter-spacing: 0.08em;
 }
 
 .loc-standing-badge {
-  font: 12px 'Fira Mono', monospace;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.05em;
 }
 
 .loc-scrap-readout {
-  font: 12px 'Fira Mono', monospace;
-  color: var(--loc-amber);
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--p-amber);
+  letter-spacing: 0.05em;
   white-space: nowrap;
   margin-left: auto;
 }
 
 .loc-esc-hint {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--loc-very-dim);
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  color: var(--p-very-dim);
   white-space: nowrap;
   padding-left: 8px;
 }
@@ -103,16 +61,17 @@
 
 .loc-flavor {
   padding: 10px 14px;
-  border-bottom: 1px solid var(--loc-border);
+  border-bottom: 1px solid var(--p-border);
 }
 
 .loc-flavor p {
-  font: 11px/1.7 'Fira Mono', monospace;
-  color: var(--loc-dim);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--p-dim);
   margin: 0;
 }
 
-/* ── Area list (top-level station nav) ──────────────────────────────────────── */
+/* ── Area list (top-level station nav) ────────────────────────────────────────── */
 
 .loc-area-list {
   flex: 1;
@@ -124,7 +83,7 @@
 
 .loc-area-card {
   background: transparent;
-  border-bottom: 1px solid var(--loc-very-dim);
+  border-bottom: 1px solid var(--p-very-dim);
   padding: 14px 18px;
   cursor: pointer;
   transition: background 0.12s;
@@ -141,34 +100,36 @@
 }
 
 .loc-area-card-name {
-  font: bold 12px 'Fira Mono', monospace;
-  color: var(--loc-cyan);
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 
 .loc-area-card-desc {
-  font: 11px/1.5 'Fira Mono', monospace;
-  color: var(--loc-dim);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--p-dim);
 }
 
 .loc-area-card-lock {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--loc-red);
+  font-size: 10px;
+  color: var(--p-red);
   margin-top: 6px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
-/* ── Back button ────────────────────────────────────────────────────────────── */
+/* ── Back button ──────────────────────────────────────────────────────────────── */
 
 .loc-back-btn {
-  font: 11px 'Fira Mono', monospace;
-  color: var(--loc-dim);
+  font-size: 10px;
+  color: var(--p-dim);
   cursor: pointer;
-  border: 1px solid var(--loc-very-dim);
+  border: 1px solid var(--p-very-dim);
   padding: 4px 10px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   transition: color 0.12s, border-color 0.12s;
   user-select: none;
   white-space: nowrap;
@@ -176,31 +137,32 @@
 }
 
 .loc-back-btn:hover {
-  color: var(--loc-cyan);
-  border-color: var(--loc-cyan);
+  color: var(--p-cyan);
+  border-color: var(--p-cyan);
 }
 
-/* ── Zone detail header ─────────────────────────────────────────────────────── */
+/* ── Zone detail header ───────────────────────────────────────────────────────── */
 
 .loc-zone-title {
-  font: bold 13px 'Fira Mono', monospace;
-  color: var(--loc-cyan);
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .loc-station-sub {
-  font: 11px 'Fira Mono', monospace;
-  color: var(--loc-dim);
+  font-size: 10px;
+  color: var(--p-dim);
 }
 
-/* ── Zone flavor text ───────────────────────────────────────────────────────── */
+/* ── Zone flavor text ─────────────────────────────────────────────────────────── */
 
 .loc-zone-flavor {
   flex-shrink: 0;
   max-height: 140px;
   padding: 10px 14px;
-  border-bottom: 1px solid var(--loc-border);
+  border-bottom: 1px solid var(--p-border);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -208,16 +170,17 @@
 }
 
 .loc-zone-flavor p {
-  font: 12px/1.7 'Fira Mono', monospace;
-  color: var(--loc-dim);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--p-dim);
   margin: 0;
 }
 
 .loc-zone-flavor p.flavor-heading {
-  color: var(--loc-accent);
+  color: var(--p-accent);
   opacity: 0.9;
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  letter-spacing: 0.08em;
   margin-top: 12px;
 }
 
@@ -225,12 +188,12 @@
   height: 8px;
 }
 
-/* ── Zone service tabs ──────────────────────────────────────────────────────── */
+/* ── Zone service tabs ────────────────────────────────────────────────────────── */
 
 .loc-zone-service-list {
   flex-shrink: 0;
   padding: 6px 0;
-  border-bottom: 1px solid var(--loc-border);
+  border-bottom: 1px solid var(--p-border);
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -244,9 +207,9 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--loc-dim);
+  color: var(--p-dim);
   font: 10px 'Fira Mono', monospace;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   padding: 8px 10px;
   cursor: pointer;
   text-align: center;
@@ -256,18 +219,18 @@
 }
 
 .loc-service-btn:hover {
-  border-bottom-color: var(--loc-cyan);
-  color: var(--loc-cyan);
+  border-bottom-color: var(--p-cyan);
+  color: var(--p-cyan);
   background: rgba(0,255,204,0.04);
 }
 
 .loc-service-btn.active {
-  border-bottom-color: var(--loc-cyan);
-  color: var(--loc-cyan);
+  border-bottom-color: var(--p-cyan);
+  color: var(--p-cyan);
   background: rgba(0,255,204,0.06);
 }
 
-/* ── Service content panel ───────────────────────────────────────────────────── */
+/* ── Service content panel ─────────────────────────────────────────────────── */
 
 .loc-service-panel {
   flex: 1;
@@ -289,18 +252,18 @@
 .loc-service-panel::before {
   top: 1px;
   left: 1px;
-  border-top: 1px solid var(--loc-border);
-  border-left: 1px solid var(--loc-border);
+  border-top: 1px solid var(--p-border);
+  border-left: 1px solid var(--p-border);
 }
 
 .loc-service-panel::after {
   bottom: 1px;
   right: 1px;
-  border-bottom: 1px solid var(--loc-border);
-  border-right: 1px solid var(--loc-border);
+  border-bottom: 1px solid var(--p-border);
+  border-right: 1px solid var(--p-border);
 }
 
-/* ── Service content — common ────────────────────────────────────────────────── */
+/* ── Service content — common ──────────────────────────────────────────────── */
 
 .svc-stats {
   display: flex;
@@ -316,28 +279,28 @@
 }
 
 .svc-stat-label {
-  font: 9px 'Fira Mono', monospace;
-  color: var(--loc-very-dim);
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  color: var(--p-very-dim);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .svc-stat-value {
-  font: 13px 'Fira Mono', monospace;
-  color: var(--loc-amber);
+  font-size: 12px;
+  color: var(--p-amber);
 }
 
-.svc-stat-value.green { color: var(--loc-green); }
-.svc-stat-value.red   { color: var(--loc-red); }
+.svc-stat-value.green { color: var(--p-green); }
+.svc-stat-value.red   { color: var(--p-red); }
 
 .svc-allied-note {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--loc-cyan);
+  font-size: 10px;
+  color: var(--p-cyan);
   border: 1px solid rgba(0,255,204,0.25);
   padding: 3px 8px;
   display: inline-block;
   margin-bottom: 14px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
 .svc-divider {
@@ -350,10 +313,10 @@
   display: block;
   width: 100%;
   background: transparent;
-  border: 1px solid var(--loc-very-dim);
-  color: var(--loc-dim);
-  font: 11px 'Fira Mono', monospace;
-  letter-spacing: 0.07em;
+  border: 1px solid var(--p-very-dim);
+  color: var(--p-dim);
+  font: 10px 'Fira Mono', monospace;
+  letter-spacing: 0.05em;
   padding: 10px 14px;
   cursor: pointer;
   text-align: left;
@@ -362,10 +325,10 @@
   margin-bottom: 8px;
 }
 
-.svc-action-btn.cyan   { border-color: rgba(0,255,204,0.35); color: var(--loc-cyan); }
-.svc-action-btn.green  { border-color: rgba(0,255,102,0.35); color: var(--loc-green); }
-.svc-action-btn.amber  { border-color: rgba(255,170,0,0.35); color: var(--loc-amber); }
-.svc-action-btn.magenta{ border-color: rgba(255,0,170,0.35); color: var(--loc-magenta); }
+.svc-action-btn.cyan   { border-color: rgba(0,255,204,0.35); color: var(--p-cyan); }
+.svc-action-btn.green  { border-color: rgba(0,255,102,0.35); color: var(--p-green); }
+.svc-action-btn.amber  { border-color: rgba(255,170,0,0.35); color: var(--p-amber); }
+.svc-action-btn.magenta{ border-color: rgba(255,0,170,0.35); color: var(--p-magenta); }
 
 .svc-action-btn:hover:not(:disabled) {
   filter: brightness(1.25);
@@ -378,23 +341,23 @@
 }
 
 .svc-status-ok {
-  font: 11px 'Fira Mono', monospace;
-  color: var(--loc-green);
-  letter-spacing: 0.07em;
+  font-size: 10px;
+  color: var(--p-green);
+  letter-spacing: 0.05em;
   margin-bottom: 8px;
   padding: 6px 0;
 }
 
 .svc-status-dim {
-  font: 11px 'Fira Mono', monospace;
-  color: var(--loc-dim);
-  letter-spacing: 0.07em;
+  font-size: 10px;
+  color: var(--p-dim);
+  letter-spacing: 0.05em;
 }
 
-/* ── Progress bar ────────────────────────────────────────────────────────────── */
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
 
 .svc-progress-wrap {
-  border: 1px solid var(--loc-cyan);
+  border: 1px solid var(--p-cyan);
   margin-bottom: 8px;
   height: 34px;
   position: relative;
@@ -403,7 +366,7 @@
 
 .svc-progress-fill {
   height: 100%;
-  background: var(--loc-cyan);
+  background: var(--p-cyan);
   opacity: 0.22;
   transition: width 0.1s linear;
   position: absolute;
@@ -417,16 +380,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 10px 'Fira Mono', monospace;
-  color: var(--loc-white);
-  letter-spacing: 0.07em;
+  font-size: 10px;
+  color: var(--p-white);
+  letter-spacing: 0.05em;
 }
 
-/* ── Trade ───────────────────────────────────────────────────────────────────── */
+/* ── Trade ─────────────────────────────────────────────────────────────────── */
 
 .trade-shift-hint {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--loc-very-dim);
+  font-size: 10px;
+  color: var(--p-very-dim);
   margin-bottom: 12px;
   letter-spacing: 0.05em;
 }
@@ -434,12 +397,12 @@
 .trade-table {
   width: 100%;
   border-collapse: collapse;
-  font: 11px 'Fira Mono', monospace;
+  font-size: 11px;
 }
 
 .trade-table th {
-  font: 9px 'Fira Mono', monospace;
-  color: var(--loc-dim);
+  font-size: 9px;
+  color: var(--p-dim);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-align: left;
@@ -453,15 +416,15 @@
   vertical-align: middle;
 }
 
-.trade-item  { color: var(--loc-cyan); }
-.trade-price { color: var(--loc-amber); }
-.trade-qty   { color: var(--loc-green); min-width: 32px; }
-.trade-qty.zero { color: var(--loc-very-dim); }
+.trade-item  { color: var(--p-cyan); }
+.trade-price { color: var(--p-amber); }
+.trade-qty   { color: var(--p-green); min-width: 32px; }
+.trade-qty.zero { color: var(--p-very-dim); }
 
 .trade-btn {
   background: transparent;
-  border: 1px solid var(--loc-very-dim);
-  color: var(--loc-dim);
+  border: 1px solid var(--p-very-dim);
+  color: var(--p-dim);
   font: 9px 'Fira Mono', monospace;
   letter-spacing: 0.05em;
   padding: 3px 8px;
@@ -472,24 +435,24 @@
 
 .trade-btn.can {
   border-color: rgba(0,255,204,0.35);
-  color: var(--loc-cyan);
+  color: var(--p-cyan);
 }
 
 .trade-btn:hover.can { filter: brightness(1.3); }
 .trade-btn:disabled  { opacity: 0.25; cursor: not-allowed; }
 
-/* ── Bounties ────────────────────────────────────────────────────────────────── */
+/* ── Bounties ──────────────────────────────────────────────────────────────── */
 
 .bounty-section {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--loc-dim);
-  letter-spacing: 0.1em;
+  font-size: 10px;
+  color: var(--p-dim);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin: 12px 0 8px;
 }
 
 .bounty-card {
-  border: 1px solid var(--loc-very-dim);
+  border: 1px solid var(--p-very-dim);
   padding: 10px 14px;
   margin-bottom: 8px;
   display: flex;
@@ -499,31 +462,31 @@
 
 .bounty-info { flex: 1; }
 
-.bounty-title  { font: 10px 'Fira Mono', monospace; color: var(--loc-cyan); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-.bounty-target { font: 11px 'Fira Mono', monospace; color: var(--loc-amber); margin-bottom: 2px; }
-.bounty-reward { font: 11px 'Fira Mono', monospace; color: var(--loc-green); }
-.bounty-status { font: 11px 'Fira Mono', monospace; letter-spacing: 0.06em; }
+.bounty-title  { font-size: 10px; color: var(--p-cyan); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.bounty-target { font-size: 11px; color: var(--p-amber); margin-bottom: 2px; }
+.bounty-reward { font-size: 11px; color: var(--p-green); }
+.bounty-status { font-size: 11px; letter-spacing: 0.05em; }
 
 .bounty-accept-btn {
   background: transparent;
   border: 1px solid rgba(0,255,204,0.35);
-  color: var(--loc-cyan);
+  color: var(--p-cyan);
   font: 10px 'Fira Mono', monospace;
   padding: 5px 12px;
   cursor: pointer;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   transition: filter 0.1s;
   white-space: nowrap;
 }
 
 .bounty-accept-btn:hover { filter: brightness(1.3); }
 
-/* ── Relations ───────────────────────────────────────────────────────────────── */
+/* ── Relations ─────────────────────────────────────────────────────────────── */
 
 .relations-title {
-  font: 10px 'Fira Mono', monospace;
-  color: var(--loc-dim);
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  color: var(--p-dim);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 14px;
 }
@@ -534,28 +497,28 @@
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px solid rgba(0,255,204,0.05);
-  font: 11px 'Fira Mono', monospace;
+  font-size: 11px;
 }
 
 .relations-faction { color: rgba(255,255,255,0.65); letter-spacing: 0.05em; }
-.relations-level   { letter-spacing: 0.06em; }
+.relations-level   { letter-spacing: 0.05em; }
 
-/* ── Intel / lore ────────────────────────────────────────────────────────────── */
+/* ── Intel / lore ──────────────────────────────────────────────────────────── */
 
-.intel-block { font: 12px/1.7 'Fira Mono', monospace; color: var(--loc-dim); }
+.intel-block { font-size: 11px; line-height: 1.7; color: var(--p-dim); }
 .intel-block p { margin: 0 0 2px; }
-.intel-block p.intel-heading { color: var(--loc-accent); opacity: 0.85; font-size: 10px; letter-spacing: 0.1em; margin-top: 14px; }
+.intel-block p.intel-heading { color: var(--p-accent); opacity: 0.85; font-size: 9px; letter-spacing: 0.08em; margin-top: 14px; }
 .intel-block p.intel-blank  { height: 6px; }
 
-/* ── Reactor ─────────────────────────────────────────────────────────────────── */
+/* ── Reactor ───────────────────────────────────────────────────────────────── */
 
 .reactor-card {
-  border: 1px solid var(--loc-very-dim);
+  border: 1px solid var(--p-very-dim);
   padding: 12px 16px;
   margin-bottom: 10px;
 }
 
 .reactor-card.overdue { border-color: rgba(255,0,170,0.45); }
 
-.reactor-name   { font: 12px 'Fira Mono', monospace; color: var(--loc-cyan); letter-spacing: 0.08em; margin-bottom: 4px; }
-.reactor-status { font: 11px 'Fira Mono', monospace; margin-bottom: 10px; }
+.reactor-name   { font-size: 11px; color: var(--p-cyan); letter-spacing: 0.05em; margin-bottom: 4px; }
+.reactor-status { font-size: 11px; margin-bottom: 10px; }
