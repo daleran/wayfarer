@@ -153,7 +153,7 @@ const NAMED_DERELICTS = [
 
 function _buildDerelictItems() {
   return NAMED_DERELICTS.map(({ def, slug, file }) => {
-    const loot = def.lootTable.map(l => {
+    const loot = (def.lootTable || []).map(l => {
       if (l.type === 'scrap' || l.type === 'fuel') return `${l.type}×${l.amount}`;
       if (l.type === 'ammo') return `${l.ammoType}×${l.amount}`;
       if (l.type === 'moduleId') return l.id;

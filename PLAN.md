@@ -23,7 +23,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BG | Module Affixes & Randomized Traits | Modules / Equipment |
 | BL | Core Combat Philosophy — Disabling vs. Destroying | Gameplay |
 | BM | Crew System — Named Crew, Health & Performance | Ship Systems |
-| BN | Salvage Bay & Engineering Bay | Scavenging |
 | BO | Data Extraction — Computer Salvage | Scavenging |
 | BQ | Crew Active Abilities | Ship Systems |
 | BR | Electronic Warfare | Modules / Equipment |
@@ -363,26 +362,6 @@ Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-le
 ---
 
 ## Scavenging
-
-### BN: Salvage Bay & Engineering Bay
-
-Two large-slot ship modules that unlock advanced field operations.
-
-**Derelicts Are Ships (Architecture):** *(implemented — see DEVLOG CI)*
-- Derelicts are Ship instances with `crew = 0`. An enemy whose crew is killed mid-combat becomes a derelict in place.
-- `createDerelict()` factory in `js/world/derelict.js` returns configured Ships. Named derelicts in `js/data/ships/named/`.
-
-**Salvage Bay:**
-- Without it, defeating a ship yields only scrap, fuel, and ammo
-- With it, the player can extract intact weapon and ship modules from derelicts
-- *Scrapping:* Full deconstruction strips everything — fuel, ammo, all modules — and reduces hull to zero. Base scrap yield is proportional to the hull and armor damage dealt during the fight (reward precision combat)
-- Requires a derelict target (crew all dead) or a destroyed hulk
-
-**Engineering Bay** (Large slot):
-- Allows field repair of own hull points and damaged modules using special commodities and scrap
-- Complements the existing field armor repair system with deeper hull restoration capability
-
----
 
 ### BO: Data Extraction — Computer Salvage
 

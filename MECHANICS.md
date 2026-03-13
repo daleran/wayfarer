@@ -79,12 +79,13 @@ As hull health drops, the ship progressively loses capability. Each threshold ad
 
 ### Field Repair (R key)
 
-Press R when stopped (throttle 0) to enter repair mode. Both armor and module repair run simultaneously:
+Press R when stopped (throttle 0) to enter repair mode. Armor, module, and hull repair run simultaneously:
 
 - **Armor** — repairs the most-depleted arc first; costs scrap per armor point; auto-cancels when full
 - **Module condition** — improves the worst-condition installed module one step at a time; costs scrap per step
+- **Hull** — requires an Engineering Bay module; restores hull points at a slower rate and higher scrap cost than armor; auto-cancels when full
 
-Press R again to cancel. Also cancels when all repairs are done or scrap runs out. Hull damage cannot be repaired in the field — dock at a station.
+Press R again to cancel. Also cancels when all repairs are done or scrap runs out.
 
 ### Station Repair
 
@@ -130,7 +131,7 @@ The main map is the Gravewake Zone. Named editor maps in `js/data/maps/` serve a
 
 ## Ship Modules
 
-Ships have a fixed number of module slots. Each slot has a physical mount point on the hull. **Engine slots** only accept engine modules and vice versa. Other slots are general-purpose. Modules are installed/removed via the Ship Screen (I key) — click installed modules to uninstall, click cargo modules then empty slots to install.
+Ships have a fixed number of module slots. Each slot has a physical mount point on the hull with a size (`small` or `large`). **Engine slots** only accept engine modules and vice versa. **Large modules** can only be installed in large-size mounts; small modules fit in any mount. General-purpose slots accept any non-engine module that fits. Modules are installed/removed via the Ship Screen (I key) — click installed modules to uninstall, click cargo modules then empty slots to install.
 
 ### Engine Modules & Thrust-to-Weight
 
@@ -163,6 +164,14 @@ Fission reactors track time since their last overhaul. When overdue, output degr
 ### Utility Modules
 
 Passive stat-modifying modules that trade one advantage for a drawback (e.g. more cargo but less armor, more fuel but more weight). Bonuses scale with module condition.
+
+### Salvage Bay (Large Utility)
+
+A large-slot utility module that enables advanced salvage operations. When installed, salvaging a derelict extracts its installed modules and weapons (with their current condition) in addition to the standard scrap, fuel, and ammo yields. Destroyed modules are skipped. Modules appear as loot drops around the wreck. The salvage prompt shows "+ MODULES" when a Salvage Bay is active.
+
+### Engineering Bay (Large Utility)
+
+A large-slot utility module that enables field hull repair. When installed, pressing R while stopped also repairs hull damage at a slower rate and higher scrap cost than armor repair. Hull repair runs in parallel with armor and module repair. A CYAN "HULL REPAIR..." progress bar is shown during hull repair. Without this module, hull damage can only be repaired at stations.
 
 ### Module Condition
 
@@ -254,7 +263,7 @@ Non-player ships become derelicts when their hull drops to a critical threshold.
 
 ### Salvage Process
 
-Press **E** near a derelict to begin salvage. A progress bar fills; the player is frozen and vulnerable. **E** or **Esc** cancels. On completion, loot drops are computed from the wreck's remaining stats (armor, fuel, weapon magazines). The derelict persists but cannot be re-salvaged.
+Press **E** near a derelict to begin salvage. A progress bar fills; the player is frozen and vulnerable. **E** or **Esc** cancels. On completion, loot drops are computed from the wreck's remaining stats (armor → scrap, fuel tank → fuel, weapon magazines → ammo). If the player has a Salvage Bay installed, the derelict's installed modules and weapons are also extracted as loot drops with their current condition. The derelict persists but cannot be re-salvaged.
 
 ### Derelicts
 

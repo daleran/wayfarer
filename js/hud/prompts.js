@@ -1,5 +1,5 @@
 import {
-  AMBER, GREEN, RED,
+  AMBER, GREEN, RED, CYAN,
   BAR_TRACK,
   CONDITION_FAULTY,
 } from '@/rendering/colors.js';
@@ -46,7 +46,9 @@ export function renderRepairPrompt(ctx, game) {
 
   const armorNeeded   = player.armorCurrent < player.armorMax;
   const modulesNeeded = game.repair.hasModulesToRepair(player);
-  if ((!armorNeeded && !modulesNeeded) || game.scrap <= 0) return;
+  const hasEngBay     = player.capabilities.has_engineering_bay;
+  const hullNeeded    = hasEngBay && player.hullCurrent < player.hullMax;
+  if ((!armorNeeded && !modulesNeeded && !hullNeeded) || game.scrap <= 0) return;
 
   const alpha   = 0.6 + Math.sin(Date.now() * 0.005) * 0.4;
   const promptY = camera.height * 0.62;
@@ -59,6 +61,7 @@ export function renderRepairPrompt(ctx, game) {
   const costs = [];
   if (armorNeeded)   costs.push('1 scrap/pt');
   if (modulesNeeded) costs.push('15 scrap/step');
+  if (hullNeeded)    costs.push('3 scrap/hull pt');
   ctx.fillText(`Press R to Repair  [${costs.join(' · ')}]`, camera.width / 2, promptY);
   ctx.globalAlpha = 1;
   ctx.restore();
@@ -102,6 +105,25 @@ export function renderRepairBar(ctx, game) {
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
+
+  // Hull repair bar (Engineering Bay) — bottom-most
+  const hasEngBay = player.capabilities.has_engineering_bay;
+  if (hasEngBay && player.hullCurrent < player.hullMax) {
+    const hullAccum = game.repair._hullRepairAccum ?? 0;
+    ctx.font = PROMPT.font;
+    ctx.fillStyle = CYAN;
+    ctx.fillText('HULL REPAIR...', camera.width / 2, yOffset - 4);
+
+    ctx.strokeStyle = CYAN;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 1, yOffset - 1, barW + 2, barH + 2);
+    ctx.fillStyle = BAR_TRACK;
+    ctx.fillRect(x, yOffset, barW, barH);
+    ctx.fillStyle = CYAN;
+    ctx.fillRect(x, yOffset, barW * hullAccum, barH);
+
+    yOffset -= barH + 24;
+  }
 
   const hasModules = game.repair.hasModulesToRepair(player);
   if (hasModules) {

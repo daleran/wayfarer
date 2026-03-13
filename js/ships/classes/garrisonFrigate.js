@@ -105,6 +105,8 @@ export class GarrisonFrigate extends Ship {
       'Strengths: heavy armor, long range, nacelles easy to hot-swap in the field. ' +
       'Weaknesses: slow to turn, thirsty on fuel, and no amount of paint hides what it is.';
 
+    this.shipClassName = 'Garrison Class Frigate';
+
     this._initStats({
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,

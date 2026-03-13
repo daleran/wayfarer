@@ -9,7 +9,6 @@ export class GraveClanAmbusher extends MaverickCourier {
     this.faction     = 'scavenger';
     this.relation    = 'hostile';
     this.shipType    = 'grave-clan-ambusher';
-    this.displayName = 'Grave-Clan Ambusher';
     this.ai          = { ...AI_TEMPLATES.lurker };
 
     this.flavorText =

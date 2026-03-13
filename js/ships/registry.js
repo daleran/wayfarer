@@ -1,5 +1,6 @@
 // Central registries. Add new ships/NPCs here only.
 // Consumers: game.js, designer.js, editor.js
+import { generateShipName } from './nameGenerator.js';
 
 import { OnyxClassTug }         from './classes/onyxTug.js';
 import { MaverickCourier }      from './classes/maverickCourier.js';
@@ -139,5 +140,7 @@ export const NPC_REGISTRY = [
 export function createShip(id, x, y) {
   const entry = NPC_REGISTRY.find(n => n.id === id);
   if (!entry) throw new Error(`Unknown NPC id: ${id}`);
-  return entry.create(x, y);
+  const ship = entry.create(x, y);
+  if (!ship.name) ship.name = generateShipName(entry.faction);
+  return ship;
 }

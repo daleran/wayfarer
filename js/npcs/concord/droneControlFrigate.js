@@ -33,7 +33,6 @@ export class DroneControlFrigate extends GarrisonFrigate {
     this.faction     = 'concord';
     this.relation    = 'hostile';
     this.shipType    = 'drone-control-frigate';
-    this.displayName = 'Drone Control Frigate';
     this.ai          = { ...AI_TEMPLATES.standoff };
 
     this.flavorText =

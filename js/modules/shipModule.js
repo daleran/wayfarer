@@ -31,6 +31,7 @@ export class ShipModule {
     this.powerDraw     = 0;  // watts consumed
     this.fuelDrainRate = 0;  // fuel/sec idle (fuel cells only)
     this.weapon        = null; // set by weapon modules
+    this.size          = 'small'; // 'small' | 'large' — mount size constraint
     this.weight        = 0;  // mass units for T/W calculation
     this.condition     = 'good'; // good | worn | faulty | damaged | destroyed
     this.isPowered     = true;   // set by power balance; false when insufficient reactor output
@@ -77,10 +78,11 @@ export class AutocannonModule extends ShipModule {
     super();
     const W = WEAPONS.autocannon;
     this.name        = 'autocannon';
-    this.displayName = 'AUTOCANNON';
+    this.displayName = 'AUTOCANNON (S)';
     this.description = 'Kinetic hardpoint. Fires on trigger, mouse-aimed.';
     this.powerDraw   = W.powerDraw;
     this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
     this.powerPriority = 2;
     this.weapon      = new Autocannon();
   }
@@ -101,6 +103,7 @@ export class LanceModuleSmall extends ShipModule {
     this.description = 'Hitscan beam emitter. Continuous fire, high power draw.';
     this.powerDraw   = W.powerDraw;
     this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
     this.powerPriority = 2;
     this.weapon      = new Lance('small');
   }
@@ -117,10 +120,11 @@ export class CannonModule extends ShipModule {
     super();
     const W = WEAPONS.cannon;
     this.name        = 'cannon';
-    this.displayName = 'CANNON';
+    this.displayName = 'CANNON (S)';
     this.description = 'Heavy slug thrower. Slow fire rate, punishing impact.';
     this.powerDraw   = W.powerDraw;
     this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
     this.powerPriority = 2;
     this.weapon      = new Cannon();
   }
@@ -133,17 +137,18 @@ export class CannonModule extends ShipModule {
 }
 
 export class RocketPodModule extends ShipModule {
-  constructor(size = 'small', defaultMode = 'ht') {
+  constructor(rocketSize = 'small', defaultMode = 'ht') {
     super();
-    const id = size === 'large' ? 'rocket-l' : 'rocket-s';
+    const id = rocketSize === 'large' ? 'rocket-l' : 'rocket-s';
     const W = WEAPONS[id];
-    this.name        = size === 'large' ? 'rocket-pod-l' : 'rocket-pod-s';
-    this.displayName = size === 'large' ? 'RPOD-L' : 'RPOD-S';
+    this.name        = rocketSize === 'large' ? 'rocket-pod-l' : 'rocket-pod-s';
+    this.displayName = rocketSize === 'large' ? 'RPOD-L' : 'RPOD-S';
     this.description = 'Rocket pod. Fires RKT (dumbfire), WG (wire-guided), or HT (heat-seeking) ordnance.';
     this.powerDraw   = W.powerDraw;
     this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
     this.powerPriority = 2;
-    this.weapon      = size === 'large' ? new RocketPodLarge() : new RocketPodSmall();
+    this.weapon      = rocketSize === 'large' ? new RocketPodLarge() : new RocketPodSmall();
     this.weapon.currentAmmoId = defaultMode;
   }
   drawAtMount(ctx, color, alpha) {
@@ -193,6 +198,7 @@ function _initEngine(mod, id) {
   mod.fuelDrainRate = E.fuelDrainRate;
   mod.powerDraw     = E.powerDraw;
   mod.powerPriority = 3; // engines: last to lose power
+  mod.size          = E.size === 'L' ? 'large' : 'small';
 }
 
 export class OnyxDriveUnit extends EngineModule {
@@ -258,6 +264,7 @@ function _initReactor(mod, id) {
   mod.powerOutput   = R.powerOutput;
   mod.fuelDrainRate = R.fuelDrainRate;
   mod.weight        = R.weight;
+  mod.size          = R.size === 'L' ? 'large' : 'small';
 }
 
 export class HydrogenFuelCell extends ShipModule {
@@ -439,6 +446,7 @@ function _initUtility(mod, id) {
   mod.name        = id;
   mod.displayName = U.displayName;
   mod.weight      = U.weight;
+  mod.size        = U.size === 'L' ? 'large' : 'small';
   mod.isUtility   = true;
   mod._cargoBonus = U.cargoBonus || 0;
   mod._fuelBonus  = U.fuelBonus  || 0;
@@ -567,6 +575,26 @@ export class ExtraArmorLarge extends UtilityModule {
   drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, WHITE); }
 }
 
+export class SalvageBayModule extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'salvage-bay');
+    this.description = 'Field salvage bay. Extracts installed modules and weapons from derelicts during salvage.';
+    this.hasSalvageBay = true;
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, AMBER); }
+}
+
+export class EngineeringBayModule extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'engineering-bay');
+    this.description = 'Field engineering bay. Enables hull repair using scrap while stationary.';
+    this.hasEngineeringBay = true;
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, GREEN); }
+}
+
 // ─── Module registry ────────────────────────────────────────────────────────
 // Single source of truth for all installable modules.
 // Designer and game systems iterate this instead of maintaining parallel lists.
@@ -606,4 +634,6 @@ export const MODULE_REGISTRY = [
   { id: 'stripped-weight-l',  category: 'UTILITY', create: () => new StrippedWeightLarge() },
   { id: 'extra-armor-s',     category: 'UTILITY', create: () => new ExtraArmorSmall() },
   { id: 'extra-armor-l',     category: 'UTILITY', create: () => new ExtraArmorLarge() },
+  { id: 'salvage-bay',       category: 'UTILITY', create: () => new SalvageBayModule() },
+  { id: 'engineering-bay',   category: 'UTILITY', create: () => new EngineeringBayModule() },
 ];

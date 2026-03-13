@@ -6,11 +6,6 @@ export const PaleWitness = {
   name: 'Pale Witness',
   derelictClass: 'hauler',
   salvageTime: 3,
-  lootTable: [
-    { type: 'scrap',    amount: 22 },
-    { type: 'fuel',     amount: 18 },
-    { type: 'moduleId', id: 'SalvageScanner', condition: 'faulty' },
-  ],
   lore: `PALE WITNESS — G100-class hauler, running dark below Pale.
 No distress signal. No survivors recovered.
 Scanner array still drawing power from backup cells.`,

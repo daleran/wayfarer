@@ -9,7 +9,6 @@ export class SalvageMothership extends GarrisonFrigate {
     this.faction     = 'scavenger';
     this.relation    = 'hostile';
     this.shipType    = 'salvage-mothership';
-    this.displayName = 'Salvage Mothership';
     this.ai          = { ...AI_TEMPLATES.standoff };
 
     this.flavorText =

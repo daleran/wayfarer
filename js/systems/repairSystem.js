@@ -1,6 +1,7 @@
 import {
   REPAIR_RATE, REPAIR_COST_PER_PT,
   MODULE_REPAIR_RATE, MODULE_REPAIR_COST,
+  HULL_REPAIR_RATE, HULL_REPAIR_COST,
 } from '@data/compiledData.js';
 import {
   MODULE_BREACH_HULL_THRESHOLD, MODULE_BREACH_CHANCE_LOW,
@@ -14,21 +15,24 @@ export class RepairSystem {
     this.isRepairing = false;
     this._repairAccum = 0;
     this._moduleRepairAccum = 0;
+    this._hullRepairAccum = 0;
   }
 
   start() {
     this.isRepairing = true;
     this._repairAccum = 0;
     this._moduleRepairAccum = 0;
+    this._hullRepairAccum = 0;
   }
 
   cancel() {
     this.isRepairing = false;
     this._repairAccum = 0;
     this._moduleRepairAccum = 0;
+    this._hullRepairAccum = 0;
   }
 
-  update(dt, player, scrap) {
+  update(dt, player, scrap, opts = {}) {
     if (!player || !player.active) return { scrapSpent: 0, done: false };
 
     let scrapSpent = 0;
@@ -66,9 +70,24 @@ export class RepairSystem {
       this._moduleRepairAccum = 0;
     }
 
+    // Hull repair — requires Engineering Bay module
+    if (opts.hasEngineeringBay && player.hullCurrent < player.hullMax) {
+      if (scrap - scrapSpent >= HULL_REPAIR_COST) {
+        this._hullRepairAccum += HULL_REPAIR_RATE * dt;
+        while (this._hullRepairAccum >= 1 && scrap - scrapSpent >= HULL_REPAIR_COST) {
+          player.hullCurrent = Math.min(player.hullCurrent + 1, player.hullMax);
+          scrapSpent += HULL_REPAIR_COST;
+          this._hullRepairAccum -= 1;
+        }
+      }
+    } else {
+      this._hullRepairAccum = 0;
+    }
+
     const armorDone = player.armorCurrent >= player.armorMax;
     const modsDone = !this.hasModulesToRepair(player);
-    const done = (armorDone && modsDone) || scrap - scrapSpent <= 0;
+    const hullDone = !opts.hasEngineeringBay || player.hullCurrent >= player.hullMax;
+    const done = (armorDone && modsDone && hullDone) || scrap - scrapSpent <= 0;
     if (done) this.cancel();
 
     return { scrapSpent, done };

@@ -125,6 +125,8 @@ export class MaverickCourier extends Ship {
       'enough to survive a graze, handles well. Weakness: small cargo, not built ' +
       'for a stand-up fight.';
 
+    this.shipClassName = 'Maverick Class Courier';
+
     this._initStats({
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,

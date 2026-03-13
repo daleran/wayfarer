@@ -24,7 +24,6 @@ export class SnatcHerDrone extends MaverickCourier {
     this.faction     = 'concord';
     this.relation    = 'hostile';
     this.shipType    = 'snatcher-drone';
-    this.displayName = 'Snatcher Drone';
     this.ai          = { ...AI_TEMPLATES.latch };
 
     this.flavorText =

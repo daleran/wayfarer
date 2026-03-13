@@ -29,7 +29,6 @@ function npcGroup(x, y, count, shipType) {
       y - Math.cos(angle) * dist,
     );
     ship.homePosition = { x, y };
-    ship._canRespawn  = true;
     return ship;
   });
 }
@@ -43,7 +42,6 @@ function lurkerGroup(x, y, count) {
     const ship = createShip('grave-clan-ambusher', rx, ry);
     ship.ai._coverPoint = { x: rx, y: ry };
     ship.homePosition   = { x, y };
-    ship._canRespawn    = true;
     return ship;
   });
 }

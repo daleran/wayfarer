@@ -29,6 +29,8 @@ import {
   StrippedWeightLarge,
   ExtraArmorSmall,
   ExtraArmorLarge,
+  SalvageBayModule,
+  EngineeringBayModule,
 } from './shipModule.js';
 
 export const MODULE_REGISTRY = {
@@ -69,6 +71,8 @@ export const MODULE_REGISTRY = {
   'stripped-weight-l':     StrippedWeightLarge,
   'extra-armor-s':        ExtraArmorSmall,
   'extra-armor-l':        ExtraArmorLarge,
+  'salvage-bay':          SalvageBayModule,
+  'engineering-bay':      EngineeringBayModule,
 };
 
 export function createModuleById(id) {

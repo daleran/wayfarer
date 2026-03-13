@@ -5,15 +5,6 @@ import { input } from './input.js';
 import { MAP } from './data/maps/tyr.js';
 import { createHullbreaker } from './ships/player/hullbreaker.js';
 import { createCrashDummy } from './ships/player/crashDummy.js';
-import { Autocannon } from './modules/weapons/autocannon.js';
-import { RocketPodSmall } from './modules/weapons/rocket.js';
-import { RocketPodLarge } from './modules/weapons/rocketLarge.js';
-import { Railgun } from './modules/weapons/railgun.js';
-import { GatlingGun } from './modules/weapons/gatlingGun.js';
-import { Lance } from './modules/weapons/lance.js';
-import { PlasmaCannon } from './modules/weapons/plasmaCannon.js';
-import { Cannon } from './modules/weapons/cannon.js';
-import { Torpedo } from './modules/weapons/torpedo.js';
 import { ParticlePool } from './systems/particlePool.js';
 import { SalvageSystem } from './systems/salvageSystem.js';
 import { RepairSystem } from './systems/repairSystem.js';
@@ -35,7 +26,6 @@ import {
 import { ReputationSystem } from './systems/reputation.js';
 import { PlayerInventory } from './systems/playerInventory.js';
 import { NavigationSystem } from './systems/navigationSystem.js';
-import { createModuleById } from './modules/registry.js';
 import { createShip } from './ships/registry.js';
 
 export class GameManager {
@@ -114,43 +104,6 @@ export class GameManager {
     this.inventory.bindPlayer(this.player);
     this.inventory.initFromPlayer(this.player);
 
-    if (this.isTestMode) {
-      // Swap slot 2 (H2 fuel cell) to small fission reactor for testing overhaul mechanic
-      this.player.moduleSlots[2] = createModuleById('SmallFissionReactor');
-
-      // Full weapon roster in test mode — replace module-installed weapons
-      this.player.weapons = [];
-      // Primaries
-      this.player.addWeapon(new Autocannon());
-      this.player.addWeapon(new GatlingGun());
-      this.player.addWeapon(new Railgun('small-fixed'));
-      this.player.addWeapon(new Railgun('large-turret'));
-      this.player.addWeapon(new Railgun('large-fixed'));
-      this.player.addWeapon(new Lance('small-fixed'));
-      this.player.addWeapon(new Lance('small-turret'));
-      this.player.addWeapon(new Lance('large-fixed'));
-      this.player.addWeapon(new Lance('large-turret'));
-      this.player.addWeapon(new PlasmaCannon('small'));
-      this.player.addWeapon(new PlasmaCannon('large'));
-      this.player.addWeapon(new Cannon());
-      // Secondaries
-      this.player.addWeapon(new RocketPodSmall());
-      this.player.addWeapon(new RocketPodLarge());
-      this.player.addWeapon(new Torpedo());
-
-      // Seed cargo ammo reserves for test mode
-      this.inventory.ammo['25mm-ap'] = 300;
-      this.inventory.ammo['25mm-he'] = 100;
-      this.inventory.ammo['8mm'] = 600;
-      this.inventory.ammo['90mm-ap'] = 12;
-      this.inventory.ammo['90mm-he'] = 8;
-      this.inventory.ammo['rkt'] = 20;
-      this.inventory.ammo['wg'] = 10;
-      this.inventory.ammo['ht'] = 10;
-      this.inventory.ammo['30mm-kp'] = 10;
-      this.inventory.ammo['60mm-kp'] = 6;
-    }
-    // Normal mode: weapons come from installed modules (set up in ship constructor)
 
     this.entities.push(this.player);
 
@@ -220,7 +173,9 @@ export class GameManager {
     }
 
     if (this.salvage.isSalvaging) {
-      const result = this.salvage.update(dt);
+      const result = this.salvage.update(dt, {
+        hasSalvageBay: this.player?.capabilities.has_salvage_bay,
+      });
       if (result) {
         for (const e of result.lootEntities) this.entities.push(e);
         this.particlePool.explosion(result.particlePos.x, result.particlePos.y, 10);
@@ -286,7 +241,9 @@ export class GameManager {
     }
 
     if (this.repair.isRepairing) {
-      const { scrapSpent } = this.repair.update(dt, this.player, this.inventory.scrap);
+      const { scrapSpent } = this.repair.update(dt, this.player, this.inventory.scrap, {
+        hasEngineeringBay: this.player?.capabilities.has_engineering_bay,
+      });
       this.inventory.scrap -= scrapSpent;
     }
     this.weaponSys.updateReloads(dt, this.player, this.inventory.ammo);
@@ -516,7 +473,9 @@ export class GameManager {
     if (input.wasJustPressed('r')) this.weaponSys.manualReload(this.player, this.inventory.ammo);
 
     if (this.repair.isRepairing) {
-      const stillValid = p.throttleLevel === 0 && p.speed < 1 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.inventory.scrap > 0;
+      const hasEngBay = p.capabilities.has_engineering_bay;
+      const hullNeeded = hasEngBay && p.hullCurrent < p.hullMax;
+      const stillValid = p.throttleLevel === 0 && p.speed < 1 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p) || hullNeeded) && this.inventory.scrap > 0;
       if (!stillValid || input.wasJustPressed('escape')) {
         this.repair.cancel();
       } else if (input.wasJustPressed('r')) {
@@ -526,7 +485,8 @@ export class GameManager {
       return;
     }
 
-    const canRepair = p.throttleLevel === 0 && p.speed < 1 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.inventory.scrap > 0;
+    const hasEngBayForRepair = p.capabilities.has_engineering_bay && p.hullCurrent < p.hullMax;
+    const canRepair = p.throttleLevel === 0 && p.speed < 1 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p) || hasEngBayForRepair) && this.inventory.scrap > 0;
     if (input.wasJustPressed('r') && canRepair) { this.repair.start(); return; }
 
     if (input.wasJustPressed('f')) this.combatMode = !this.combatMode;

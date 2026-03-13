@@ -275,6 +275,7 @@ CI. 2026-MAR-13-0000: Derelicts-as-Ships Unification — derelicts are now Ship 
 CJ. 2026-MAR-13-0000: CSV-Based Tuning Data — build-time compilation: 11 CSVs in `data/` → `data/compiledData.js` via `scripts/compile-data.js`; all 6 tuning JS files deleted (`js/data/tuning/`); all imports point to `@data/compiledData.js`; no runtime CSV parsing, synchronous imports preserved.
 CE. 2026-MAR-13-0000: Visual Module System — mount points on all 4 ship classes; module icons drawn on hull (condition-colored); positional damage routing (hits to arc prefer modules in that arc); moduleVisuals.js renderer.
 AN. 2026-MAR-13-0000: Utility Modules — 8 passive stat-modifying modules (Expanded Hold S/L, Aux Tank S/L, Stripped Weight S/L, Extra Armor S/L); CSV-driven stats; condition-scaled bonuses; onInstall/onRemove apply additive cargo/fuel/armor/weight changes; utility category in moduleVisuals.js; ship screen tooltip rows.
+BN. 2026-MAR-13-0000: Salvage Bay & Engineering Bay — two large-slot utility modules; Salvage Bay extracts installed modules/weapons from derelict moduleSlots during salvage; Engineering Bay enables field hull repair (0.5 pts/sec, 3 scrap/pt); module size constraint (large modules require large mounts); lootTable arrays removed from named derelicts.
 
 
 # === PLAN.md ===
@@ -304,7 +305,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BG | Module Affixes & Randomized Traits | Modules / Equipment |
 | BL | Core Combat Philosophy — Disabling vs. Destroying | Gameplay |
 | BM | Crew System — Named Crew, Health & Performance | Ship Systems |
-| BN | Salvage Bay & Engineering Bay | Scavenging |
 | BO | Data Extraction — Computer Salvage | Scavenging |
 | BQ | Crew Active Abilities | Ship Systems |
 | BR | Electronic Warfare | Modules / Equipment |
@@ -644,26 +644,6 @@ Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-le
 ---
 
 ## Scavenging
-
-### BN: Salvage Bay & Engineering Bay
-
-Two large-slot ship modules that unlock advanced field operations.
-
-**Derelicts Are Ships (Architecture):** *(implemented — see DEVLOG CI)*
-- Derelicts are Ship instances with `crew = 0`. An enemy whose crew is killed mid-combat becomes a derelict in place.
-- `createDerelict()` factory in `js/world/derelict.js` returns configured Ships. Named derelicts in `js/data/ships/named/`.
-
-**Salvage Bay:**
-- Without it, defeating a ship yields only scrap, fuel, and ammo
-- With it, the player can extract intact weapon and ship modules from derelicts
-- *Scrapping:* Full deconstruction strips everything — fuel, ammo, all modules — and reduces hull to zero. Base scrap yield is proportional to the hull and armor damage dealt during the fight (reward precision combat)
-- Requires a derelict target (crew all dead) or a destroyed hulk
-
-**Engineering Bay** (Large slot):
-- Allows field repair of own hull points and damaged modules using special commodities and scrap
-- Complements the existing field armor repair system with deeper hull restoration capability
-
----
 
 ### BO: Data Extraction — Computer Salvage
 
@@ -1103,12 +1083,13 @@ As hull health drops, the ship progressively loses capability. Each threshold ad
 
 ### Field Repair (R key)
 
-Press R when stopped (throttle 0) to enter repair mode. Both armor and module repair run simultaneously:
+Press R when stopped (throttle 0) to enter repair mode. Armor, module, and hull repair run simultaneously:
 
 - **Armor** — repairs the most-depleted arc first; costs scrap per armor point; auto-cancels when full
 - **Module condition** — improves the worst-condition installed module one step at a time; costs scrap per step
+- **Hull** — requires an Engineering Bay module; restores hull points at a slower rate and higher scrap cost than armor; auto-cancels when full
 
-Press R again to cancel. Also cancels when all repairs are done or scrap runs out. Hull damage cannot be repaired in the field — dock at a station.
+Press R again to cancel. Also cancels when all repairs are done or scrap runs out.
 
 ### Station Repair
 
@@ -1154,7 +1135,7 @@ The main map is the Gravewake Zone. Named editor maps in `js/data/maps/` serve a
 
 ## Ship Modules
 
-Ships have a fixed number of module slots. Each slot has a physical mount point on the hull. **Engine slots** only accept engine modules and vice versa. Other slots are general-purpose. Modules are installed/removed via the Ship Screen (I key) — click installed modules to uninstall, click cargo modules then empty slots to install.
+Ships have a fixed number of module slots. Each slot has a physical mount point on the hull with a size (`small` or `large`). **Engine slots** only accept engine modules and vice versa. **Large modules** can only be installed in large-size mounts; small modules fit in any mount. General-purpose slots accept any non-engine module that fits. Modules are installed/removed via the Ship Screen (I key) — click installed modules to uninstall, click cargo modules then empty slots to install.
 
 ### Engine Modules & Thrust-to-Weight
 
@@ -1187,6 +1168,14 @@ Fission reactors track time since their last overhaul. When overdue, output degr
 ### Utility Modules
 
 Passive stat-modifying modules that trade one advantage for a drawback (e.g. more cargo but less armor, more fuel but more weight). Bonuses scale with module condition.
+
+### Salvage Bay (Large Utility)
+
+A large-slot utility module that enables advanced salvage operations. When installed, salvaging a derelict extracts its installed modules and weapons (with their current condition) in addition to the standard scrap, fuel, and ammo yields. Destroyed modules are skipped. Modules appear as loot drops around the wreck. The salvage prompt shows "+ MODULES" when a Salvage Bay is active.
+
+### Engineering Bay (Large Utility)
+
+A large-slot utility module that enables field hull repair. When installed, pressing R while stopped also repairs hull damage at a slower rate and higher scrap cost than armor repair. Hull repair runs in parallel with armor and module repair. A CYAN "HULL REPAIR..." progress bar is shown during hull repair. Without this module, hull damage can only be repaired at stations.
 
 ### Module Condition
 
@@ -1278,7 +1267,7 @@ Non-player ships become derelicts when their hull drops to a critical threshold.
 
 ### Salvage Process
 
-Press **E** near a derelict to begin salvage. A progress bar fills; the player is frozen and vulnerable. **E** or **Esc** cancels. On completion, loot drops are computed from the wreck's remaining stats (armor, fuel, weapon magazines). The derelict persists but cannot be re-salvaged.
+Press **E** near a derelict to begin salvage. A progress bar fills; the player is frozen and vulnerable. **E** or **Esc** cancels. On completion, loot drops are computed from the wreck's remaining stats (armor → scrap, fuel tank → fuel, weapon magazines → ammo). If the player has a Salvage Bay installed, the derelict's installed modules and weapons are also extracted as loot drops with their current condition. The derelict persists but cannot be re-salvaged.
 
 ### Derelicts
 
@@ -1805,4 +1794,216 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Station renderers (CC):** AshveilStation custom renderer (~200px colony ship hull, 10 rectangular sections, docked ships, running lights, approach beam). Kell's Stop unchanged (~120px). The Coil unchanged (~300px).
 - **Rationale:** Full-screen overlays broke immersion. Side panels keep the world visible, reinforce spatial context while docked. DOM-based UI is more maintainable than canvas text rendering and supports proper hover/click interactions. Bottom HUD bar clears the center viewport for combat readability.
 
+
+# === DATA (CSV) ===
+
+## aiBehaviors.csv
+
+```csv
+id,combatBehavior,passiveBehavior,aggroRange,deaggroRange,fireRange,orbitRadius,kiteRange,standoffRange,standoffFireRange,patrolRadius,fleeHullRatio,aftDistance,aimTolerance,orbitHoldThreshold,lurkerScanRange,lurkerHideRadius,travelThrottle,approachThrottle,arriveRadius,slowRadius,waitMin,waitMax
+stalker,stalker,,1400,2000,800,550,,,,300,0.3,300,0.4,80,,,,,,,,
+kiter,kiter,,1400,2000,800,,750,,,300,0.3,,,80,,,,,,,,
+standoff,standoff,,1400,2000,,,,1200,1400,300,0.3,,,,,,,,,,,,
+latch,latch,,1800,2400,,,,,,200,0,,,,,,,,,,,,
+lurker,lurker,,1400,2000,,,,,1400,,0.3,,,,700,150,,,,,,
+trader,flee,trader,0,,,,,,,,0.3,,,,,,3,1,120,400,5,8
+militia,stalker,militia,0,2000,800,550,,,,300,0.3,300,0.4,80,,,,,,,,
+```
+
+## ammo.csv
+
+```csv
+id,name,tag,weight,baseValue,guidedType,guidanceStrength
+8mm,8mm Ball,,0.005,0.05,,
+25mm-ap,25mm Armor Piercing,AP,0.01,0.2,,
+25mm-he,25mm High Explosive,HE,0.01,0.3,,
+90mm-ap,90mm Armor Piercing,AP,0.5,1.0,,
+90mm-he,90mm High Explosive,HE,0.5,1.5,,
+rkt,Dumbfire Rocket,RKT,1.0,2.0,,
+wg,Wire-Guided Missile,WG,1.5,3.0,wire,3.0
+ht,Heat-Seeking Missile,HT,1.5,3.0,heat,2.5
+30mm-kp,30mm Kinetic Penetrator,,0.5,1.5,,
+60mm-kp,60mm Kinetic Penetrator,,1.0,3.0,,
+```
+
+## economy.csv
+
+```csv
+key,value
+DEFAULT_SCRAP,20
+FUEL_RATES,0|0|0.1|0.2|0.5|1
+REPAIR_RATE,1.5
+REPAIR_COST_PER_PT,1
+MODULE_REPAIR_RATE,0.25
+MODULE_REPAIR_COST,15
+BOUNTY_EXPIRY_WARNING_SECS,60
+SALVAGE_EFFICIENCY,0.5
+SALVAGE_FUEL_RATE,0.25
+SALVAGE_AMMO_RATE,0.25
+SCRAP_MASS,0.1
+HULL_REPAIR_RATE,0.5
+HULL_REPAIR_COST,3
+```
+
+## moduleEngines.csv
+
+```csv
+id,displayName,size,thrust,fuelEffMult,fuelDrainRate,powerDraw,weight
+onyx-drive-unit,ONYX DRIVE UNIT (S),S,1500,1.0,0.005,1,50
+chem-rocket-s,CHEM ROCKET (S),S,2200,3.5,0,2,80
+chem-rocket-l,CHEM ROCKET (L),L,3500,5.5,0,3,150
+magplasma-torch-s,MAG-PLASMA TORCH (S),S,1700,1.3,0.010,40,60
+magplasma-torch-l,MAG-PLASMA TORCH (L),L,2000,1.6,0.020,80,100
+ion-thruster,ION THRUSTER (S),S,300,0.05,0.002,120,40
+```
+
+## moduleReactors.csv
+
+```csv
+id,displayName,size,powerOutput,fuelDrainRate,overhaulInterval,overhaulCost,degradedOutput,weight
+hydrogen-fuel-cell,H2 FUEL CELL (S),S,80,0.025,,,0,20
+fission-reactor-s,FISSION REACTOR (S),S,160,0,10800,800,0.6,40
+fission-reactor-l,FISSION REACTOR (L),L,300,0,14400,1500,0.6,80
+fusion-reactor-l,FUSION REACTOR (L),L,500,0.005,,,0,100
+```
+
+## moduleSensors.csv
+
+```csv
+id,displayName,powerDraw,weight,sensorRange,minimapStations,minimapShips,leadIndicators,healthPips,salvageDetail,trajectoryLine,enemyTelemetry,moduleInspection
+salvaged-sensor-suite,SALVAGED SENSORS (S),2,10,0,1,0,0,0,0,0,0,0
+standard-sensor-suite,STANDARD SENSORS (S),8,15,3000,1,1,0,0,0,0,0,0
+combat-computer,COMBAT COMPUTER (S),15,20,2000,1,1,1,1,0,1,1,0
+salvage-scanner,SALVAGE SCANNER (S),12,15,2500,1,1,0,0,1,0,0,0
+long-range-scanner,LONG-RANGE SENSORS (S),20,25,8000,1,1,0,0,0,1,1,1
+```
+
+## moduleUtility.csv
+
+```csv
+id,displayName,size,weight,cargoBonus,fuelBonus,armorBonus
+expanded-hold-s,EXPANDED HOLD (S),S,30,30,0,-15
+expanded-hold-l,EXPANDED HOLD (L),L,60,60,0,-25
+aux-tank-s,AUX TANK (S),S,25,0,20,-10
+aux-tank-l,AUX TANK (L),L,50,0,40,-20
+stripped-weight-s,STRIPPED WEIGHT (S),S,-40,0,0,-20
+stripped-weight-l,STRIPPED WEIGHT (L),L,-80,0,0,-40
+extra-armor-s,EXTRA ARMOR (S),S,40,0,0,30
+extra-armor-l,EXTRA ARMOR (L),L,80,0,0,60
+salvage-bay,SALVAGE BAY (L),L,40,0,0,0
+engineering-bay,ENGINEERING BAY (L),L,35,0,0,0
+```
+
+## moduleWeapons.csv
+
+```csv
+id,displayName,size,weight,powerDraw,damageMult,hullDamageMult,rangeMult,speedMult,cooldownMult,magSize,reloadTime,blastRadius,acceptedAmmoTypes,isBeam,isFixed,isSecondary,canIntercept,isInterceptable,guidanceStrength,burstSpread
+autocannon,AUTOCANNON,S,30,20,1.0,,1.0,1.0,1.04,60,10.0,,25mm,,,,,,,
+cannon,CANNON,S,50,30,3.24,4.5,0.933,0.65,3.0,4,14.0,,90mm,,,,,,,
+lance-sf,LANCE-SF,S,25,30,,,0.4,,,,,,,1,1,,,,
+lance-st,LANCE-ST,S,25,15,,,0.340,,,,,,,1,,,,,
+lance-lf,LANCE-LF,L,25,60,,,0.7,,,,,,,1,1,,,,
+lance-lt,LANCE-LT,L,25,50,,,0.4,,,,,,,1,,,,,
+railgun-sf,RAILGUN-SF,S,,,10.6,12.0,2.0,4.5,,1,5.4,,30mm-kp,,1,,,,,
+railgun-lt,RAILGUN-LT,S,,,10.6,12.0,2.0,4.5,,1,5.4,,60mm-kp,,,,,,,
+railgun-lf,RAILGUN-LF,L,,,21.2,24.0,2.0,4.5,,2,8.5,,60mm-kp,,1,,,,,
+gatling,GATLING,S,,,0.24,0.2,0.333,2.0,0.06,200,8.0,,8mm,,,,1,,,
+plasma-s,PLASMA-S,S,,,1.47,8.0,0.27,1.6,1.0,,,,,,,,,,,
+plasma-l,PLASMA-L,L,,,2.94,12.0,0.40,1.6,1.6,,,,,,,,,,,
+rocket-s,RPOD-S,S,35,10,5.3,6.5,,1.4,1.0,2,13.0,,RKT|WG|HT,,,1,,1,2.5|3.0,0.07
+rocket-l,RPOD-L,L,60,10,5.3,6.5,,1.4,1.5,8,13.0,280,RKT|WG|HT,,,1,,1,2.5|3.0,0.07
+torpedo,TORPEDO,L,,,17.65,22.0,1.467,0.45,15.0,3,,200,,,1,1,,1,,
+```
+
+## reputation.csv
+
+```csv
+key,value
+KILL_PENALTY,-10
+RIVAL_BONUS,5
+BOUNTY_BONUS,20
+ATTACK_NEUTRAL_PENALTY,-25
+HOSTILE_THRESHOLD,-50
+ALLIED_THRESHOLD,50
+DISCOUNT_RATE,0.15
+```
+
+## shipBase.csv
+
+```csv
+key,value
+SPEED_FACTOR,1.4
+BASE_SPEED,70
+BASE_ACCELERATION,9
+BASE_TURN_RATE,0.55
+BASE_HULL,200
+BASE_ARMOR,100
+BASE_CARGO,50
+BASE_FUEL_MAX,100
+BASE_FUEL_EFFICIENCY,1.0
+BASE_HULL_WEIGHT,1000
+FUEL_WEIGHT_PER_UNIT,0.5
+TW_ACCEL_SENSITIVITY,1.4
+TW_SPEED_SENSITIVITY,0.6
+TW_TURN_SENSITIVITY,0.3
+TW_MULT_MIN,0.15
+TW_MULT_MAX,2.0
+THROTTLE_LEVELS,6
+THROTTLE_RATIOS,0|0.15|0.35|0.55|0.8|1.5
+SPAWN_ENEMY_RADIUS_MIN,150
+SPAWN_ENEMY_RADIUS_MAX,200
+SPAWN_LURKER_RADIUS_MIN,60
+SPAWN_LURKER_RADIUS_MAX,80
+```
+
+## shipClasses.csv
+
+```csv
+id              , label                 , speedMult, accelMult, turnMult, hullMult, weightMult, cargoMult, armorFront, armorSide, armorAft, fuelMaxMult, fuelEffMult
+onyx-tug        , Onyx Class Tug        ,      0.55,      0.65,     0.65,     1.8 ,        1.2,       2.5,        2.0,       1.5,     1.2 ,         0.8,         0.5
+g100-hauler     , G100 Class Hauler     ,      0.85,      0.85,     0.9 ,     1.1 ,        1.4,       3.5,        1.3,       1.2,     1.0 ,         1.3,         0.9
+garrison-frigate, Garrison Class Frigate,      0.85,      0.7 ,     0.8 ,     2.5 ,        2.0,       1.5,        2.5,       2.0,     1.5 ,         2.5,         1.1
+maverick-courier, Maverick Class Courier,      1.3 ,      1.2 ,     1.15,     0.85,        0.5,       0.3,        1.0,       1.0,     0.85,         0.8,         0.9
+```
+
+## shipsNamed.csv
+
+```csv
+id                   , label                , shipClass       , faction  , relation, aiBehavior, modules
+hullbreaker          , Hullbreaker          , onyx-tug        , player   , player  ,           , onyx-drive-unit|autocannon|hydrogen-fuel-cell|salvaged-sensor-suite|null
+light-fighter        , Light Fighter        , maverick-courier, scavenger, hostile , stalker   , onyx-drive-unit|autocannon|null
+armed-hauler         , Armed Hauler         , g100-hauler     , scavenger, hostile , kiter     , onyx-drive-unit|autocannon|lance-s|null
+salvage-mothership   , Salvage Mothership   , garrison-frigate, scavenger, hostile , standoff  , onyx-drive-unit|cannon|rocket-pod-l:heat|null|null
+grave-clan-ambusher  , Grave-Clan Ambusher  , maverick-courier, scavenger, hostile , lurker    , onyx-drive-unit|autocannon|rocket-pod-s:heat
+trader-convoy        , Trader Convoy        , g100-hauler     , neutral  , neutral , trader    , onyx-drive-unit
+militia-patrol       , Militia Patrol       , garrison-frigate, neutral  , neutral , militia   , onyx-drive-unit
+drone-control-frigate, Drone Control Frigate, garrison-frigate, concord  , hostile , standoff  , onyx-drive-unit|lance-s|null
+snatcher-drone       , Snatcher Drone       , maverick-courier, concord  , hostile , latch     ,
+```
+
+## weaponBase.csv
+
+```csv
+key,value
+PROJECTILE_SPEED_FACTOR,1.4
+BASE_PROJECTILE_SPEED,200
+BASE_WEAPON_RANGE,1400
+BASE_DAMAGE,19
+BASE_HULL_DAMAGE,12
+BASE_COOLDOWN,0.9
+AUTOCANNON_MAG_SIZE,60
+AUTOCANNON_RELOAD_TIME,10.0
+CANNON_MAG_SIZE,4
+CANNON_RELOAD_TIME,14.0
+GATLING_MAG_SIZE,200
+GATLING_RELOAD_TIME,8.0
+ROCKET_MAG_SIZE,2
+ROCKET_RELOAD_TIME,13.0
+HE_AUTOCANNON_BLAST,60
+HE_CANNON_BLAST,150
+MODULE_BREACH_HULL_THRESHOLD,0.60
+MODULE_BREACH_CHANCE_LOW,0.12
+MODULE_BREACH_CHANCE_MID,0.25
+MODULE_BREACH_CHANCE_HIGH,0.40
+```
 

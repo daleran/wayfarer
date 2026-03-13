@@ -136,7 +136,9 @@ export class ShipScreen {
         const isEngineSlot = mount?.slot === 'engine';
         const selectedMod = game.modules[this._selectedCargoModIdx];
         const isSelectedEngine = selectedMod?.isEngine ?? false;
-        if (isEngineSlot === isSelectedEngine) {
+        // Size constraint: large modules require large mounts
+        const sizeOk = selectedMod?.size !== 'large' || mount?.size === 'large';
+        if (isEngineSlot === isSelectedEngine && sizeOk) {
           this._installTargetSlot = i;
           this._installModuleIdx = this._selectedCargoModIdx;
           this._installing = true;
@@ -339,7 +341,8 @@ export class ShipScreen {
       ctx.restore();
 
       // Content
-      const slotLabel = mount?.slot === 'engine' ? 'E' : String(i + 1);
+      const sizeTag = mount?.size === 'large' ? 'L' : 'S';
+      const slotLabel = mount?.slot === 'engine' ? `E·${sizeTag}` : `${i + 1}·${sizeTag}`;
       const textY = curY + BOX_H / 2;
 
       if (isInstalling) {
@@ -404,7 +407,11 @@ export class ShipScreen {
     const isEngineSlot = mount?.slot === 'engine';
     const selectedMod = game.modules[this._selectedCargoModIdx];
     if (!selectedMod) return false;
-    return (selectedMod.isEngine ?? false) === isEngineSlot;
+    // Engine slot constraint
+    if ((selectedMod.isEngine ?? false) !== isEngineSlot) return false;
+    // Size constraint: large modules require large mounts
+    if (selectedMod.size === 'large' && mount?.size !== 'large') return false;
+    return true;
   }
 
   // ── Expanded stat rows on hover ───────────────────────────────────────────

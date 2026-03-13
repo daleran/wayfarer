@@ -1,6 +1,6 @@
 id,displayName,powerDraw,weight,sensorRange,minimapStations,minimapShips,leadIndicators,healthPips,salvageDetail,trajectoryLine,enemyTelemetry,moduleInspection
-salvaged-sensor-suite,SALVAGED SENSORS,2,10,0,1,0,0,0,0,0,0,0
-standard-sensor-suite,STANDARD SENSORS,8,15,3000,1,1,0,0,0,0,0,0
-combat-computer,COMBAT COMPUTER,15,20,2000,1,1,1,1,0,1,1,0
-salvage-scanner,SALVAGE SCANNER,12,15,2500,1,1,0,0,1,0,0,0
-long-range-scanner,LONG-RANGE SENSORS,20,25,8000,1,1,0,0,0,1,1,1
+salvaged-sensor-suite,SALVAGED SENSORS (S),2,10,0,1,0,0,0,0,0,0,0
+standard-sensor-suite,STANDARD SENSORS (S),8,15,3000,1,1,0,0,0,0,0,0
+combat-computer,COMBAT COMPUTER (S),15,20,2000,1,1,1,1,0,1,1,0
+salvage-scanner,SALVAGE SCANNER (S),12,15,2500,1,1,0,0,1,0,0,0
+long-range-scanner,LONG-RANGE SENSORS (S),20,25,8000,1,1,0,0,0,1,1,1

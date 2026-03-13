@@ -96,6 +96,8 @@ export class OnyxClassTug extends Ship {
       'survivability for its class, reliable in every condition. Weakness: painfully ' +
       'slow, nearly impossible to mount meaningful weapons on without custom work.';
 
+    this.shipClassName = 'Onyx Class Tug';
+
     this._initStats({
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,

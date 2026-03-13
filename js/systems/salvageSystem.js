@@ -1,4 +1,4 @@
-import { createLootDrop, createAmmoDrop } from '@/entities/lootDrop.js';
+import { createLootDrop, createAmmoDrop, createModuleDrop, createWeaponDrop } from '@/entities/lootDrop.js';
 import { SALVAGE_EFFICIENCY, SALVAGE_FUEL_RATE, SALVAGE_AMMO_RATE } from '@data/compiledData.js';
 
 export class SalvageSystem {
@@ -17,13 +17,13 @@ export class SalvageSystem {
     player.throttleLevel = 0;
   }
 
-  update(dt) {
+  update(dt, opts = {}) {
     if (!this.salvageTarget || !this.salvageTarget.active || this.salvageTarget.salvaged) {
       this.cancel();
       return null;
     }
     this.salvageProgress += dt;
-    if (this.salvageProgress >= this.salvageTotal) return this._complete();
+    if (this.salvageProgress >= this.salvageTotal) return this._complete(opts);
     return null;
   }
 
@@ -33,7 +33,7 @@ export class SalvageSystem {
     this.salvageTarget = null;
   }
 
-  _complete() {
+  _complete(opts = {}) {
     const derelict = this.salvageTarget;
     derelict.salvaged = true;
 
@@ -57,6 +57,18 @@ export class SalvageSystem {
       if (w.magSize && w.currentAmmoId) {
         const ammo = Math.floor(w.magSize * SALVAGE_AMMO_RATE * mult * rand());
         if (ammo > 0) lootEntities.push(createAmmoDrop(derelict.x, derelict.y, w.currentAmmoId, ammo));
+      }
+    }
+
+    // Salvage Bay — extract installed modules/weapons from derelict
+    if (opts.hasSalvageBay) {
+      for (const mod of (derelict.moduleSlots || [])) {
+        if (!mod || mod.condition === 'destroyed') continue;
+        if (mod.weapon) {
+          lootEntities.push(createWeaponDrop(derelict.x, derelict.y, mod.weapon));
+        } else {
+          lootEntities.push(createModuleDrop(derelict.x, derelict.y, mod));
+        }
       }
     }
 

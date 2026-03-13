@@ -9,7 +9,6 @@ export class ArmedHauler extends G100ClassHauler {
     this.faction     = 'scavenger';
     this.relation    = 'hostile';
     this.shipType    = 'armed-hauler';
-    this.displayName = 'Armed Hauler';
     this.ai          = { ...AI_TEMPLATES.kiter };
 
     this.flavorText =

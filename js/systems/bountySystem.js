@@ -8,7 +8,7 @@ export class BountySystem {
 
   onEnemyCrippled(target, { particlePool, hud, reputation }) {
     particlePool.explosion(target.x, target.y, 20);
-    if (target.displayName) hud.addKill(target.displayName);
+    if (target.name) hud.addKill(target.name);
     if (target.faction) reputation.onKill(target.faction);
     for (const bounty of this.activeBounties) {
       if (bounty.status === 'active' && bounty.targetEntity === target) {
@@ -20,7 +20,7 @@ export class BountySystem {
 
   onEnemyKilled(target, { particlePool, hud, reputation, entities: _entities }) {
     particlePool.explosion(target.x, target.y, 20);
-    if (target.displayName) hud.addKill(target.displayName);
+    if (target.name) hud.addKill(target.name);
     if (target.faction) reputation.onKill(target.faction);
     for (const bounty of this.activeBounties) {
       if (bounty.status === 'active' && bounty.targetEntity === target) {
@@ -34,7 +34,7 @@ export class BountySystem {
     if (this.activeBounties.find(b => b.contract.id === contract.id)) return null;
     const target = createShip(contract.targetShipType,
       contract.targetPosition.x, contract.targetPosition.y);
-    target.displayName = contract.targetName;
+    target.name = contract.targetName;
     target.homePosition = { ...contract.targetPosition };
     target.isBountyTarget = true;
     const idx = station.bounties.indexOf(contract);

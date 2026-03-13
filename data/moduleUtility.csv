@@ -7,3 +7,5 @@ stripped-weight-s,STRIPPED WEIGHT (S),S,-40,0,0,-20
 stripped-weight-l,STRIPPED WEIGHT (L),L,-80,0,0,-40
 extra-armor-s,EXTRA ARMOR (S),S,40,0,0,30
 extra-armor-l,EXTRA ARMOR (L),L,80,0,0,60
+salvage-bay,SALVAGE BAY (L),L,40,0,0,0
+engineering-bay,ENGINEERING BAY (L),L,35,0,0,0

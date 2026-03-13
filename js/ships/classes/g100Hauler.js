@@ -106,6 +106,8 @@ export class G100ClassHauler extends Ship {
       'redundancy, solid all-around armor for a civilian hull. Weakness: no speed, ' +
       'no finesse — getting cornered means relying on whatever you bolted to the hardpoints.';
 
+    this.shipClassName = 'G100 Class Hauler';
+
     this._initStats({
       speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,

@@ -77,7 +77,9 @@ export class Ship extends Entity {
       salvage_detail: false,
       trajectory_line: false,
       enemy_telemetry: false,
-      module_inspection: false
+      module_inspection: false,
+      has_salvage_bay: false,
+      has_engineering_bay: false,
     };
 
     // Input state (set by game each frame)
@@ -103,10 +105,12 @@ export class Ship extends Entity {
     this.interactionRadius = 0;
     this.isNearby = false;
     this.canSalvage = false;
+    this._salvageBayActive = false;
     this._loreAlpha = 0;
 
-    // Display / bounty metadata (set dynamically)
-    this.displayName = null;
+    // Identity metadata
+    this.name = null;           // unique vessel name (e.g. "Iron Fang")
+    this.shipClassName = null;  // hull class (e.g. "Onyx Class Tug") — set by ship class constructor
     this.isBountyTarget = false;
 
     // Turret tracking — world-space target set by game each frame (player only)
@@ -412,7 +416,9 @@ export class Ship extends Entity {
       salvage_detail: false,
       trajectory_line: false,
       enemy_telemetry: false,
-      module_inspection: false
+      module_inspection: false,
+      has_salvage_bay: false,
+      has_engineering_bay: false,
     };
 
     if (!this.moduleSlots) return;
@@ -422,14 +428,16 @@ export class Ship extends Entity {
       const operational = mod.conditionMultiplier > 0 && mod.isPowered !== false;
       // Capabilities go offline when module is destroyed or unpowered
       if (operational) {
-        if (mod.minimap_stations)   this.capabilities.minimap_stations   = true;
-        if (mod.minimap_ships)      this.capabilities.minimap_ships      = true;
-        if (mod.lead_indicators)    this.capabilities.lead_indicators    = true;
-        if (mod.health_pips)        this.capabilities.health_pips        = true;
-        if (mod.salvage_detail)     this.capabilities.salvage_detail     = true;
-        if (mod.trajectory_line)    this.capabilities.trajectory_line    = true;
-        if (mod.enemy_telemetry)    this.capabilities.enemy_telemetry    = true;
-        if (mod.module_inspection)  this.capabilities.module_inspection  = true;
+        if (mod.minimap_stations)    this.capabilities.minimap_stations   = true;
+        if (mod.minimap_ships)       this.capabilities.minimap_ships      = true;
+        if (mod.lead_indicators)     this.capabilities.lead_indicators    = true;
+        if (mod.health_pips)         this.capabilities.health_pips        = true;
+        if (mod.salvage_detail)      this.capabilities.salvage_detail     = true;
+        if (mod.trajectory_line)     this.capabilities.trajectory_line    = true;
+        if (mod.enemy_telemetry)     this.capabilities.enemy_telemetry    = true;
+        if (mod.module_inspection)   this.capabilities.module_inspection  = true;
+        if (mod.hasSalvageBay)       this.capabilities.has_salvage_bay    = true;
+        if (mod.hasEngineeringBay)   this.capabilities.has_engineering_bay = true;
       }
       // Sensor range scales with condition (degraded sensors have reduced range)
       if (mod.sensor_range) {
@@ -730,7 +738,8 @@ export class Ship extends Entity {
       ctx.globalAlpha = alpha;
       if (this.canSalvage) {
         ctx.fillStyle = AMBER;
-        ctx.fillText('[ E ] SALVAGE', screen.x, promptY);
+        const salvageLabel = this._salvageBayActive ? '[ E ] SALVAGE + MODULES' : '[ E ] SALVAGE';
+        ctx.fillText(salvageLabel, screen.x, promptY);
       } else {
         ctx.fillStyle = RED;
         ctx.fillText('STOP TO SALVAGE', screen.x, promptY);

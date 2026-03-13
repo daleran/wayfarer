@@ -9,7 +9,6 @@ export class LightFighter extends MaverickCourier {
     this.faction     = 'scavenger';
     this.relation    = 'hostile';
     this.shipType    = 'light-fighter';
-    this.displayName = 'Light Fighter';
     this.ai          = { ...AI_TEMPLATES.stalker };
 
     this.flavorText =

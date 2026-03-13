@@ -11,6 +11,7 @@ class Hullbreaker extends OnyxClassTug {
     this.faction   = 'player';
     this.relation  = 'player';
     this.shipType  = 'hullbreaker';
+    this.name      = 'Hullbreaker';
 
     this.flavorText =
       'A salvage-modified Onyx Class Tug — armor stripped for fuel capacity, ' +

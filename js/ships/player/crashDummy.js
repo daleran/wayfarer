@@ -3,7 +3,8 @@ import { AutocannonModule, OnyxDriveUnit, HydrogenFuelCell, SalvagedSensorSuite 
 
 // Crash Dummy — editor-only test ship.
 // Identical to the Hullbreaker so gameplay feel matches, but edits here
-// don't affect the real player ship.
+// don't affect the real player ship. Use the editor Items menu to spawn
+// weapons, modules, and ammo as needed.
 const ARMOR_REDUCTION = 0.7;
 const FUEL_MAX_BOOST  = 1.3;
 
@@ -14,6 +15,7 @@ class CrashDummy extends OnyxClassTug {
     this.faction   = 'player';
     this.relation  = 'player';
     this.shipType  = 'crash-dummy';
+    this.name      = 'Crash Dummy';
 
     this.flavorText =
       'Editor test vehicle. Stats mirror the Hullbreaker — armor stripped ' +
@@ -28,7 +30,7 @@ class CrashDummy extends OnyxClassTug {
     // Enlarged fuel tank
     this.fuelMax = Math.round(this.fuelMax * FUEL_MAX_BOOST);
 
-    // Module slots — 5 universal slots
+    // Module slots — mirrors Hullbreaker layout
     this.moduleSlots = [
       new OnyxDriveUnit(),
       new AutocannonModule(),
