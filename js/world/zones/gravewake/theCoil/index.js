@@ -2,8 +2,9 @@
 // Renderer (CoilStation) + data + layout + instantiate(), all in one place.
 
 import { Station } from '../../../station.js';
-import { WHITE, AMBER, RED, GREEN } from '../../../../rendering/colors.js';
+import { AMBER, RED, GREEN } from '../../../../rendering/colors.js';
 import { line, disc, ring, text, Shape } from '../../../../rendering/draw.js';
+import { TITLE, SUBTITLE } from '../../../../rendering/draw.js';
 
 // ── CoilStation renderer ────────────────────────────────────────────────────
 
@@ -267,6 +268,7 @@ function trainPosition(t) {
 // Precompute shapes
 const DOCK_SALVAGE_SHAPE = Shape.chamferedRect(160, 120, 10);
 const CITADEL_SHAPE = Shape.chamferedRect(280, 220, 16);
+const BRIDGE_FORE = Shape.chamferedRect(70, 60, 8);       // forward block in front of bridge tower
 const BRIDGE_MAIN = Shape.chamferedRect(104, 80, 10);     // central bridge tower (~30% larger)
 const BRIDGE_BAR = Shape.chamferedRect(32, 300, 5);       // horizontal bar extending past citadel both sides
 const BRIDGE_GREEBLE_A = Shape.chamferedRect(14, 24, 3);  // sensor mast / antenna cluster
@@ -315,9 +317,9 @@ class CoilStation extends Station {
     // ── 1. DOCK & SALVAGE — on the truss (truss drawn over it) ─────────
     const dsCx = -50;
     DOCK_SALVAGE_SHAPE.at(dsCx, 0).fill(ctx, HULL_FILL);
-    DOCK_SALVAGE_SHAPE.at(dsCx, 0).stroke(ctx, WHITE, 1.8, 0.5);
+    DOCK_SALVAGE_SHAPE.at(dsCx, 0).stroke(ctx, AMBER, 1.8, 0.5);
     // Interior grid
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 0.5;
     ctx.globalAlpha = 0.12;
     for (let ry = -45; ry <= 45; ry += 25) {
@@ -343,8 +345,8 @@ class CoilStation extends Station {
     ];
     for (const arm of dsArms) {
       const armEnd = arm.side * (60 + arm.len); // extend from D&S edge
-      line(ctx, arm.x, arm.side * 60, arm.x, armEnd, WHITE, arm.armW, 0.35);
-      line(ctx, arm.x - 8, armEnd, arm.x + 8, armEnd, WHITE, 1.2, 0.25);
+      line(ctx, arm.x, arm.side * 60, arm.x, armEnd, AMBER, arm.armW, 0.35);
+      line(ctx, arm.x - 8, armEnd, arm.x + 8, armEnd, AMBER, 1.2, 0.25);
       // Nav light at tip
       const armPhase2 = ((t * 2.0 + arm.x * 0.02) % 1 + 1) % 1;
       disc(ctx, arm.x, armEnd, 2, accent, armPhase2 < 0.25 ? 0.8 : 0.1);
@@ -361,7 +363,7 @@ class CoilStation extends Station {
       const jy = Math.min(jTop, jEnd);
       const jh = Math.abs(jEnd - jTop);
       ctx.fillRect(jx, jy, jetty.jettyW, jh);
-      ctx.strokeStyle = WHITE;
+      ctx.strokeStyle = AMBER;
       ctx.lineWidth = 1.5;
       ctx.globalAlpha = 0.4;
       ctx.strokeRect(jx, jy, jetty.jettyW, jh);
@@ -369,7 +371,7 @@ class CoilStation extends Station {
 
       // Crossbars along jetty
       for (let cy2 = Math.min(jTop, jEnd) + 15; cy2 < Math.max(jTop, jEnd); cy2 += 20) {
-        line(ctx, jetty.x - jetty.jettyW, cy2, jetty.x + jetty.jettyW, cy2, WHITE, 0.8, 0.2);
+        line(ctx, jetty.x - jetty.jettyW, cy2, jetty.x + jetty.jettyW, cy2, AMBER, 0.8, 0.2);
       }
 
       // Docked ships on the jetty
@@ -380,7 +382,7 @@ class CoilStation extends Station {
         ctx.translate(jetty.x + shipOff, shipY);
         ctx.rotate(ship.rot);
         ctx.fillStyle = SHIP_FILL;
-        ctx.strokeStyle = WHITE;
+        ctx.strokeStyle = AMBER;
         ctx.lineWidth = 0.9;
         ctx.fillRect(-ship.w / 2, -ship.h / 2, ship.w, ship.h);
         ctx.globalAlpha = ship.gutted ? 0.3 : 0.45;
@@ -405,9 +407,9 @@ class CoilStation extends Station {
           const craneBase = jEnd;
           const craneTip = shipY;
           const craneX = jetty.x + shipOff + ship.w * 0.3;
-          line(ctx, jetty.x, craneBase, craneX, craneTip, WHITE, 1.5, 0.35);
-          line(ctx, jetty.x - 8, craneBase, craneX, craneTip, WHITE, 0.8, 0.2);
-          disc(ctx, craneX, craneTip, 3, WHITE, 0.3);
+          line(ctx, jetty.x, craneBase, craneX, craneTip, AMBER, 1.5, 0.35);
+          line(ctx, jetty.x - 8, craneBase, craneX, craneTip, AMBER, 0.8, 0.2);
+          disc(ctx, craneX, craneTip, 3, AMBER, 0.3);
 
           // Animated sparks
           const sparkPhase = ((t * 3.5 + jetty.x * 0.02) % 1 + 1) % 1;
@@ -436,8 +438,8 @@ class CoilStation extends Station {
     // ── 3. DOCKING ARMS — along the truss ──────────────────────────────
     for (const arm of DOCK_ARMS) {
       const armEnd = arm.side * (TRUSS_HALF_H + arm.len);
-      line(ctx, arm.x, arm.side * TRUSS_HALF_H, arm.x, armEnd, WHITE, arm.armW, 0.3);
-      line(ctx, arm.x - 10, armEnd, arm.x + 10, armEnd, WHITE, 1.2, 0.25);
+      line(ctx, arm.x, arm.side * TRUSS_HALF_H, arm.x, armEnd, AMBER, arm.armW, 0.3);
+      line(ctx, arm.x - 10, armEnd, arm.x + 10, armEnd, AMBER, 1.2, 0.25);
 
       for (const ship of arm.ships) {
         const shipOff = ship.offset || 0;
@@ -446,7 +448,7 @@ class CoilStation extends Station {
         ctx.translate(arm.x + shipOff, shipY);
         ctx.rotate(ship.rot);
         ctx.fillStyle = SHIP_FILL;
-        ctx.strokeStyle = WHITE;
+        ctx.strokeStyle = AMBER;
         ctx.lineWidth = 0.8;
         ctx.fillRect(-ship.w / 2, -ship.h / 2, ship.w, ship.h);
         ctx.globalAlpha = 0.4;
@@ -474,7 +476,7 @@ class CoilStation extends Station {
         // Full outline + broken interior
         ctx.fillStyle = WRECK_FILL;
         ctx.fillRect(-hw, -hh, w.w, w.h);
-        ctx.strokeStyle = WHITE;
+        ctx.strokeStyle = AMBER;
         ctx.lineWidth = 0.8;
         ctx.globalAlpha = w.alpha;
         ctx.strokeRect(-hw, -hh, w.w, w.h);
@@ -493,7 +495,7 @@ class CoilStation extends Station {
         ctx.fillStyle = WRECK_FILL;
         ctx.globalAlpha = w.alpha * 0.6;
         ctx.fillRect(-hw, -hh, w.w, w.h);
-        ctx.strokeStyle = WHITE;
+        ctx.strokeStyle = AMBER;
         ctx.lineWidth = 0.7;
         ctx.globalAlpha = w.alpha;
         ctx.beginPath();
@@ -512,7 +514,7 @@ class CoilStation extends Station {
         ctx.stroke();
       } else {
         // 'frame' — skeleton only, faint dashed outline
-        ctx.strokeStyle = WHITE;
+        ctx.strokeStyle = AMBER;
         ctx.lineWidth = 0.5;
         ctx.globalAlpha = w.alpha * 0.6;
         // Faint perimeter
@@ -540,14 +542,14 @@ class CoilStation extends Station {
     // ── 5. TRUSS SPINE — heavy arkship backbone ────────────────────────
     ctx.fillStyle = HULL_FILL;
     ctx.fillRect(TRUSS_LEFT, -TRUSS_HALF_H, TRUSS_RIGHT - TRUSS_LEFT, TRUSS_HALF_H * 2);
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 2.0;
     ctx.globalAlpha = 0.5;
     ctx.strokeRect(TRUSS_LEFT, -TRUSS_HALF_H, TRUSS_RIGHT - TRUSS_LEFT, TRUSS_HALF_H * 2);
     ctx.globalAlpha = 1;
 
     // Heavy cross-bracing
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 1.2;
     ctx.globalAlpha = 0.18;
     const braceStep = 35;
@@ -576,7 +578,7 @@ class CoilStation extends Station {
       ctx.save();
       ctx.translate(carX, trainY);
       ctx.fillStyle = 'rgba(60,40,10,0.9)';
-      ctx.strokeStyle = WHITE;
+      ctx.strokeStyle = AMBER;
       ctx.lineWidth = 0.8;
       const carW = car === 0 ? 18 : 14;
       const carH = 8;
@@ -592,7 +594,7 @@ class CoilStation extends Station {
       // Coupling between cars
       if (car === 0) {
         const coupleDir = train.dir || 1;
-        line(ctx, -coupleDir * (carW / 2), 0, -coupleDir * (carW / 2 + 8), 0, WHITE, 0.6, 0.3);
+        line(ctx, -coupleDir * (carW / 2), 0, -coupleDir * (carW / 2 + 8), 0, AMBER, 0.6, 0.3);
       }
       ctx.restore();
     }
@@ -609,7 +611,7 @@ class CoilStation extends Station {
     ctx.arc(mCx, 0, mR, 0, Math.PI * 2);
     ctx.fillStyle = HULL_FILL;
     ctx.fill();
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 2.0;
     ctx.globalAlpha = 0.55;
     ctx.stroke();
@@ -621,7 +623,7 @@ class CoilStation extends Station {
       ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
       ctx.fillStyle = HULL_FILL;
       ctx.fill();
-      ctx.strokeStyle = WHITE;
+      ctx.strokeStyle = AMBER;
       ctx.lineWidth = 1.0;
       ctx.globalAlpha = 0.3;
       ctx.stroke();
@@ -634,9 +636,9 @@ class CoilStation extends Station {
     ctx.globalAlpha = 1;
 
     // Connector from market to truss
-    line(ctx, mCx + mR, 0, TRUSS_LEFT, 0, WHITE, 2.5, 0.4);
-    line(ctx, mCx + mR, -12, TRUSS_LEFT, -TRUSS_HALF_H, WHITE, 1.2, 0.25);
-    line(ctx, mCx + mR, 12, TRUSS_LEFT, TRUSS_HALF_H, WHITE, 1.2, 0.25);
+    line(ctx, mCx + mR, 0, TRUSS_LEFT, 0, AMBER, 2.5, 0.4);
+    line(ctx, mCx + mR, -12, TRUSS_LEFT, -TRUSS_HALF_H, AMBER, 1.2, 0.25);
+    line(ctx, mCx + mR, 12, TRUSS_LEFT, TRUSS_HALF_H, AMBER, 1.2, 0.25);
 
     // ── 8. SLUMS — tightly packed modules bolted to the spine ──────────
     for (const m of SLUM_MODULES) {
@@ -644,18 +646,18 @@ class CoilStation extends Station {
       ctx.translate(m.x, m.y);
       if (m.type === 'cigar') {
         Shape.cigar(m.w, m.h, m.r).fill(ctx, HULL_FILL);
-        Shape.cigar(m.w, m.h, m.r).stroke(ctx, WHITE, 1.0, 0.4);
+        Shape.cigar(m.w, m.h, m.r).stroke(ctx, AMBER, 1.0, 0.4);
       } else if (m.type === 'stadium') {
         Shape.stadium(m.w, m.h).fill(ctx, HULL_FILL);
-        Shape.stadium(m.w, m.h).stroke(ctx, WHITE, 1.0, 0.4);
+        Shape.stadium(m.w, m.h).stroke(ctx, AMBER, 1.0, 0.4);
       } else if (m.type === 'chamf') {
         Shape.chamferedRect(m.w, m.h, m.c).fill(ctx, HULL_FILL);
-        Shape.chamferedRect(m.w, m.h, m.c).stroke(ctx, WHITE, 1.0, 0.4);
+        Shape.chamferedRect(m.w, m.h, m.c).stroke(ctx, AMBER, 1.0, 0.4);
       } else {
         const hw = m.w / 2, hh = m.h / 2;
         ctx.fillStyle = HULL_FILL;
         ctx.fillRect(-hw, -hh, m.w, m.h);
-        ctx.strokeStyle = WHITE;
+        ctx.strokeStyle = AMBER;
         ctx.lineWidth = 1.0;
         ctx.globalAlpha = 0.4;
         ctx.strokeRect(-hw, -hh, m.w, m.h);
@@ -667,8 +669,8 @@ class CoilStation extends Station {
     // ── 9. CENTRAL DOCKING FACILITY ────────────────────────────────────
     const dockCx = 180;
     DOCK_SHAPE.at(dockCx, 0).fill(ctx, HULL_FILL);
-    DOCK_SHAPE.at(dockCx, 0).stroke(ctx, WHITE, 1.4, 0.45);
-    ctx.strokeStyle = WHITE;
+    DOCK_SHAPE.at(dockCx, 0).stroke(ctx, AMBER, 1.4, 0.45);
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 0.5;
     ctx.globalAlpha = 0.12;
     ctx.beginPath();
@@ -717,9 +719,9 @@ class CoilStation extends Station {
     const citHalfH = 110; // 220 tall
     // Main block (280×220)
     CITADEL_SHAPE.at(citCx, 0).fill(ctx, HULL_FILL);
-    CITADEL_SHAPE.at(citCx, 0).stroke(ctx, WHITE, 1.8, 0.5);
+    CITADEL_SHAPE.at(citCx, 0).stroke(ctx, AMBER, 1.8, 0.5);
     // Interior ribs
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 0.5;
     ctx.globalAlpha = 0.12;
     for (let ry = -85; ry <= 85; ry += 28) {
@@ -737,16 +739,20 @@ class CoilStation extends Station {
     ctx.globalAlpha = 1;
 
     // Bridge — Star Destroyer style: horizontal bar extending past both sides,
-    // large central tower block, greebles at the ends
+    // forward block, large central tower block, greebles at the ends
     const bridgeX = citCx + 40; // offset toward the stern (right)
+    const foreX = bridgeX - 70; // forward block in front of bridge tower
     // Horizontal bar — long and narrow, extends past citadel top and bottom
     BRIDGE_BAR.at(bridgeX, 0).fill(ctx, HULL_FILL);
-    BRIDGE_BAR.at(bridgeX, 0).stroke(ctx, WHITE, 1.6, 0.5);
+    BRIDGE_BAR.at(bridgeX, 0).stroke(ctx, AMBER, 1.6, 0.5);
+    // Forward block — in front of conning tower
+    BRIDGE_FORE.at(foreX, 0).fill(ctx, HULL_FILL);
+    BRIDGE_FORE.at(foreX, 0).stroke(ctx, AMBER, 1.4, 0.45);
     // Central bridge tower — large imposing block
     BRIDGE_MAIN.at(bridgeX, 0).fill(ctx, HULL_FILL);
-    BRIDGE_MAIN.at(bridgeX, 0).stroke(ctx, WHITE, 2.0, 0.6);
+    BRIDGE_MAIN.at(bridgeX, 0).stroke(ctx, AMBER, 2.0, 0.6);
     // Bridge interior cross
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 0.5;
     ctx.globalAlpha = 0.12;
     ctx.beginPath();
@@ -764,17 +770,17 @@ class CoilStation extends Station {
     const barExtent = 150; // bar half-height
     // Top greeble cluster
     BRIDGE_GREEBLE_A.at(bridgeX - 4, -barExtent + 12).fill(ctx, HULL_FILL);
-    BRIDGE_GREEBLE_A.at(bridgeX - 4, -barExtent + 12).stroke(ctx, WHITE, 0.8, 0.35);
+    BRIDGE_GREEBLE_A.at(bridgeX - 4, -barExtent + 12).stroke(ctx, AMBER, 0.8, 0.35);
     BRIDGE_GREEBLE_B.at(bridgeX + 8, -barExtent + 6).fill(ctx, HULL_FILL);
-    BRIDGE_GREEBLE_B.at(bridgeX + 8, -barExtent + 6).stroke(ctx, WHITE, 0.8, 0.3);
+    BRIDGE_GREEBLE_B.at(bridgeX + 8, -barExtent + 6).stroke(ctx, AMBER, 0.8, 0.3);
     // Bottom greeble cluster
     BRIDGE_GREEBLE_A.at(bridgeX - 4, barExtent - 12).fill(ctx, HULL_FILL);
-    BRIDGE_GREEBLE_A.at(bridgeX - 4, barExtent - 12).stroke(ctx, WHITE, 0.8, 0.35);
+    BRIDGE_GREEBLE_A.at(bridgeX - 4, barExtent - 12).stroke(ctx, AMBER, 0.8, 0.35);
     BRIDGE_GREEBLE_B.at(bridgeX + 8, barExtent - 6).fill(ctx, HULL_FILL);
-    BRIDGE_GREEBLE_B.at(bridgeX + 8, barExtent - 6).stroke(ctx, WHITE, 0.8, 0.3);
+    BRIDGE_GREEBLE_B.at(bridgeX + 8, barExtent - 6).stroke(ctx, AMBER, 0.8, 0.3);
     // Small antenna lines at bar tips
-    line(ctx, bridgeX, -barExtent, bridgeX, -barExtent - 12, WHITE, 0.8, 0.3);
-    line(ctx, bridgeX, barExtent, bridgeX, barExtent + 12, WHITE, 0.8, 0.3);
+    line(ctx, bridgeX, -barExtent, bridgeX, -barExtent - 12, AMBER, 0.8, 0.3);
+    line(ctx, bridgeX, barExtent, bridgeX, barExtent + 12, AMBER, 0.8, 0.3);
 
     // ── 12. ENGINE NOZZLE — dead conical exhaust ───────────────────────
     const nozzleThroat = citCx + citHalfW; // starts at citadel right edge
@@ -791,7 +797,7 @@ class CoilStation extends Station {
     ctx.closePath();
     ctx.fillStyle = HULL_FILL;
     ctx.fill();
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 2.0;
     ctx.globalAlpha = 0.45;
     ctx.stroke();
@@ -803,13 +809,13 @@ class CoilStation extends Station {
       ctx.beginPath();
       ctx.moveTo(nozzleMouth - 5, -ry);
       ctx.lineTo(nozzleMouth - 5, ry);
-      ctx.strokeStyle = WHITE;
+      ctx.strokeStyle = AMBER;
       ctx.lineWidth = 1.0;
       ctx.globalAlpha = 0.15;
       ctx.stroke();
     }
     // Horizontal rib lines inside the cone
-    ctx.strokeStyle = WHITE;
+    ctx.strokeStyle = AMBER;
     ctx.lineWidth = 0.6;
     ctx.globalAlpha = 0.1;
     for (let ry = -mouthHalfH + 20; ry < mouthHalfH; ry += 25) {
@@ -831,7 +837,7 @@ class CoilStation extends Station {
     ctx.fillRect(nozzleMouth - mouthHalfH, -mouthHalfH, mouthHalfH * 2, mouthHalfH * 2);
 
     // Nozzle lip
-    line(ctx, nozzleMouth, -mouthHalfH, nozzleMouth, mouthHalfH, WHITE, 3.0, 0.35);
+    line(ctx, nozzleMouth, -mouthHalfH, nozzleMouth, mouthHalfH, AMBER, 3.0, 0.35);
 
 
     // ── 13. WINDOW LIGHTS — alive city feel ────────────────────────────
@@ -877,11 +883,11 @@ class CoilStation extends Station {
     this._renderDockingArea(ctx);
 
     // ── ALL TEXT LABELS — drawn last so they sit on top of everything ────
-    text(ctx, 'THE COIL', -100, -280, accent, { size: 56, weight: 'bold', alpha: 0.75 });
-    text(ctx, 'SALVAGE YARD', dsCx, -110, accent, { size: 22, weight: 'bold', alpha: 0.6 });
-    text(ctx, 'COIL MARKET', mCx, mR + 50, accent, { size: 25, weight: 'bold', alpha: 0.7 });
-    text(ctx, 'SLUMS', -720, 160, accent, { size: 25, weight: 'bold', alpha: 0.6 });
-    text(ctx, 'CITADEL', citCx, -citHalfH - 40, accent, { size: 25, weight: 'bold', alpha: 0.65 });
+    text(ctx, 'THE COIL', -100, -280, accent, { style: TITLE });
+    text(ctx, 'SALVAGE YARD', dsCx, -110, accent, { style: SUBTITLE });
+    text(ctx, 'COIL MARKET', mCx, mR + 50, accent, { style: SUBTITLE });
+    text(ctx, 'SLUMS', -720, 160, accent, { style: SUBTITLE });
+    text(ctx, 'CITADEL', citCx - 80, citHalfH + 40, accent, { style: SUBTITLE });
 
     ctx.restore();
   }
@@ -905,12 +911,12 @@ class CoilStation extends Station {
     // Landing spars — left and right edges of the docking zone
     const sparLen = size * 0.8;
     const sparTop = y + (size - sparLen) / 2;
-    line(ctx, x - halfS, sparTop, x - halfS, sparTop + sparLen, WHITE, 2.5, 0.35);
-    line(ctx, x + halfS, sparTop, x + halfS, sparTop + sparLen, WHITE, 2.5, 0.35);
+    line(ctx, x - halfS, sparTop, x - halfS, sparTop + sparLen, AMBER, 2.5, 0.35);
+    line(ctx, x + halfS, sparTop, x + halfS, sparTop + sparLen, AMBER, 2.5, 0.35);
     // Crossbars on spars
     for (let sy = sparTop + 15; sy < sparTop + sparLen; sy += 20) {
-      line(ctx, x - halfS - 4, sy, x - halfS + 4, sy, WHITE, 1.0, 0.2);
-      line(ctx, x + halfS - 4, sy, x + halfS + 4, sy, WHITE, 1.0, 0.2);
+      line(ctx, x - halfS - 4, sy, x - halfS + 4, sy, AMBER, 1.0, 0.2);
+      line(ctx, x + halfS - 4, sy, x + halfS + 4, sy, AMBER, 1.0, 0.2);
     }
 
     // Blinking lights at the top edge of the docking square

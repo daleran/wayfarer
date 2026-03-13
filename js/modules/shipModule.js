@@ -150,6 +150,7 @@ export class OnyxDriveUnit extends EngineModule {
     this.displayName   = 'ONYX DRIVE UNIT';
     this.description   = 'Stock single-nacelle drive. Balanced output, minimal fuel overhead.';
     this.fuelDrainRate = 0.005; // small constant idle drain
+    this.powerDraw     = 1;     // minimal power draw
     // speedMult / accelMult / fuelEffMult remain 1.0 — no change to base stats
   }
 }

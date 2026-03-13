@@ -16,6 +16,11 @@ export class ShipScreen {
     this._cargoFilter = 'all';
     this._game = null;
 
+    // Tooltip
+    this._tooltip = document.createElement('div');
+    this._tooltip.className = 'ship-tooltip';
+    document.body.appendChild(this._tooltip);
+
     // Prevent clicks on panel from reaching canvas
     if (this._el) {
       this._el.addEventListener('mousedown', e => e.stopPropagation());
@@ -23,8 +28,8 @@ export class ShipScreen {
     }
   }
 
-  open(game)   { if (game) this._game = game; this.visible = true;  this._selectedCargoModIdx = null; this._render(); }
-  close()      { this.visible = false; this._cancelInstall(); this._hide(); }
+  open(game)   { if (game) this._game = game; this.visible = true;  this._selectedCargoModIdx = null; game?.camera?.pushZoom(2.75); this._render(); }
+  close()      { this.visible = false; this._cancelInstall(); this._hideTooltip(); this._game?.camera?.popZoom(); this._hide(); }
   toggle(game) { this.visible ? this.close() : this.open(game); }
 
   _cancelInstall() {
@@ -228,36 +233,35 @@ export class ShipScreen {
         nameEl.textContent = `[${i + 1}] ${mod.displayName}`;
         top.appendChild(nameEl);
 
-        // Power annotation
+        // Right side: condition + power at a glance
+        const rightEl = document.createElement('span');
+        rightEl.className = 'ship-module-right';
+
+        if (mod.condition) {
+          const cond = document.createElement('span');
+          cond.className = 'ship-module-condition-badge';
+          cond.style.color = conditionColor(mod.condition);
+          cond.textContent = mod.condition.toUpperCase();
+          rightEl.appendChild(cond);
+        }
+
         const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
         if (effOut > 0 || mod.powerDraw > 0) {
           const pwr = document.createElement('span');
           pwr.className = `ship-module-power ${effOut > 0 ? 'positive' : 'negative'}`;
           pwr.textContent = effOut > 0 ? `+${effOut}W` : `-${mod.powerDraw}W`;
-          top.appendChild(pwr);
+          rightEl.appendChild(pwr);
         }
 
+        top.appendChild(rightEl);
         slot.appendChild(top);
 
-        // Condition badge
-        if (mod.condition && mod.condition !== 'good') {
-          const cond = document.createElement('div');
-          cond.className = 'ship-module-condition';
-          cond.style.color = conditionColor(mod.condition);
-          cond.textContent = mod.condition.toUpperCase();
-          slot.appendChild(cond);
-        }
-
-        // Description
-        if (mod.description) {
-          const desc = document.createElement('div');
-          desc.className = 'ship-module-desc';
-          desc.textContent = mod.description;
-          slot.appendChild(desc);
-        }
+        // Tooltip on hover
+        this._attachModuleTooltip(slot, mod);
 
         // Click to remove
         slot.addEventListener('click', () => {
+          this._hideTooltip();
           if (mod.onRemove) mod.onRemove(game.player);
           game.modules.push(mod);
           game.player.moduleSlots[i] = null;
@@ -377,8 +381,10 @@ export class ShipScreen {
         }
         item.appendChild(right);
 
+        this._attachModuleTooltip(item, m);
         if (hasEmptySlot) {
           item.addEventListener('click', () => {
+            this._hideTooltip();
             this._selectedCargoModIdx = isSelected ? null : mi;
             this._render();
           });
@@ -391,8 +397,9 @@ export class ShipScreen {
     // Weapons in cargo
     if ((this._cargoFilter === 'all' || this._cargoFilter === 'modules') && game.weapons?.length > 0) {
       for (const wep of game.weapons) {
-        this._addCargoItem(list, wep.displayName || wep.constructor.name,
+        const wepItem = this._addCargoItem(list, wep.displayName || wep.constructor.name,
           wep.isSecondary ? 'SEC' : 'PRI', 'weapon');
+        this._attachWeaponTooltip(wepItem, wep);
         hasItems = true;
       }
     }
@@ -434,6 +441,7 @@ export class ShipScreen {
     item.appendChild(valEl);
 
     list.appendChild(item);
+    return item;
   }
 
   _updateInstallProgress() {
@@ -442,5 +450,101 @@ export class ShipScreen {
     if (prog) {
       prog.style.width = `${Math.min(this._installProgress / 1.5, 1) * 100}%`;
     }
+  }
+
+  // ── Tooltip ────────────────────────────────────────────────────────────────
+
+  _showTooltip(e, rows) {
+    const tt = this._tooltip;
+    if (!tt || rows.length === 0) return;
+    tt.innerHTML = '';
+    for (const { label, value, cls } of rows) {
+      const row = document.createElement('div');
+      row.className = 'ship-tooltip-row';
+      const l = document.createElement('span');
+      l.className = 'ship-tooltip-label';
+      l.textContent = label;
+      const v = document.createElement('span');
+      v.className = `ship-tooltip-value${cls ? ' ' + cls : ''}`;
+      v.textContent = value;
+      row.appendChild(l);
+      row.appendChild(v);
+      tt.appendChild(row);
+    }
+    tt.classList.add('visible');
+    this._positionTooltip(e);
+  }
+
+  _hideTooltip() {
+    if (this._tooltip) this._tooltip.classList.remove('visible');
+  }
+
+  _positionTooltip(e) {
+    const tt = this._tooltip;
+    if (!tt) return;
+    const pad = 12;
+    let x = e.clientX + pad;
+    let y = e.clientY - pad;
+    const rect = tt.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth) x = e.clientX - rect.width - pad;
+    if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 4;
+    if (y < 4) y = 4;
+    tt.style.left = `${x}px`;
+    tt.style.top = `${y}px`;
+  }
+
+  _attachModuleTooltip(el, mod) {
+    el.addEventListener('mouseenter', (e) => this._showTooltip(e, this._moduleTooltipRows(mod)));
+    el.addEventListener('mousemove', (e) => this._positionTooltip(e));
+    el.addEventListener('mouseleave', () => this._hideTooltip());
+  }
+
+  _attachWeaponTooltip(el, wep) {
+    el.addEventListener('mouseenter', (e) => this._showTooltip(e, this._weaponTooltipRows(wep)));
+    el.addEventListener('mousemove', (e) => this._positionTooltip(e));
+    el.addEventListener('mouseleave', () => this._hideTooltip());
+  }
+
+  _moduleTooltipRows(mod) {
+    const rows = [];
+    if (mod.condition) {
+      const mult = mod.conditionMultiplier;
+      rows.push({ label: 'CONDITION', value: `${mod.condition.toUpperCase()} ×${mult.toFixed(2)}`, cls: mod.condition === 'good' ? 'green' : '' });
+    }
+    const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
+    if (effOut > 0) rows.push({ label: 'POWER', value: `+${effOut}W`, cls: 'green' });
+    if (mod.powerDraw > 0) rows.push({ label: 'DRAW', value: `-${mod.powerDraw}W`, cls: 'amber' });
+    if (mod.fuelDrainRate > 0) rows.push({ label: 'FUEL DRAIN', value: `${mod.fuelDrainRate.toFixed(3)}/s`, cls: 'amber' });
+    if (mod.speedMult) rows.push({ label: 'SPEED', value: `×${mod.speedMult.toFixed(2)}`, cls: '' });
+    if (mod.accelMult) rows.push({ label: 'ACCEL', value: `×${mod.accelMult.toFixed(2)}`, cls: '' });
+    if (mod.fuelEffMult) rows.push({ label: 'FUEL EFF', value: `×${mod.fuelEffMult.toFixed(2)}`, cls: '' });
+    if (mod.isFissionReactor) {
+      const interval = mod._overhaulInterval || 0;
+      const elapsed = mod.timeSinceOverhaul || 0;
+      if (mod.isOverdue) {
+        rows.push({ label: 'OVERHAUL', value: 'OVERDUE', cls: 'red' });
+      } else if (interval > 0) {
+        const remaining = Math.max(0, interval - elapsed);
+        const mins = Math.floor(remaining / 60);
+        const secs = Math.floor(remaining % 60);
+        rows.push({ label: 'OVERHAUL IN', value: `${mins}m ${secs}s`, cls: '' });
+      }
+      if (mod.overhaulCost) rows.push({ label: 'OVERHAUL COST', value: `${mod.overhaulCost} scrap`, cls: 'amber' });
+    }
+    if (mod.description) rows.push({ label: '', value: mod.description, cls: 'dim' });
+    return rows;
+  }
+
+  _weaponTooltipRows(wep) {
+    const rows = [];
+    if (wep.damage) rows.push({ label: 'DAMAGE', value: `${wep.damage}`, cls: 'red' });
+    if (wep.hullDamage) rows.push({ label: 'HULL DMG', value: `${wep.hullDamage}`, cls: 'red' });
+    if (wep.maxRange) rows.push({ label: 'RANGE', value: `${wep.maxRange}`, cls: '' });
+    if (wep.cooldownMax) rows.push({ label: 'FIRE RATE', value: `${(1 / wep.cooldownMax).toFixed(1)}/s`, cls: '' });
+    if (wep.magSize) rows.push({ label: 'MAGAZINE', value: `${wep.magSize}`, cls: '' });
+    if (wep.isBeam) rows.push({ label: 'TYPE', value: 'BEAM', cls: 'cyan' });
+    if (wep.blastRadius) rows.push({ label: 'BLAST', value: `${wep.blastRadius}`, cls: 'amber' });
+    if (wep.isSecondary) rows.push({ label: 'SLOT', value: 'SECONDARY', cls: '' });
+    return rows;
   }
 }
