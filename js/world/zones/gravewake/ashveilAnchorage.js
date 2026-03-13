@@ -2,7 +2,7 @@
 // Data + layout + instantiate(), all in one place.
 
 import { Station } from '../../station.js';
-import { WHITE } from '../../../ui/colors.js';
+import { WHITE } from '../../../rendering/colors.js';
 
 // ── AshveilStation renderer ────────────────────────────────────────────────
 
@@ -214,6 +214,9 @@ class AshveilStation extends Station {
     ctx.lineTo(-50, 140);
     ctx.closePath();
     ctx.fill();
+
+    // Docking lights — red/green pair at the docking collar
+    this._renderDockingLights(ctx, 0, 70, 18);
 
     this._renderNameLabel(ctx, camera, 90, 'bold 11px monospace', 0.8);
 

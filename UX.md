@@ -303,11 +303,13 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 
 **Rendering style by planet type:**
 
-- **Ice / rocky worlds (surface visible from space):** Topographic contour polygons clipped to the disk. Draw 3–6 closed irregular polygon paths at decreasing scales — nested, offset, not centered — to suggest terrain elevation layers. Jagged straight-line segments between vertices (no bezier smoothing). The visual reference is the Nostromo descent computer in *Alien* (1979): a CRT scanner reading back surface topology as jagged closed curves. Pale (`#b8ccd8`) is the reference implementation in `_renderPale()` in `renderer.js`.
+- **Ice / rocky worlds (surface visible from space):** Topographic contour polygons clipped to the disk. Draw 3–6 closed irregular polygon paths at decreasing scales — nested, offset, not centered — to suggest terrain elevation layers. Jagged straight-line segments between vertices (no bezier smoothing). The visual reference is the Nostromo descent computer in *Alien* (1979): a CRT scanner reading back surface topology as jagged closed curves. Pale (`#b8ccd8`) is the reference implementation in `js/world/zones/gravewake/planetPale.js`.
 
 - **Gas giants:** Horizontal band striations — thin lines or arcs at different y-offsets across the disk, clipped. Bands should vary in spacing and opacity. Optional: planetary rings as thin ellipses angled across the limb. No solid fills.
 
-- **Thick-atmosphere worlds (habitable or shrouded):** Geometric cloud swirls — angular spiral or arc segments that suggest cloud bands without being smooth curves. Straight-line approximations of spiral paths, or stacked arc segments offset from center, clipped to disk.
+- **Habitable worlds (brine seas, landmasses):** Continental landmass contours — filled faintly with coastline strokes. Same jagged polygon style as ice worlds, but with filled landmasses at very low alpha and distinct coastline outlines. Thalassa (`#4a9a6a`) is the reference implementation in `js/world/zones/gravewake/moonThalassa.js`.
+
+- **Thick-atmosphere worlds (shrouded):** Geometric cloud swirls — angular spiral or arc segments that suggest cloud bands without being smooth curves. Straight-line approximations of spiral paths, or stacked arc segments offset from center, clipped to disk.
 
 **Common rules for all planet types:**
 - Very faint body fill (0.05–0.08 alpha) — just enough to read as a disk, not a ring

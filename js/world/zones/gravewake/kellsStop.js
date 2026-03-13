@@ -2,7 +2,7 @@
 // Renderer (FuelDepotStation) + data + layout + instantiate(), all in one place.
 
 import { Station } from '../../station.js';
-import { AMBER, WHITE } from '../../../ui/colors.js';
+import { AMBER, WHITE } from '../../../rendering/colors.js';
 
 // ── FuelDepotStation renderer ───────────────────────────────────────────────
 
@@ -214,6 +214,9 @@ class FuelDepotStation extends Station {
         ctx.globalAlpha = 1;
       }
     }
+
+    // Docking lights — red/green pair at the docking spar
+    this._renderDockingLights(ctx, 0, 52, 12);
 
     this._renderNameLabel(ctx, camera, 68);
 

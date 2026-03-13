@@ -1,5 +1,5 @@
 import { Projectile } from '../../entities/projectile.js';
-import { GREEN } from '../../ui/colors.js';
+import { GREEN } from '../../rendering/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          GATLING_MAG_SIZE, GATLING_RELOAD_TIME } from '../../data/tuning/weaponTuning.js';

@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { AMBER, CYAN, GREEN, MAGENTA } from '../ui/colors.js';
+import { AMBER, CYAN, GREEN, MAGENTA } from '../rendering/colors.js';
 import {
   SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
   SalvageScannerModule, LongRangeScannerModule,

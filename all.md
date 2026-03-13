@@ -86,7 +86,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
 - **Navigation:** `↑/↓` change category, `←/→` cycle item, `T` toggle rotation (ships), `R` reset view, scroll/drag to zoom/pan
 - **Deep-link:** `?designer&category=<cat>&id=<slug>`
-- **In scope:** `js/ships/**`, `js/npcs/**`, `js/world/**`, `js/modules/**`, `js/ui/colors.js`
+- **In scope:** `js/ships/**`, `js/npcs/**`, `js/world/**`, `js/modules/**`, `js/rendering/colors.js`
 - Item slugs are defined in `js/test/designer.js` — check there for current IDs.
 
 ## Architecture
@@ -130,20 +130,32 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPC
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
 - **Centralized stats** — `js/data/tuning/` is the single source of truth for all base stats. Split across: `shipTuning.js` (movement/health/fuel), `weaponTuning.js` (damage/range/ammo), `aiTuning.js` (AI templates), `moduleTuning.js`, `economyTuning.js`, `reputationTuning.js` (reputation constants). Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
 - **Weapon registry** — `js/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
-- **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, designerZoom, flavorText }`. No factory dispatcher — entities self-instantiate.
+- **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, flavorText }`. No factory dispatcher — entities self-instantiate.
 - **UI overlays** — station panel (`#location-overlay`, right 30% DOM panel) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
-- **Color palette** — `js/ui/colors.js` exports all color constants; never use inline hex strings
+- **Color palette** — `js/rendering/colors.js` exports all color constants; never use inline hex strings
 - **Draw API** — `js/rendering/draw.js` exports reusable canvas primitives. Two layers:
   - **Immediate utilities** (take `ctx` as first arg): `polygon`, `polygonFill`, `polygonStroke`, `line`, `lines`, `disc`, `ring`, `trail`, `text`, `pulse`, `engineGlow`
   - **`Shape` class** — composable geometry templates with transform chaining (`.at()`, `.scaled()`, `.rotated()`, `.flipX()`, `.flipY()`) and draw methods (`.fill()`, `.stroke()`, `.draw()`). Factory methods: `Shape.rect()`, `Shape.chamferedRect()`, `Shape.cigar()`, `Shape.trapezoid()`, `Shape.wedge()`, `Shape.stadium()`, `Shape.cross()`, `Shape.ngon()`
   - **`DrawBatch` class** — deferred rendering that groups by style to minimize canvas state changes. Methods: `fillPoly`, `strokePoly`, `poly`, `line`, `disc`, `ring`, `rect`, `text`, then `flush()` to render all
   - **`text(ctx, str, x, y, color, opts)`** — world-space text. Options: `size` (12), `weight` ('normal'), `align` ('center'), `baseline` ('middle'), `alpha` (1), `font` ('monospace'). Batch equivalent: `batch.text(str, x, y, color, opts)`
   - Always use Draw API primitives for new rendering code instead of raw `ctx` calls. Import from `js/rendering/draw.js`.
+  - **Prefer Shape factories and Draw helpers over raw point arrays.** When drawing geometry, always use `Shape.rect()`, `Shape.chamferedRect()`, `Shape.trapezoid()`, `Shape.wedge()`, etc. with `.at()`, `.scaled()`, `.rotated()` transforms so that a human can easily tweak position, width, height, scale, and rotation without editing point coordinates. If you need a shape that doesn't exist yet, add a new `Shape` factory method or standalone draw function to `js/rendering/draw.js` rather than hand-placing points. **Exception:** complex ship hull shapes that require directional armor arc rendering (`_drawShape`/`_drawHullArcs`) may use hand-placed point arrays when the hull silhouette cannot be composed from primitives.
 
 ### Coordinate System
 
 - Rotation 0 = pointing up (north, negative Y).
 - World origin top-left; positive X right, positive Y down.
+
+### Direction & Dimension Terminology
+
+When the user says:
+- **Width** — size along the X axis (left to right)
+- **Height** — size along the Y axis (top to bottom)
+- **Up / move up** — decrease Y (toward top of screen)
+- **Down / move down** — increase Y (toward bottom of screen)
+- **Left / Right** — decrease / increase X
+- **On top / above** — drawn later (higher z-order, visually in front)
+- **Underneath / below / behind** — drawn earlier (lower z-order, visually behind)
 
 ## Controls Reference
 
@@ -163,8 +175,8 @@ Never hardcode raw stat numbers in ship/weapon constructors. All base values liv
 
 Ship classes use `this._initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft })` from `Ship` base to set all stats in one call. Subclasses that only override a subset (e.g. enemies that don't set cargo/fuel) can omit those keys — they'll keep the parent's values.
 
-### Colors: Always Use `js/ui/colors.js`
-Never use inline hex strings anywhere in the codebase. Import named constants from `js/ui/colors.js`. If a new color is needed, add it there first.
+### Colors: Always Use `js/rendering/colors.js`
+Never use inline hex strings anywhere in the codebase. Import named constants from `js/rendering/colors.js`. If a new color is needed, add it there first.
 
 ### Docs: Always Update After Changes
 - Mechanic added/changed → `MECHANICS.md`
@@ -1895,11 +1907,13 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 
 **Rendering style by planet type:**
 
-- **Ice / rocky worlds (surface visible from space):** Topographic contour polygons clipped to the disk. Draw 3–6 closed irregular polygon paths at decreasing scales — nested, offset, not centered — to suggest terrain elevation layers. Jagged straight-line segments between vertices (no bezier smoothing). The visual reference is the Nostromo descent computer in *Alien* (1979): a CRT scanner reading back surface topology as jagged closed curves. Pale (`#b8ccd8`) is the reference implementation in `_renderPale()` in `renderer.js`.
+- **Ice / rocky worlds (surface visible from space):** Topographic contour polygons clipped to the disk. Draw 3–6 closed irregular polygon paths at decreasing scales — nested, offset, not centered — to suggest terrain elevation layers. Jagged straight-line segments between vertices (no bezier smoothing). The visual reference is the Nostromo descent computer in *Alien* (1979): a CRT scanner reading back surface topology as jagged closed curves. Pale (`#b8ccd8`) is the reference implementation in `js/world/zones/gravewake/planetPale.js`.
 
 - **Gas giants:** Horizontal band striations — thin lines or arcs at different y-offsets across the disk, clipped. Bands should vary in spacing and opacity. Optional: planetary rings as thin ellipses angled across the limb. No solid fills.
 
-- **Thick-atmosphere worlds (habitable or shrouded):** Geometric cloud swirls — angular spiral or arc segments that suggest cloud bands without being smooth curves. Straight-line approximations of spiral paths, or stacked arc segments offset from center, clipped to disk.
+- **Habitable worlds (brine seas, landmasses):** Continental landmass contours — filled faintly with coastline strokes. Same jagged polygon style as ice worlds, but with filled landmasses at very low alpha and distinct coastline outlines. Thalassa (`#4a9a6a`) is the reference implementation in `js/world/zones/gravewake/moonThalassa.js`.
+
+- **Thick-atmosphere worlds (shrouded):** Geometric cloud swirls — angular spiral or arc segments that suggest cloud bands without being smooth curves. Straight-line approximations of spiral paths, or stacked arc segments offset from center, clipped to disk.
 
 **Common rules for all planet types:**
 - Very faint body fill (0.05–0.08 alpha) — just enough to read as a disk, not a ring

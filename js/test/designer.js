@@ -1,4 +1,4 @@
-// Unified Designer — ?designer&category=<cat>&id=<item>
+_// Unified Designer — ?designer&category=<cat>&id=<item>
 // Up/Down: change category. Left/Right: cycle item within category.
 // Ships: scaled drawShape(). POIs: mock camera render(). Weapons: projectile/beam visual + stats.
 
@@ -11,7 +11,8 @@ import { SHIP_REGISTRY, NPC_REGISTRY } from '../ships/registry.js';
 import { STATION_REGISTRY } from '../world/stationRegistry.js';
 
 // POIs
-import { createPlanet }       from '../world/planet.js';
+import { PlanetPale }         from '../world/zones/gravewake/planetPale.js';
+import { MoonThalassa }       from '../world/zones/gravewake/moonThalassa.js';
 import { createDerelict }     from '../world/derelict.js';
 import { createArkshipSpine } from '../world/arkshipSpine.js';
 import { createDebrisCloud }  from '../world/debrisCloud.js';
@@ -43,7 +44,7 @@ import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
   RAIL_WHITE, PLASMA_GREEN, TORPEDO_AMBER,
   DIM_TEXT, DIM_OUTLINE,
-} from '../ui/colors.js';
+} from '../rendering/colors.js';
 
 // ─── SHIP GROUPING ────────────────────────────────────────────────────────────
 // Reorders the flat registry so each variant follows its parent class.
@@ -56,7 +57,6 @@ function _buildShipItems() {
       label:       s.label,
       file:        s.file,
       type:        'ship',
-      zoom:        7,
       parentClass: null,
       isVariant:   false,
       create:      () => s.create(0, 0),
@@ -66,7 +66,6 @@ function _buildShipItems() {
       label:       n.label,
       file:        n.file,
       type:        'ship',
-      zoom:        7,
       parentClass: n.shipClass,
       isVariant:   false,
       create:      () => n.create(0, 0),
@@ -102,7 +101,6 @@ function _buildStationItems() {
     label:      s.entity.name,
     file:       null,
     type:       'poi',
-    zoom:       s.designerZoom,
     flavorText: s.flavorText ?? null,
     create:     () => s.entity.instantiate(0, 0),
     info: {
@@ -167,16 +165,16 @@ const CATEGORIES = [
     label: 'Planets',
     items: [
       {
-        id: 'planet-thalassa', label: 'Thalassa (moon)', file: 'js/world/planet.js', type: 'poi', zoom: 1.0,
+        id: 'moon-thalassa', label: 'Thalassa (moon)', file: 'js/world/zones/gravewake/moonThalassa.js', type: 'poi',
         flavorText: "A cold green moon, barely breathable. Settlers called it promising once. The second wave never came.",
-        create: () => createPlanet({ x: 0, y: 0, name: 'Thalassa', radius: 200, colorInner: '#4a9a4a', colorOuter: '#2a5a2a' }),
-        info: { Type: 'Planet', Radius: '200u', Color: 'green gradient' },
+        create: () => MoonThalassa.backgroundData({ x: 0, y: 0 }),
+        info: { Type: 'Moon', Radius: '200u', Note: 'Brine seas, dome farms' },
       },
       {
-        id: 'planet-pale', label: 'Pale (ice planet)', file: 'js/world/planet.js', type: 'poi', zoom: 0.04,
+        id: 'planet-pale', label: 'Pale (ice planet)', file: 'js/world/zones/gravewake/planetPale.js', type: 'poi',
         flavorText: "A frozen world of nitrogen plains and fractured ice. Navigation charts list it as uninhabitable — the scavenger clans who've built settlements on its cryo-flats prefer it that way.",
-        create: () => createPlanet({ x: 0, y: 0, name: 'Pale', radius: 9000, colorInner: '#b8ccd8', colorOuter: '#2a3848' }),
-        info: { Type: 'Planet (ice)', Radius: '9000u', Note: 'Zoom out far' },
+        create: () => PlanetPale.backgroundData({ x: 0, y: 0 }),
+        info: { Type: 'Planet (ice)', Radius: '540u', Note: 'Topographic contours' },
       },
     ],
   },
@@ -185,7 +183,7 @@ const CATEGORIES = [
     label: 'Derelicts',
     items: [
       {
-        id: 'derelict-hollow-march', label: 'Hollow March', file: 'js/world/derelict.js', type: 'poi', zoom: 8.0,
+        id: 'derelict-hollow-march', label: 'Hollow March', file: 'js/world/derelict.js', type: 'poi',
         flavorText: "The registration marks are burned off. Cargo manifests mention nothing that would explain the damage.",
         create: () => createDerelict({ x: 0, y: 0, name: 'Hollow March', salvageTime: 5, lootTable: [{ type: 'scrap', amount: 40 }, { type: 'void_crystals', amount: 3 }] }),
         info: { Type: 'Derelict', 'Salvage Time': '5s', Loot: 'scrap×40, void_crystals×3', 'Interact R': '120u' },
@@ -197,13 +195,13 @@ const CATEGORIES = [
     label: 'Environment',
     items: [
       {
-        id: 'arkship-spine', label: 'Arkship Spine', file: 'js/world/arkshipSpine.js', type: 'poi', zoom: 0.25,
+        id: 'arkship-spine', label: 'Arkship Spine', file: 'js/world/arkshipSpine.js', type: 'poi',
         flavorText: "The skeletal remains of a colony ship, kilometers long. It still drifts on the course it was launched with centuries ago.",
         create: () => createArkshipSpine({ x: 0, y: 0, rotation: 0, length: 2200, width: 140 }),
         info: { Type: 'ArkshipSpine', Length: '2200u', Width: '140u', Note: 'Static terrain' },
       },
       {
-        id: 'debris-cloud', label: 'Debris Cloud', file: 'js/world/debrisCloud.js', type: 'poi', zoom: 0.8,
+        id: 'debris-cloud', label: 'Debris Cloud', file: 'js/world/debrisCloud.js', type: 'poi',
         flavorText: "The field spreads a little wider every year. Something blew here. Nobody agrees on what.",
         create: () => createDebrisCloud({ x: 0, y: 0, spreadRadius: 350, fragmentCount: 30 }),
         info: { Type: 'DebrisCloud', 'Spread R': '350u', Fragments: '30' },
@@ -347,9 +345,8 @@ export class Designer {
     // Ship-specific
     this._autoRotate = false;
     this._angle      = 0;
-    this._shipScale  = 7;
 
-    // POI/ship shared viewport state
+    // Global viewport state (persisted in URL)
     this._zoom  = 1.0;
     this._panX  = 0;
     this._panY  = 0;
@@ -385,17 +382,13 @@ export class Designer {
     this.canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.12 : 0.89;
-      const cat = this._cat();
-      if (cat.id === 'ships') {
-        this._shipScale = Math.max(1, Math.min(30, this._shipScale * factor));
-      } else {
-        this._zoom = Math.max(0.005, Math.min(30, this._zoom * factor));
-      }
+      this._zoom = Math.max(0.005, Math.min(30, this._zoom * factor));
+      this._syncZoomToUrl();
     }, { passive: false });
 
-    // POI drag
+    // Drag to pan
     this.canvas.addEventListener('mousedown', (e) => {
-      if (e.button === 0 && this._cat().id !== 'ships') {
+      if (e.button === 0) {
         this._dragging  = true;
         this._dragLastX = e.clientX;
         this._dragLastY = e.clientY;
@@ -414,6 +407,7 @@ export class Designer {
     const params = new URLSearchParams(window.location.search);
     const urlCat = params.get('category');
     const urlId  = params.get('id');
+    const urlZoom = params.get('zoom');
     if (urlCat) {
       const ci = CATEGORIES.findIndex(c => c.id === urlCat);
       if (ci !== -1) this._catIdx = ci;
@@ -422,6 +416,10 @@ export class Designer {
       const items = CATEGORIES[this._catIdx].items;
       const ii = items.findIndex(it => it.id === urlId);
       if (ii !== -1) this._itemIdx = ii;
+    }
+    if (urlZoom) {
+      const z = parseFloat(urlZoom);
+      if (isFinite(z) && z > 0) this._zoom = z;
     }
 
     this._load(false);
@@ -444,15 +442,6 @@ export class Designer {
       this._entity.relation = 'none';
     }
 
-    // Reset viewport to item default
-    if (def.type === 'ship') {
-      this._shipScale = /** @type {any} */ (def).zoom ?? 7;
-    } else {
-      this._zoom = /** @type {any} */ (def).zoom ?? 1.0;
-      this._panX = 0;
-      this._panY = 0;
-    }
-
     if (updateUrl) this._updateUrl();
 
     // Rebuild compare table when category changes; otherwise just update highlight
@@ -467,8 +456,15 @@ export class Designer {
     const url = new URL(window.location.href);
     url.searchParams.set('category', this._cat().id);
     url.searchParams.set('id', this._item().id);
+    url.searchParams.set('zoom', this._zoom.toFixed(4));
     // Ensure ?designer param is preserved
     if (!url.searchParams.has('designer')) url.searchParams.set('designer', '');
+    history.replaceState(null, '', url.toString());
+  }
+
+  _syncZoomToUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('zoom', this._zoom.toFixed(4));
     history.replaceState(null, '', url.toString());
   }
 
@@ -511,15 +507,11 @@ export class Designer {
 
     // R — reset view
     if (input.wasJustPressed('r')) {
-      const def = this._item();
+      this._zoom = 1.0;
       this._panX = 0;
       this._panY = 0;
-      if (def.type === 'ship') {
-        this._shipScale = /** @type {any} */ (def).zoom ?? 7;
-        this._angle = 0;
-      } else {
-        this._zoom = /** @type {any} */ (def).zoom ?? 1.0;
-      }
+      this._angle = 0;
+      this._syncZoomToUrl();
     }
 
     // Ship rotation
@@ -580,7 +572,7 @@ export class Designer {
     // Scale reference ring
     ctx.save();
     ctx.beginPath();
-    ctx.arc(pcx, pcy, 25 * this._shipScale, 0, Math.PI * 2);
+    ctx.arc(pcx, pcy, 25 * this._zoom, 0, Math.PI * 2);
     ctx.strokeStyle = '#091525';
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -588,8 +580,8 @@ export class Designer {
 
     // Ship
     ctx.save();
-    ctx.translate(pcx, pcy);
-    ctx.scale(this._shipScale, this._shipScale);
+    ctx.translate(pcx + this._panX, pcy + this._panY);
+    ctx.scale(this._zoom, this._zoom);
     ctx.rotate(this._angle);
     this._entity._drawShape(ctx);
     ctx.restore();
@@ -600,7 +592,7 @@ export class Designer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
-    ctx.fillText(`${this._shipScale.toFixed(1)}× scale  •  ${def.file}`, pcx, 12);
+    ctx.fillText(`${this._zoom.toFixed(1)}× zoom  •  ${def.file}`, pcx, 12);
     ctx.restore();
   }
 
@@ -748,7 +740,7 @@ export class Designer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
-    ctx.fillText(`zoom ${this._zoom.toFixed(3)}×  •  ${this._item().file}`, pcx, 12);
+    ctx.fillText(`${this._zoom.toFixed(3)}× zoom  •  ${this._item().file}`, pcx, 12);
     ctx.restore();
   }
 
@@ -935,7 +927,7 @@ export class Designer {
     // Controls hint
     ctx.fillStyle = DIM_TEXT;
     ctx.font = '10px monospace';
-    ctx.fillText(`T rotate [${this._autoRotate ? 'ON' : 'OFF'}]  •  R reset  •  C compare`, MARGIN, y); y += 20;
+    ctx.fillText(`T rotate [${this._autoRotate ? 'ON' : 'OFF'}]  •  R reset  •  scroll zoom  •  C compare`, MARGIN, y); y += 20;
 
     this._header(ctx, 'HULL', y); y += 18;
     this._row(ctx, 'Hull HP',  ship.hullMax,       GREEN, y); y += 16;

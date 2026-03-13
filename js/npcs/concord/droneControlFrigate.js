@@ -1,7 +1,7 @@
 import { GarrisonFrigate } from '../../ships/classes/garrisonFrigate.js';
 import { LanceModuleSmall } from '../../modules/shipModule.js';
 import { AI_TEMPLATES } from '../../data/tuning/aiTuning.js';
-import { CONCORD_BLUE, ENEMY_FILL } from '../../ui/colors.js';
+import { CONCORD_BLUE, ENEMY_FILL } from '../../rendering/colors.js';
 import { engineGlow } from '../../rendering/draw.js';
 import { SnatcHerDrone } from './snatcHerDrone.js';
 

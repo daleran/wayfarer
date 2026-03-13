@@ -1,5 +1,5 @@
 import { Entity } from '../entities/entity.js';
-import { DIM_OUTLINE, VERY_DIM } from '../ui/colors.js';
+import { DIM_OUTLINE, VERY_DIM } from '../rendering/colors.js';
 
 export class ArkshipSpine extends Entity {
   constructor(x, y, data) {

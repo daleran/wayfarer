@@ -8,7 +8,7 @@ If the user specifies files or a scope, review only those. If no scope is given,
 
 ### 1. Convention violations
 - **Hardcoded stats** — any numeric stat not using the `BASE_X * MULT` pattern (see stat-audit)
-- **Inline hex colors** — any `#xxx` string outside `js/ui/colors.js`
+- **Inline hex colors** — any `#xxx` string outside `js/rendering/colors.js`
 - **Missing registry entries** — new ship/NPC/module/station without corresponding registry entry
 - **Missing doc updates** — code changes mechanics/UI/lore but corresponding .md file not updated
 

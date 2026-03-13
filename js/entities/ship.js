@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { RELATION_COLORS, RED, WHITE, armorArcColor } from '../ui/colors.js';
+import { RELATION_COLORS, RED, WHITE, armorArcColor } from '../rendering/colors.js';
 import { trail as drawTrail } from '../rendering/draw.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL, BASE_CARGO,

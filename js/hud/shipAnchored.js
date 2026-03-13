@@ -1,7 +1,7 @@
 import {
   CYAN, AMBER, RED, MAGENTA, WHITE,
   VERY_DIM, DIM_TEXT,
-} from '../ui/colors.js';
+} from '../rendering/colors.js';
 
 const GUIDANCE_LABELS = { dumbfire: 'DUMB', wire: 'WIRE', heat: 'HEAT' };
 const WEAPON_PANEL_GAP      = 38;

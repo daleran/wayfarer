@@ -5,7 +5,7 @@ import {
   renderSalvageBar, renderRepairBar, renderAutoFireIndicator,
   renderDevControls, renderPanModeBanner,
 } from './hud/prompts.js';
-import { armorArcColor } from './ui/colors.js';
+import { armorArcColor } from './rendering/colors.js';
 
 const PICKUP_ABOVE = 90;
 

@@ -99,7 +99,7 @@ export class SentinelCorvette extends Ship {
 
   _drawShape(ctx) {
     // Draw hull centered at (0,0), pointing up (rotation 0 = north).
-    // Use colors from js/ui/colors.js — NEVER inline hex.
+    // Use colors from js/rendering/colors.js — NEVER inline hex.
     // ctx is pre-translated to ship position and rotated.
     //
     // DIRECTIONAL ARMOR RENDERING — REQUIRED for all ship classes.
@@ -163,7 +163,6 @@ Open `js/ships/registry.js`. Add:
   id: 'sentinel-corvette',
   label: 'Sentinel Class Corvette',
   create: (x, y) => new SentinelCorvette(x, y),
-  designerZoom: 0.4,
   faction: 'settlements',   // or 'scavengers', 'concord', etc.
   role: 'player',           // 'player', 'enemy', or 'neutral'
 }
@@ -177,7 +176,6 @@ Open `js/test/designer.js`. Add to the correct category (Ships, Enemies, or Neut
   id: 'sentinel-corvette',
   label: 'Sentinel Class Corvette',
   create: (x, y) => new SentinelCorvette(x, y),
-  designerZoom: 0.4,
   statsPanel: (ship) => [
     { label: 'HULL',  value: ship.hullMax },
     { label: 'SPEED', value: ship.speedMax.toFixed(1) },

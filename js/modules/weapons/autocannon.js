@@ -1,5 +1,5 @@
 import { Projectile } from '../../entities/projectile.js';
-import { AMBER, AUTOCANNON_GLOW } from '../../ui/colors.js';
+import { AMBER, AUTOCANNON_GLOW } from '../../rendering/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          AUTOCANNON_MAG_SIZE, AUTOCANNON_RELOAD_TIME,

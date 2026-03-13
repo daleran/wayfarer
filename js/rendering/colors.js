@@ -79,6 +79,11 @@ export const RELATION_COLORS = {
 export const PALE_ICE     = '#b8ccd8'; // icy blue-grey body
 export const PALE_HAZE    = '#7090a8'; // limb atmospheric haze
 
+// Thalassa — brine-sea moon colors
+export const THALASSA_BRINE = '#4a9a6a'; // green-teal brine seas
+export const THALASSA_LAND  = '#6a7a5a'; // muted olive landmasses
+export const THALASSA_HAZE  = '#3a6a4a'; // thin green atmosphere
+
 // World-space overlays
 export const RANGE_CIRCLE = 'rgba(0,255,204,0.12)';
 

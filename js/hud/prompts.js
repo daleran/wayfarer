@@ -2,7 +2,7 @@ import {
   CYAN, AMBER, GREEN, RED, MAGENTA,
   BAR_TRACK, DIM_TEXT,
   CONDITION_FAULTY,
-} from '../ui/colors.js';
+} from '../rendering/colors.js';
 
 const BMARGIN = 32;
 

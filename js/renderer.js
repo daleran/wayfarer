@@ -1,4 +1,4 @@
-import { GREEN, RED, RANGE_CIRCLE, AMBER, VERY_DIM, CYAN, WHITE, STARFIELD_TINT_WHITE, BG_CLEAR, BEAM_GLOW_OUTER, BEAM_GLOW_MID } from './ui/colors.js';
+import { GREEN, RED, RANGE_CIRCLE, AMBER, VERY_DIM, CYAN, WHITE, STARFIELD_TINT_WHITE, BG_CLEAR, BEAM_GLOW_OUTER, BEAM_GLOW_MID } from './rendering/colors.js';
 import { input } from './input.js';
 
 // Starfield layer config: [count, parallaxFactor, starSize]

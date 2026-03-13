@@ -23,7 +23,7 @@ The file contains: renderer class (if custom) + data descriptor + layout + `inst
 ```js
 // js/world/zones/gravewake/ironveilOutpost.js
 import { Station } from '../../station.js';
-import { CYAN, AMBER, WHITE } from '../../../ui/colors.js';
+import { CYAN, AMBER, WHITE } from '../../../rendering/colors.js';
 
 // ── Custom renderer (skip if using generic hex) ─────────────────────────────
 
@@ -110,7 +110,6 @@ import { IronveilOutpost } from './zones/gravewake/ironveilOutpost.js';
 {
   entity: IronveilOutpost,
   id: 'ironveil-outpost',
-  designerZoom: 3.5,
   flavorText: 'A sentence of flavor text.',
 },
 ```

@@ -48,7 +48,7 @@ ORPHAN: js/old/unusedHelper.js
 ```
 FILE: js/some/module.js
 LINE: 3
-UNUSED IMPORT: AMBER from '../../ui/colors.js'
+UNUSED IMPORT: AMBER from '../../rendering/colors.js'
 ```
 
 ### 4. Stale data references
@@ -126,7 +126,7 @@ Group findings by category:
 === DEAD CODE SCAN RESULTS ===
 
 [Unused Imports]
-  js/foo.js:3 — AMBER from '../../ui/colors.js'
+  js/foo.js:3 — AMBER from '../../rendering/colors.js'
 
 [Unused Exports]
   js/bar.js:42 — export function helperFn()

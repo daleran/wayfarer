@@ -39,21 +39,21 @@ FIX:   const SPEED_MULT = X.X; ... this.speedMax = BASE_SPEED * SPEED_MULT * SPE
 
 ### 2. Inline hex color strings
 
-**The rule:** No hex color strings anywhere in the codebase. All colors come from `js/ui/colors.js`.
+**The rule:** No hex color strings anywhere in the codebase. All colors come from `js/rendering/colors.js`.
 
 **Files to scan:** All `js/**/*.js` files
 
 **What to flag:**
 - Any string matching `/#[0-9a-fA-F]{3,8}/` used as a color argument (e.g. in `ctx.fillStyle`, `ctx.strokeStyle`, `ctx.shadowColor`)
-- Exception: `js/ui/colors.js` itself — that file is the definition file and is allowed to contain hex strings
+- Exception: `js/rendering/colors.js` itself — that file is the definition file and is allowed to contain hex strings
 
 **Report format per violation:**
 ```
 FILE: js/world/someRenderer.js
 LINE: 88
 FOUND: ctx.strokeStyle = '#ff4422';
-FIX:   import { RED } from '../ui/colors.js'; ... ctx.strokeStyle = RED;
-       (If no matching color exists, add one to js/ui/colors.js first)
+FIX:   import { RED } from '../rendering/colors.js'; ... ctx.strokeStyle = RED;
+       (If no matching color exists, add one to js/rendering/colors.js first)
 ```
 
 ### 3. Stats defined outside tuning files
@@ -105,7 +105,7 @@ When fixing a stat violation:
 4. Do not change any other code in the file
 
 When fixing a color violation:
-1. Check `js/ui/colors.js` for an existing matching color
-2. If no match exists, add a new named constant to `js/ui/colors.js` first
+1. Check `js/rendering/colors.js` for an existing matching color
+2. If no match exists, add a new named constant to `js/rendering/colors.js` first
 3. Replace the inline hex with the imported constant
 4. Add the import line if the file doesn't already import from colors.js

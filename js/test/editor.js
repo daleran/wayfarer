@@ -10,7 +10,7 @@ import { createDerelict } from '../world/derelict.js';
 import {
   CYAN, AMBER, GREEN, RED, MAGENTA, WHITE,
   PANEL_BG, DIM_TEXT, DIM_OUTLINE,
-} from '../ui/colors.js';
+} from '../rendering/colors.js';
 
 const SIDEBAR_W = 240;
 

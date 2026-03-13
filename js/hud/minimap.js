@@ -1,5 +1,4 @@
 import { Station } from '../world/station.js';
-import { Planet } from '../world/planet.js';
 import { LootDrop } from '../entities/lootDrop.js';
 import { Derelict } from '../world/derelict.js';
 import {
@@ -7,7 +6,7 @@ import {
   MINIMAP_BG, MINIMAP_BORDER, MINIMAP_PLANET, MINIMAP_STATION,
   MINIMAP_ENEMY, MINIMAP_PLAYER,
   MINIMAP_LOOT, MINIMAP_DERELICT,
-} from '../ui/colors.js';
+} from '../rendering/colors.js';
 
 const MM_MARGIN = 24;
 const MM_PANEL  = 225;
@@ -53,7 +52,7 @@ export function renderMinimap(ctx, game) {
 
   if (canSeeStations) {
     for (const e of entities) {
-      if (!(e instanceof Planet) || !e.active) continue;
+      if (!e.isPlanet || !e.active) continue;
       const mx = ox + e.x * SCALE;
       const my = oy + e.y * SCALE;
       const mr = Math.max(2, e.radius * SCALE);

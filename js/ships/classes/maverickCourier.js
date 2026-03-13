@@ -1,57 +1,112 @@
 import { Ship } from '../../entities/ship.js';
-import { polygonFill, lines, engineGlow } from '../../rendering/draw.js';
+import { polygonFill, polygonStroke, lines, pulse } from '../../rendering/draw.js';
 
 const SPEED_MULT = 1.3;   // ~109 u/s — fast but not a racer
 const ACCEL_MULT = 1.2;   // responsive, not twitchy
-const TURN_MULT  = 1.15;  // handles well, not a sports car
-const HULL_MULT  = 0.85;  // 170 hp — solid everyday frame
+const TURN_MULT = 1.15;  // handles well, not a sports car
+const HULL_MULT = 0.85;  // 170 hp — solid everyday frame
 const CARGO_MULT = 0.3;   // 15 units — small trunk
 
 // Armor arc multipliers (× BASE_ARMOR = 100)
 const ARMOR_FRONT = 1.0;  // 100 — standard nose
-const ARMOR_SIDE  = 1.0;  // 100 — protected flanks
-const ARMOR_AFT   = 0.85; //  85 — decent stern
+const ARMOR_SIDE = 1.0;  // 100 — protected flanks
+const ARMOR_AFT = 0.85; //  85 — decent stern
 
 const FUEL_MAX_MULT = 0.8;  // 80 unit tank — decent range
-const FUEL_EFF_MULT = 0.9;  // burns at 90% base rate — economical enough
+const FUEL_EFF_MULT = 0.9;  // burns at 90% base rate — economical
 
-// Personal courier — narrow flat nose, one quick shoulder flare, then long
-// straight sides to a wide flat stern. Boxy vehicle proportions.
+// Sleek needle-nose courier. Long sharp nose, set-back cockpit with
+// shoulder flare, tapered engine block. X-wing proportions scaled to
+// a personal craft — fast, pointy, purposeful.
+//
+// Profile (top-down):
+//        ·           nose tip
+//       / \
+//      /   \         nose taper
+//     │     │
+//    ┌┘     └┐       cockpit flare (widest)
+//    │       │
+//    └┐     ┌┘       engine taper
+//      └───┘         stern face
 export const HULL_POINTS = [
-  { x: -3,  y: -10 },  // port nose
-  { x:  3,  y: -10 },  // starboard nose
-  { x:  7,  y:  -7 },  // starboard shoulder (quick flare)
-  { x:  7,  y:   5 },  // starboard body (long straight run)
-  { x:  5,  y:   9 },  // starboard haunch
-  { x:  3,  y:  11 },  // starboard stern corner
-  { x: -3,  y:  11 },  // port stern corner
-  { x: -5,  y:   9 },  // port haunch
-  { x: -7,  y:   5 },  // port body (long straight run)
-  { x: -7,  y:  -7 },  // port shoulder (quick flare)
+  { x: 0, y: -18 },  // nose tip
+  { x: 1.5, y: -14 },  // starboard nose upper
+  { x: 3, y: -8 },  // starboard nose mid
+  { x: 4, y: 0 },  // starboard nose base
+  { x: 6, y: 1 },  // starboard cockpit flare
+  { x: 6, y: 5 },  // starboard cockpit aft
+  { x: 5, y: 7 },  // starboard engine shoulder
+  { x: 4, y: 12 },  // starboard engine taper
+  { x: 3, y: 14 },  // starboard stern corner
+  { x: -3, y: 14 },  // port stern corner
+  { x: -4, y: 12 },  // port engine taper
+  { x: -5, y: 7 },  // port engine shoulder
+  { x: -6, y: 5 },  // port cockpit aft
+  { x: -6, y: 1 },  // port cockpit flare
+  { x: -4, y: 0 },  // port nose base
+  { x: -3, y: -8 },  // port nose mid
+  { x: -1.5, y: -14 },  // port nose upper
 ];
 
-// Cockpit block — rectangular, flush with nose
+// Stubby trapezoidal wings flanking cockpit — drawn under hull
+const WING_STBD = [
+  { x: 6, y: 1 },  // root leading edge
+  { x: 11, y: 2 },  // tip leading edge
+  { x: 11, y: 6 },  // tip trailing edge
+  { x: 6, y: 7 },  // root trailing edge
+];
+const WING_PORT = [
+  { x: -6, y: 1 },
+  { x: -11, y: 2 },
+  { x: -11, y: 6 },
+  { x: -6, y: 7 },
+];
+
+// Cockpit canopy overlay
 const COCKPIT = [
-  { x: -2, y: -10 },
-  { x:  2, y: -10 },
-  { x:  2, y:  -3 },
-  { x: -2, y:  -3 },
+  { x: -3, y: 0 },
+  { x: 3, y: 0 },
+  { x: 3, y: 4 },
+  { x: -3, y: 4 },
 ];
 
-// Belt line — at mid-body
-const BELT_LINE = [
-  { x: -7, y: 0 },
-  { x:  7, y: 0 },
+// Engine assembly — Saturn V F1-style: chamfered housing box + bell nozzle
+// Housing anchored at stern face (y=14), bell hangs below with a gap
+
+// Thrust structure housing — chamfered rectangle flush with stern
+// Absolute coords (not offset by ENGINE_Y)
+const ENGINE_HOUSING = [
+  { x: -2.2, y: 12 },   // port top corner (chamfer)
+  { x: -3, y: 13 },   // port upper
+  { x: -3, y: 17 },   // port lower
+  { x: 3, y: 17 },   // starboard lower
+  { x: 3, y: 13 },   // starboard upper
+  { x: 2.2, y: 12 },   // starboard top corner (chamfer)
 ];
 
-// Single center engine
-const ENGINE_POS = [{ x: 0, y: 11 }];
+// Bell nozzle — 0.5px gap below housing, narrow throat flaring to wide exit
+const NOZZLE_BELL = [
+  { x: -2, y: 17.5 },  // throat port
+  { x: 2, y: 17.5 },  // throat starboard
+  { x: 3.3, y: 23.5 },  // bell exit starboard
+  { x: -3.3, y: 23.5 },  // bell exit port
+];
+
+// Detail lines
+const NOSE_SPINE = [{ x: 0, y: -16 }, { x: 0, y: 0 }];
+const HULL_SEAM = [{ x: -4, y: 0 }, { x: 4, y: 0 }];
+const COCKPIT_SLIT = [{ x: -2.5, y: 2 }, { x: 2.5, y: 2 }];
+const WING_SEAM_STBD = [{ x: 6, y: 1 }, { x: 11, y: 2 }];
+const WING_SEAM_PORT = [{ x: -6, y: 1 }, { x: -11, y: 2 }];
+
+// Single center engine trail origin — at bell exit
+const ENGINE_POS = [{ x: 0, y: 23.5 }];
 
 export class MaverickCourier extends Ship {
   constructor(x, y) {
     super(x, y);
 
-    this.faction  = 'neutral';
+    this.faction = 'neutral';
     this.shipType = 'maverick-courier';
 
     this.flavorText =
@@ -74,35 +129,65 @@ export class MaverickCourier extends Ship {
   }
 
   _drawShape(ctx) {
-    // Arc segment map (10 hull points, 0–9).
+    // Arc segment map (17 hull points, 0–16).
     const ARC_MAP = {
-      front:     [9, 0, 1, 2],
-      starboard: [2, 3, 4, 5],
-      aft:       [5, 6],
-      port:      [6, 7, 8, 9],
+      front: [16, 0, 1, 2, 3],
+      starboard: [3, 4, 5, 6, 7, 8],
+      aft: [8, 9],
+      port: [9, 10, 11, 12, 13, 14, 15, 16],
     };
+    const isPlayer = this.relation === 'player';
+    const fill = isPlayer ? this._playerHullFill() : this.hullFill;
 
-    // Main hull
+    // 1. Wings (under hull)
+    for (const [wing, arc] of /** @type {[Array<{x:number,y:number}>, string][]} */ ([[WING_PORT, 'port'], [WING_STBD, 'starboard']])) {
+      ctx.beginPath();
+      ctx.moveTo(wing[0].x, wing[0].y);
+      for (let i = 1; i < wing.length; i++) ctx.lineTo(wing[i].x, wing[i].y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      if (!this._strokeArcCurrent(ctx, arc)) {
+        ctx.strokeStyle = this.hullStroke;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    // 2. Main hull
     this._fillAndStrokeHull(ctx, HULL_POINTS, ARC_MAP);
 
-    // Cockpit canopy — slightly lighter fill
+    // 3. Cockpit overlay
     polygonFill(ctx, COCKPIT, this.hullFill, 0.5);
-    ctx.strokeStyle = this.hullStroke;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(COCKPIT[0].x, COCKPIT[0].y);
-    for (let i = 1; i < COCKPIT.length; i++) ctx.lineTo(COCKPIT[i].x, COCKPIT[i].y);
-    ctx.closePath();
-    ctx.stroke();
+    polygonStroke(ctx, COCKPIT, this.hullStroke, 1, 0.6);
 
-    // Belt line crease
-    lines(ctx, [[BELT_LINE[0], BELT_LINE[1]]], this.hullStroke, 1, 0.3);
+    // 4. Detail lines
+    lines(ctx, [NOSE_SPINE], this.hullStroke, 1, 0.3);
+    lines(ctx, [HULL_SEAM], this.hullStroke, 1, 0.25);
+    lines(ctx, [COCKPIT_SLIT], this.hullStroke, 1, 0.4);
+    lines(ctx, [WING_SEAM_STBD, WING_SEAM_PORT], this.hullStroke, 1, 0.2);
 
-    // Engine glow
-    engineGlow(ctx, ENGINE_POS, this.engineColor, 2 + this.throttleLevel * 0.5, 2, 2, 0.3);
+    // 5. Engine assembly — on top of hull (F1-style housing + bell)
+    polygonFill(ctx, ENGINE_HOUSING, this.hullStroke, 0.4);
+    polygonStroke(ctx, ENGINE_HOUSING, this.hullStroke, 0.8, 0.5);
+
+    polygonFill(ctx, NOZZLE_BELL, this.hullStroke, 0.5);
+    polygonStroke(ctx, NOZZLE_BELL, this.hullStroke, 0.8, 0.6);
+
+    // 6. Exhaust plume (throttle-scaled)
+    if (this.throttleLevel > 0) {
+      const pLen = 5 + this.throttleLevel * 6;
+      const pAlpha = (0.3 + this.throttleLevel * 0.3) * pulse(0.012, 0.7, 1.0);
+      const plume = [
+        { x: -2.8, y: 23.5 },
+        { x: 2.8, y: 23.5 },
+        { x: 0, y: 23.5 + pLen },
+      ];
+      polygonFill(ctx, plume, this.engineColor, pAlpha);
+    }
   }
 
   getBounds() {
-    return { x: this.x, y: this.y, radius: 12 };
+    return { x: this.x, y: this.y, radius: 20 };
   }
 }

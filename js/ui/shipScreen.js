@@ -1,4 +1,4 @@
-import { conditionColor } from './colors.js';
+import { conditionColor } from '../rendering/colors.js';
 
 // ── Ship Screen — left 30% HTML panel (I key) ──────────────────────────────
 // Replaces the old canvas-based 3-column overlay with a DOM panel.

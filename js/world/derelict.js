@@ -3,7 +3,7 @@ import { G100ClassHauler } from '../ships/classes/g100Hauler.js';
 import { MaverickCourier } from '../ships/classes/maverickCourier.js';
 import { GarrisonFrigate } from '../ships/classes/garrisonFrigate.js';
 import { OnyxClassTug } from '../ships/classes/onyxTug.js';
-import { AMBER, DIM_TEXT } from '../ui/colors.js';
+import { AMBER, DIM_TEXT } from '../rendering/colors.js';
 
 const INTERACTION_RADIUS = 120;
 const HULL_ALPHA = 0.55;

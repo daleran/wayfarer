@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { AMBER, WHITE } from '../ui/colors.js';
+import { AMBER, WHITE } from '../rendering/colors.js';
 
 const DURATION = 0.55; // seconds
 

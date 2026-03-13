@@ -1,7 +1,7 @@
 // LocationOverlay — HTML overlay controller for station panel.
 // Two-level nav: area list → area detail (flavor + services).
 
-import { FACTION, standingColor } from './colors.js';
+import { FACTION, standingColor } from '../rendering/colors.js';
 import { buildRepairPanel    } from './station/serviceRepair.js';
 import { buildTradePanel     } from './station/serviceTrade.js';
 import { buildBountiesPanel  } from './station/serviceBounties.js';
