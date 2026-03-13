@@ -6,9 +6,10 @@
   left: 0;
   right: 0;
   z-index: 20;
-  font-family: monospace;
+  font-family: 'Fira Mono', monospace;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   padding: 0 0 8px;
   pointer-events: none;
   user-select: none;
@@ -28,6 +29,24 @@
   );
   z-index: 10;
 }
+
+/* ── Weapon info row (above grid) ───────────────────────────────────────────── */
+
+.hud-weapon-row {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 4px;
+}
+
+.hud-weapon-info {
+  font: 10px 'Fira Mono', monospace;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.hud-weapon-info.pri { color: #00ffcc; }
+.hud-weapon-info.sec { color: #ff00aa; }
 
 /* ── Grid container ─────────────────────────────────────────────────────────── */
 
@@ -49,7 +68,7 @@
 }
 
 .hud-group-label {
-  font: bold 10px monospace;
+  font: bold 10px 'Fira Mono', monospace;
   color: #556677;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -89,7 +108,7 @@
 .hud-seg-bar.cargo.full    { border-color: #ff4444; color: #ff4444; }
 
 .hud-bar-value {
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   min-width: 44px;
   text-align: left;
 }
@@ -98,7 +117,7 @@
 
 .hud-separator {
   color: #334455;
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   margin: 0 4px;
 }
 
@@ -140,7 +159,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font: bold 7px monospace;
+  font: bold 7px 'Fira Mono', monospace;
   color: rgba(255,255,255,0.55);
   z-index: 1;
 }
@@ -159,7 +178,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 9px monospace;
+  font: 9px 'Fira Mono', monospace;
   color: #334455;
   box-sizing: border-box;
   transition: border-color 0.08s, color 0.08s, background 0.08s;
@@ -171,10 +190,19 @@
   color: #000000;
 }
 
+/* ── Speed readout ───────────────────────────────────────────────────────────── */
+
+.hud-speed {
+  font: 10px 'Fira Mono', monospace;
+  color: #00ffcc;
+  opacity: 0.65;
+  margin-left: 4px;
+}
+
 /* ── Fuel burn rate ──────────────────────────────────────────────────────────── */
 
 .hud-fuel-burn {
-  font: 9px monospace;
+  font: 9px 'Fira Mono', monospace;
   color: #ffaa00;
   opacity: 0.55;
 }
@@ -182,7 +210,7 @@
 /* ── Power readout ───────────────────────────────────────────────────────────── */
 
 .hud-power {
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   display: flex;
   gap: 4px;
   align-items: center;
@@ -199,14 +227,14 @@
 /* ── Scrap readout ───────────────────────────────────────────────────────────── */
 
 .hud-scrap {
-  font: bold 13px monospace;
+  font: bold 13px 'Fira Mono', monospace;
   color: #ffaa00;
 }
 
 /* ── Overhaul warning ────────────────────────────────────────────────────────── */
 
 .hud-overhaul-warn {
-  font: bold 9px monospace;
+  font: bold 9px 'Fira Mono', monospace;
   color: #ff00aa;
   letter-spacing: 0.06em;
   animation: hud-flash 1s step-end infinite;
@@ -224,7 +252,7 @@
   z-index: 25;
   background: rgba(0,8,18,0.95);
   border: 1px solid #00ffcc;
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: #aabbcc;
   padding: 6px 10px;
   pointer-events: none;

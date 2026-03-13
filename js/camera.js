@@ -5,12 +5,42 @@ export class Camera {
     this.width = width;
     this.height = height;
     this.zoom = 0.44;
+    this._targetZoom = this.zoom;
+    this._zoomMin = 0.2;
+    this._zoomMax = 2.75;
   }
 
   follow(target, dt) {
     const factor = 1 - Math.pow(1 - 0.08, dt * 60);
     this.x += (target.x - this.x) * factor;
     this.y += (target.y - this.y) * factor;
+  }
+
+  applyWheel(wheelDelta) {
+    if (wheelDelta === 0) return;
+    this._targetZoom *= 1 - wheelDelta * 0.001;
+    this._targetZoom = Math.max(this._zoomMin, Math.min(this._zoomMax, this._targetZoom));
+  }
+
+  updateZoom(dt) {
+    const factor = 1 - Math.pow(1 - 0.15, dt * 60);
+    this.zoom += (this._targetZoom - this.zoom) * factor;
+  }
+
+  /** Smoothly transition to a cinematic zoom level, saving the previous target for restore. */
+  pushZoom(level) {
+    if (this._savedZoom == null) {
+      this._savedZoom = this._targetZoom;
+    }
+    this._targetZoom = Math.max(this._zoomMin, Math.min(this._zoomMax, level));
+  }
+
+  /** Restore the zoom level saved by pushZoom. */
+  popZoom() {
+    if (this._savedZoom != null) {
+      this._targetZoom = this._savedZoom;
+      this._savedZoom = null;
+    }
   }
 
   worldToScreen(wx, wy) {

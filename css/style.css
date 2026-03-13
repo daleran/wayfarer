@@ -1,7 +1,32 @@
+@font-face {
+  font-family: 'Fira Mono';
+  src: url('../assets/fonts/FiraMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Fira Mono';
+  src: url('../assets/fonts/FiraMono-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Fira Mono';
+  src: url('../assets/fonts/FiraMono-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: block;
+}
+
 body {
   margin: 0;
   background: #000;
   overflow: hidden;
+  font-family: 'Fira Mono', monospace;
 }
 
 /* ── Custom scrollbar — vector monitor style ───────────────────────────────── */
@@ -62,7 +87,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font: bold 9px/1.4 monospace;
+  font: bold 9px/1.4 'Fira Mono', monospace;
   color: #00b8d4;
   letter-spacing: 0.05em;
   user-select: none;
@@ -101,13 +126,13 @@ body {
 }
 
 #compare-title {
-  font: bold 10px monospace;
+  font: bold 10px 'Fira Mono', monospace;
   color: #00b8d4;
   letter-spacing: 0.1em;
 }
 
 #compare-close {
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   color: #2a5070;
   cursor: pointer;
   user-select: none;
@@ -127,7 +152,7 @@ body {
 
 #compare-table {
   border-collapse: collapse;
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: #7aadcc;
   width: 100%;
   white-space: nowrap;
@@ -138,7 +163,7 @@ body {
   top: 0;
   background: #000d1a;
   color: #00b8d4;
-  font: bold 9px monospace;
+  font: bold 9px 'Fira Mono', monospace;
   letter-spacing: 0.06em;
   text-align: right;
   padding: 6px 10px 6px 6px;

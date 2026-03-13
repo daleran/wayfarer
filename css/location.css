@@ -24,7 +24,7 @@
   height: calc(100vh - 60px);
   z-index: 10;
   background: var(--loc-bg);
-  font-family: monospace;
+  font-family: 'Fira Mono', monospace;
   cursor: default;
   display: flex;
   flex-direction: column;
@@ -67,24 +67,24 @@
 }
 
 .loc-station-name {
-  font: bold 15px monospace;
+  font: bold 15px 'Fira Mono', monospace;
   color: var(--loc-cyan);
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
 .loc-station-faction {
-  font: 12px monospace;
+  font: 12px 'Fira Mono', monospace;
   letter-spacing: 0.1em;
 }
 
 .loc-standing-badge {
-  font: 12px monospace;
+  font: 12px 'Fira Mono', monospace;
   letter-spacing: 0.08em;
 }
 
 .loc-scrap-readout {
-  font: 12px monospace;
+  font: 12px 'Fira Mono', monospace;
   color: var(--loc-amber);
   letter-spacing: 0.08em;
   white-space: nowrap;
@@ -92,7 +92,7 @@
 }
 
 .loc-esc-hint {
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: var(--loc-very-dim);
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -107,7 +107,7 @@
 }
 
 .loc-flavor p {
-  font: 11px/1.7 monospace;
+  font: 11px/1.7 'Fira Mono', monospace;
   color: var(--loc-dim);
   margin: 0;
 }
@@ -141,7 +141,7 @@
 }
 
 .loc-area-card-name {
-  font: bold 12px monospace;
+  font: bold 12px 'Fira Mono', monospace;
   color: var(--loc-cyan);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -149,12 +149,12 @@
 }
 
 .loc-area-card-desc {
-  font: 11px/1.5 monospace;
+  font: 11px/1.5 'Fira Mono', monospace;
   color: var(--loc-dim);
 }
 
 .loc-area-card-lock {
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: var(--loc-red);
   margin-top: 6px;
   letter-spacing: 0.06em;
@@ -163,7 +163,7 @@
 /* ── Back button ────────────────────────────────────────────────────────────── */
 
 .loc-back-btn {
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   color: var(--loc-dim);
   cursor: pointer;
   border: 1px solid var(--loc-very-dim);
@@ -183,14 +183,14 @@
 /* ── Zone detail header ─────────────────────────────────────────────────────── */
 
 .loc-zone-title {
-  font: bold 13px monospace;
+  font: bold 13px 'Fira Mono', monospace;
   color: var(--loc-cyan);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .loc-station-sub {
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   color: var(--loc-dim);
 }
 
@@ -208,7 +208,7 @@
 }
 
 .loc-zone-flavor p {
-  font: 12px/1.7 monospace;
+  font: 12px/1.7 'Fira Mono', monospace;
   color: var(--loc-dim);
   margin: 0;
 }
@@ -245,7 +245,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--loc-dim);
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   letter-spacing: 0.06em;
   padding: 8px 10px;
   cursor: pointer;
@@ -316,14 +316,14 @@
 }
 
 .svc-stat-label {
-  font: 9px monospace;
+  font: 9px 'Fira Mono', monospace;
   color: var(--loc-very-dim);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .svc-stat-value {
-  font: 13px monospace;
+  font: 13px 'Fira Mono', monospace;
   color: var(--loc-amber);
 }
 
@@ -331,7 +331,7 @@
 .svc-stat-value.red   { color: var(--loc-red); }
 
 .svc-allied-note {
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: var(--loc-cyan);
   border: 1px solid rgba(0,255,204,0.25);
   padding: 3px 8px;
@@ -352,7 +352,7 @@
   background: transparent;
   border: 1px solid var(--loc-very-dim);
   color: var(--loc-dim);
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   letter-spacing: 0.07em;
   padding: 10px 14px;
   cursor: pointer;
@@ -378,7 +378,7 @@
 }
 
 .svc-status-ok {
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   color: var(--loc-green);
   letter-spacing: 0.07em;
   margin-bottom: 8px;
@@ -386,7 +386,7 @@
 }
 
 .svc-status-dim {
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
   color: var(--loc-dim);
   letter-spacing: 0.07em;
 }
@@ -417,7 +417,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: var(--loc-white);
   letter-spacing: 0.07em;
 }
@@ -425,7 +425,7 @@
 /* ── Trade ───────────────────────────────────────────────────────────────────── */
 
 .trade-shift-hint {
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: var(--loc-very-dim);
   margin-bottom: 12px;
   letter-spacing: 0.05em;
@@ -434,11 +434,11 @@
 .trade-table {
   width: 100%;
   border-collapse: collapse;
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
 }
 
 .trade-table th {
-  font: 9px monospace;
+  font: 9px 'Fira Mono', monospace;
   color: var(--loc-dim);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -462,7 +462,7 @@
   background: transparent;
   border: 1px solid var(--loc-very-dim);
   color: var(--loc-dim);
-  font: 9px monospace;
+  font: 9px 'Fira Mono', monospace;
   letter-spacing: 0.05em;
   padding: 3px 8px;
   cursor: pointer;
@@ -481,7 +481,7 @@
 /* ── Bounties ────────────────────────────────────────────────────────────────── */
 
 .bounty-section {
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: var(--loc-dim);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -499,16 +499,16 @@
 
 .bounty-info { flex: 1; }
 
-.bounty-title  { font: 10px monospace; color: var(--loc-cyan); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-.bounty-target { font: 11px monospace; color: var(--loc-amber); margin-bottom: 2px; }
-.bounty-reward { font: 11px monospace; color: var(--loc-green); }
-.bounty-status { font: 11px monospace; letter-spacing: 0.06em; }
+.bounty-title  { font: 10px 'Fira Mono', monospace; color: var(--loc-cyan); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.bounty-target { font: 11px 'Fira Mono', monospace; color: var(--loc-amber); margin-bottom: 2px; }
+.bounty-reward { font: 11px 'Fira Mono', monospace; color: var(--loc-green); }
+.bounty-status { font: 11px 'Fira Mono', monospace; letter-spacing: 0.06em; }
 
 .bounty-accept-btn {
   background: transparent;
   border: 1px solid rgba(0,255,204,0.35);
   color: var(--loc-cyan);
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   padding: 5px 12px;
   cursor: pointer;
   letter-spacing: 0.06em;
@@ -521,7 +521,7 @@
 /* ── Relations ───────────────────────────────────────────────────────────────── */
 
 .relations-title {
-  font: 10px monospace;
+  font: 10px 'Fira Mono', monospace;
   color: var(--loc-dim);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -534,7 +534,7 @@
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px solid rgba(0,255,204,0.05);
-  font: 11px monospace;
+  font: 11px 'Fira Mono', monospace;
 }
 
 .relations-faction { color: rgba(255,255,255,0.65); letter-spacing: 0.05em; }
@@ -542,7 +542,7 @@
 
 /* ── Intel / lore ────────────────────────────────────────────────────────────── */
 
-.intel-block { font: 12px/1.7 monospace; color: var(--loc-dim); }
+.intel-block { font: 12px/1.7 'Fira Mono', monospace; color: var(--loc-dim); }
 .intel-block p { margin: 0 0 2px; }
 .intel-block p.intel-heading { color: var(--loc-accent); opacity: 0.85; font-size: 10px; letter-spacing: 0.1em; margin-top: 14px; }
 .intel-block p.intel-blank  { height: 6px; }
@@ -557,5 +557,5 @@
 
 .reactor-card.overdue { border-color: rgba(255,0,170,0.45); }
 
-.reactor-name   { font: 12px monospace; color: var(--loc-cyan); letter-spacing: 0.08em; margin-bottom: 4px; }
-.reactor-status { font: 11px monospace; margin-bottom: 10px; }
+.reactor-name   { font: 12px 'Fira Mono', monospace; color: var(--loc-cyan); letter-spacing: 0.08em; margin-bottom: 4px; }
+.reactor-status { font: 11px 'Fira Mono', monospace; margin-bottom: 10px; }

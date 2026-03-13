@@ -3,6 +3,7 @@ import {
   BAR_TRACK, DIM_TEXT,
   CONDITION_FAULTY,
 } from '../rendering/colors.js';
+import { PROMPT, LABEL } from '../rendering/draw.js';
 
 const BMARGIN = 32;
 
@@ -10,7 +11,7 @@ export function renderPauseIcon(ctx, camera) {
   const flash = Math.sin(Date.now() * 0.006) > 0;
   if (!flash) return;
   ctx.save();
-  ctx.font = 'bold 13px monospace';
+  ctx.font = PROMPT.font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.fillStyle = AMBER;
@@ -19,12 +20,12 @@ export function renderPauseIcon(ctx, camera) {
 }
 
 export function renderDockPrompt(ctx, game) {
-  if (!game.nearbyStation || game.salvage.isSalvaging) return;
+  if (!game.nearbyStation || game.salvage.isSalvaging || game.isDocked) return;
   const { camera } = game;
   const alpha   = 0.6 + Math.sin(Date.now() * 0.004) * 0.4;
   const promptY = camera.height * 0.62;
   ctx.save();
-  ctx.font = '14px monospace';
+  ctx.font = PROMPT.font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.globalAlpha = alpha;
@@ -46,10 +47,10 @@ export function renderRepairPrompt(ctx, game) {
   const alpha   = 0.6 + Math.sin(Date.now() * 0.005) * 0.4;
   const promptY = camera.height * 0.62;
   ctx.save();
+  ctx.font = PROMPT.font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.globalAlpha = alpha;
-  ctx.font = '14px monospace';
   ctx.fillStyle = GREEN;
   const costs = [];
   if (armorNeeded)   costs.push('1 scrap/pt');
@@ -70,7 +71,7 @@ export function renderSalvageBar(ctx, game) {
   const y        = camera.height * 0.70;
 
   ctx.save();
-  ctx.font = 'bold 13px monospace';
+  ctx.font = PROMPT.font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.fillStyle = AMBER;
@@ -101,7 +102,7 @@ export function renderRepairBar(ctx, game) {
   const hasModules = game.repair.hasModulesToRepair(player);
   if (hasModules) {
     const modAccum = game.repair._moduleRepairAccum ?? 0;
-    ctx.font = 'bold 13px monospace';
+    ctx.font = PROMPT.font;
     ctx.fillStyle = CONDITION_FAULTY;
     ctx.fillText('MODULE REPAIR...', camera.width / 2, yOffset - 4);
 
@@ -118,7 +119,7 @@ export function renderRepairBar(ctx, game) {
 
   if (player.armorCurrent < player.armorMax) {
     const ratio = player.armorCurrent / player.armorMax;
-    ctx.font = 'bold 13px monospace';
+    ctx.font = PROMPT.font;
     ctx.fillStyle = GREEN;
     ctx.fillText('REPAIRING...', camera.width / 2, yOffset - 4);
 
@@ -137,7 +138,7 @@ export function renderAutoFireIndicator(ctx, game) {
   if (!game.autoFireMode) return;
   const pulse = 0.75 + Math.sin(Date.now() * 0.008) * 0.25;
   ctx.save();
-  ctx.font = 'bold 11px monospace';
+  ctx.font = PROMPT.font;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillStyle = RED;
@@ -187,7 +188,7 @@ export function renderDevControls(ctx, game) {
   ctx.lineWidth = 1;
   ctx.strokeRect(ox, oy, panelW, panelH);
 
-  ctx.font = '10px monospace';
+  ctx.font = LABEL.font;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
@@ -214,7 +215,7 @@ export function renderDevControls(ctx, game) {
 export function renderPanModeBanner(ctx, game) {
   const { camera } = game;
   ctx.save();
-  ctx.font = 'bold 13px monospace';
+  ctx.font = PROMPT.font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = CYAN;

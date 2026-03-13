@@ -186,13 +186,30 @@ A subtle fullscreen post-processing pass (or overlay) to sell the vector monitor
 
 ## Typography
 
-- **Font:** `monospace` (system default). If a custom font is ever added, it should be a clean pixel/terminal font (e.g., something like IBM VGA, Terminus, or a bitmap-style web font).
-- **Sizes:**
-  - Panel headers: 16-18px
-  - Labels and readouts: 12-14px
-  - Small/secondary text: 10-11px
-  - All caps for headers and labels. Mixed case for body text and descriptions.
+- **Font:** `'Fira Mono', monospace` (exported as `FONT` from `js/rendering/draw.js`). All canvas and DOM text uses this font family.
+- **All caps** for all canvas world-space text (station names, zone labels, prompts, flavor text). Mixed case only for DOM body text and descriptions.
 - **Spacing:** Generous. Instruments are meant to be read at a glance in tense situations. Don't cram text together.
+
+### Canvas Text Style System
+
+Standardized text styles are defined in `js/rendering/draw.js` as named constants. Each exports `{ font, alpha, size, weight }`. **Always use these constants** — never hardcode font strings in canvas rendering code. Color is always per-call.
+
+| Style | Size | Weight | Alpha | Usage |
+|---|---|---|---|---|
+| `TITLE` | 48px | normal | 0.7 | Major world landmarks — station names, planet/moon names |
+| `SUBTITLE` | 24px | normal | 0.5 | Zone labels, sub-areas, smaller station names |
+| `PROMPT` | 12px | bold | 1.0 | HUD prompts, progress bars, status indicators, action text |
+| `FLAVOR` | 12px | normal | 0.6 | On-map flavor text, derelict lore, ambient descriptions |
+| `LABEL` | 10px | normal | 0.65 | Weapon panels, throttle readout, ammo counts, dev controls |
+| `MINIMAP` | 10px | normal | 1.0 | Minimap station/entity names |
+
+**Usage with `text()` helper:** `text(ctx, 'THE COIL', x, y, color, { style: TITLE })` — the style preset provides size/weight/alpha defaults; individual opts can still override.
+
+**Usage with raw ctx:** `ctx.font = PROMPT.font; ctx.globalAlpha = PROMPT.alpha;` — use `.font` for pre-built font string, `.alpha` for the standard opacity.
+
+### DOM Text (CSS)
+
+DOM panels (station overlay, ship screen, bottom HUD) use CSS with `font-family: 'Fira Mono', monospace` and their own size/weight conventions defined in `css/location.css`, `css/ship.css`, and `css/hudBottom.css`. These are separate from the canvas text styles above.
 
 ---
 
@@ -258,9 +275,9 @@ Derelicts render two types of text directly in world-space (anchored to the hull
 
 Both are proximity-triggered — only rendered when `derelict.isNearby = true` (player within interaction range). No derelict name label; the lore text replaces it.
 
-1. **Lore paragraph** — Rendered to the **right** of the hull. `9px monospace`, `DIM_TEXT` at 40% alpha. No blinking. Multiple lines from `derelict.loreText[]` spaced 13px apart, vertically centered on the hull. Story unfolds as the player approaches — not in a HUD box.
+1. **Lore paragraph** — Rendered to the **right** of the hull. `FLAVOR` style (12px normal, `DIM_TEXT`, 0.6 alpha scaled by distance). No blinking. Multiple lines from `derelict.loreText[]` spaced 16px apart, vertically centered on the hull. Story unfolds as the player approaches — not in a HUD box.
 
-2. **`[ E ] SALVAGE` prompt** — Rendered **below** the hull. `11px monospace`, AMBER, blinking (sinusoidal alpha 0.55–0.90).
+2. **`[ E ] SALVAGE` prompt** — Rendered **below** the hull. `PROMPT` style (12px bold), AMBER, blinking (sinusoidal alpha 0.55–0.90).
 
 Set `isNearby` on the derelict entity from `game._checkDerelictInteraction()`; clear it when no longer nearby.
 
@@ -280,7 +297,7 @@ Stations are **not** sleek, symmetric, corporate structures. This is a broken un
    - Rivet-dot at patch center
    - Inner-surface ribs (faint horizontal lines across arms/modules)
 
-4. **Relation color signals station attitude — not faction.** Structure (hull plates, rects, brackets) is always WHITE at partial alpha. Accent elements — nav lights, pier lights, beacons, labels — use the `accentColor` getter driven by `station.relation`: AMBER = neutral (default for all factions), CYAN = friendly, RED = enemy. Fuel tanks are always AMBER regardless of relation (hazard marking, not faction).
+4. **Relation color signals station attitude — not faction.** Structure (hull plates, rects, brackets) is always WHITE at partial alpha. Accent elements — nav lights, pier lights, beacons, labels — use the `accentColor` getter driven by `station.relation`: AMBER = neutral (default for all factions), CYAN = friendly, RED = enemy. Fuel tanks are always AMBER regardless of relation (hazard marking, not faction). Stations expose `outlineColor` (bright accent for canvas labels and UI borders) and `fillColor` (dimmed 15% alpha version for UI panel backgrounds) — both derived from `accentColor`.
 
 5. **Docked ships add life.** Use small boxy ship silhouettes (rectangular hull + cockpit block + wing stubs) parked at jetty tips and inner piers. Vary rotation and scale. They should read as "in various states of disassembly/assembly" — not all perfectly aligned.
 
@@ -288,7 +305,7 @@ Stations are **not** sleek, symmetric, corporate structures. This is a broken un
 
 7. **Approach beacon at the harbor mouth.** Two beacons at the harbor entrance corners, pulsing together. A faint trapezoidal gradient beam pointing away from the mouth. Beacon color = `accentColor`.
 
-8. **Label below the structure** in `accentColor`, small bold monospace.
+8. **Label below the structure** in `outlineColor`, SUBTITLE style (24px, uppercase).
 
 **Anti-patterns to avoid:**
 - No hexagons

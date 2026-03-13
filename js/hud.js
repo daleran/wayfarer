@@ -1,5 +1,5 @@
 import { renderMinimap } from './hud/minimap.js';
-import { renderWeaponPanels } from './hud/shipAnchored.js';
+import { renderThrottle, renderCursorWeapons } from './hud/shipAnchored.js';
 import {
   renderPauseIcon, renderDockPrompt, renderRepairPrompt,
   renderSalvageBar, renderRepairBar, renderAutoFireIndicator,
@@ -60,7 +60,8 @@ export class HUD {
     if (!player) return;
 
     renderMinimap(ctx, game);
-    renderWeaponPanels(ctx, game);
+    renderThrottle(ctx, game);
+    renderCursorWeapons(ctx, game);
 
     // Bottom strip is DOM-based — update it
     this._updateBottomStrip(game);
@@ -95,6 +96,17 @@ export class HUD {
     if (!this._bottomEl) return;
     const r = this._bottomRefs;
     const SEG_COUNT = 10;
+
+    // Weapon info row above the grid
+    const weaponRow = document.createElement('div');
+    weaponRow.className = 'hud-weapon-row';
+    r.priWeaponEl = document.createElement('span');
+    r.priWeaponEl.className = 'hud-weapon-info pri';
+    r.secWeaponEl = document.createElement('span');
+    r.secWeaponEl.className = 'hud-weapon-info sec';
+    weaponRow.appendChild(r.priWeaponEl);
+    weaponRow.appendChild(r.secWeaponEl);
+    this._bottomEl.appendChild(weaponRow);
 
     // 3-column × 2-row grid
     // Col 1: ARMOR / HULL   Col 2: THROTTLE / FUEL   Col 3: PWR+CARGO / SCRAP
@@ -147,6 +159,9 @@ export class HUD {
       r.throttlePips.push(pip);
     }
     throttleGroup.appendChild(throttlePips);
+    r.speedEl = document.createElement('span');
+    r.speedEl.className = 'hud-speed';
+    throttleGroup.appendChild(r.speedEl);
     grid.appendChild(throttleGroup);
 
     // ── Col 3, Row 1: PWR + SCRAP ──────────────────────────────────────────
@@ -261,6 +276,15 @@ export class HUD {
     const p = game.player;
     if (!p) return;
 
+    // Weapon info
+    const GUIDANCE = { dumbfire: 'DUMB', wire: 'WIRE', heat: 'HEAT' };
+    const primaries   = p._primaryWeapons;
+    const secondaries = p._secondaryWeapons;
+    const activePri   = primaries[p.primaryWeaponIdx];
+    const activeSec   = secondaries[p.secondaryWeaponIdx];
+    r.priWeaponEl.textContent = activePri ? _weaponInfoText(activePri, GUIDANCE) : '';
+    r.secWeaponEl.textContent = activeSec ? _weaponInfoText(activeSec, GUIDANCE) : '';
+
     // Armor pips
     const arcs = p.armorArcs;
     const arcsMax = p.armorArcsMax;
@@ -287,6 +311,9 @@ export class HUD {
     for (let i = 0; i < r.throttlePips.length; i++) {
       r.throttlePips[i].className = i === current ? 'hud-throttle-pip active' : 'hud-throttle-pip';
     }
+
+    // Speed
+    r.speedEl.textContent = `${Math.floor(p.speed)} U/S`;
 
     // Hull
     const hullRatio = p.hullMax > 0 ? p.hullCurrent / p.hullMax : 0;
@@ -358,4 +385,18 @@ export class HUD {
   hideTooltip() {
     if (this._tooltip) this._tooltip.classList.remove('visible');
   }
+}
+
+function _weaponInfoText(weapon, guidanceLabels) {
+  const rawName = weapon.displayName || weapon.constructor.name.toUpperCase();
+  const name = rawName.replace(/\s*\[.*?\]$/, '').trim();
+
+  let mode = '';
+  if (weapon.currentAmmoMode)   mode = weapon.currentAmmoMode.toUpperCase();
+  else if (weapon.guidanceMode) mode = (guidanceLabels[weapon.guidanceMode] ?? weapon.guidanceMode).toUpperCase();
+  else if (weapon.isBeam)       mode = 'BEAM';
+
+  const modePart = mode ? `  ${mode}` : '';
+  const ammoPart = weapon.ammo !== undefined ? `  ${weapon.ammo}/${weapon.magSize || '∞'}` : '';
+  return `${name}${modePart}${ammoPart}`;
 }

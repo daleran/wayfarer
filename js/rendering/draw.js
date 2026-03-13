@@ -8,6 +8,35 @@
 
 const TWO_PI = Math.PI * 2;
 
+/** Project font — use in all ctx.font assignments and DOM styles. */
+export const FONT = "'Fira Mono', monospace";
+
+// ── Standardized text styles ────────────────────────────────────────────────
+// Semantic presets for canvas text. Each exports { font, alpha, size, weight }.
+// Color is always per-call. Use with text() via `style:` or directly on ctx.
+
+function _style(size, weight, alpha) {
+  return { font: `${weight} ${size}px ${FONT}`, alpha, size, weight };
+}
+
+/** Major world landmarks — station names, planet names */
+export const TITLE    = _style(48, 'normal', 0.7);
+
+/** Zone labels, sub-areas, smaller station names */
+export const SUBTITLE = _style(24, 'normal', 0.5);
+
+/** HUD prompts, progress bars, status indicators, action text */
+export const PROMPT   = _style(12, 'bold', 1);
+
+/** On-map flavor text, derelict lore, ambient descriptions */
+export const FLAVOR   = _style(12, 'normal', 0.6);
+
+/** Weapon panels, throttle readout, ammo counts, cursor indicators */
+export const LABEL    = _style(10, 'normal', 0.65);
+
+/** Minimap station/entity names */
+export const MINIMAP  = _style(10, 'normal', 1);
+
 // ── Immediate utilities ─────────────────────────────────────────────────────
 
 /** Trace a closed polygon path (no fill/stroke). */
@@ -138,11 +167,18 @@ export function trail(ctx, screenPoints, color, maxAlpha = 0.6, maxWidth = 2.5) 
 
 /** World-space text.
  *  Coordinates are in whatever space ctx is currently transformed to.
- *  Default font is monospace to match project aesthetic. */
-export function text(ctx, str, x, y, color, {
-  size = 12, weight = 'normal', align = 'center', baseline = 'middle',
-  alpha = 1, font = 'monospace',
-} = {}) {
+ *  Default font is monospace to match project aesthetic.
+ *  Accepts a `style` preset (TITLE/SUBTITLE/PROMPT/FLAVOR/LABEL/MINIMAP) — individual opts override it. */
+export function text(ctx, str, x, y, color, opts = {}) {
+  const {
+    style,
+    size = style?.size ?? 12,
+    weight = style?.weight ?? 'normal',
+    align = 'center',
+    baseline = 'middle',
+    alpha = style?.alpha ?? 1,
+    font = FONT,
+  } = opts;
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
   ctx.font = `${weight} ${size}px ${font}`;
@@ -542,7 +578,7 @@ export class DrawBatch {
     this._getGroup('ring', stroke, lineWidth, alpha).ops.push({ x, y, r });
   }
 
-  text(str, x, y, color, { size = 12, weight = 'normal', align = 'center', baseline = 'middle', font = 'monospace', alpha = 1 } = {}) {
+  text(str, x, y, color, { size = 12, weight = 'normal', align = 'center', baseline = 'middle', font = FONT, alpha = 1 } = {}) {
     const fontStr = `${weight} ${size}px ${font}`;
     const key = `text|${color}|${fontStr}|${align}|${baseline}|${_alphaKey(alpha)}`;
     let group = this._groups.get(key);

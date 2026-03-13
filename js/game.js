@@ -156,6 +156,8 @@ export class GameManager {
   update(dt) {
     input.tick();
     this.totalTime += dt;
+    this.camera.applyWheel(input.wheelDelta);
+    this.camera.updateZoom(dt);
 
     if (this.isDocked) {
       // Ship screen toggle available while docked
@@ -168,7 +170,6 @@ export class GameManager {
       this.stationScreen.update(dt, this);
       this.stationScreen.handleInput(input, this);
       if (!this.stationScreen.visible) this.isDocked = false;
-      return;
     }
 
     if (this.salvage.isSalvaging) {
@@ -184,14 +185,11 @@ export class GameManager {
 
     this._processInput(dt);
 
-    // Ship screen pauses simulation (but still ticks its own state + keeps rendering)
-    if (this.shipScreen.visible) {
+    if (this.shipScreen.visible && !this.isDocked) {
       this.shipScreen.update(dt, this);
       if (!this._shipScreenJustToggled) {
         this.shipScreen.handleInput(input, this);
       }
-      this._shipScreenJustToggled = false;
-      return;
     }
     this._shipScreenJustToggled = false;
 
@@ -291,6 +289,7 @@ export class GameManager {
     if (this.player && this.player.active && !this.isPanMode) {
       this.camera.follow(this.player, dt);
     }
+
   }
 
   _updateModules(dt) {

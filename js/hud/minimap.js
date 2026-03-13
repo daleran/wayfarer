@@ -7,6 +7,7 @@ import {
   MINIMAP_ENEMY, MINIMAP_PLAYER,
   MINIMAP_LOOT, MINIMAP_DERELICT,
 } from '../rendering/colors.js';
+import { MINIMAP as MINIMAP_TEXT } from '../rendering/draw.js';
 
 const MM_MARGIN = 24;
 const MM_PANEL  = 225;
@@ -74,7 +75,7 @@ export function renderMinimap(ctx, game) {
       ctx.lineWidth = 1;
       ctx.strokeRect(mx - 4, my - 4, 8, 8);
       ctx.globalAlpha = 1;
-      ctx.font = '8px monospace';
+      ctx.font = MINIMAP_TEXT.font;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = color;

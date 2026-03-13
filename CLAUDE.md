@@ -164,6 +164,7 @@ When the user says:
 - **R**: Toggle field armor/module repair (must be stopped)
 - **E**: Dock at nearby station / begin salvage on nearby derelict
 - **I**: Toggle Ship Status screen (paper doll, modules, stats, cargo)
+- **Scroll wheel**: Zoom in/out (0.2–1.5×, smooth lerp)
 - **Esc**: Cancel salvage / close station screen / close ship screen
 
 ## Rules & Conventions
