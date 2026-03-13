@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CD**
+**Next available code: CF**
 
 ---
 
@@ -19,7 +19,7 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | AX | Named Bosses | AI / Enemies |
 | BA | Story Threads & Trigger System | Narrative |
 | BB | Mission & Bounty Board | Gameplay |
-| BC | Full Map View | UI |
+| BC | Full Map View & Navigation | UI |
 | BD | Procedural Audio | Audio |
 | BE | Named NPC Ships & Persistent World Characters | AI / World |
 | BF | Cloud Save System | Platform |
@@ -39,6 +39,8 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BY | Expanded Debug Overlay | Dev Tools |
 | BZ | Systemic Narrative Engine | Narrative |
+| CD | Station Interaction Overhaul | UI / Gameplay |
+| CE | Visual Module System | Ship Systems / Modules |
 
 ---
 
@@ -374,7 +376,7 @@ In The Coil's Slums, the player can eventually purchase their own home — a con
 
 ## UI
 
-### BC: Full Map View
+### BC: Full Map View & Navigation
 
 Toggle with M key. Shows the entire starmap zoomed out:
 - All discovered settlements, moons, and POIs as icons (undiscovered locations hidden)
@@ -384,6 +386,13 @@ Toggle with M key. Shows the entire starmap zoomed out:
 - Known hidden route connections as dotted lines
 - In nebulae: map range reduced, staticky/noisy appearance
 - Near Concord ruins: phantom contacts, faint static
+
+**Course Plotting & Navigation:**
+- Click a destination on the map to set a course — draws a heading line and shows distance
+- HUD direction indicator and distance readout while navigating (visible in normal flight, not just map view)
+- Fuel range overlay: a circle or boundary showing how far the player can travel on the current tank
+- Minimap expands into the full system map (M key) rather than being a separate view — same data, zoomed out
+- Estimated travel time at current throttle
 
 ---
 
@@ -461,6 +470,11 @@ Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-le
 
 Two large-slot ship modules that unlock advanced field operations.
 
+**Derelicts Are Ships (Architecture):**
+- Derelicts are not a separate entity type — they are Ships with no living crew. Same hull, same modules, same rendering. An enemy whose crew is killed mid-combat becomes a derelict in place, retaining its hull shape, installed modules, and remaining armor/hull values.
+- Current standalone `Derelict` class is replaced: all derelicts in the world are spawned as Ship instances (uncrewed, engines off, drifting). Pre-placed "ancient" derelicts use the same Ship class with appropriate ship templates and heavy condition degradation.
+- This unifies salvage, combat, and the world model — what you fight is what you loot.
+
 **Salvage Bay:**
 - Without it, defeating a ship yields only scrap, fuel, and ammo
 - With it, the player can extract intact weapon and ship modules from derelicts
@@ -520,6 +534,73 @@ All audio generated via Web Audio API — no asset files required.
 - **Explosions** — noise burst with low-frequency rumble, scaled by blast radius
 - **Ambient background** — very low filtered noise for deep-space atmosphere
 - **UI sounds** — click/confirm tones on dock, purchase, and menu actions
+
+---
+
+## Station & Module Overhauls
+
+### CD: Station Interaction Overhaul
+
+Stations become navigable places rather than menu screens. Inspired by *Journey* and classic point-and-click adventure flow — each station is a series of named locations the player moves between, with flavor text grounding each area.
+
+**Core Model:**
+- Docking at a station enters a **location-based interaction mode** — the player navigates between named districts/areas within the station
+- Camera jumps to the station's world position on dock; each district has its own world-space anchor point around the station
+- Station areas are not abstract menus — they are places with positions, flavor text, and distinct service sets
+- Flavor text appears near the station name, near each zone title, and as ambient world-space text near the station exterior
+
+**Interaction Flow (The Coil example):**
+- Dock at The Coil → start in **The Salvage Yard** (default entry for a scavenger hub)
+  - Services: Repair, Refuel, Purchase Used Ship Parts, Purchase Ship
+- Navigate to **The Central Market**
+  - Services: Buy food/supplies, browse contraband, visit The Oddities Store
+- Navigate to **The Slums**
+  - Services: Meet NPCs, visit the neighborhood bar, visit player housing (see BW)
+- Navigate to **The Palace** (reputation-gated)
+  - Services: High-tier dealings, Salvage Lord interactions
+
+**Implementation Notes:**
+- Each station defines an array of `districts[]` with `{ id, name, flavorText, services[], worldOffset }` — the district's world position is the station's position plus the offset
+- District navigation via a sidebar or bottom bar showing available areas; click to move between them
+- Transition between districts can be instant or include a brief camera pan
+- Smaller stations (Kell's Stop, Ashveil Anchorage) may have only 1–2 districts
+- Cross-references: AS (The Coil district definitions), BW (Slums housing), AR (Black Market at The Coil)
+
+---
+
+### CE: Visual Module System
+
+All ship modules are physically drawn on the ship hull. Ships define mount points where modules attach. Module damage is visible, positional, and tied to where the ship is hit.
+
+**Visual Mounting:**
+- Each ship class defines named **mount points** — positions on the hull where specific slot types (large/small, weapon/utility/engine) can be placed
+- Installed modules are rendered at their mount point on the ship canvas — different modules have different visual appearances (e.g., different engine types produce different exhaust shapes, weapons have distinct barrel silhouettes)
+- Module condition is displayed via color on the ship canvas: Green (good), Amber (worn), Orange (damaged), Red (critical/destroyed)
+
+**Positional Damage:**
+- When a ship takes a hit, the impact location on the hull determines which mounted module is at risk of taking damage — not random selection
+- Front-mounted modules take damage from frontal hits, aft modules from rear hits, etc.
+- Replaces the current random hull-breach system with spatially coherent module damage
+
+**Unified Module Slots:**
+- Weapons and non-weapon modules share a unified slot system — a weapon IS a module mounted to a hardpoint
+- Slots are typed by size (Large / Small) and by mount type (Weapon, Utility, Engine, Reactor)
+- Ship inventory screen has the player place modules directly onto the ship's mount points — drag-and-drop onto the paper-doll hull view
+
+**Module Tooltips:**
+- Tooltip includes a small canvas rendering of the module's visual appearance alongside its stats
+- Condition bar and current stats shown in tooltip
+
+**Map & HUD Integration:**
+- Armor and hull values are displayed near ships on the world map (not just in HUD)
+- Minimap ship icons reflect approximate hull condition via color
+
+**Wear & Tear:**
+- Low-quality modules (worn/faulty condition) have a random chance of degrading further during regular use — not just from combat damage
+- Cross-references: AN (module catalog), BG (affixes modify visual appearance or add particle effects), AO (thrust-to-weight uses module weight from mount data), BN (salvaging a derelict-ship shows its mounted modules visually)
+
+**Initial Module Set:**
+- Build out the full initial set of implementable modules from AN, plus engine variants, reactor variants, and armor plating as mountable modules rather than abstract stats
 
 ---
 
