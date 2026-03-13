@@ -3,12 +3,6 @@ import { AI_TEMPLATES } from '@data/compiledData.js';
 import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
 import { engineGlow } from '@/rendering/draw.js';
 
-const SPEED_MULT = 2.0;   // ~196 u/s — extremely fast
-const ACCEL_MULT = 2.2;
-const TURN_MULT  = 2.2;
-const HULL_MULT  = 0.15;  // 30 HP — very fragile
-const ARMOR_ALL  = 0.1;   // 10 per arc
-
 const LATCH_RANGE          = 35;   // px
 const DRAIN_INTERVAL       = 0.25; // seconds per tick
 const ARMOR_DRAIN_PER_TICK = 2.6;  // ~10.4/sec
@@ -40,11 +34,6 @@ export class SnatcHerDrone extends MaverickCourier {
       'A Concord Remnant autonomous intercept unit. No weapons, no crew, ' +
       'no hesitation. Designed to latch onto a hull and drain it from the outside. ' +
       'Fragile under fire — priority target when latched.';
-
-    this._initStats({
-      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
-      hull: HULL_MULT, armorFront: ARMOR_ALL, armorSide: ARMOR_ALL, armorAft: ARMOR_ALL,
-    });
 
     this.weapons = [];  // no weapons — latch mechanic only
 

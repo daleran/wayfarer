@@ -2,15 +2,6 @@ import { GarrisonFrigate } from '@/ships/classes/garrisonFrigate.js';
 import { OnyxDriveUnit } from '@/modules/shipModule.js';
 import { AI_TEMPLATES } from '@data/compiledData.js';
 
-const SPEED_MULT = 0.5;   // ~42 u/s — steady patrol speed
-const ACCEL_MULT = 0.6;
-const TURN_MULT  = 0.6;
-const HULL_MULT  = 2.0;   // 400 hp — reinforced patrol vessel
-
-const ARMOR_FRONT = 2.5;
-const ARMOR_SIDE  = 2.0;
-const ARMOR_AFT   = 1.5;
-
 export class MilitiaPatrol extends GarrisonFrigate {
   constructor(x, y) {
     super(x, y);
@@ -26,11 +17,6 @@ export class MilitiaPatrol extends GarrisonFrigate {
       'scavenger conversions. Steady, professional, and territorial. Strength: ' +
       'heavy armor, commands respect on sight. Weakness: follows patrol routes ' +
       'predictably; slow response to anything outside its zone.';
-
-    this._initStats({
-      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
-      hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
-    });
 
     this.moduleSlots = [new OnyxDriveUnit()];
     this._applyModules();

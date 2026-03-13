@@ -5,15 +5,6 @@ import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
 import { engineGlow } from '@/rendering/draw.js';
 import { SnatcHerDrone } from './snatcHerDrone.js';
 
-const SPEED_MULT = 0.45;
-const ACCEL_MULT = 0.5;
-const TURN_MULT  = 0.6;
-const HULL_MULT  = 2.0;   // 400 HP
-
-const ARMOR_FRONT = 2.0;  // 200
-const ARMOR_SIDE  = 1.6;  // 160
-const ARMOR_AFT   = 1.2;  // 120
-
 const DRONE_MAX          = 3;
 const DRONE_COOLDOWN     = 12;  // seconds
 const DRONE_SPAWN_OFFSET = 80;  // px lateral offset
@@ -58,11 +49,6 @@ export class DroneControlFrigate extends GarrisonFrigate {
       'It does not rush. It does not retreat. It deploys and waits. ' +
       'Strength: relentless drone harassment, fortress-grade frontal armor. ' +
       'Weakness: drones are fragile; destroy them before focusing the hull.';
-
-    this._initStats({
-      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
-      hull: HULL_MULT, armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
-    });
 
     this.moduleSlots = [new OnyxDriveUnit(), new LanceModuleSmall(), null];
     this._applyModules();
