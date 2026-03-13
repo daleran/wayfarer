@@ -63,7 +63,7 @@ export class ShipScreen {
   handleInput(input, game) {
     this._game = game;
     if (!this.visible) return;
-    if (input.wasJustPressed('escape') || input.wasJustPressed('i')) {
+    if (input.wasJustPressed('escape') || input.wasJustPressed('i') || input.wasJustPressed('tab')) {
       this.close();
     }
   }
@@ -195,7 +195,7 @@ export class ShipScreen {
     const net = totalOut - totalDraw;
     const powerEl = document.createElement('span');
     powerEl.className = 'ship-modules-power';
-    powerEl.style.color = net >= 0 ? '#00ff66' : '#ff4444';
+    powerEl.style.color = net >= 0 ? 'var(--p-green)' : 'var(--p-red)';
     powerEl.textContent = `${net >= 0 ? '+' : ''}${net}W`;
     header.appendChild(powerEl);
     section.appendChild(header);
@@ -219,7 +219,7 @@ export class ShipScreen {
 
         const text = document.createElement('div');
         text.className = 'ship-module-name';
-        text.style.color = '#00ff66';
+        text.style.color = 'var(--p-green)';
         text.textContent = 'INSTALLING...';
         text.style.position = 'relative';
         text.style.zIndex = '1';
@@ -320,7 +320,8 @@ export class ShipScreen {
     for (const f of ['all', 'modules', 'commodities', 'ammo']) {
       const btn = document.createElement('button');
       btn.className = `ship-cargo-filter${this._cargoFilter === f ? ' active' : ''}`;
-      btn.textContent = f.toUpperCase();
+      const filterGlyphs = { modules: '□ ', commodities: '⬡ ', ammo: '◇ ' };
+      btn.textContent = (filterGlyphs[f] || '') + f.toUpperCase();
       btn.addEventListener('click', () => {
         this._cargoFilter = f;
         this._render();
@@ -363,7 +364,7 @@ export class ShipScreen {
 
         const nameEl = document.createElement('span');
         nameEl.className = 'ship-cargo-item-name module-name';
-        nameEl.textContent = m.displayName;
+        nameEl.textContent = '□ ' + m.displayName;
         item.appendChild(nameEl);
 
         const right = document.createElement('span');
@@ -432,7 +433,8 @@ export class ShipScreen {
     const nameEl = document.createElement('span');
     const nameCls = type === 'scrap' ? 'scrap' : type === 'weapon' ? 'weapon-name' : type === 'ammo' ? 'ammo-name' : '';
     nameEl.className = `ship-cargo-item-name${nameCls ? ' ' + nameCls : ''}`;
-    nameEl.textContent = name;
+    const glyph = (type === 'ammo') ? '◇ ' : (type === 'weapon') ? '□ ' : '⬡ ';
+    nameEl.textContent = glyph + name;
     item.appendChild(nameEl);
 
     const valEl = document.createElement('span');

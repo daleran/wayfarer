@@ -3,7 +3,7 @@ import { G100ClassHauler } from '../ships/classes/g100Hauler.js';
 import { MaverickCourier } from '../ships/classes/maverickCourier.js';
 import { GarrisonFrigate } from '../ships/classes/garrisonFrigate.js';
 import { OnyxClassTug } from '../ships/classes/onyxTug.js';
-import { AMBER, DIM_TEXT } from '../rendering/colors.js';
+import { AMBER, RED, DIM_TEXT } from '../rendering/colors.js';
 import { FLAVOR, PROMPT } from '../rendering/draw.js';
 
 const INTERACTION_RADIUS = 120;
@@ -37,6 +37,7 @@ export class Derelict extends Entity {
     this.derelictClass = 'hauler';
     this.loreText = [];
     this.isNearby = false;
+    this.canSalvage = false;
     this._loreAlpha = 0;
     this.rotation = (Math.random() - 0.5) * 1.2;
 
@@ -75,7 +76,7 @@ export class Derelict extends Entity {
       ctx.restore();
     }
 
-    // "Press E" prompt — blinking, only at interaction range
+    // "Press E" / "Stop to salvage" prompt — blinking, only at interaction range
     if (this.isNearby) {
       const alpha = 0.55 + Math.sin(Date.now() * 0.004) * 0.35;
       const promptY = screen.y + (this.getBounds().radius + 14) * camera.zoom;
@@ -83,9 +84,14 @@ export class Derelict extends Entity {
       ctx.font = PROMPT.font;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillStyle = AMBER;
       ctx.globalAlpha = alpha;
-      ctx.fillText('[ E ] SALVAGE', screen.x, promptY);
+      if (this.canSalvage) {
+        ctx.fillStyle = AMBER;
+        ctx.fillText('[ E ] SALVAGE', screen.x, promptY);
+      } else {
+        ctx.fillStyle = RED;
+        ctx.fillText('STOP TO SALVAGE', screen.x, promptY);
+      }
       ctx.restore();
     }
   }

@@ -21,16 +21,22 @@ export function renderPauseIcon(ctx, camera) {
 
 export function renderDockPrompt(ctx, game) {
   if (!game.nearbyStation || game.salvage.isSalvaging || game.isDocked) return;
-  const { camera } = game;
+  const { player, camera } = game;
   const alpha   = 0.6 + Math.sin(Date.now() * 0.004) * 0.4;
   const promptY = camera.height * 0.62;
+  const stopped = player.throttleLevel === 0 && player.speed < 1;
   ctx.save();
   ctx.font = PROMPT.font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = GREEN;
-  ctx.fillText(`Press E to dock at ${game.nearbyStation.name}`, camera.width / 2, promptY);
+  if (stopped) {
+    ctx.fillStyle = GREEN;
+    ctx.fillText(`Press E to dock at ${game.nearbyStation.name}`, camera.width / 2, promptY);
+  } else {
+    ctx.fillStyle = RED;
+    ctx.fillText('STOP TO DOCK', camera.width / 2, promptY);
+  }
   ctx.globalAlpha = 1;
   ctx.restore();
 }
@@ -38,7 +44,7 @@ export function renderDockPrompt(ctx, game) {
 export function renderRepairPrompt(ctx, game) {
   const { player, camera } = game;
   if (game.salvage.isSalvaging || game.repair.isRepairing || game.isDocked) return;
-  if (!player || player.throttleLevel !== 0) return;
+  if (!player || player.throttleLevel !== 0 || player.speed >= 1) return;
 
   const armorNeeded   = player.armorCurrent < player.armorMax;
   const modulesNeeded = game.repair.hasModulesToRepair(player);

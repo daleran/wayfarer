@@ -161,7 +161,7 @@ export class GameManager {
 
     if (this.isDocked) {
       // Ship screen toggle available while docked
-      const justToggledShip = input.wasJustPressed('i');
+      const justToggledShip = input.wasJustPressed('i') || input.wasJustPressed('tab');
       if (justToggledShip) this.shipScreen.toggle(this);
       if (this.shipScreen.visible && !justToggledShip) {
         this.shipScreen.update(dt, this);
@@ -170,6 +170,7 @@ export class GameManager {
       this.stationScreen.update(dt, this);
       this.stationScreen.handleInput(input, this);
       if (!this.stationScreen.visible) this.isDocked = false;
+      return;
     }
 
     if (this.salvage.isSalvaging) {
@@ -359,7 +360,7 @@ export class GameManager {
 
     // Ship screen toggle — processed before everything else
     // Set flag so handleInput doesn't close it on the same tick
-    if (input.wasJustPressed('i')) {
+    if (input.wasJustPressed('i') || input.wasJustPressed('tab')) {
       this.shipScreen.toggle(this);
       this._shipScreenJustToggled = true;
     }
@@ -391,7 +392,7 @@ export class GameManager {
     if (input.wasJustPressed('r')) this.weaponSys.manualReload(this.player, this.inventory.ammo);
 
     if (this.repair.isRepairing) {
-      const stillValid = p.throttleLevel === 0 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.inventory.scrap > 0;
+      const stillValid = p.throttleLevel === 0 && p.speed < 1 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.inventory.scrap > 0;
       if (!stillValid || input.wasJustPressed('escape')) {
         this.repair.cancel();
       } else if (input.wasJustPressed('r')) {
@@ -401,7 +402,7 @@ export class GameManager {
       return;
     }
 
-    const canRepair = p.throttleLevel === 0 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.inventory.scrap > 0;
+    const canRepair = p.throttleLevel === 0 && p.speed < 1 && (p.armorCurrent < p.armorMax || this.repair.hasModulesToRepair(p)) && this.inventory.scrap > 0;
     if (input.wasJustPressed('r') && canRepair) { this.repair.start(); return; }
 
     if (input.wasJustPressed('f')) this.autoFireMode = !this.autoFireMode;

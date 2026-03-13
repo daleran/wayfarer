@@ -32,7 +32,9 @@ export class InteractionSystem {
       }
     }
 
-    if (this.nearbyDerelict && input.wasJustPressed('e')) salvage.start(this.nearbyDerelict, player);
+    const stopped = player.throttleLevel === 0 && player.speed < 1;
+    if (this.nearbyDerelict) this.nearbyDerelict.canSalvage = stopped;
+    if (this.nearbyDerelict && stopped && input.wasJustPressed('e')) salvage.start(this.nearbyDerelict, player);
   }
 
   checkDocking(entities, player, input, { reputation, hud, stationScreen, bounty, game }) {
@@ -44,7 +46,7 @@ export class InteractionSystem {
         break;
       }
     }
-    if (this.nearbyStation && input.wasJustPressed('e')) {
+    if (this.nearbyStation && input.wasJustPressed('e') && player.throttleLevel === 0 && player.speed < 1) {
       if (reputation.isHostile(this.nearbyStation.reputationFaction)) {
         hud.addPickupText('DOCKING REFUSED', this.nearbyStation.x, this.nearbyStation.y, 'hostile');
         return { isDocked: false };
@@ -85,7 +87,7 @@ export class InteractionSystem {
         } else if (entity.lootType === 'ammo' && entity.ammoType) {
           game.ammo[entity.ammoType] = (game.ammo[entity.ammoType] || 0) + entity.amount;
           entity.active = false;
-          game.hud.addPickupText(entity.label, entity.x, entity.y, 'module');
+          game.hud.addPickupText(entity.label, entity.x, entity.y, 'ammo');
         } else {
           if (game.totalCargoUsed < game.totalCargoCapacity) {
             game.cargo[entity.lootType] = (game.cargo[entity.lootType] || 0) + entity.amount;
