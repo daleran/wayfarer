@@ -218,7 +218,7 @@ class AshveilStation extends Station {
     // Docking lights — red/green pair at the docking collar
     this._renderDockingLights(ctx, 0, 70, 18);
 
-    this._renderNameLabel(ctx, camera, 90, 'bold 11px monospace', 0.8);
+    this._renderNameLabel(ctx, camera, 90);
 
     ctx.restore();
   }

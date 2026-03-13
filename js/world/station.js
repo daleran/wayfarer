@@ -1,5 +1,6 @@
 import { Entity } from '../entities/entity.js';
 import { CYAN, AMBER, RED, GREEN, WHITE } from '../rendering/colors.js';
+import { SUBTITLE } from '../rendering/draw.js';
 import { FACTION_MAP } from '../systems/reputation.js';
 
 export class Station extends Entity {
@@ -26,6 +27,16 @@ export class Station extends Entity {
     if (this.relation === 'friendly') return CYAN;
     if (this.relation === 'enemy')    return RED;
     return AMBER;
+  }
+
+  // Outline color — bright accent, used for canvas labels and UI borders.
+  get outlineColor() { return this.accentColor; }
+
+  // Fill color — dimmed version of accent, used for UI panel backgrounds.
+  get fillColor() {
+    if (this.relation === 'friendly') return 'rgba(0,255,204,0.15)';
+    if (this.relation === 'enemy')    return 'rgba(255,68,68,0.15)';
+    return 'rgba(255,170,0,0.15)';
   }
 
   update(dt) {
@@ -146,15 +157,15 @@ export class Station extends Entity {
 
   // Draw station name below the icon. Call inside a render() block after ctx.scale(z, z).
   // Callers must not have already unscaled — this method handles the 1/z rescale.
-  _renderNameLabel(ctx, camera, yOffset = 50, font = '10px monospace', alpha = 0.7) {
+  _renderNameLabel(ctx, camera, yOffset = 50) {
     const z = camera.zoom;
     ctx.scale(1 / z, 1 / z);
-    ctx.font = font;
+    ctx.font = SUBTITLE.font;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillStyle = this.accentColor;
-    ctx.globalAlpha = alpha;
-    ctx.fillText(this.name, 0, yOffset * z);
+    ctx.fillStyle = this.outlineColor;
+    ctx.globalAlpha = SUBTITLE.alpha;
+    ctx.fillText(this.name.toUpperCase(), 0, yOffset * z);
     ctx.globalAlpha = 1;
   }
 

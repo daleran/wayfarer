@@ -68,6 +68,7 @@ function _doHostile(ship, player, entities, dt, ai) {
 
   ship.aiStatus = 'aggro';
   switch (ai.combatBehavior) {
+    case 'latch':    _doLatch(ship, player, dist);                  break;
     case 'kiter':    _doKiter(ship, player, entities, dist, ai);    break;
     case 'stalker':  _doStalker(ship, player, entities, dist, ai);  break;
     case 'standoff': _doStandoff(ship, player, entities, dist, ai); break;
@@ -127,6 +128,29 @@ function _doShielding(ship, player, entities, dist, ai) {
   ship.throttleLevel = orbitDist > ai.orbitHoldThreshold ? 4 : 2;
 
   if (dist < ai.fireRange) _doLeadFire(ship, player, entities, dist);
+}
+
+function _doLatch(ship, player, _dist) {
+  // Charge at the player with evasive zigzag
+  if (ship.ai._latchZigTimer === undefined) {
+    ship.ai._latchZigTimer = 0;
+    ship.ai._latchZigDir = Math.random() < 0.5 ? 1 : -1;
+  }
+
+  ship.ai._latchZigTimer += 1 / 60; // ~dt at 60fps
+  if (ship.ai._latchZigTimer > 0.4 + Math.random() * 0.3) {
+    ship.ai._latchZigTimer = 0;
+    ship.ai._latchZigDir *= -1;
+  }
+
+  const dx = player.x - ship.x;
+  const dy = player.y - ship.y;
+  const angleToPlayer = Math.atan2(dx, -dy);
+  const zigOffset = ship.ai._latchZigDir * 0.6; // ~34° weave
+  const targetAngle = angleToPlayer + zigOffset;
+  const diff = angleDiff(ship.rotation, targetAngle);
+  ship.rotationInput = Math.sign(diff);
+  ship.throttleLevel = 5;
 }
 
 function _doKiter(ship, player, entities, dist, ai) {

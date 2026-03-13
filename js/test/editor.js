@@ -190,7 +190,7 @@ export class EditorOverlay {
     ctx.strokeStyle = MAGENTA;
     ctx.lineWidth = 1;
     ctx.strokeRect(bx, 8, bw, bh);
-    ctx.font = 'bold 12px monospace';
+    ctx.font = "bold 12px 'Fira Mono', monospace";
     ctx.textAlign = 'center';
     ctx.fillStyle = MAGENTA;
     ctx.fillText('PAN MODE  \u2014  ` to exit  \u2014  scroll to zoom', W / 2, 28);
@@ -202,7 +202,7 @@ export class EditorOverlay {
   _renderDebugOverlay(ctx, game, mode) {
     const cam = game.camera;
     ctx.save();
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
 
     for (const entity of game.entities) {
       if (!entity.active) continue;
@@ -232,16 +232,10 @@ export class EditorOverlay {
         : '—';
 
       // Layout: calculate box height
-      const armorLines = hasArcs ? 4 : 1;
-      const totalLines = 2 + armorLines + 1 + 2; // hull, armor×N, speed, beh, state
       const wepWrapped = _wrapText(wepLine, 18); // wrap at ~18 chars
-      const detailLines = mode === 2 ? 5 + 1 : 0; // ACC TRN THR WT THT + separator
-      const boxH = (totalLines + wepWrapped.length + detailLines) * 14 + 8;
       const boxW = 126;
 
-      ctx.fillStyle = 'rgba(0,8,16,0.30)';
-      ctx.fillRect(ox - 2, oy - 12, boxW, boxH);
-
+      ctx.globalAlpha = 0.6;
       ctx.textAlign = 'left';
       ctx.fillStyle = CYAN;
       ctx.fillText(`HP: ${hull}/${hullMax}`, ox, oy); oy += 14;
@@ -267,11 +261,11 @@ export class EditorOverlay {
       ctx.fillText(`ST:  ${state}`,             ox, oy); oy += 14;
 
       ctx.fillStyle = GREEN;
-      ctx.font = '9px monospace';
+      ctx.font = "9px 'Fira Mono', monospace";
       for (const ln of wepWrapped) {
         ctx.fillText(ln, ox, oy); oy += 13;
       }
-      ctx.font = '10px monospace';
+      ctx.font = "10px 'Fira Mono', monospace";
 
       // Detailed layer
       if (mode === 2) {
@@ -284,7 +278,7 @@ export class EditorOverlay {
         oy += 10;
 
         ctx.fillStyle = 'rgba(200,200,200,0.55)';
-        ctx.font = '10px monospace';
+        ctx.font = "10px 'Fira Mono', monospace";
         ctx.fillText(`ACC: ${(entity.acceleration ?? 0).toFixed(1)}`, ox, oy); oy += 14;
         ctx.fillText(`TRN: ${(entity.turnRate ?? 0).toFixed(3)} rad/s`, ox, oy); oy += 14;
         ctx.fillText(`THR: ${entity.throttleLevel ?? '--'}/${entity.throttleLevels ?? '--'}`, ox, oy); oy += 14;
@@ -302,6 +296,8 @@ export class EditorOverlay {
           ctx.fillText(m, ox, oy); oy += 14;
         }
       }
+
+      ctx.globalAlpha = 1;
 
       // Velocity vector
       const vx = entity.vx ?? 0, vy = entity.vy ?? 0;
@@ -337,7 +333,7 @@ export class EditorOverlay {
     const mw    = game.camera.screenToWorld(ms.x, ms.y);
     const coordX = Math.round(mw.x);
     const coordY = Math.round(mw.y);
-    ctx.font      = '10px monospace';
+    ctx.font      = "10px 'Fira Mono', monospace";
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(80,120,180,0.55)';
     ctx.fillText(`${coordX}, ${coordY}`, ms.x, ms.y - 14);
@@ -365,12 +361,12 @@ export class EditorOverlay {
     ctx.stroke();
 
     // Category header
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.textAlign = 'left';
     ctx.fillStyle = DIM_TEXT;
     ctx.fillText('\u2190/\u2192 CATEGORY', x + 10, 22);
 
-    ctx.font = 'bold 13px monospace';
+    ctx.font = "bold 13px 'Fira Mono', monospace";
     ctx.fillStyle = CYAN;
     ctx.fillText(cat.label, x + 10, 42);
 
@@ -391,7 +387,7 @@ export class EditorOverlay {
     ctx.stroke();
 
     // Item list
-    ctx.font = '11px monospace';
+    ctx.font = "11px 'Fira Mono', monospace";
     const itemH      = 22;
     const listTop    = 72;
     const maxVisible = Math.floor((H - listTop - 52) / itemH);
@@ -435,14 +431,14 @@ export class EditorOverlay {
       ctx.lineTo(x + SIDEBAR_W - 8, sy);
       ctx.stroke();
 
-      ctx.font = '10px monospace';
+      ctx.font = "10px 'Fira Mono', monospace";
       ctx.fillStyle = DIM_TEXT;
       ctx.textAlign = 'left';
       ctx.fillText(selItem.stats ?? '', x + 10, sy + 14);
     }
 
     // Hint row at bottom
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillStyle = DIM_TEXT;
     ctx.textAlign = 'left';
     ctx.fillText('\u2191/\u2193 select   Alt: place', x + 10, H - 36);
@@ -488,7 +484,7 @@ export class EditorOverlay {
       { text: `[?map=${mapParam}]`, active: false },
     ];
 
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.textAlign = 'left';
     let cx = 10;
     for (const seg of segments) {

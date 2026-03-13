@@ -1,4 +1,4 @@
-_// Unified Designer — ?designer&category=<cat>&id=<item>
+// Unified Designer — ?designer&category=<cat>&id=<item>
 // Up/Down: change category. Left/Right: cycle item within category.
 // Ships: scaled drawShape(). POIs: mock camera render(). Weapons: projectile/beam visual + stats.
 
@@ -11,11 +11,11 @@ import { SHIP_REGISTRY, NPC_REGISTRY } from '../ships/registry.js';
 import { STATION_REGISTRY } from '../world/stationRegistry.js';
 
 // POIs
-import { PlanetPale }         from '../world/zones/gravewake/planetPale.js';
-import { MoonThalassa }       from '../world/zones/gravewake/moonThalassa.js';
-import { createDerelict }     from '../world/derelict.js';
+import { PlanetPale } from '../world/zones/gravewake/planetPale.js';
+import { MoonThalassa } from '../world/zones/gravewake/moonThalassa.js';
+import { createDerelict } from '../world/derelict.js';
 import { createArkshipSpine } from '../world/arkshipSpine.js';
-import { createDebrisCloud }  from '../world/debrisCloud.js';
+import { createDebrisCloud } from '../world/debrisCloud.js';
 
 // Modules
 import {
@@ -30,15 +30,15 @@ import {
 } from '../modules/shipModule.js';
 
 // Weapons
-import { Autocannon }     from '../modules/weapons/autocannon.js';
-import { GatlingGun }     from '../modules/weapons/gatlingGun.js';
-import { Railgun }        from '../modules/weapons/railgun.js';
-import { Lance }          from '../modules/weapons/lance.js';
-import { PlasmaCannon }   from '../modules/weapons/plasmaCannon.js';
-import { Cannon }         from '../modules/weapons/cannon.js';
+import { Autocannon } from '../modules/weapons/autocannon.js';
+import { GatlingGun } from '../modules/weapons/gatlingGun.js';
+import { Railgun } from '../modules/weapons/railgun.js';
+import { Lance } from '../modules/weapons/lance.js';
+import { PlasmaCannon } from '../modules/weapons/plasmaCannon.js';
+import { Cannon } from '../modules/weapons/cannon.js';
 import { RocketPodSmall } from '../modules/weapons/rocket.js';
 import { RocketPodLarge } from '../modules/weapons/rocketLarge.js';
-import { Torpedo }        from '../modules/weapons/torpedo.js';
+import { Torpedo } from '../modules/weapons/torpedo.js';
 
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
@@ -53,27 +53,27 @@ function _buildShipItems() {
   // Hulls first (no parent), then NPCs grouped under their hull via shipClass.
   const flat = [
     ...SHIP_REGISTRY.map(s => ({
-      id:          s.id,
-      label:       s.label,
-      file:        s.file,
-      type:        'ship',
+      id: s.id,
+      label: s.label,
+      file: s.file,
+      type: 'ship',
       parentClass: null,
-      isVariant:   false,
-      create:      () => s.create(0, 0),
+      isVariant: false,
+      create: () => s.create(0, 0),
     })),
     ...NPC_REGISTRY.map(n => ({
-      id:          n.id,
-      label:       n.label,
-      file:        n.file,
-      type:        'ship',
+      id: n.id,
+      label: n.label,
+      file: n.file,
+      type: 'ship',
       parentClass: n.shipClass,
-      isVariant:   false,
-      create:      () => n.create(0, 0),
+      isVariant: false,
+      create: () => n.create(0, 0),
     })),
   ];
 
-  const result  = [];
-  const added   = new Set();
+  const result = [];
+  const added = new Set();
 
   for (const item of flat) {
     if (added.has(item.id) || item.parentClass) continue;
@@ -97,17 +97,17 @@ function _buildShipItems() {
 
 function _buildStationItems() {
   return STATION_REGISTRY.map(s => ({
-    id:         s.id,
-    label:      s.entity.name,
-    file:       null,
-    type:       'poi',
+    id: s.id,
+    label: s.entity.name,
+    file: null,
+    type: 'poi',
     flavorText: s.flavorText ?? null,
-    create:     () => s.entity.instantiate(0, 0),
+    create: () => s.entity.instantiate(0, 0),
     info: {
-      Type:        s.entity.renderer ? s.entity.renderer : 'Station',
-      Faction:     s.entity.faction,
+      Type: s.entity.renderer ? s.entity.renderer : 'Station',
+      Faction: s.entity.faction,
       'Docking R': `${s.entity.dockingRadius ?? 150}u`,
-      Services:    s.entity.services.join(' · '),
+      Services: s.entity.services.join(' · '),
     },
   }));
 }
@@ -121,29 +121,29 @@ function _mod(id, label, category, createFn) {
 function _buildModuleItems() {
   return [
     // ── Engines
-    _mod('onyx-drive-unit',   'Onyx Drive Unit',         'ENGINE', () => new OnyxDriveUnit()),
-    _mod('chem-rocket-s',     'Chem Rocket (S)',          'ENGINE', () => new ChemRocketSmall()),
-    _mod('chem-rocket-l',     'Chem Rocket (L)',          'ENGINE', () => new ChemRocketLarge()),
-    _mod('magplasma-torch-s', 'Mag-Plasma Torch (S)',     'ENGINE', () => new MagplasmaTorchSmall()),
-    _mod('magplasma-torch-l', 'Mag-Plasma Torch (L)',     'ENGINE', () => new MagplasmaTorchLarge()),
-    _mod('ion-thruster',      'Ion Thruster',             'ENGINE', () => new IonThruster()),
+    _mod('onyx-drive-unit', 'Onyx Drive Unit', 'ENGINE', () => new OnyxDriveUnit()),
+    _mod('chem-rocket-s', 'Chem Rocket (S)', 'ENGINE', () => new ChemRocketSmall()),
+    _mod('chem-rocket-l', 'Chem Rocket (L)', 'ENGINE', () => new ChemRocketLarge()),
+    _mod('magplasma-torch-s', 'Mag-Plasma Torch (S)', 'ENGINE', () => new MagplasmaTorchSmall()),
+    _mod('magplasma-torch-l', 'Mag-Plasma Torch (L)', 'ENGINE', () => new MagplasmaTorchLarge()),
+    _mod('ion-thruster', 'Ion Thruster', 'ENGINE', () => new IonThruster()),
     // ── Weapons
-    _mod('mod-autocannon',    'Autocannon Mount',         'WEAPON', () => new AutocannonModule()),
-    _mod('mod-lance-s',       'Lance Mount (S)',          'WEAPON', () => new LanceModuleSmall()),
-    _mod('mod-cannon',        'Cannon Mount',             'WEAPON', () => new CannonModule()),
-    _mod('mod-rpod-s',        'Rocket Pod (S)',           'WEAPON', () => new RocketPodModule('small', 'dumbfire')),
-    _mod('mod-rpod-l',        'Rocket Pod (L)',           'WEAPON', () => new RocketPodModule('large', 'dumbfire')),
+    _mod('mod-autocannon', 'Autocannon Mount', 'WEAPON', () => new AutocannonModule()),
+    _mod('mod-lance-s', 'Lance Mount (S)', 'WEAPON', () => new LanceModuleSmall()),
+    _mod('mod-cannon', 'Cannon Mount', 'WEAPON', () => new CannonModule()),
+    _mod('mod-rpod-s', 'Rocket Pod (S)', 'WEAPON', () => new RocketPodModule('small', 'dumbfire')),
+    _mod('mod-rpod-l', 'Rocket Pod (L)', 'WEAPON', () => new RocketPodModule('large', 'dumbfire')),
     // ── Power
-    _mod('h2-fuel-cell',      'H2 Fuel Cell (S)',         'POWER',  () => new HydrogenFuelCell()),
-    _mod('fission-s',         'Fission Reactor (S)',      'POWER',  () => new SmallFissionReactor()),
-    _mod('fission-l',         'Fission Reactor (L)',      'POWER',  () => new LargeFissionReactor()),
-    _mod('fusion-l',          'Fusion Reactor (L)',       'POWER',  () => new LargeFusionReactor()),
+    _mod('h2-fuel-cell', 'H2 Fuel Cell (S)', 'POWER', () => new HydrogenFuelCell()),
+    _mod('fission-s', 'Fission Reactor (S)', 'POWER', () => new SmallFissionReactor()),
+    _mod('fission-l', 'Fission Reactor (L)', 'POWER', () => new LargeFissionReactor()),
+    _mod('fusion-l', 'Fusion Reactor (L)', 'POWER', () => new LargeFusionReactor()),
     // ── Sensors
-    _mod('salvaged-sensors',  'Salvaged Sensors',         'SENSOR', () => new SalvagedSensorSuite()),
-    _mod('standard-sensors',  'Standard Sensors',         'SENSOR', () => new StandardSensorSuite()),
-    _mod('combat-computer',   'Combat Computer',          'SENSOR', () => new CombatComputerModule()),
-    _mod('salvage-scanner',   'Salvage Scanner',          'SENSOR', () => new SalvageScannerModule()),
-    _mod('long-range-sensors','Long-Range Sensors',       'SENSOR', () => new LongRangeScannerModule()),
+    _mod('salvaged-sensors', 'Salvaged Sensors', 'SENSOR', () => new SalvagedSensorSuite()),
+    _mod('standard-sensors', 'Standard Sensors', 'SENSOR', () => new StandardSensorSuite()),
+    _mod('combat-computer', 'Combat Computer', 'SENSOR', () => new CombatComputerModule()),
+    _mod('salvage-scanner', 'Salvage Scanner', 'SENSOR', () => new SalvageScannerModule()),
+    _mod('long-range-sensors', 'Long-Range Sensors', 'SENSOR', () => new LongRangeScannerModule()),
   ];
 }
 
@@ -213,105 +213,105 @@ const CATEGORIES = [
     label: 'Weapons',
     items: [
       {
-        id: 'autocannon',  label: 'Autocannon',    file: 'js/weapons/autocannon.js',  type: 'weapon',
+        id: 'autocannon', label: 'Autocannon', file: 'js/weapons/autocannon.js', type: 'weapon',
         flavorText: "Rotating breech, medium caseless, point-and-fire. AP or HE mode. Standard issue for anyone who can afford it.",
         create: () => new Autocannon(),
-        projColor: AMBER,   projLen: 3,  projTrail: true,
+        projColor: AMBER, projLen: 3, projTrail: true,
         flags: ['manual', 'ammo-modes'],
       },
       {
-        id: 'gatling',     label: 'Gatling',       file: 'js/weapons/gatlingGun.js',  type: 'weapon',
+        id: 'gatling', label: 'Gatling', file: 'js/weapons/gatlingGun.js', type: 'weapon',
         flavorText: "Six barrels, one aim. Shreds at close range. Reloads slow. Point defense capable.",
         create: () => new GatlingGun(),
-        projColor: GREEN,   projLen: 3,  projTrail: false,
+        projColor: GREEN, projLen: 3, projTrail: false,
         flags: ['manual', 'intercept', 'ammo'],
       },
       {
-        id: 'railgun-sf',  label: 'Railgun (SF)',  file: 'js/weapons/railgun.js',     type: 'weapon',
+        id: 'railgun-sf', label: 'Railgun (SF)', file: 'js/weapons/railgun.js', type: 'weapon',
         flavorText: "Small fixed rail accelerator. No pivot mount — the whole ship is the gun platform.",
         create: () => new Railgun('small-fixed'),
         projColor: RAIL_WHITE, projLen: 12, projTrail: true,
         flags: ['fixed', 'hull-dmg'],
       },
       {
-        id: 'railgun-lt',  label: 'Railgun (LT)',  file: 'js/weapons/railgun.js',     type: 'weapon',
+        id: 'railgun-lt', label: 'Railgun (LT)', file: 'js/weapons/railgun.js', type: 'weapon',
         flavorText: "Two conductive rails, one very fast slug. Accuracy drops before effective range does.",
         create: () => new Railgun('large-turret'),
         projColor: RAIL_WHITE, projLen: 12, projTrail: true,
         flags: ['manual', 'hull-dmg'],
       },
       {
-        id: 'railgun-lf',  label: 'Railgun (LF)',  file: 'js/weapons/railgun.js',     type: 'weapon',
+        id: 'railgun-lf', label: 'Railgun (LF)', file: 'js/weapons/railgun.js', type: 'weapon',
         flavorText: "The full-length rail cannon. Massive penetrator. Hull-mount only. Devastating.",
         create: () => new Railgun('large-fixed'),
         projColor: RAIL_WHITE, projLen: 12, projTrail: true,
         flags: ['fixed', 'hull-dmg'],
       },
       {
-        id: 'lance-sf',    label: 'Lance (SF)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        id: 'lance-sf', label: 'Lance (SF)', file: 'js/weapons/lance.js', type: 'weapon',
         flavorText: "Hull-mounted lance projector. No gimbal. Ramps to high damage. Aim with the ship.",
         create: () => new Lance('small-fixed'),
         isBeam: true, projColor: CYAN,
         flags: ['beam', 'fixed', 'ramp-dmg', 'hull-dmg'],
       },
       {
-        id: 'lance-st',    label: 'Lance (ST)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        id: 'lance-st', label: 'Lance (ST)', file: 'js/weapons/lance.js', type: 'weapon',
         flavorText: "Point-defense beam. Low power draw. Can intercept missiles passing through the beam.",
         create: () => new Lance('small-turret'),
         isBeam: true, projColor: CYAN,
         flags: ['beam', 'ramp-dmg', 'intercept'],
       },
       {
-        id: 'lance-lf',    label: 'Lance (LF)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        id: 'lance-lf', label: 'Lance (LF)', file: 'js/weapons/lance.js', type: 'weapon',
         flavorText: "Heavy fixed lance. Full hull-damage application. Maximum ramp ceiling.",
         create: () => new Lance('large-fixed'),
         isBeam: true, projColor: CYAN,
         flags: ['beam', 'fixed', 'ramp-dmg', 'hull-dmg'],
       },
       {
-        id: 'lance-lt',    label: 'Lance (LT)',    file: 'js/weapons/lance.js',       type: 'weapon',
+        id: 'lance-lt', label: 'Lance (LT)', file: 'js/weapons/lance.js', type: 'weapon',
         flavorText: "Heavy turret lance. Full hull damage, wide tracking arc. Power hungry.",
         create: () => new Lance('large-turret'),
         isBeam: true, projColor: CYAN,
         flags: ['beam', 'ramp-dmg', 'hull-dmg'],
       },
       {
-        id: 'plasma-s',    label: 'Plasma (S)',    file: 'js/weapons/plasmaCannon.js', type: 'weapon',
+        id: 'plasma-s', label: 'Plasma (S)', file: 'js/weapons/plasmaCannon.js', type: 'weapon',
         flavorText: "Superheated bolt, damage falls with distance. Best used close; worst used as a threat.",
         create: () => new PlasmaCannon('small'),
         projColor: PLASMA_GREEN, projLen: 5, projTrail: false,
         flags: ['manual', 'falloff', 'hull-dmg'],
       },
       {
-        id: 'plasma-l',    label: 'Plasma (L)',    file: 'js/weapons/plasmaCannon.js', type: 'weapon',
+        id: 'plasma-l', label: 'Plasma (L)', file: 'js/weapons/plasmaCannon.js', type: 'weapon',
         flavorText: "Long-cycle plasma system. More mass, longer burn, further reach.",
         create: () => new PlasmaCannon('large'),
         projColor: PLASMA_GREEN, projLen: 5, projTrail: false,
         flags: ['manual', 'falloff', 'hull-dmg'],
       },
       {
-        id: 'cannon',      label: 'Cannon',        file: 'js/weapons/cannon.js',      type: 'weapon',
+        id: 'cannon', label: 'Cannon', file: 'js/weapons/cannon.js', type: 'weapon',
         flavorText: "Smoothbore heavy round. AP or HE mode. No electronics. It hits or it doesn't.",
         create: () => new Cannon(),
         projColor: '#dd8800', projLen: 7, projTrail: false,
         flags: ['manual', 'aoe', 'hull-dmg', 'ammo', 'ammo-modes'],
       },
       {
-        id: 'rpod-s',      label: 'Rocket Pod (S)', file: 'js/weapons/rocket.js',    type: 'weapon',
+        id: 'rpod-s', label: 'Rocket Pod (S)', file: 'js/weapons/rocket.js', type: 'weapon',
         flavorText: "Two-tube pod. Dumbfire, wire, or heat guidance. Shared ammo pool with large pod.",
         create: () => new RocketPodSmall(),
-        projColor: AMBER,   projLen: 8,  projTrail: true,
+        projColor: AMBER, projLen: 8, projTrail: true,
         flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'guidance-modes'],
       },
       {
-        id: 'rpod-l',      label: 'Rocket Pod (L)', file: 'js/weapons/rocketLarge.js', type: 'weapon',
+        id: 'rpod-l', label: 'Rocket Pod (L)', file: 'js/weapons/rocketLarge.js', type: 'weapon',
         flavorText: "Eight-tube burst pod. Staggered fire. Fills the sky. Same guidance options as small pod.",
         create: () => new RocketPodLarge(),
-        projColor: AMBER,   projLen: 8,  projTrail: true,
+        projColor: AMBER, projLen: 8, projTrail: true,
         flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'burst', 'guidance-modes'],
       },
       {
-        id: 'torpedo',     label: 'Torpedo',       file: 'js/weapons/torpedo.js',     type: 'weapon',
+        id: 'torpedo', label: 'Torpedo', file: 'js/weapons/torpedo.js', type: 'weapon',
         flavorText: "Heavy ship-killer. Fixed forward only. Interceptable. Takes commitment.",
         create: () => new Torpedo(),
         projColor: TORPEDO_AMBER, projLen: 16, projTrail: true,
@@ -329,14 +329,14 @@ const CATEGORIES = [
 // ─── DESIGNER CLASS ───────────────────────────────────────────────────────────
 
 const PANEL_W = 280;
-const MARGIN  = 14;
+const MARGIN = 14;
 
 export class Designer {
   constructor() {
     this.canvas = null;
-    this.ctx    = null;
+    this.ctx = null;
 
-    this._catIdx  = 0;
+    this._catIdx = 0;
     this._itemIdx = 0;
 
     // Current loaded entity
@@ -344,25 +344,25 @@ export class Designer {
 
     // Ship-specific
     this._autoRotate = false;
-    this._angle      = 0;
+    this._angle = 0;
 
     // Global viewport state (persisted in URL)
-    this._zoom  = 1.0;
-    this._panX  = 0;
-    this._panY  = 0;
+    this._zoom = 1.0;
+    this._panX = 0;
+    this._panY = 0;
 
     // POI drag
-    this._dragging  = false;
+    this._dragging = false;
     this._dragLastX = 0;
     this._dragLastY = 0;
 
     this._time = 0;
 
     // Compare panel
-    this._compareOpen   = false;
-    this._comparePanel  = null;
-    this._compareTable  = null;
-    this._compareCatId  = null; // which category the table was built for
+    this._compareOpen = false;
+    this._comparePanel = null;
+    this._compareTable = null;
+    this._compareCatId = null; // which category the table was built for
   }
 
   // ── Init ────────────────────────────────────────────────────────────────────
@@ -370,12 +370,12 @@ export class Designer {
   init() {
     /** @type {HTMLCanvasElement} */
     this.canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('game'));
-    this.canvas.width  = window.innerWidth;
+    this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.ctx = this.canvas.getContext('2d');
 
     window.addEventListener('resize', () => {
-      this.canvas.width  = window.innerWidth;
+      this.canvas.width = window.innerWidth;
       this.canvas.height = window.innerHeight;
     });
 
@@ -389,12 +389,12 @@ export class Designer {
     // Drag to pan
     this.canvas.addEventListener('mousedown', (e) => {
       if (e.button === 0) {
-        this._dragging  = true;
+        this._dragging = true;
         this._dragLastX = e.clientX;
         this._dragLastY = e.clientY;
       }
     });
-    window.addEventListener('mouseup',   (e) => { if (e.button === 0) this._dragging = false; });
+    window.addEventListener('mouseup', (e) => { if (e.button === 0) this._dragging = false; });
     window.addEventListener('mousemove', (e) => {
       if (!this._dragging) return;
       this._panX += e.clientX - this._dragLastX;
@@ -406,7 +406,7 @@ export class Designer {
     // Parse URL
     const params = new URLSearchParams(window.location.search);
     const urlCat = params.get('category');
-    const urlId  = params.get('id');
+    const urlId = params.get('id');
     const urlZoom = params.get('zoom');
     if (urlCat) {
       const ci = CATEGORIES.findIndex(c => c.id === urlCat);
@@ -428,13 +428,13 @@ export class Designer {
 
   // ── State helpers ────────────────────────────────────────────────────────────
 
-  _cat()  { return CATEGORIES[this._catIdx]; }
+  _cat() { return CATEGORIES[this._catIdx]; }
   _item() { return this._cat().items[this._itemIdx]; }
 
   _load(updateUrl = true) {
     const def = this._item();
     this._entity = def.create();
-    this._angle  = 0;
+    this._angle = 0;
     this._autoRotate = false;
 
     // Designer preview: no relation context → white silhouette
@@ -476,12 +476,12 @@ export class Designer {
 
     // Category navigation (up/down)
     if (input.wasJustPressed('arrowup')) {
-      this._catIdx  = (this._catIdx - 1 + CATEGORIES.length) % CATEGORIES.length;
+      this._catIdx = (this._catIdx - 1 + CATEGORIES.length) % CATEGORIES.length;
       this._itemIdx = 0;
       this._load();
     }
     if (input.wasJustPressed('arrowdown')) {
-      this._catIdx  = (this._catIdx + 1) % CATEGORIES.length;
+      this._catIdx = (this._catIdx + 1) % CATEGORIES.length;
       this._itemIdx = 0;
       this._load();
     }
@@ -529,8 +529,8 @@ export class Designer {
     const { ctx, canvas } = this;
     const W = canvas.width;
     const H = canvas.height;
-    const cat  = this._cat();
-    const def  = this._item();
+    const cat = this._cat();
+    const def = this._item();
 
     // Background
     ctx.fillStyle = '#000810';
@@ -565,7 +565,7 @@ export class Designer {
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 10]);
     ctx.beginPath(); ctx.moveTo(PANEL_W, pcy); ctx.lineTo(W, pcy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(pcx, 0);       ctx.lineTo(pcx, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pcx, 0); ctx.lineTo(pcx, H); ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
 
@@ -588,7 +588,7 @@ export class Designer {
 
     // Scale label
     ctx.save();
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
@@ -627,12 +627,12 @@ export class Designer {
 
     // Category label
     ctx.fillStyle = badgeColor;
-    ctx.font = 'bold 11px monospace';
+    ctx.font = "bold 11px 'Fira Mono', monospace";
     ctx.fillText(`[ ${cat} ]`, pcx, cy); cy += 28;
 
     // Module display name
     ctx.fillStyle = WHITE;
-    ctx.font = 'bold 22px monospace';
+    ctx.font = "bold 22px 'Fira Mono', monospace";
     ctx.fillText(mod.displayName ?? def.label, pcx, cy); cy += 36;
 
     // Separator line
@@ -645,53 +645,53 @@ export class Designer {
     // Key stats block — varies by category
     const statLine = (label, value, color) => {
       ctx.fillStyle = DIM_TEXT;
-      ctx.font = '11px monospace';
+      ctx.font = "11px 'Fira Mono', monospace";
       ctx.textAlign = 'right';
       ctx.fillText(label, pcx - 8, cy);
       ctx.fillStyle = color;
-      ctx.font = 'bold 11px monospace';
+      ctx.font = "bold 11px 'Fira Mono', monospace";
       ctx.textAlign = 'left';
       ctx.fillText(value, pcx + 8, cy);
       cy += 18;
     };
 
     if (mod.isEngine) {
-      statLine('SPEED MULT',   `×${mod.speedMult.toFixed(2)}`,    AMBER);
-      statLine('ACCEL MULT',   `×${mod.accelMult.toFixed(2)}`,    AMBER);
-      statLine('FUEL EFF MULT',`×${mod.fuelEffMult.toFixed(2)}`,  mod.fuelEffMult > 1 ? RED : GREEN);
+      statLine('SPEED MULT', `×${mod.speedMult.toFixed(2)}`, AMBER);
+      statLine('ACCEL MULT', `×${mod.accelMult.toFixed(2)}`, AMBER);
+      statLine('FUEL EFF MULT', `×${mod.fuelEffMult.toFixed(2)}`, mod.fuelEffMult > 1 ? RED : GREEN);
       if (mod.fuelDrainRate > 0)
         statLine('FUEL DRAIN', `+${mod.fuelDrainRate.toFixed(3)}/s`, AMBER);
       if (mod.powerDraw > 0)
-        statLine('POWER DRAW', `-${mod.powerDraw}W`,               MAGENTA);
+        statLine('POWER DRAW', `-${mod.powerDraw}W`, MAGENTA);
     } else if (cat === 'WEAPON' && mod.weapon) {
       const w = mod.weapon;
       const arm = w.damage ?? w.armorDamage;
-      if (arm != null)          statLine('ARMOR DMG',  String(arm),                    GREEN);
-      if (w.hullDamage != null) statLine('HULL DMG',   String(w.hullDamage),           GREEN);
-      if (w.cooldownMax != null)statLine('COOLDOWN',   `${(w.cooldownMax * 1000).toFixed(0)}ms`, AMBER);
-      if (w.maxRange != null)   statLine('RANGE',      `${Math.round(w.maxRange)}u`,   AMBER);
-      if (mod.powerDraw > 0)    statLine('POWER DRAW', `-${mod.powerDraw}W`,           MAGENTA);
+      if (arm != null) statLine('ARMOR DMG', String(arm), GREEN);
+      if (w.hullDamage != null) statLine('HULL DMG', String(w.hullDamage), GREEN);
+      if (w.cooldownMax != null) statLine('COOLDOWN', `${(w.cooldownMax * 1000).toFixed(0)}ms`, AMBER);
+      if (w.maxRange != null) statLine('RANGE', `${Math.round(w.maxRange)}u`, AMBER);
+      if (mod.powerDraw > 0) statLine('POWER DRAW', `-${mod.powerDraw}W`, MAGENTA);
     } else if (cat === 'POWER') {
-      if (mod.powerOutput > 0)  statLine('OUTPUT',     `+${mod.effectivePowerOutput ?? mod.powerOutput}W`, GREEN);
-      if (mod.fuelDrainRate > 0)statLine('FUEL DRAIN', `+${mod.fuelDrainRate.toFixed(3)}/s`, AMBER);
-      if (mod.overhaulCost)     statLine('OVERHAUL',   `${mod.overhaulCost} scrap`,    MAGENTA);
+      if (mod.powerOutput > 0) statLine('OUTPUT', `+${mod.effectivePowerOutput ?? mod.powerOutput}W`, GREEN);
+      if (mod.fuelDrainRate > 0) statLine('FUEL DRAIN', `+${mod.fuelDrainRate.toFixed(3)}/s`, AMBER);
+      if (mod.overhaulCost) statLine('OVERHAUL', `${mod.overhaulCost} scrap`, MAGENTA);
     } else if (cat === 'SENSOR') {
-      if (mod.sensor_range)     statLine('SENSOR RANGE', `${mod.sensor_range}u`,       CYAN);
-      if (mod.powerDraw > 0)    statLine('POWER DRAW', `-${mod.powerDraw}W`,           MAGENTA);
+      if (mod.sensor_range) statLine('SENSOR RANGE', `${mod.sensor_range}u`, CYAN);
+      if (mod.powerDraw > 0) statLine('POWER DRAW', `-${mod.powerDraw}W`, MAGENTA);
       const caps = [];
       if (mod.minimap_stations) caps.push('stations');
-      if (mod.minimap_ships)    caps.push('ships');
-      if (mod.lead_indicators)  caps.push('lead');
-      if (mod.health_pips)      caps.push('pips');
-      if (mod.salvage_detail)   caps.push('salvage');
-      if (caps.length)          statLine('DETECTS',    caps.join(' · '),               CYAN);
+      if (mod.minimap_ships) caps.push('ships');
+      if (mod.lead_indicators) caps.push('lead');
+      if (mod.health_pips) caps.push('pips');
+      if (mod.salvage_detail) caps.push('salvage');
+      if (caps.length) statLine('DETECTS', caps.join(' · '), CYAN);
     }
 
     ctx.restore();
 
     // File label bottom
     ctx.save();
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
@@ -736,7 +736,7 @@ export class Designer {
 
     // Zoom label
     ctx.save();
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = DIM_TEXT;
@@ -789,15 +789,15 @@ export class Designer {
 
       // Glow
       ctx.shadowColor = def.projColor;
-      ctx.shadowBlur  = 12 * t;
+      ctx.shadowBlur = 12 * t;
       ctx.strokeStyle = def.projColor;
       ctx.globalAlpha = 0.2 + 0.7 * t;
-      ctx.lineWidth   = 8;
+      ctx.lineWidth = 8;
       ctx.beginPath(); ctx.moveTo(-beamLen, 0); ctx.lineTo(beamLen, 0); ctx.stroke();
 
       // Core
       ctx.globalAlpha = 0.5 + 0.5 * t;
-      ctx.lineWidth   = 2;
+      ctx.lineWidth = 2;
       ctx.strokeStyle = WHITE;
       ctx.beginPath(); ctx.moveTo(-beamLen, 0); ctx.lineTo(beamLen, 0); ctx.stroke();
 
@@ -805,7 +805,7 @@ export class Designer {
 
       // Label
       ctx.save();
-      ctx.font = '10px monospace';
+      ctx.font = "10px 'Fira Mono', monospace";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = DIM_TEXT;
@@ -832,20 +832,20 @@ export class Designer {
 
       // Bolt glow
       ctx.shadowColor = def.projColor;
-      ctx.shadowBlur  = 6;
-      ctx.fillStyle   = WHITE;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = WHITE;
       ctx.fillRect(-projLen, -1.5, projLen, 3);
 
       // Bolt core color
-      ctx.shadowBlur  = 0;
-      ctx.fillStyle   = def.projColor;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = def.projColor;
       ctx.fillRect(-projLen, -1, projLen, 2);
 
       ctx.restore();
 
       // Label
       ctx.save();
-      ctx.font = '10px monospace';
+      ctx.font = "10px 'Fira Mono', monospace";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = DIM_TEXT;
@@ -876,7 +876,7 @@ export class Designer {
 
     // Header
     ctx.fillStyle = CYAN;
-    ctx.font = 'bold 11px monospace';
+    ctx.font = "bold 11px 'Fira Mono', monospace";
     ctx.fillText('[ DESIGNER ]', MARGIN, y);
     y += 22;
 
@@ -884,25 +884,25 @@ export class Designer {
 
     // Category breadcrumb
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(`↑↓ category   ← → item`, MARGIN, y); y += 14;
 
     // Category row
     ctx.fillStyle = AMBER;
-    ctx.font = 'bold 10px monospace';
+    ctx.font = "bold 10px 'Fira Mono', monospace";
     ctx.fillText(`[ ${cat.label.toUpperCase()} ]  ${this._catIdx + 1}/${CATEGORIES.length}`, MARGIN, y); y += 18;
 
     // Item name (variants shown with ↳ prefix)
     const displayLabel = def.isVariant ? '↳ ' + def.label : def.label;
-    const nameColor    = def.isVariant ? AMBER : WHITE;
+    const nameColor = def.isVariant ? AMBER : WHITE;
     ctx.fillStyle = nameColor;
-    ctx.font = 'bold 13px monospace';
-    y = this._wrapText(ctx, displayLabel, MARGIN, y, PANEL_W - MARGIN * 2, 16, nameColor, 'bold 13px monospace');
+    ctx.font = "bold 13px 'Fira Mono', monospace";
+    y = this._wrapText(ctx, displayLabel, MARGIN, y, PANEL_W - MARGIN * 2, 16, nameColor, "bold 13px 'Fira Mono', monospace");
     y += 4;
 
     // Item index
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(`item ${this._itemIdx + 1} / ${cat.items.length}`, MARGIN, y); y += 16;
 
     this._divider(ctx, y); y += 10;
@@ -926,39 +926,39 @@ export class Designer {
 
     // Controls hint
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(`T rotate [${this._autoRotate ? 'ON' : 'OFF'}]  •  R reset  •  scroll zoom  •  C compare`, MARGIN, y); y += 20;
 
     this._header(ctx, 'HULL', y); y += 18;
-    this._row(ctx, 'Hull HP',  ship.hullMax,       GREEN, y); y += 16;
-    this._row(ctx, 'Cargo',    ship.cargoCapacity,  AMBER, y); y += 20;
+    this._row(ctx, 'Hull HP', ship.hullMax, GREEN, y); y += 16;
+    this._row(ctx, 'Cargo', ship.cargoCapacity, AMBER, y); y += 20;
 
     this._header(ctx, 'ARMOR ARCS', y); y += 18;
-    this._row(ctx, 'Front',     ship.armorArcsMax.front,     GREEN, y); y += 16;
-    this._row(ctx, 'Port',      ship.armorArcsMax.port,      GREEN, y); y += 16;
+    this._row(ctx, 'Front', ship.armorArcsMax.front, GREEN, y); y += 16;
+    this._row(ctx, 'Port', ship.armorArcsMax.port, GREEN, y); y += 16;
     this._row(ctx, 'Starboard', ship.armorArcsMax.starboard, GREEN, y); y += 16;
-    this._row(ctx, 'Aft',       ship.armorArcsMax.aft,       GREEN, y); y += 20;
+    this._row(ctx, 'Aft', ship.armorArcsMax.aft, GREEN, y); y += 20;
 
     this._header(ctx, 'MOVEMENT', y); y += 18;
-    this._row(ctx, 'Speed Max',    ship.speedMax,                    AMBER, y); y += 16;
-    this._row(ctx, 'Acceleration', ship.acceleration,                AMBER, y); y += 16;
-    this._row(ctx, 'Turn Rate',    ship.turnRate.toFixed(2) + ' r/s', AMBER, y); y += 20;
+    this._row(ctx, 'Speed Max', ship.speedMax, AMBER, y); y += 16;
+    this._row(ctx, 'Acceleration', ship.acceleration, AMBER, y); y += 16;
+    this._row(ctx, 'Turn Rate', ship.turnRate.toFixed(2) + ' r/s', AMBER, y); y += 20;
 
     this._header(ctx, 'THROTTLE', y); y += 18;
     ctx.fillStyle = WHITE;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(ship._throttleRatios.join(' / '), MARGIN, y); y += 20;
 
     this._header(ctx, 'FUEL', y); y += 18;
-    this._row(ctx, 'Tank',       ship.fuelMax + ' u',                AMBER, y); y += 16;
+    this._row(ctx, 'Tank', ship.fuelMax + ' u', AMBER, y); y += 16;
     this._row(ctx, 'Efficiency', '×' + ship.fuelEfficiency.toFixed(2), AMBER, y); y += 20;
 
     if (ship.weapons.length > 0) {
       this._header(ctx, 'WEAPONS', y); y += 18;
       for (const w of ship.weapons) {
-        const tag  = w.isAutoFire ? '[auto]' : w.isSecondary ? '[sec]' : '[pri]';
+        const tag = w.isAutoFire ? '[auto]' : w.isSecondary ? '[sec]' : '[pri]';
         ctx.fillStyle = DIM_TEXT;
-        ctx.font = '10px monospace';
+        ctx.font = "10px 'Fira Mono', monospace";
         ctx.fillText((w.displayName ?? w.constructor.name) + ' ' + tag, MARGIN, y); y += 14;
         if (w.damage != null || w.armorDamage != null) {
           const dmg = w.damage ?? w.armorDamage;
@@ -976,14 +976,14 @@ export class Designer {
 
     this._divider(ctx, y); y += 10;
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(def.file, MARGIN, y);
     y += 20;
 
     if (ship.flavorText) {
       this._divider(ctx, y); y += 10;
       this._header(ctx, 'LORE', y); y += 16;
-      y = this._wrapText(ctx, ship.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+      y = this._wrapText(ctx, ship.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
     }
 
     return y;
@@ -993,18 +993,18 @@ export class Designer {
     const w = this._entity;
 
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText('R reset view  •  scroll zoom', MARGIN, y); y += 20;
 
     this._header(ctx, 'DAMAGE', y); y += 18;
 
     if (def.isBeam) {
       this._row(ctx, 'Armor (base)', w.baseDamage + '/s', GREEN, y); y += 16;
-      this._row(ctx, 'Armor (max)',  w.maxDamage  + '/s', GREEN, y); y += 16;
-      this._row(ctx, 'Ramp time',   w.rampTime   + 's',  AMBER, y); y += 20;
+      this._row(ctx, 'Armor (max)', w.maxDamage + '/s', GREEN, y); y += 16;
+      this._row(ctx, 'Ramp time', w.rampTime + 's', AMBER, y); y += 20;
     } else {
       const armDmg = w.damage ?? w.armorDamage;
-      if (armDmg != null) { this._row(ctx, 'Armor',  armDmg,       GREEN, y); y += 16; }
+      if (armDmg != null) { this._row(ctx, 'Armor', armDmg, GREEN, y); y += 16; }
       if (w.hullDamage != null) { this._row(ctx, 'Hull', w.hullDamage, GREEN, y); y += 16; }
       if (w.blastRadius != null) { this._row(ctx, 'Blast R', w.blastRadius + 'u', AMBER, y); y += 16; }
 
@@ -1014,17 +1014,17 @@ export class Designer {
     }
 
     this._header(ctx, 'PROFILE', y); y += 18;
-    if (w.cooldownMax != null)    { this._row(ctx, 'Cooldown', (w.cooldownMax * 1000).toFixed(0) + 'ms', AMBER, y); y += 16; }
+    if (w.cooldownMax != null) { this._row(ctx, 'Cooldown', (w.cooldownMax * 1000).toFixed(0) + 'ms', AMBER, y); y += 16; }
     if (w.cooldown != null && w.cooldownMax == null) { this._row(ctx, 'Cooldown', (w.cooldown * 1000).toFixed(0) + 'ms', AMBER, y); y += 16; }
-    if (w.maxRange != null)       { this._row(ctx, 'Range',  Math.round(w.maxRange) + 'u',     AMBER, y); y += 16; }
-    if (w.projectileSpeed != null){ this._row(ctx, 'Proj spd', Math.round(w.projectileSpeed) + 'u/s', AMBER, y); y += 16; }
-    if (w.ammo != null)           { this._row(ctx, 'Ammo',  `${w.ammo} / ${w.ammoMax}`,        WHITE, y); y += 16; }
+    if (w.maxRange != null) { this._row(ctx, 'Range', Math.round(w.maxRange) + 'u', AMBER, y); y += 16; }
+    if (w.projectileSpeed != null) { this._row(ctx, 'Proj spd', Math.round(w.projectileSpeed) + 'u/s', AMBER, y); y += 16; }
+    if (w.ammo != null) { this._row(ctx, 'Ammo', `${w.ammo} / ${w.ammoMax}`, WHITE, y); y += 16; }
     y += 4;
 
     if (def.flags && def.flags.length > 0) {
       this._header(ctx, 'FLAGS', y); y += 18;
       ctx.fillStyle = MAGENTA;
-      ctx.font = '10px monospace';
+      ctx.font = "10px 'Fira Mono', monospace";
       for (const f of def.flags) {
         ctx.fillText('  · ' + f, MARGIN, y); y += 14;
       }
@@ -1033,14 +1033,14 @@ export class Designer {
 
     this._divider(ctx, y); y += 10;
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(def.file, MARGIN, y);
     y += 20;
 
     if (def.flavorText) {
       this._divider(ctx, y); y += 10;
       this._header(ctx, 'LORE', y); y += 16;
-      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
     }
 
     return y;
@@ -1051,7 +1051,7 @@ export class Designer {
     const cat = def.category ?? 'MODULE';
 
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText('← → cycle  •  C compare', MARGIN, y); y += 20;
 
     // Category badge color
@@ -1059,22 +1059,22 @@ export class Designer {
     const badgeColor = BADGE_COLORS[cat] ?? WHITE;
     this._header(ctx, cat, y);
     ctx.fillStyle = badgeColor;
-    ctx.font = 'bold 10px monospace';
+    ctx.font = "bold 10px 'Fira Mono', monospace";
     ctx.fillText(cat, MARGIN, y); y += 18;
 
     if (mod.isEngine) {
       this._header(ctx, 'DRIVE STATS', y); y += 18;
-      this._row(ctx, 'Speed Mult',    `×${mod.speedMult.toFixed(2)}`,     AMBER, y); y += 16;
-      this._row(ctx, 'Accel Mult',    `×${mod.accelMult.toFixed(2)}`,     AMBER, y); y += 16;
-      this._row(ctx, 'FuelEff Mult',  `×${mod.fuelEffMult.toFixed(2)}`,   mod.fuelEffMult > 1 ? RED : GREEN, y); y += 20;
+      this._row(ctx, 'Speed Mult', `×${mod.speedMult.toFixed(2)}`, AMBER, y); y += 16;
+      this._row(ctx, 'Accel Mult', `×${mod.accelMult.toFixed(2)}`, AMBER, y); y += 16;
+      this._row(ctx, 'FuelEff Mult', `×${mod.fuelEffMult.toFixed(2)}`, mod.fuelEffMult > 1 ? RED : GREEN, y); y += 20;
     } else if (cat === 'WEAPON' && mod.weapon) {
       this._header(ctx, 'WEAPON STATS', y); y += 18;
       const w = mod.weapon;
       const arm = w.damage ?? w.armorDamage;
-      if (arm != null)          { this._row(ctx, 'Armor Dmg', arm,                       GREEN, y); y += 16; }
-      if (w.hullDamage != null) { this._row(ctx, 'Hull Dmg',  w.hullDamage,              GREEN, y); y += 16; }
-      if (w.cooldownMax != null){ this._row(ctx, 'Cooldown',  `${(w.cooldownMax*1000).toFixed(0)}ms`, AMBER, y); y += 16; }
-      if (w.maxRange != null)   { this._row(ctx, 'Range',     `${Math.round(w.maxRange)}u`, AMBER, y); y += 16; }
+      if (arm != null) { this._row(ctx, 'Armor Dmg', arm, GREEN, y); y += 16; }
+      if (w.hullDamage != null) { this._row(ctx, 'Hull Dmg', w.hullDamage, GREEN, y); y += 16; }
+      if (w.cooldownMax != null) { this._row(ctx, 'Cooldown', `${(w.cooldownMax * 1000).toFixed(0)}ms`, AMBER, y); y += 16; }
+      if (w.maxRange != null) { this._row(ctx, 'Range', `${Math.round(w.maxRange)}u`, AMBER, y); y += 16; }
       y += 4;
     } else if (cat === 'POWER') {
       this._header(ctx, 'POWER OUTPUT', y); y += 18;
@@ -1082,9 +1082,9 @@ export class Designer {
       if (out > 0) { this._row(ctx, 'Output', `+${out}W`, GREEN, y); y += 16; }
       if (mod.overhaulCost) {
         const interval = mod._overhaulInterval;
-        const hrs = interval ? `every ${(interval/3600).toFixed(0)}h` : '—';
-        this._row(ctx, 'Overhaul',  `${mod.overhaulCost} scrap`, MAGENTA, y); y += 16;
-        this._row(ctx, 'Interval',  hrs, MAGENTA, y); y += 16;
+        const hrs = interval ? `every ${(interval / 3600).toFixed(0)}h` : '—';
+        this._row(ctx, 'Overhaul', `${mod.overhaulCost} scrap`, MAGENTA, y); y += 16;
+        this._row(ctx, 'Interval', hrs, MAGENTA, y); y += 16;
       }
       y += 4;
     } else if (cat === 'SENSOR') {
@@ -1092,12 +1092,12 @@ export class Designer {
       if (mod.sensor_range) { this._row(ctx, 'Range', `${mod.sensor_range}u`, CYAN, y); y += 16; }
       const caps = [];
       if (mod.minimap_stations) caps.push('stations');
-      if (mod.minimap_ships)    caps.push('ships');
-      if (mod.lead_indicators)  caps.push('lead');
-      if (mod.health_pips)      caps.push('pips');
-      if (mod.salvage_detail)   caps.push('salvage');
+      if (mod.minimap_ships) caps.push('ships');
+      if (mod.lead_indicators) caps.push('lead');
+      if (mod.health_pips) caps.push('pips');
+      if (mod.salvage_detail) caps.push('salvage');
       if (caps.length) {
-        ctx.fillStyle = DIM_TEXT; ctx.font = '10px monospace';
+        ctx.fillStyle = DIM_TEXT; ctx.font = "10px 'Fira Mono', monospace";
         ctx.fillText('Detects', MARGIN, y);
         ctx.fillStyle = CYAN; ctx.textAlign = 'right';
         ctx.fillText(caps.join(' · '), PANEL_W - MARGIN, y);
@@ -1108,27 +1108,27 @@ export class Designer {
     }
 
     this._header(ctx, 'POWER / FUEL', y); y += 18;
-    const draw = mod.powerDraw  ?? 0;
-    const out  = mod.powerOutput ?? 0;
-    if (out  > 0) { this._row(ctx, 'Pwr Output', `+${out}W`, GREEN, y); y += 16; }
-    if (draw > 0) { this._row(ctx, 'Pwr Draw',   `-${draw}W`, MAGENTA, y); y += 16; }
+    const draw = mod.powerDraw ?? 0;
+    const out = mod.powerOutput ?? 0;
+    if (out > 0) { this._row(ctx, 'Pwr Output', `+${out}W`, GREEN, y); y += 16; }
+    if (draw > 0) { this._row(ctx, 'Pwr Draw', `-${draw}W`, MAGENTA, y); y += 16; }
     const drain = mod.fuelDrainRate ?? 0;
     if (drain > 0) { this._row(ctx, 'Fuel Drain', `+${drain.toFixed(3)}/s`, AMBER, y); y += 16; }
     if (draw === 0 && out === 0 && drain === 0) {
-      ctx.fillStyle = DIM_TEXT; ctx.font = '10px monospace';
+      ctx.fillStyle = DIM_TEXT; ctx.font = "10px 'Fira Mono', monospace";
       ctx.fillText('  no power or fuel overhead', MARGIN, y); y += 16;
     }
     y += 8;
 
     this._divider(ctx, y); y += 10;
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(def.file, MARGIN, y); y += 20;
 
     if (mod.description) {
       this._divider(ctx, y); y += 10;
       this._header(ctx, 'DESCRIPTION', y); y += 16;
-      y = this._wrapText(ctx, mod.description, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+      y = this._wrapText(ctx, mod.description, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
     }
 
     return y;
@@ -1136,7 +1136,7 @@ export class Designer {
 
   _renderPoiStats(ctx, y, def) {
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText('R reset  •  scroll zoom  •  drag pan', MARGIN, y); y += 20;
 
     this._header(ctx, 'INFO', y); y += 18;
@@ -1148,7 +1148,7 @@ export class Designer {
     // Zoom / pan readout
     this._divider(ctx, y); y += 10;
     ctx.fillStyle = AMBER;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(`Zoom: ${this._zoom.toFixed(3)}×`, MARGIN, y); y += 16;
     const panWx = -(this._panX / this._zoom);
     const panWy = -(this._panY / this._zoom);
@@ -1161,7 +1161,7 @@ export class Designer {
     if (def.flavorText) {
       this._divider(ctx, y); y += 10;
       this._header(ctx, 'LORE', y); y += 16;
-      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, '10px monospace');
+      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
     }
 
     return y;
@@ -1173,10 +1173,10 @@ export class Designer {
     this._comparePanel = document.getElementById('compare-panel');
     this._compareTable = document.getElementById('compare-table');
 
-    const tab   = document.getElementById('compare-tab');
+    const tab = document.getElementById('compare-tab');
     const close = document.getElementById('compare-close');
 
-    tab.addEventListener('click',   () => this._toggleCompare());
+    tab.addEventListener('click', () => this._toggleCompare());
     close.addEventListener('click', () => this._toggleCompare());
 
     // Clicking a row navigates to that item
@@ -1206,9 +1206,9 @@ export class Designer {
     const table = this._compareTable;
     table.innerHTML = '';
 
-    const cols  = this._compareColumns(cat);
+    const cols = this._compareColumns(cat);
     const thead = /** @type {HTMLTableElement} */ (table).createTHead();
-    const hrow  = thead.insertRow();
+    const hrow = thead.insertRow();
 
     // Name column header
     const th0 = document.createElement('th');
@@ -1224,12 +1224,12 @@ export class Designer {
     const tbody = /** @type {HTMLTableElement} */ (table).createTBody();
     cat.items.forEach((def, idx) => {
       const entity = def.create();
-      const vals   = cols.map(col => col.get(def, entity));
+      const vals = cols.map(col => col.get(def, entity));
 
       const tr = tbody.insertRow();
       tr.dataset.idx = idx;
       if (idx === this._itemIdx) tr.classList.add('cmp-current');
-      if (def.isVariant)         tr.classList.add('cmp-variant');
+      if (def.isVariant) tr.classList.add('cmp-variant');
 
       // Name cell
       const nameCell = tr.insertCell();
@@ -1250,7 +1250,7 @@ export class Designer {
     if (!this._compareTable) return;
     const rows = this._compareTable.querySelectorAll('tbody tr[data-idx]');
     rows.forEach(row => {
-      row.classList.toggle('cmp-current', parseInt(/** @type {HTMLElement} */ (row).dataset.idx, 10) === this._itemIdx);
+      row.classList.toggle('cmp-current', parseInt(/** @type {HTMLElement} */(row).dataset.idx, 10) === this._itemIdx);
     });
     // Scroll current row into view
     const cur = this._compareTable.querySelector('tr.cmp-current');
@@ -1264,60 +1264,64 @@ export class Designer {
 
     if (cat.id === 'ships') {
       return [
-        { label: 'FACTION',  get: (d)    => v(d.faction ?? '—',               'cmp-dim') },
-        { label: 'HULL',     get: (_, e) => v(e.hullMax,                       'cmp-white') },
-        { label: 'ARM-F',    get: (_, e) => v(e.armorArcsMax?.front  ?? '—',   'cmp-green') },
-        { label: 'ARM-P',    get: (_, e) => v(e.armorArcsMax?.port   ?? '—',   'cmp-green') },
-        { label: 'ARM-S',    get: (_, e) => v(e.armorArcsMax?.starboard ?? '—','cmp-green') },
-        { label: 'ARM-A',    get: (_, e) => v(e.armorArcsMax?.aft    ?? '—',   'cmp-green') },
-        { label: 'SPEED',    get: (_, e) => v(Math.round(e.speedMax),          'cmp-amber') },
-        { label: 'ACCEL',    get: (_, e) => v(Math.round(e.acceleration),      'cmp-amber') },
-        { label: 'TURN r/s', get: (_, e) => v(e.turnRate?.toFixed(2) ?? '—',   'cmp-amber') },
-        { label: 'FUEL',     get: (_, e) => v(e.fuelMax ?? '—',                'cmp-cyan') },
-        { label: 'EFF ×',    get: (_, e) => v(e.fuelEfficiency?.toFixed(2) ?? '—', 'cmp-cyan') },
-        { label: 'CARGO',    get: (_, e) => v(e.cargoCapacity ?? '—',          'cmp-dim') },
-        { label: 'WEAPONS',  get: (_, e) => v(
+        { label: 'FACTION', get: (d) => v(d.faction ?? '—', 'cmp-dim') },
+        { label: 'HULL', get: (_, e) => v(e.hullMax, 'cmp-white') },
+        { label: 'ARM-F', get: (_, e) => v(e.armorArcsMax?.front ?? '—', 'cmp-green') },
+        { label: 'ARM-P', get: (_, e) => v(e.armorArcsMax?.port ?? '—', 'cmp-green') },
+        { label: 'ARM-S', get: (_, e) => v(e.armorArcsMax?.starboard ?? '—', 'cmp-green') },
+        { label: 'ARM-A', get: (_, e) => v(e.armorArcsMax?.aft ?? '—', 'cmp-green') },
+        { label: 'SPEED', get: (_, e) => v(Math.round(e.speedMax), 'cmp-amber') },
+        { label: 'ACCEL', get: (_, e) => v(Math.round(e.acceleration), 'cmp-amber') },
+        { label: 'TURN r/s', get: (_, e) => v(e.turnRate?.toFixed(2) ?? '—', 'cmp-amber') },
+        { label: 'FUEL', get: (_, e) => v(e.fuelMax ?? '—', 'cmp-cyan') },
+        { label: 'EFF ×', get: (_, e) => v(e.fuelEfficiency?.toFixed(2) ?? '—', 'cmp-cyan') },
+        { label: 'CARGO', get: (_, e) => v(e.cargoCapacity ?? '—', 'cmp-dim') },
+        {
+          label: 'WEAPONS', get: (_, e) => v(
             (e.weapons ?? []).map(w => w.displayName ?? w.constructor.name).join(', ') || '—',
-            'cmp-dim') },
+            'cmp-dim')
+        },
       ];
     }
 
     if (cat.id === 'weapons') {
       return [
-        { label: 'ARM DMG',   get: (_, e) => { const d = e.damage ?? e.armorDamage ?? null; return v(d ?? '—', d != null ? 'cmp-green' : 'cmp-dim'); } },
-        { label: 'HULL DMG',  get: (_, e) => v(e.hullDamage ?? '—',           e.hullDamage != null ? 'cmp-green' : 'cmp-dim') },
-        { label: 'DPS',       get: (_, e) => {
-            const d  = e.damage ?? e.armorDamage;
+        { label: 'ARM DMG', get: (_, e) => { const d = e.damage ?? e.armorDamage ?? null; return v(d ?? '—', d != null ? 'cmp-green' : 'cmp-dim'); } },
+        { label: 'HULL DMG', get: (_, e) => v(e.hullDamage ?? '—', e.hullDamage != null ? 'cmp-green' : 'cmp-dim') },
+        {
+          label: 'DPS', get: (_, e) => {
+            const d = e.damage ?? e.armorDamage;
             const cd = e.cooldownMax;
             if (d != null && cd != null) return v((d / cd).toFixed(1), 'cmp-green');
-            if (e.baseDamage != null)    return v(e.baseDamage + '/s', 'cmp-green');
+            if (e.baseDamage != null) return v(e.baseDamage + '/s', 'cmp-green');
             return v('—', 'cmp-dim');
           }
         },
-        { label: 'CD ms',     get: (_, e) => {
+        {
+          label: 'CD ms', get: (_, e) => {
             const cd = e.cooldownMax ?? e.cooldown;
             return v(cd != null ? Math.round(cd * 1000) : '—', cd != null ? 'cmp-amber' : 'cmp-dim');
           }
         },
-        { label: 'RANGE u',   get: (_, e) => v(e.maxRange != null ? Math.round(e.maxRange) : '—', e.maxRange != null ? 'cmp-amber' : 'cmp-dim') },
-        { label: 'PROJ u/s',  get: (_, e) => v(e.projectileSpeed != null ? Math.round(e.projectileSpeed) : '—', e.projectileSpeed != null ? 'cmp-amber' : 'cmp-dim') },
-        { label: 'BLAST R',   get: (_, e) => v(e.blastRadius ?? '—',          e.blastRadius != null ? 'cmp-mag' : 'cmp-dim') },
-        { label: 'AMMO',      get: (_, e) => v(e.magSize ?? '—',              e.magSize != null ? 'cmp-white' : 'cmp-dim') },
-        { label: 'FLAGS',     get: (d)    => v((d.flags ?? []).join(' '),      'cmp-dim') },
+        { label: 'RANGE u', get: (_, e) => v(e.maxRange != null ? Math.round(e.maxRange) : '—', e.maxRange != null ? 'cmp-amber' : 'cmp-dim') },
+        { label: 'PROJ u/s', get: (_, e) => v(e.projectileSpeed != null ? Math.round(e.projectileSpeed) : '—', e.projectileSpeed != null ? 'cmp-amber' : 'cmp-dim') },
+        { label: 'BLAST R', get: (_, e) => v(e.blastRadius ?? '—', e.blastRadius != null ? 'cmp-mag' : 'cmp-dim') },
+        { label: 'AMMO', get: (_, e) => v(e.magSize ?? '—', e.magSize != null ? 'cmp-white' : 'cmp-dim') },
+        { label: 'FLAGS', get: (d) => v((d.flags ?? []).join(' '), 'cmp-dim') },
       ];
     }
 
     if (cat.id === 'modules') {
       return [
-        { label: 'CAT',       get: (d)    => v(d.category ?? '—',                          'cmp-dim') },
-        { label: 'PWR OUT',   get: (_, e) => { const o = e.powerOutput ?? 0; return v(o > 0 ? `+${o}W` : '—', o > 0 ? 'cmp-green' : 'cmp-dim'); } },
-        { label: 'PWR DRAW',  get: (_, e) => { const d = e.powerDraw ?? 0; return v(d > 0 ? `-${d}W` : '—', d > 0 ? 'cmp-mag' : 'cmp-dim'); } },
-        { label: 'FUEL/s',    get: (_, e) => { const f = e.fuelDrainRate ?? 0; return v(f > 0 ? f.toFixed(3) : '—', f > 0 ? 'cmp-amber' : 'cmp-dim'); } },
-        { label: 'SPD ×',     get: (_, e) => v(e.isEngine ? `×${e.speedMult.toFixed(2)}`  : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
-        { label: 'ACCEL ×',   get: (_, e) => v(e.isEngine ? `×${e.accelMult.toFixed(2)}`  : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
-        { label: 'FEFF ×',    get: (_, e) => v(e.isEngine ? `×${e.fuelEffMult.toFixed(2)}`: '—', e.isEngine ? (e.fuelEffMult > 1 ? 'cmp-red' : 'cmp-green') : 'cmp-dim') },
-        { label: 'SENSOR',    get: (_, e) => v(e.sensor_range ? `${e.sensor_range}u` : '—', e.sensor_range ? 'cmp-cyan' : 'cmp-dim') },
-        { label: 'OVERHAUL',  get: (_, e) => v(e.overhaulCost ? `${e.overhaulCost} sc` : '—', e.overhaulCost ? 'cmp-mag' : 'cmp-dim') },
+        { label: 'CAT', get: (d) => v(d.category ?? '—', 'cmp-dim') },
+        { label: 'PWR OUT', get: (_, e) => { const o = e.powerOutput ?? 0; return v(o > 0 ? `+${o}W` : '—', o > 0 ? 'cmp-green' : 'cmp-dim'); } },
+        { label: 'PWR DRAW', get: (_, e) => { const d = e.powerDraw ?? 0; return v(d > 0 ? `-${d}W` : '—', d > 0 ? 'cmp-mag' : 'cmp-dim'); } },
+        { label: 'FUEL/s', get: (_, e) => { const f = e.fuelDrainRate ?? 0; return v(f > 0 ? f.toFixed(3) : '—', f > 0 ? 'cmp-amber' : 'cmp-dim'); } },
+        { label: 'SPD ×', get: (_, e) => v(e.isEngine ? `×${e.speedMult.toFixed(2)}` : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
+        { label: 'ACCEL ×', get: (_, e) => v(e.isEngine ? `×${e.accelMult.toFixed(2)}` : '—', e.isEngine ? 'cmp-amber' : 'cmp-dim') },
+        { label: 'FEFF ×', get: (_, e) => v(e.isEngine ? `×${e.fuelEffMult.toFixed(2)}` : '—', e.isEngine ? (e.fuelEffMult > 1 ? 'cmp-red' : 'cmp-green') : 'cmp-dim') },
+        { label: 'SENSOR', get: (_, e) => v(e.sensor_range ? `${e.sensor_range}u` : '—', e.sensor_range ? 'cmp-cyan' : 'cmp-dim') },
+        { label: 'OVERHAUL', get: (_, e) => v(e.overhaulCost ? `${e.overhaulCost} sc` : '—', e.overhaulCost ? 'cmp-mag' : 'cmp-dim') },
       ];
     }
 
@@ -1348,13 +1352,13 @@ export class Designer {
 
   _header(ctx, label, y) {
     ctx.fillStyle = CYAN;
-    ctx.font = 'bold 10px monospace';
+    ctx.font = "bold 10px 'Fira Mono', monospace";
     ctx.fillText(label, MARGIN, y);
   }
 
   _row(ctx, label, value, color, y) {
     ctx.fillStyle = DIM_TEXT;
-    ctx.font = '10px monospace';
+    ctx.font = "10px 'Fira Mono', monospace";
     ctx.textAlign = 'left';
     ctx.fillText(label, MARGIN, y);
     ctx.fillStyle = color;

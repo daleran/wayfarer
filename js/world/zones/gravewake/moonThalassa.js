@@ -3,6 +3,7 @@
 // The most habitable moon in Tyr — brine seas, dome farms, algae cultures.
 
 import { THALASSA_BRINE, THALASSA_LAND, THALASSA_HAZE } from '../../../rendering/colors.js';
+import { TITLE } from '../../../rendering/draw.js';
 
 // Terrain contour shapes — normalized coords (r=1), closed polygon per entry.
 // Designed to read as brine-sea coastlines and continental shelves.
@@ -107,12 +108,12 @@ export const MoonThalassa = {
         ctx.stroke();
 
         // Name label
-        ctx.font = '11px monospace';
+        ctx.font = TITLE.font;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = THALASSA_BRINE;
-        ctx.globalAlpha = 0.45;
-        ctx.fillText(this.name.toUpperCase(), cx, cy - r - 10);
+        ctx.globalAlpha = TITLE.alpha;
+        ctx.fillText(this.name.toUpperCase(), cx, cy - r - 24);
 
         ctx.globalAlpha = 1;
         ctx.restore();

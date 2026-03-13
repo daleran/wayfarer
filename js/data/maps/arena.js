@@ -6,6 +6,7 @@ import { TheCoil } from '../../world/zones/gravewake/theCoil/index.js';
 import { PlanetPale } from '../../world/zones/gravewake/planetPale.js';
 import { createDerelict } from '../../world/derelict.js';
 import { createShip } from '../../ships/registry.js';
+import { KellsStop } from '/js/world/zones/gravewake/kellsStop.js';
 
 function spawnEnemy(x, y, shipType) {
   const ship = createShip(shipType, x, y);
@@ -29,6 +30,7 @@ export const MAP = {
   entities: [
     // The Coil — for BH station overlay testing
     TheCoil.instantiate(4000, 5200),
+    KellsStop.instantiate(3000, 5600),
 
     // Six derelicts in a hex ring at r≈1800 around Pale
     createDerelict({

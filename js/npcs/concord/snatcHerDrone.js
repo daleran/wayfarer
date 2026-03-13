@@ -11,8 +11,8 @@ const ARMOR_ALL  = 0.1;   // 10 per arc
 
 const LATCH_RANGE          = 35;   // px
 const DRAIN_INTERVAL       = 0.25; // seconds per tick
-const ARMOR_DRAIN_PER_TICK = 2;    // 8/sec
-const HULL_DRAIN_PER_TICK  = 0.5;  // 2/sec bleed
+const ARMOR_DRAIN_PER_TICK = 2.6;  // ~10.4/sec
+const HULL_DRAIN_PER_TICK  = 0.65; // ~2.6/sec bleed
 
 // Tiny hexagonal dart — ~14px
 const DRONE_POINTS = [
@@ -34,7 +34,7 @@ export class SnatcHerDrone extends MaverickCourier {
     this.relation    = 'hostile';
     this.shipType    = 'snatcher-drone';
     this.displayName = 'Snatcher Drone';
-    this.ai          = { ...AI_TEMPLATES.stalker };
+    this.ai          = { ...AI_TEMPLATES.latch };
 
     this.flavorText =
       'A Concord Remnant autonomous intercept unit. No weapons, no crew, ' +

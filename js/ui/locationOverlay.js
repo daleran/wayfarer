@@ -25,7 +25,6 @@ export class LocationOverlay {
     this._game      = null;
     this._zoneId    = null;
     this._serviceId = null;
-    this._prevZoom  = null;
     this._el        = document.getElementById('location-overlay');
   }
 
@@ -38,19 +37,15 @@ export class LocationOverlay {
     this._el.classList.remove('hidden');
 
     if (game?.camera) {
-      this._prevZoom = game.camera.zoom;
-      game.camera.zoom = this._prevZoom * 4;
-      game.camera.x = station.x;
-      game.camera.y = station.y;
+      game.camera.pushZoom(2.75);
     }
 
     this._render();
   }
 
   close() {
-    if (this._prevZoom !== null && this._game?.camera) {
-      this._game.camera.zoom = this._prevZoom;
-      this._prevZoom = null;
+    if (this._game?.camera) {
+      this._game.camera.popZoom();
     }
     this.visible = false;
     this._el.classList.add('hidden');

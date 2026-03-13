@@ -161,8 +161,8 @@ export const GRAVEWAKE = {
     // Enemies
     ...npcGroup(3200, 2200, 3, 'light-fighter'),
     ...npcGroup(2800, 7500, 3, 'light-fighter'),
-    ...npcGroup(14000, 4200, 1, 'drone-control-frigate'),
-    ...npcGroup(10500, 2500, 1, 'drone-control-frigate'),
+    ...npcGroup(14000, 8000, 1, 'drone-control-frigate'),
+    ...npcGroup(10500, 7000, 1, 'drone-control-frigate'),
 
     // Lurkers
     ...lurkerGroup(4200, 4000, 2),

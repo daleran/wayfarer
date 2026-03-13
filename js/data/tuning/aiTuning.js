@@ -55,6 +55,15 @@ export const AI_TEMPLATES = {
     fleeHullRatio:        0.3,
   },
 
+  // Charges directly at player to latch; no weapons, no orbit
+  latch: {
+    combatBehavior:     'latch',
+    aggroRange:          1800,
+    deaggroRange:        2400,
+    patrolRadius:         200,
+    fleeHullRatio:        0,       // never flees — expendable
+  },
+
   // Hides near cover; pounces on traders and switches to player if closer
   lurker: {
     combatBehavior:     'lurker',

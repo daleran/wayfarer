@@ -4,6 +4,7 @@ import { MaverickCourier } from '../ships/classes/maverickCourier.js';
 import { GarrisonFrigate } from '../ships/classes/garrisonFrigate.js';
 import { OnyxClassTug } from '../ships/classes/onyxTug.js';
 import { AMBER, DIM_TEXT } from '../rendering/colors.js';
+import { FLAVOR, PROMPT } from '../rendering/draw.js';
 
 const INTERACTION_RADIUS = 120;
 const HULL_ALPHA = 0.55;
@@ -63,13 +64,13 @@ export class Derelict extends Entity {
       const loreX = screen.x + 28 * camera.zoom + 10;
       const loreY = screen.y - (this.loreText.length - 1) * 6;
       ctx.save();
-      ctx.font = '9px monospace';
+      ctx.font = FLAVOR.font;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       ctx.fillStyle = DIM_TEXT;
-      ctx.globalAlpha = this._loreAlpha * 0.75;
+      ctx.globalAlpha = this._loreAlpha * FLAVOR.alpha;
       for (let i = 0; i < this.loreText.length; i++) {
-        ctx.fillText(this.loreText[i], loreX, loreY + i * 13);
+        ctx.fillText(this.loreText[i], loreX, loreY + i * 16);
       }
       ctx.restore();
     }
@@ -79,7 +80,7 @@ export class Derelict extends Entity {
       const alpha = 0.55 + Math.sin(Date.now() * 0.004) * 0.35;
       const promptY = screen.y + (this.getBounds().radius + 14) * camera.zoom;
       ctx.save();
-      ctx.font = '11px monospace';
+      ctx.font = PROMPT.font;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = AMBER;

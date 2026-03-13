@@ -2,6 +2,7 @@
 // Renders as a CRT-style topographic sphere with contour lines.
 
 import { PALE_ICE, PALE_HAZE } from '../../../rendering/colors.js';
+import { TITLE } from '../../../rendering/draw.js';
 
 // Terrain contour shapes — normalized coords (r=1), closed polygon per entry.
 // Designed to read as topographic ice-surface scan data (Nostromo-style CRT aesthetic).
@@ -94,12 +95,12 @@ export const PlanetPale = {
         ctx.stroke();
 
         // Name label
-        ctx.font = '12px monospace';
+        ctx.font = TITLE.font;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = PALE_ICE;
-        ctx.globalAlpha = 0.50;
-        ctx.fillText(this.name.toUpperCase(), cx, cy - r - 10);
+        ctx.globalAlpha = TITLE.alpha;
+        ctx.fillText(this.name.toUpperCase(), cx, cy - r - 24);
 
         ctx.globalAlpha = 1;
         ctx.restore();
