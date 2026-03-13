@@ -1,5 +1,5 @@
 import { Entity } from '../entities/entity.js';
-import { CYAN, AMBER, RED, WHITE } from '../ui/colors.js';
+import { CYAN, AMBER, RED, GREEN, WHITE } from '../rendering/colors.js';
 import { FACTION_MAP } from '../systems/reputation.js';
 
 export class Station extends Entity {
@@ -97,9 +97,51 @@ export class Station extends Entity {
       }
     }
 
+    // Docking lights
+    this._renderDockingLights(ctx, 0, 44, 15);
+
     this._renderNameLabel(ctx, camera, 50);
 
     ctx.restore();
+  }
+
+  // Blinking red/green docking lights — standard pattern for all stations.
+  // Call inside a render() block after ctx.scale(z, z).
+  // x, y = center of the docking area; spacing = distance from center to each light.
+  // Lights blink alternately: red (port) and green (starboard).
+  _renderDockingLights(ctx, x, y, spacing = 20) {
+    const t = this._navPulse;
+    const phase = ((t * 1.8) % 2);
+    const redOn = phase < 1;
+    const greenOn = !redOn;
+
+    // Port (left) — red
+    ctx.beginPath();
+    ctx.arc(x - spacing, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = RED;
+    ctx.globalAlpha = redOn ? 0.85 : 0.1;
+    ctx.fill();
+    if (redOn) {
+      ctx.beginPath();
+      ctx.arc(x - spacing, y, 8, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.08;
+      ctx.fill();
+    }
+
+    // Starboard (right) — green
+    ctx.beginPath();
+    ctx.arc(x + spacing, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = GREEN;
+    ctx.globalAlpha = greenOn ? 0.85 : 0.1;
+    ctx.fill();
+    if (greenOn) {
+      ctx.beginPath();
+      ctx.arc(x + spacing, y, 8, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.08;
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
   }
 
   // Draw station name below the icon. Call inside a render() block after ctx.scale(z, z).
@@ -114,6 +156,14 @@ export class Station extends Entity {
     ctx.globalAlpha = alpha;
     ctx.fillText(this.name, 0, yOffset * z);
     ctx.globalAlpha = 1;
+  }
+
+  // Can the player dock from this world-space position?
+  // Default: circular radius check. Override for custom zones.
+  isInDockingZone(wx, wy) {
+    const dx = wx - this.x;
+    const dy = wy - this.y;
+    return Math.sqrt(dx * dx + dy * dy) < this.dockingRadius;
   }
 
   getBounds() {

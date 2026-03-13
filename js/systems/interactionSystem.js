@@ -39,9 +39,7 @@ export class InteractionSystem {
     this.nearbyStation = null;
     for (const entity of entities) {
       if (!(entity instanceof Station)) continue;
-      const dx = entity.x - player.x;
-      const dy = entity.y - player.y;
-      if (Math.sqrt(dx * dx + dy * dy) < entity.dockingRadius) {
+      if (entity.isInDockingZone(player.x, player.y)) {
         this.nearbyStation = entity;
         break;
       }
