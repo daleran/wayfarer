@@ -1,5 +1,5 @@
 import { Projectile } from '@/entities/projectile.js';
-import { GREEN } from '@/rendering/colors.js';
+import { GREEN, PROJ_GLOW_GREEN } from '@/rendering/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          GATLING_MAG_SIZE, GATLING_RELOAD_TIME } from '@data/compiledData.js';
@@ -13,9 +13,8 @@ const RANGE_MULT       = 0.333;  // ~500u — short range
 export class GatlingGun {
   constructor() {
     this.isSecondary = false;
-    this.isAutoFire  = false;  // manually fired, not auto-fire
+    this.isAutoFire  = false;
     this.displayName = 'GATLING';
-    this.ammoType    = 'gatling';
     this.damage       = BASE_DAMAGE      * DAMAGE_MULT;
     this.hullDamage   = BASE_HULL_DAMAGE * HULL_DAMAGE_MULT;
     this.projectileSpeed = BASE_PROJECTILE_SPEED * SPEED_MULT * PROJECTILE_SPEED_FACTOR;
@@ -27,7 +26,9 @@ export class GatlingGun {
     this.ammo         = GATLING_MAG_SIZE;
     this.reloadTime   = GATLING_RELOAD_TIME;
     this._reloadTimer = 0;
-    this.ammoCargoWeight = 0.005; // 200 rounds per cargo unit
+    // Ammo item system
+    this.acceptedAmmoTypes = ['8mm'];
+    this.currentAmmoId     = '8mm';
   }
 
   get isReloading() { return this._reloadTimer > 0; }
@@ -46,7 +47,7 @@ export class GatlingGun {
     proj.hullDamage  = this.hullDamage;
     proj.maxRange    = this.maxRange;
     proj.color       = GREEN;
-    proj.glowColor   = '#ccffcc';
+    proj.glowColor   = PROJ_GLOW_GREEN;
     proj.length      = 3;
     proj.canIntercept = true;
     entities.push(proj);

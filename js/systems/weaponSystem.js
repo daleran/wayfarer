@@ -1,4 +1,5 @@
 import { Projectile } from '@/entities/projectile.js';
+import { AMMO } from '@data/compiledData.js';
 
 export class WeaponSystem {
   constructor() {}
@@ -10,13 +11,13 @@ export class WeaponSystem {
       w._reloadTimer -= dt;
       if (w._reloadTimer <= 0) {
         w._reloadTimer = 0;
-        if (w.ammoType && w.magSize !== undefined) {
-          const available = ammo[w.ammoType] ?? 0;
+        if (w.currentAmmoId && w.magSize !== undefined) {
+          const available = ammo[w.currentAmmoId] ?? 0;
           if (available > 0) {
             const needed = w.magSize - w.ammo;
             const take = Math.min(needed, available);
             w.ammo += take;
-            ammo[w.ammoType] -= take;
+            ammo[w.currentAmmoId] -= take;
           }
         }
       }
@@ -26,30 +27,27 @@ export class WeaponSystem {
   manualReload(player, ammo) {
     if (!player) return;
     for (const w of player.weapons) {
-      if (w.ammoType === undefined || w.magSize === undefined) continue;
+      if (!w.currentAmmoId || w.magSize === undefined) continue;
       if (w._reloadTimer > 0) continue;
       if (w.ammo >= w.magSize) continue;
-      if ((ammo[w.ammoType] ?? 0) <= 0) continue;
+      if ((ammo[w.currentAmmoId] ?? 0) <= 0) continue;
       w._reloadTimer = w.reloadTime;
     }
   }
 
-  cycleAmmoMode(weapon, ammo, hud, player) {
-    const modes = weapon.ammoModes;
-    if (!modes || modes.length < 2) return;
-    const next = modes[(modes.indexOf(weapon.currentAmmoMode) + 1) % modes.length];
-    ammo[weapon.ammoType] = (ammo[weapon.ammoType] ?? 0) + weapon.ammo;
+  /** Cycle to the next accepted ammo type. Dumps magazine back, starts reload. */
+  cycleAmmo(weapon, ammo, hud, player) {
+    const types = weapon.acceptedAmmoTypes;
+    if (!types || types.length < 2) return;
+    const idx = types.indexOf(weapon.currentAmmoId);
+    const next = types[(idx + 1) % types.length];
+    // Dump current magazine back to cargo
+    ammo[weapon.currentAmmoId] = (ammo[weapon.currentAmmoId] ?? 0) + weapon.ammo;
     weapon.ammo = 0;
-    weapon.currentAmmoMode = next;
+    weapon.currentAmmoId = next;
     weapon._reloadTimer = weapon.reloadTime;
-    hud.addPickupText('\u2192 ' + next.toUpperCase(), player.x, player.y, null);
-  }
-
-  cycleGuidanceMode(weapon, hud, player) {
-    const modes = weapon.guidanceModes;
-    if (!modes || modes.length < 2) return;
-    weapon.guidanceMode = modes[(modes.indexOf(weapon.guidanceMode) + 1) % modes.length];
-    hud.addPickupText('\u2192 ' + weapon.guidanceMode.toUpperCase(), player.x, player.y, null);
+    const tag = AMMO[next]?.tag || next.toUpperCase();
+    hud.addPickupText('\u2192 ' + tag, player.x, player.y, null);
   }
 
   updateGuidance(entities, ships, mouseWorld) {

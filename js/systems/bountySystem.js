@@ -1,4 +1,3 @@
-import { generateEnemyLoot } from '@/entities/lootDrop.js';
 import { createShip } from '@/ships/registry.js';
 import { REPUTATION } from '@data/compiledData.js';
 
@@ -7,11 +6,21 @@ export class BountySystem {
     this.activeBounties = [];
   }
 
-  onEnemyKilled(target, { particlePool, hud, reputation, entities }) {
+  onEnemyCrippled(target, { particlePool, hud, reputation }) {
     particlePool.explosion(target.x, target.y, 20);
     if (target.displayName) hud.addKill(target.displayName);
-    const drops = generateEnemyLoot(target.x, target.y);
-    for (const drop of drops) entities.push(drop);
+    if (target.faction) reputation.onKill(target.faction);
+    for (const bounty of this.activeBounties) {
+      if (bounty.status === 'active' && bounty.targetEntity === target) {
+        bounty.status = 'completed';
+        hud.addPickupText(`Bounty Complete: +${bounty.contract.reward} scrap`, target.x, target.y);
+      }
+    }
+  }
+
+  onEnemyKilled(target, { particlePool, hud, reputation, entities: _entities }) {
+    particlePool.explosion(target.x, target.y, 20);
+    if (target.displayName) hud.addKill(target.displayName);
     if (target.faction) reputation.onKill(target.faction);
     for (const bounty of this.activeBounties) {
       if (bounty.status === 'active' && bounty.targetEntity === target) {

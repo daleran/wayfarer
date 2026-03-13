@@ -3,25 +3,24 @@ import { AMBER, AUTOCANNON_GLOW } from '@/rendering/colors.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_WEAPON_RANGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          AUTOCANNON_MAG_SIZE, AUTOCANNON_RELOAD_TIME,
-         HE_AUTOCANNON_BLAST } from '@data/compiledData.js';
+         HE_AUTOCANNON_BLAST, AMMO } from '@data/compiledData.js';
 import { normalizeToTarget } from '@/utils/math.js';
 
 const DAMAGE_MULT  = 1.0;
 const RANGE_MULT   = 1.0;
 const SPEED_MULT   = 1.0;
 const COOLDOWN_MULT = 1.04;
-const CARGO_WEIGHT = 0.01; // 100 rounds per cargo unit
 
-// Ammo mode definitions — all values relative to base weapon stats
-const AMMO_MODES = {
-  ap: {
+// Ballistic behavior keyed by ammo id
+const AMMO_BEHAVIOR = {
+  '25mm-ap': {
     damageMult:    1.0,
-    hullDamageBase: null, // uses weapon default (no hullDamage property on AP)
+    hullDamageBase: null,
     blastRadius:   0,
     detonatesOnContact: false,
     canIntercept:  false,
   },
-  he: {
+  '25mm-he': {
     damageMult:    0.25,
     hullDamageBase: BASE_HULL_DAMAGE * 1.65,
     blastRadius:   HE_AUTOCANNON_BLAST,
@@ -38,7 +37,6 @@ export class Autocannon {
     this.projectileSpeed = BASE_PROJECTILE_SPEED * SPEED_MULT * PROJECTILE_SPEED_FACTOR;
     this.maxRange = BASE_WEAPON_RANGE * RANGE_MULT;
     this.isAutoFire = false;
-    this.ammoType = 'autocannon';
     this.color = AMBER;
     this.glowColor = AUTOCANNON_GLOW;
     // Magazine
@@ -46,14 +44,14 @@ export class Autocannon {
     this.ammo           = AUTOCANNON_MAG_SIZE;
     this.reloadTime     = AUTOCANNON_RELOAD_TIME;
     this._reloadTimer   = 0;
-    this.ammoCargoWeight = CARGO_WEIGHT;
-    // Ammo mode
-    this.ammoModes       = ['ap', 'he'];
-    this.currentAmmoMode = 'ap';
+    // Ammo item system
+    this.acceptedAmmoTypes = ['25mm-ap', '25mm-he'];
+    this.currentAmmoId     = '25mm-ap';
   }
 
   get displayName() {
-    return 'AUTOCANNON [' + this.currentAmmoMode.toUpperCase() + ']';
+    const tag = AMMO[this.currentAmmoId]?.tag;
+    return tag ? 'AUTOCANNON [' + tag + ']' : 'AUTOCANNON';
   }
 
   get isReloading() { return this._reloadTimer > 0; }
@@ -68,33 +66,31 @@ export class Autocannon {
     const n = normalizeToTarget(ship.x, ship.y, tx, ty);
     if (!n) return;
     const { nx, ny, dist } = n;
-    const mode = AMMO_MODES[this.currentAmmoMode];
+    const behavior = AMMO_BEHAVIOR[this.currentAmmoId] ?? AMMO_BEHAVIOR['25mm-ap'];
     const proj = new Projectile(
       ship.x, ship.y,
       nx * this.projectileSpeed,
       ny * this.projectileSpeed,
-      this.damage * mode.damageMult,
+      this.damage * behavior.damageMult,
       ship
     );
     proj.color = this.color;
     proj.glowColor = this.glowColor;
     proj.length = 3;
     proj.hasTrail = true;
-    if (mode.hullDamageBase !== null) proj.hullDamage = mode.hullDamageBase;
-    if (mode.blastRadius > 0) {
-      proj.blastRadius = mode.blastRadius;
-      // HE: detonate at click point (range-capped) like flak, and also on contact
+    if (behavior.hullDamageBase !== null) proj.hullDamage = behavior.hullDamageBase;
+    if (behavior.blastRadius > 0) {
+      proj.blastRadius = behavior.blastRadius;
       proj.maxRange           = Math.min(dist + 20, this.maxRange);
       proj.detonatesOnExpiry  = true;
       proj.detonatesOnContact = true;
     } else {
       proj.maxRange = this.maxRange;
     }
-    if (mode.canIntercept) proj.canIntercept = true;
+    if (behavior.canIntercept) proj.canIntercept = true;
     entities.push(proj);
     if (ship.relation === 'player') {
       this.ammo--;
-      // Auto-start reload when magazine is empty
       if (this.ammo <= 0) this._reloadTimer = this.reloadTime;
     }
     this._cooldown = this.cooldownMax * (ship._fireCooldownMult ?? 1);

@@ -76,10 +76,16 @@ function _buildItemCategories() {
 
   // Ammo
   const ammoTypes = [
-    { id: 'autocannon', label: 'Autocannon Ammo', amount: 100 },
-    { id: 'cannon',     label: 'Cannon Ammo',     amount: 20 },
-    { id: 'gatling',    label: 'Gatling Ammo',     amount: 200 },
-    { id: 'rocket',     label: 'Rocket Ammo',      amount: 10 },
+    { id: '8mm',      label: '8mm Ball',              amount: 200 },
+    { id: '25mm-ap',  label: '25mm Armor Piercing',   amount: 100 },
+    { id: '25mm-he',  label: '25mm High Explosive',   amount: 50 },
+    { id: '90mm-ap',  label: '90mm Armor Piercing',   amount: 12 },
+    { id: '90mm-he',  label: '90mm High Explosive',   amount: 8 },
+    { id: 'rkt',      label: 'Dumbfire Rocket',       amount: 10 },
+    { id: 'wg',       label: 'Wire-Guided Missile',   amount: 10 },
+    { id: 'ht',       label: 'Heat-Seeking Missile',  amount: 10 },
+    { id: '30mm-kp',  label: '30mm Kinetic Penetrator', amount: 6 },
+    { id: '60mm-kp',  label: '60mm Kinetic Penetrator', amount: 4 },
   ];
   cats.push({
     label: 'AMMO',

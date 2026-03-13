@@ -1,5 +1,5 @@
 import { Ship } from '@/entities/ship.js';
-import { engineGlow, lines } from '@/rendering/draw.js';
+import { lines } from '@/rendering/draw.js';
 
 const SPEED_MULT  = 0.55;  // ~46 u/s — very slow
 const ACCEL_MULT  = 0.65;  // ~7 u/s²
@@ -70,6 +70,18 @@ const WELD_SEAM = [
 // Single large engine at the back of the starboard nacelle
 const ENGINE_POS = [{ x: 11, y: 12 }];
 
+// Mount point positions — index i maps to moduleSlots[i].
+// Slots: [engine, weapon, reactor, sensor, utility]
+const MOUNT_POINTS = [
+  { x: 11,  y: 10,  arc: 'starboard', size: 'small', slot: 'engine' },  // engine — stbd nacelle near exhaust
+  { x: -8,  y: -22, arc: 'front',     size: 'small' },  // weapon — port cockpit hardpoint
+  { x: 10,  y: -2,  arc: 'starboard', size: 'small' },  // reactor — stbd nacelle interior
+  { x: 4,   y: -22, arc: 'front',     size: 'small' },  // sensor — cockpit roof
+  { x: -8,  y: 2,   arc: 'port',      size: 'small' },  // utility — port nacelle
+];
+
+export { MOUNT_POINTS as MOUNT_POINTS_ONYX };
+
 export class OnyxClassTug extends Ship {
   constructor(x, y) {
     super(x, y);
@@ -96,6 +108,10 @@ export class OnyxClassTug extends Ship {
     return ENGINE_POS;
   }
 
+  get _mountPoints() {
+    return MOUNT_POINTS;
+  }
+
   _drawShape(ctx) {
     // Arc segment map — maps each armor arc to the hull polygon indices it covers.
     // Used by _drawHullArcs() when this ship is player-owned.
@@ -118,8 +134,6 @@ export class OnyxClassTug extends Ship {
     // Weld seam across hull
     lines(ctx, [WELD_SEAM], this.hullStroke, 1, 0.25);
 
-    // Engine glow — nacelle engine
-    engineGlow(ctx, ENGINE_POS, this.engineColor, 3 + this.throttleLevel * 0.6, 2, 2, 0.3);
   }
 
   getBounds() {

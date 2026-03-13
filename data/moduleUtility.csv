@@ -1,0 +1,9 @@
+id,displayName,size,weight,cargoBonus,fuelBonus,armorBonus
+expanded-hold-s,EXPANDED HOLD (S),S,30,30,0,-15
+expanded-hold-l,EXPANDED HOLD (L),L,60,60,0,-25
+aux-tank-s,AUX TANK (S),S,25,0,20,-10
+aux-tank-l,AUX TANK (L),L,50,0,40,-20
+stripped-weight-s,STRIPPED WEIGHT (S),S,-40,0,0,-20
+stripped-weight-l,STRIPPED WEIGHT (L),L,-80,0,0,-40
+extra-armor-s,EXTRA ARMOR (S),S,40,0,0,30
+extra-armor-l,EXTRA ARMOR (L),L,80,0,0,60

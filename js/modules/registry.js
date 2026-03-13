@@ -21,6 +21,14 @@ import {
   CombatComputerModule,
   SalvageScannerModule,
   LongRangeScannerModule,
+  ExpandedHoldSmall,
+  ExpandedHoldLarge,
+  AuxTankSmall,
+  AuxTankLarge,
+  StrippedWeightSmall,
+  StrippedWeightLarge,
+  ExtraArmorSmall,
+  ExtraArmorLarge,
 } from './shipModule.js';
 
 export const MODULE_REGISTRY = {
@@ -51,6 +59,16 @@ export const MODULE_REGISTRY = {
   'CombatComputer':       CombatComputerModule,
   'SalvageScanner':       SalvageScannerModule,
   'LongRangeScanner':     LongRangeScannerModule,
+
+  // Utility
+  'expanded-hold-s':      ExpandedHoldSmall,
+  'expanded-hold-l':      ExpandedHoldLarge,
+  'aux-tank-s':           AuxTankSmall,
+  'aux-tank-l':           AuxTankLarge,
+  'stripped-weight-s':     StrippedWeightSmall,
+  'stripped-weight-l':     StrippedWeightLarge,
+  'extra-armor-s':        ExtraArmorSmall,
+  'extra-armor-l':        ExtraArmorLarge,
 };
 
 export function createModuleById(id) {

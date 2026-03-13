@@ -80,7 +80,7 @@ export class RepairSystem {
     return slots.some(m => m && m.condition && m.condition !== 'good');
   }
 
-  maybeBreachModule(ship) {
+  maybeBreachModule(ship, hitArc) {
     const ratio = ship.hullCurrent / ship.hullMax;
     if (ratio >= MODULE_BREACH_HULL_THRESHOLD) return null;
 
@@ -92,7 +92,18 @@ export class RepairSystem {
     if (Math.random() >= chance) return null;
 
     const slots = ship.moduleSlots ?? [];
-    const candidates = slots.filter(m => m && m.condition !== 'destroyed');
+    const mounts = ship._mountPoints;
+
+    // Prefer modules in the hit arc; fall back to all non-destroyed modules
+    let candidates;
+    if (hitArc && mounts) {
+      candidates = slots.filter((m, i) =>
+        m && m.condition !== 'destroyed' && mounts[i]?.arc === hitArc
+      );
+    }
+    if (!candidates || candidates.length === 0) {
+      candidates = slots.filter(m => m && m.condition !== 'destroyed');
+    }
     if (candidates.length === 0) return null;
 
     const mod = candidates[Math.floor(Math.random() * candidates.length)];

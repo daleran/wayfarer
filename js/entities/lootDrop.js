@@ -1,15 +1,7 @@
 import { Entity } from './entity.js';
 import { AMBER, CYAN, GREEN, MAGENTA } from '@/rendering/colors.js';
-import {
-  SalvagedSensorSuite, StandardSensorSuite, CombatComputerModule,
-  SalvageScannerModule, LongRangeScannerModule,
-  HydrogenFuelCell, SmallFissionReactor, LargeFusionReactor,
-} from '@/modules/shipModule.js';
-import { Autocannon } from '@/modules/weapons/autocannon.js';
-import { Cannon }     from '@/modules/weapons/cannon.js';
-import { Lance }      from '@/modules/weapons/lance.js';
-import { LOOT_TABLES, DEFAULT_LOOT_TABLE } from '@/data/lootTables.js';
 import { COMMODITIES } from '@/data/commodities.js';
+import { AMMO } from '@data/compiledData.js';
 
 const PICKUP_RADIUS = 40;
 const LIFETIME = 30;
@@ -130,77 +122,8 @@ export function createWeaponDrop(x, y, weaponInstance) {
 export function createAmmoDrop(x, y, ammoType, amount) {
   const drop = new LootDrop(x, y, 'ammo', amount);
   drop.ammoType = ammoType;
-  const typeLabel = ammoType.charAt(0).toUpperCase() + ammoType.slice(1).replace(/-/g, ' ');
-  drop.label = `+${amount} ${typeLabel} Ammo`;
+  const name = AMMO[ammoType]?.name || ammoType.toUpperCase();
+  drop.label = `+${amount} ${name}`;
   return _scatter(drop);
 }
 
-// Module pool — maps loot table pool id to a factory function
-const MODULE_FACTORIES = {
-  SalvagedSensorSuite:   () => new SalvagedSensorSuite(),
-  StandardSensorSuite:   () => new StandardSensorSuite(),
-  CombatComputer:        () => new CombatComputerModule(),
-  SalvageScanner:        () => new SalvageScannerModule(),
-  LongRangeScanner:      () => new LongRangeScannerModule(),
-  HydrogenFuelCell:      () => new HydrogenFuelCell(),
-  SmallFissionReactor:   () => new SmallFissionReactor(),
-  LargeFusionReactor:    () => new LargeFusionReactor(),
-};
-
-// Weapon pool — maps id to factory
-const WEAPON_FACTORIES = {
-  Autocannon: () => new Autocannon(),
-  Cannon:     () => new Cannon(),
-  LanceSmall: () => new Lance('small'),
-};
-
-function _rollCommodity(pool) {
-  let roll = Math.random();
-  for (const [id, weight] of Object.entries(pool)) {
-    roll -= weight;
-    if (roll <= 0) return id;
-  }
-  return Object.keys(pool)[0];
-}
-
-export function generateEnemyLoot(x, y, tableId = DEFAULT_LOOT_TABLE) {
-  const table = LOOT_TABLES[tableId] ?? LOOT_TABLES[DEFAULT_LOOT_TABLE];
-  const drops = [];
-
-  // Scrap — always rolled
-  if (table.scrap && Math.random() < table.scrap.chance) {
-    const amount = table.scrap.min + Math.floor(Math.random() * (table.scrap.max - table.scrap.min + 1));
-    drops.push(createLootDrop(x, y, 'scrap', amount));
-  }
-  // Fuel
-  if (table.fuel && Math.random() < table.fuel.chance) {
-    const amount = table.fuel.min + Math.floor(Math.random() * (table.fuel.max - table.fuel.min + 1));
-    drops.push(createLootDrop(x, y, 'fuel', amount));
-  }
-  // Module
-  if (table.module && Math.random() < table.module.chance) {
-    const modId = table.module.pool[Math.floor(Math.random() * table.module.pool.length)];
-    const factory = MODULE_FACTORIES[modId];
-    if (factory) drops.push(createModuleDrop(x, y, factory()));
-  }
-  // Weapon
-  if (table.weapon && Math.random() < table.weapon.chance) {
-    const wepId = table.weapon.pool[Math.floor(Math.random() * table.weapon.pool.length)];
-    const factory = WEAPON_FACTORIES[wepId];
-    if (factory) drops.push(createWeaponDrop(x, y, factory()));
-  }
-  // Ammo
-  if (table.ammo && Math.random() < table.ammo.chance) {
-    const entry = table.ammo;
-    const ammoType = entry.pool[Math.floor(Math.random() * entry.pool.length)];
-    const amount = entry.min + Math.floor(Math.random() * (entry.max - entry.min + 1));
-    drops.push(createAmmoDrop(x, y, ammoType, amount));
-  }
-  // Commodity
-  if (table.commodity && Math.random() < table.commodity.chance) {
-    const commodityId = _rollCommodity(table.commodity.pool);
-    drops.push(createLootDrop(x, y, commodityId, 1));
-  }
-
-  return drops;
-}

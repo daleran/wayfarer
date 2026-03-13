@@ -12,7 +12,7 @@ import { RocketPodSmall } from './rocket.js';
 import { RocketPodLarge } from './rocketLarge.js';
 import { Torpedo } from './torpedo.js';
 import {
-  AMBER, GREEN, CYAN, RAIL_WHITE, PLASMA_GREEN, TORPEDO_AMBER,
+  AMBER, GREEN, CYAN, RAIL_WHITE, PLASMA_GREEN, TORPEDO_AMBER, CANNON_AMBER,
 } from '@/rendering/colors.js';
 
 // Designer metadata per entry:
@@ -44,21 +44,21 @@ export const WEAPON_REGISTRY = [
     create: () => new Railgun('small-fixed'),
     flavorText: "Small fixed rail accelerator. No pivot mount — the whole ship is the gun platform.",
     projColor: RAIL_WHITE, projLen: 12, projTrail: true,
-    flags: ['fixed', 'hull-dmg'],
+    flags: ['fixed', 'hull-dmg', 'ammo'],
   },
   {
     id: 'RailgunLargeTurret', slug: 'railgun-lt', label: 'Railgun (LT)',
     create: () => new Railgun('large-turret'),
     flavorText: "Two conductive rails, one very fast slug. Accuracy drops before effective range does.",
     projColor: RAIL_WHITE, projLen: 12, projTrail: true,
-    flags: ['manual', 'hull-dmg'],
+    flags: ['manual', 'hull-dmg', 'ammo'],
   },
   {
     id: 'RailgunLarge', slug: 'railgun-lf', label: 'Railgun (LF)',
     create: () => new Railgun('large-fixed'),
     flavorText: "The full-length rail cannon. Massive penetrator. Hull-mount only. Devastating.",
     projColor: RAIL_WHITE, projLen: 12, projTrail: true,
-    flags: ['fixed', 'hull-dmg'],
+    flags: ['fixed', 'hull-dmg', 'ammo'],
   },
   {
     id: 'LanceSmall', slug: 'lance-sf', label: 'Lance (SF)',
@@ -106,22 +106,22 @@ export const WEAPON_REGISTRY = [
     id: 'Cannon', slug: 'cannon', label: 'Cannon',
     create: () => new Cannon(),
     flavorText: "Smoothbore heavy round. AP or HE mode. No electronics. It hits or it doesn't.",
-    projColor: '#dd8800', projLen: 7, projTrail: false,
+    projColor: CANNON_AMBER, projLen: 7, projTrail: false,
     flags: ['manual', 'aoe', 'hull-dmg', 'ammo', 'ammo-modes'],
   },
   {
     id: 'RocketPodSmall', slug: 'rpod-s', label: 'Rocket Pod (S)',
     create: () => new RocketPodSmall(),
-    flavorText: "Two-tube pod. Dumbfire, wire, or heat guidance. Shared ammo pool with large pod.",
+    flavorText: "Two-tube pod. Dumbfire rockets, wire-guided, or heat-seeking. Each is a separate ammo type.",
     projColor: AMBER, projLen: 8, projTrail: true,
-    flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'guidance-modes'],
+    flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'ammo-modes'],
   },
   {
     id: 'RocketPodLarge', slug: 'rpod-l', label: 'Rocket Pod (L)',
     create: () => new RocketPodLarge(),
-    flavorText: "Eight-tube burst pod. Staggered fire. Fills the sky. Same guidance options as small pod.",
+    flavorText: "Eight-tube burst pod. Staggered fire. Fills the sky. Same ammo options as small pod.",
     projColor: AMBER, projLen: 8, projTrail: true,
-    flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'burst', 'guidance-modes'],
+    flags: ['secondary', 'aoe', 'hull-dmg', 'ammo', 'burst', 'ammo-modes'],
   },
   {
     id: 'Torpedo', slug: 'torpedo', label: 'Torpedo',

@@ -20,7 +20,7 @@ export class SalvageMothership extends GarrisonFrigate {
       'Strength: fortress-class armor, long-range standoff capability. Weakness: ' +
       'lumbering in close quarters, easy to outrun.';
 
-    this.moduleSlots = [new OnyxDriveUnit(), new CannonModule(), new RocketPodModule('large', 'heat'), null, null];
+    this.moduleSlots = [new OnyxDriveUnit(), new CannonModule(), new RocketPodModule('large', 'ht'), null, null];
     this._applyModules();
   }
 }

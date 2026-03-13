@@ -10,8 +10,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 
 | Code | Title | Category |
 |---|---|---|
-| AN | Utility Modules | Modules / Equipment |
-| ~~AO~~ | ~~Dynamic Thrust-to-Weight System~~ | ~~Ship Systems~~ *(shipped)* |
 | AP | Tribute & Favor System | Economy |
 | AR | Black Market & Under-Barter | Economy |
 | AS | Gravewake Zone Features & The Coil | World / Map |
@@ -19,7 +17,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | AX | Named Bosses | AI / Enemies |
 | BA | Story Threads & Trigger System | Narrative |
 | BB | Mission & Bounty Board | Gameplay |
-| ~~BC~~ | ~~Full Map View & Navigation~~ | ~~UI~~ (shipped) |
 | BD | Procedural Audio | Audio |
 | BE | Named NPC Ships & Persistent World Characters | AI / World |
 | BF | Cloud Save System | Platform |
@@ -28,7 +25,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BM | Crew System — Named Crew, Health & Performance | Ship Systems |
 | BN | Salvage Bay & Engineering Bay | Scavenging |
 | BO | Data Extraction — Computer Salvage | Scavenging |
-| BP | Sensor Suite Upgrades | Modules / Equipment |
 | BQ | Crew Active Abilities | Ship Systems |
 | BR | Electronic Warfare | Modules / Equipment |
 | BS | Gravity Wells & Pale (Ice Moon) | World / Map |
@@ -38,10 +34,7 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
-| CD | Station Interaction Overhaul | UI / Gameplay |
 | CE | Visual Module System | Ship Systems / Modules |
-| ~~CI~~ | ~~Derelicts-as-Ships Unification~~ | ~~Code Architecture~~ *(shipped)* |
-| ~~CJ~~ | ~~CSV-Based Tuning Data~~ | ~~Code Architecture~~ *(shipped)* |
 
 ---
 
@@ -350,64 +343,13 @@ In The Coil's Slums, the player can eventually purchase their own home — a con
 
 ---
 
-## UI
-
----
-
 ## Modules / Equipment
-
-### AN: Utility Modules
-
-A collection of non-weapon, non-engine ship modules that add strategic variety to ship builds. Each occupies a module slot and provides a passive or active capability.
-
-1. **Expanded Hold** — increases scrap/commodity carry capacity
-2. **Compression Baler** — auto-converts low-value commodities into denser scrap (passive income on salvage)
-3. **Tow Rig** — lets you latch onto and slowly drag a derelict to a station for a large payout
-4. **Auxiliary Tank** — bonus fuel capacity (stackable, weight penalty)
-5. **Fuel Reclaimer** — harvests trace fuel from debris clouds and derelicts
-6. **Cold Thruster** — silent running mode; no engine glow; reduced detection range by enemies
-7. **Reactive Plating** — first hit each fight absorbed, then overloads (limited charges, refillable with scrap)
-8. **Point Defense Burst** — active ability; destroys incoming missiles in a radius; short cooldown; costs power
-9. **Chaff Pod** — breaks missile lock for a few seconds; consumable
-10. **Reinforced Cutting Arm** — reduces salvage time
-11. **Remote Scanner** — reveals loot type and quantity before committing to a salvage
-12. **Salvage Beacon** — marks a derelict for later retrieval; station pays a finder's fee
-13. **Overclock Injector** — temporary speed boost at the cost of hull health
-14. **Emergency Scrap Burn** — converts carried scrap directly into armor in a pinch
-15. **Hull Stress Frame** — lets you push hull below 0 armor briefly without dying; must be repaired soon or ship is lost
-16. **Stripped Weight** — remove non-essentials for +speed/turn; fuel cap and armor drop permanently while installed
-17. **Concord Transponder** — spoofs a Concord Remnant IFF signal; enemies hesitate to engage until they see through it
-18. **Black Market Manifest** — hides cargo from station scanners; unlocks restricted trade goods
-19. **Commune Relay Node** — passive; lets Commune settlements send tip-offs about nearby salvage or threats
-20. **Mag-Anchor** — emergency full-stop; instantly kills velocity; strains hull (small armor damage)
-21. **Jury-Rig Bay** — passive workshop that slowly converts scrap into field-repairable components; reduces scrap cost of field repairs over time
-22. **Passive Radiator Array** — vents excess reactor heat; allows fission reactors to run longer between overhauls
-23. **Debris Scoop** — low-yield magnetized intake; passively vacuums micro-loot while flying through debris fields
-24. **Cracked Void Lens** — Pre-Collapse artifact; warps local space for a short-range blink jump; massive cooldown; unknown side effects
-25. **Pressure Hull Insert** — reinforces internal bulkheads; hull takes damage at a reduced rate when armor is depleted
-26. **Scav Signal Jammer** — disrupts enemy coordination; enemies deaggro faster and lose targeting more easily
-27. **Emergency Fuel Tap** — burns hull integrity directly as fuel when tanks run dry; lets you limp to a station
-28. **Thermal Shroud** — reduces damage taken from plasma weapons and AoE explosions
-29. **Salvager's Intuition Module** — cracked Concord nav-AI fragment; highlights derelicts on the map and estimates salvage yield; occasionally outputs cryptic lore fragments
-
----
 
 ### BG: Module Affixes & Randomized Traits
 
 Diablo 2-style randomized modifier system for modules. Each module found in the wild has a randomly rolled affix (or pair of affixes) that slightly changes its properties — a Worn Autocannon with a "Rapid" affix has higher fire rate but lower damage; a Faulty Fission Reactor with a "Stable" affix has lower power but resets its overhaul timer. Creates build variety and makes scavenging feel like loot hunting.
 
 Affixes are constrained by module type — not every affix applies to every module. Common affixes slightly improve one stat, Rare affixes trade off two stats, Exotic affixes are unique and potentially game-changing. Station-purchased modules are clean (no affixes); salvage is where the interesting rolls happen.
-
----
-
-### BP: Sensor Suite Upgrades
-
-Upgrading sensors provides vital combat UI data rather than raw stat boosts.
-
-- Displays estimated trajectory/path of your fired rounds
-- Displays estimated enemy position at round impact (lead indicator)
-- Reveals detailed enemy telemetry: current speed, heading, hull condition
-- Higher-tier suites show crew count and module loadout on targeted ships
 
 ---
 
@@ -426,10 +368,9 @@ Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-le
 
 Two large-slot ship modules that unlock advanced field operations.
 
-**Derelicts Are Ships (Architecture):**
-- Derelicts are not a separate entity type — they are Ships with no living crew. Same hull, same modules, same rendering. An enemy whose crew is killed mid-combat becomes a derelict in place, retaining its hull shape, installed modules, and remaining armor/hull values.
-- Current standalone `Derelict` class is replaced: all derelicts in the world are spawned as Ship instances (uncrewed, engines off, drifting). Pre-placed "ancient" derelicts use the same Ship class with appropriate ship templates and heavy condition degradation.
-- This unifies salvage, combat, and the world model — what you fight is what you loot.
+**Derelicts Are Ships (Architecture):** *(implemented — see DEVLOG CI)*
+- Derelicts are Ship instances with `crew = 0`. An enemy whose crew is killed mid-combat becomes a derelict in place.
+- `createDerelict()` factory in `js/world/derelict.js` returns configured Ships. Named derelicts in `js/data/ships/named/`.
 
 **Salvage Bay:**
 - Without it, defeating a ship yields only scrap, fuel, and ammo
@@ -493,154 +434,18 @@ All audio generated via Web Audio API — no asset files required.
 
 ---
 
-## Station & Module Overhauls
+## Ship Systems / Modules
 
-### CD: Station Interaction Overhaul
+### CE: Visual Module System (Phase 3 remaining)
 
-Stations become navigable places rather than menu screens. Inspired by *Journey* and classic point-and-click adventure flow — each station is a series of named locations the player moves between, with flavor text grounding each area.
+Phases 1–2 shipped: mount points, module visuals on hull, positional damage routing. Remaining:
 
-**Core Model:**
-- Docking at a station enters a **location-based interaction mode** — the player navigates between named districts/areas within the station
-- Camera jumps to the station's world position on dock; each district has its own world-space anchor point around the station
-- Station areas are not abstract menus — they are places with positions, flavor text, and distinct service sets
-- Flavor text appears near the station name, near each zone title, and as ambient world-space text near the station exterior
+**Phase 3 — Ship Screen Paper Doll (deferred):**
+- Canvas element in ship panel header rendering hull silhouette + mount points
+- Module visuals at mount positions, condition-colored, click-to-install on mount point
+- Module tooltip with small canvas preview of module visual
+- Drag-and-drop onto paper-doll hull view
 
-**Interaction Flow (The Coil example):**
-- Dock at The Coil → start in **The Salvage Yard** (default entry for a scavenger hub)
-  - Services: Repair, Refuel, Purchase Used Ship Parts, Purchase Ship
-- Navigate to **The Central Market**
-  - Services: Buy food/supplies, browse contraband, visit The Oddities Store
-- Navigate to **The Slums**
-  - Services: Meet NPCs, visit the neighborhood bar, visit player housing (see BW)
-- Navigate to **The Palace** (reputation-gated)
-  - Services: High-tier dealings, Salvage Lord interactions
+**Future ideas (unshipped):**
+- Wear & Tear: low-quality modules degrade during regular use, not just combat
 
-**Implementation Notes:**
-- Each station defines an array of `districts[]` with `{ id, name, flavorText, services[], worldOffset }` — the district's world position is the station's position plus the offset
-- District navigation via a sidebar or bottom bar showing available areas; click to move between them
-- Transition between districts can be instant or include a brief camera pan
-- Smaller stations (Kell's Stop, Ashveil Anchorage) may have only 1–2 districts
-- Cross-references: AS (The Coil district definitions), BW (Slums housing), AR (Black Market at The Coil)
-
----
-
-### CE: Visual Module System
-
-All ship modules are physically drawn on the ship hull. Ships define mount points where modules attach. Module damage is visible, positional, and tied to where the ship is hit.
-
-**Visual Mounting:**
-- Each ship class defines named **mount points** — positions on the hull where specific slot types (large/small, weapon/utility/engine) can be placed
-- Installed modules are rendered at their mount point on the ship canvas — different modules have different visual appearances (e.g., different engine types produce different exhaust shapes, weapons have distinct barrel silhouettes)
-- Module condition is displayed via color on the ship canvas: Green (good), Amber (worn), Orange (damaged), Red (critical/destroyed)
-
-**Positional Damage:**
-- When a ship takes a hit, the impact location on the hull determines which mounted module is at risk of taking damage — not random selection
-- Front-mounted modules take damage from frontal hits, aft modules from rear hits, etc.
-- Replaces the current random hull-breach system with spatially coherent module damage
-
-**Unified Module Slots:**
-- Weapons and non-weapon modules share a unified slot system — a weapon IS a module mounted to a hardpoint
-- Slots are typed by size (Large / Small) and by mount type (Weapon, Utility, Engine, Reactor)
-- Ship inventory screen has the player place modules directly onto the ship's mount points — drag-and-drop onto the paper-doll hull view
-
-**Module Tooltips:**
-- Tooltip includes a small canvas rendering of the module's visual appearance alongside its stats
-- Condition bar and current stats shown in tooltip
-
-**Map & HUD Integration:**
-- Armor and hull values are displayed near ships on the world map (not just in HUD)
-- Minimap ship icons reflect approximate hull condition via color
-
-**Wear & Tear:**
-- Low-quality modules (worn/faulty condition) have a random chance of degrading further during regular use — not just from combat damage
-- Cross-references: AN (module catalog), BG (affixes modify visual appearance or add particle effects), AO (thrust-to-weight uses module weight from mount data), BN (salvaging a derelict-ship shows its mounted modules visually)
-
-**Initial Module Set:**
-- Build out the full initial set of implementable modules from AN, plus engine variants, reactor variants, and armor plating as mountable modules rather than abstract stats
-
----
-
-## Code Architecture
-
-### CI: Derelicts-as-Ships Unification
-
-Eliminate the standalone `Derelict` class. Every derelict in the world becomes a `Ship` instance — uncrewed, engines off, drifting. An uncrewed ship **is** a derelict. No separate entity type, no delegate pattern, no parallel code paths.
-
-**Core Principle:** A ship with no crew is a derelict. Any ship that loses its crew mid-combat becomes salvageable in place. Pre-placed "ancient" derelicts are just Ship instances spawned with zero crew and heavy condition degradation.
-
-**What Changes:**
-
-**1. Ship gets a crew flag**
-- Add `this.crew = 1` (alive) / `0` (derelict) to `Ship` base. Not the full BM crew system — just a binary alive/dead flag for now.
-- `ship.isDerelict` — computed getter: `this.crew === 0`
-- Derelict ships: `relation = 'derelict'`, `throttleLevel = 0`, AI skipped, no weapon fire, no fuel burn
-- Random rotation assigned at spawn (like current derelicts)
-
-**2. Derelict data moves onto Ship**
-- `ship.lootTable[]` — loot drops, same format as current `Derelict.lootTable`
-- `ship.salvageTime` — seconds to salvage (default 3)
-- `ship.salvaged` — flag, prevents re-salvage
-- `ship.loreText[]` — flavor text array (generated, see below)
-- `ship.interactionRadius` — approach distance for E-key prompt (120 units)
-- `ship.isNearby` / `ship.canSalvage` — interaction state (set by InteractionSystem)
-- `ship._loreAlpha` — proximity fade for flavor text
-
-**3. Ship renders derelict state natively**
-- When `isDerelict`: hull drawn at reduced alpha (0.55), spark particles emit periodically, lore text fades in on approach, "Press E / Stop to Salvage" prompt renders
-- No delegate ship needed — the ship already knows how to draw itself
-- Remove the green pulsing radar blip from minimap/mapView — derelicts show as grey ship icons (same shape, dimmed) using the existing ship icon rendering
-
-**4. Generated flavor text**
-- Each derelict ship gets auto-generated `loreText` describing how it was disabled or abandoned
-- Templates keyed by ship class and a random cause: "Hull breach amidships. Crew evacuation pods deployed.", "Reactor meltdown — containment failed.", "Scavenger ambush. No survivors.", "Fuel starvation. Drifting since [date].", "Concord interdiction. Registry wiped.", etc.
-- Named derelicts (Broken Covenant, Cold Remnant, etc.) keep their handwritten lore — the generator is for generic/procedural derelicts only
-
-**5. Zone files updated**
-- Each named derelict in `js/world/zones/gravewake/` becomes a Ship instantiation with `crew: 0` and its existing loot table / lore text
-- `createDerelict()` factory replaced by a helper like `createDerelictShip(shipClass, data)` that returns a properly configured Ship
-- Gravewake manifest spawns derelict-ships the same way it spawns NPC ships — via `createShip()` or a thin wrapper
-
-**6. InteractionSystem unified**
-- `updateDerelicts()` stops checking `instanceof Derelict` — instead filters `entity.isShip && entity.isDerelict && !entity.salvaged`
-- Same proximity/lore-fade/E-key logic, just operating on Ship instances
-- A ship killed mid-combat (crew → 0) immediately becomes interactive for salvage without any entity swap
-
-**7. SalvageSystem unchanged (mostly)**
-- `start(target)` / `update()` / `_complete()` work the same — target is now a Ship instead of a Derelict
-- `_rollCondition()` uses `target.shipType` or a new `target.derelictTier` instead of `target.derelictClass`
-- Loot table format stays identical
-
-**8. Minimap & Map View**
-- Remove `instanceof Derelict` checks and the green square icon
-- Derelict-ships render as dimmed grey ship markers (small triangle or dot) — same rendering path as other ships, just colored for `relation: 'derelict'`
-
-**9. Game.js cleanup**
-- Remove `import { Derelict }` and `_updateDerelictSparks()` — spark logic moves into Ship's own `update()` when `isDerelict`
-- Remove `instanceof Derelict` zone boundary check — use `entity.isShip` instead
-- `nearbyDerelict` accessor stays but now returns a Ship
-
-**Files to delete:**
-- `js/world/derelict.js` — entire file
-
-**Files to heavily modify:**
-- `js/entities/ship.js` — crew flag, derelict getters, loot/salvage fields, derelict rendering
-- `js/world/zones/gravewake/brokenCovenant.js` (and all 5 other derelict zone files) — rewrite as Ship instantiations
-- `js/world/zones/gravewake.js` — update spawn calls
-- `js/systems/interactionSystem.js` — replace Derelict type checks with Ship.isDerelict
-- `js/systems/salvageSystem.js` — minor type updates
-- `js/game.js` — remove Derelict import, spark method, instanceof checks
-- `js/hud/minimap.js` — remove Derelict import and green square rendering
-- `js/hud/mapView.js` — remove Derelict import and green square rendering
-- `js/data/maps/arena.js` — rewrite derelict spawns as Ship instances
-- `js/test/editor.js` — update derelict spawn controls
-- `js/test/designer.js` — update derelict category
-
-**Supersedes:** BN's "Derelicts Are Ships (Architecture)" section. BN's Salvage Bay and Engineering Bay concepts remain valid but are separate features.
-
-*(BI promoted and shipped)*
-
----
-
-### ~~CJ: CSV-Based Tuning Data~~ *(shipped 2026-MAR-13)*
-
-Build-time compilation: CSVs in `data/` → `data/compiledData.js` via `node scripts/compile-data.js`. All 6 tuning JS files deleted, all imports point to `@data/compiledData.js`. No runtime CSV parsing, synchronous imports preserved.

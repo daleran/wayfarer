@@ -1,10 +1,21 @@
-import { conditionColor } from '@/rendering/colors.js';
-import { THROTTLE_RATIOS } from '@data/compiledData.js';
+import { CYAN, GREEN, AMBER, RED, WHITE, DIM_TEXT, VERY_DIM, conditionColor } from '@/rendering/colors.js';
+import { text as drawText, disc } from '@/rendering/draw.js';
+import { THROTTLE_RATIOS, AMMO } from '@data/compiledData.js';
 import { createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from '@/entities/lootDrop.js';
+import { input } from '@/input.js';
+import { hullStats, massStats, movementStats, moduleTooltipRows, weaponTooltipRows } from '@/ui/shipStats.js';
 
-// ── Ship Screen — left 30% HTML panel (I key) ──────────────────────────────
-// Replaces the old canvas-based 3-column overlay with a DOM panel.
-// Module installation flow preserved: select cargo module → click empty slot.
+// ── Ship Screen — left 30% HTML panel + canvas module mount UI ────────────
+// DOM panel shows: header, stats, mass/thrust, cargo (including modules).
+// Canvas renders installed module stat boxes connected to hull mount points.
+
+// Layout constants for canvas module boxes
+const BOX_W = 180;
+const BOX_H = 28;
+const BOX_GAP = 5;
+const BOX_MARGIN_LEFT = 12;
+const BOX_START_Y = 60;
+const EXPANDED_H = 120;
 
 export class ShipScreen {
   constructor() {
@@ -18,20 +29,43 @@ export class ShipScreen {
     this._cargoFilter = 'all';
     this._game = null;
 
+    // Canvas module UI state
+    this._hoveredSlot = -1;       // index into installed slots, or -1
+    this._hoveredMount = -1;      // index into mount points, or -1
+    this._boxRects = [];          // { x, y, w, h } per installed slot
+    this._mountScreenPos = [];    // { x, y } per mount point (screen coords)
+
     // Tooltip
     this._tooltip = document.createElement('div');
     this._tooltip.className = 'ship-tooltip';
     document.body.appendChild(this._tooltip);
 
-    // Prevent clicks on panel from reaching canvas
+    // Prevent clicks on DOM panel from reaching canvas
     if (this._el) {
       this._el.addEventListener('mousedown', e => e.stopPropagation());
       this._el.addEventListener('click', e => e.stopPropagation());
     }
   }
 
-  open(game)   { if (game) this._game = game; this.visible = true;  this._selectedCargoModIdx = null; game?.camera?.pushZoom(2.75); this._render(); }
-  close()      { this.visible = false; this._cancelInstall(); this._hideTooltip(); this._game?.camera?.popZoom(); this._hide(); }
+  open(game) {
+    if (game) this._game = game;
+    this.visible = true;
+    this._selectedCargoModIdx = null;
+    game?.camera?.pushZoom(4.0);
+    if (game?.player) game.player._inventoryMode = true;
+    this._render();
+  }
+
+  close() {
+    this.visible = false;
+    this._cancelInstall();
+    this._hideTooltip();
+    this._selectedCargoModIdx = null;
+    if (this._game?.player) this._game.player._inventoryMode = false;
+    this._game?.camera?.popZoom();
+    this._hide();
+  }
+
   toggle(game) { this.visible ? this.close() : this.open(game); }
 
   _cancelInstall() {
@@ -39,7 +73,6 @@ export class ShipScreen {
     this._installProgress = 0;
     this._installModuleIdx = null;
     this._installTargetSlot = null;
-    this._selectedCargoModIdx = null;
   }
 
   _hide() {
@@ -48,6 +81,12 @@ export class ShipScreen {
 
   update(dt, game) {
     this._game = game;
+
+    // Handle canvas click for installed module boxes (uninstall / install into empty)
+    if (input.wasJustClicked() && !this._installing) {
+      this._handleCanvasClick(game);
+    }
+
     if (!this._installing) return;
     this._installProgress += dt;
     if (this._installProgress >= 1.5) {
@@ -56,18 +95,56 @@ export class ShipScreen {
       if (mod.onInstall) mod.onInstall(game.player);
       game.player.recalcTW?.(game.fuel, game.totalCargoUsed);
       this._cancelInstall();
+      this._selectedCargoModIdx = null;
       this._render();
-    } else {
-      // Update install progress bar
-      this._updateInstallProgress();
     }
   }
 
-  handleInput(input, game) {
+  handleInput(inp, game) {
     this._game = game;
     if (!this.visible) return;
-    if (input.wasJustPressed('escape') || input.wasJustPressed('i') || input.wasJustPressed('tab')) {
+    if (inp.wasJustPressed('escape') || inp.wasJustPressed('i') || inp.wasJustPressed('tab')) {
       this.close();
+    }
+  }
+
+  // ── Canvas click handling (installed module boxes) ────────────────────────
+
+  _handleCanvasClick(game) {
+    const player = game?.player;
+    if (!player) return;
+    const slots = player.moduleSlots || [];
+
+    // Click installed slot box → uninstall module to cargo
+    if (this._hoveredSlot >= 0 && this._hoveredSlot < slots.length) {
+      const i = this._hoveredSlot;
+      const mod = slots[i];
+      if (mod) {
+        // Uninstall
+        this._hideTooltip();
+        if (mod.onRemove) mod.onRemove(player);
+        game.modules.push(mod);
+        player.moduleSlots[i] = null;
+        player.recalcTW?.(game.fuel, game.totalCargoUsed);
+        this._selectedCargoModIdx = null;
+        this._render();
+        return;
+      }
+      // Click empty slot → install selected cargo module if compatible
+      if (!mod && this._selectedCargoModIdx !== null) {
+        const mount = player._mountPoints?.[i];
+        const isEngineSlot = mount?.slot === 'engine';
+        const selectedMod = game.modules[this._selectedCargoModIdx];
+        const isSelectedEngine = selectedMod?.isEngine ?? false;
+        if (isEngineSlot === isSelectedEngine) {
+          this._installTargetSlot = i;
+          this._installModuleIdx = this._selectedCargoModIdx;
+          this._installing = true;
+          this._installProgress = 0;
+          this._selectedCargoModIdx = null;
+          this._render();
+        }
+      }
     }
   }
 
@@ -77,8 +154,6 @@ export class ShipScreen {
     const game = this._game;
     if (!game || !game.player) return;
     const player = game.player;
-
-    // Spawn point: behind the ship
     const JETTISON_DIST = 80;
     const jx = player.x - Math.sin(player.rotation) * JETTISON_DIST;
     const jy = player.y + Math.cos(player.rotation) * JETTISON_DIST;
@@ -119,7 +194,6 @@ export class ShipScreen {
     }
 
     if (drop) {
-      // Override scatter velocity — eject straight behind the ship
       const ejectSpeed = 30;
       drop.vx = -Math.sin(player.rotation) * ejectSpeed;
       drop.vy =  Math.cos(player.rotation) * ejectSpeed;
@@ -130,11 +204,224 @@ export class ShipScreen {
     this._render();
   }
 
-  // Canvas render stub — no-op, everything is DOM now
-  render(_ctx, game) {
+  // ── Canvas render — installed module boxes + connection lines ──────────────
+
+  render(ctx, game) {
     if (!this.visible || !this._el) return;
     this._game = game;
     this._el.classList.add('visible');
+
+    const player = game.player;
+    if (!player) return;
+    const camera = game.camera;
+    const mounts = player._mountPoints;
+    const slots = player.moduleSlots || [];
+    if (!mounts) return;
+
+    const mx = input.mouseScreen.x;
+    const my = input.mouseScreen.y;
+
+    // Compute mount screen positions
+    this._mountScreenPos = [];
+    const sin = Math.sin(player.rotation);
+    const cos = Math.cos(player.rotation);
+    for (const m of mounts) {
+      const wx = player.x + m.x * cos - m.y * sin;
+      const wy = player.y + m.x * sin + m.y * cos;
+      this._mountScreenPos.push(camera.worldToScreen(wx, wy));
+    }
+
+    // Box X position: right edge of DOM panel + margin
+    const panelWidth = this._el.offsetWidth || Math.round(ctx.canvas.width * 0.30);
+    const panelLeft = this._el.offsetLeft || 12;
+    const boxX = panelLeft + panelWidth + BOX_MARGIN_LEFT;
+
+    // ── Hover detection ──────────────────────────────────────────────────
+    this._hoveredSlot = -1;
+    this._hoveredMount = -1;
+
+    // Check installed box rects
+    for (let i = 0; i < this._boxRects.length; i++) {
+      const r = this._boxRects[i];
+      if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+        this._hoveredSlot = i;
+        break;
+      }
+    }
+
+    // Check mount point proximity (12px radius)
+    if (this._hoveredSlot < 0) {
+      for (let i = 0; i < this._mountScreenPos.length; i++) {
+        const mp = this._mountScreenPos[i];
+        const dx = mx - mp.x;
+        const dy = my - mp.y;
+        if (dx * dx + dy * dy < 144) { // 12^2
+          this._hoveredMount = i;
+          this._hoveredSlot = i; // mount hover highlights corresponding stat box
+          break;
+        }
+      }
+    }
+
+    // ── Draw installed module boxes ──────────────────────────────────────
+    let curY = BOX_START_Y;
+    this._boxRects = [];
+
+    // Power budget header
+    let totalOut = 0, totalDraw = 0;
+    for (const mod of slots) {
+      if (!mod) continue;
+      totalOut += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
+      totalDraw += mod.powerDraw || 0;
+    }
+    const net = totalOut - totalDraw;
+
+    drawText(ctx, 'MODULES', boxX, curY - 6, DIM_TEXT,
+      { size: 10, weight: 'bold', align: 'left', baseline: 'bottom', alpha: 0.8 });
+    const netLabel = `${net >= 0 ? '+' : ''}${net}W`;
+    drawText(ctx, netLabel, boxX + BOX_W, curY - 6, net >= 0 ? GREEN : RED,
+      { size: 10, align: 'right', baseline: 'bottom', alpha: 0.8 });
+
+    const hasSelectedCargo = this._selectedCargoModIdx !== null;
+
+    for (let i = 0; i < slots.length; i++) {
+      const mod = slots[i];
+      const isHovered = this._hoveredSlot === i;
+      const isInstalling = this._installTargetSlot === i && this._installing;
+      const mount = mounts[i];
+      const mountPos = this._mountScreenPos[i];
+      const boxH = isHovered && mod ? EXPANDED_H : BOX_H;
+
+      this._boxRects.push({ x: boxX, y: curY, w: BOX_W, h: boxH });
+
+      // Connection line to mount point
+      const lineAlpha = isHovered ? 0.9 : 0.3;
+      const lineWidth = isHovered ? 1.5 : 0.8;
+      ctx.save();
+      ctx.globalAlpha = lineAlpha;
+      ctx.strokeStyle = CYAN;
+      ctx.lineWidth = lineWidth;
+      if (!isHovered) ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(boxX + BOX_W, curY + BOX_H / 2);
+      ctx.lineTo(mountPos.x, mountPos.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      // Box background
+      const isEmptyCanInstall = !mod && !isInstalling && hasSelectedCargo && this._isSlotCompatible(i, game);
+      const borderColor = isInstalling ? GREEN
+        : isEmptyCanInstall ? GREEN
+        : isHovered ? CYAN : VERY_DIM;
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = 'rgba(0,4,12,0.88)';
+      ctx.fillRect(boxX, curY, BOX_W, boxH);
+      ctx.globalAlpha = 1;
+
+      if (isInstalling) {
+        // Green progress fill
+        const pct = Math.min(this._installProgress / 1.5, 1);
+        ctx.fillStyle = 'rgba(0,255,102,0.12)';
+        ctx.fillRect(boxX, curY, BOX_W * pct, boxH);
+      } else if (isEmptyCanInstall) {
+        ctx.fillStyle = 'rgba(0,255,102,0.03)';
+        ctx.fillRect(boxX, curY, BOX_W, boxH);
+      }
+
+      // Border
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 1;
+      if (!mod && !isInstalling && !isEmptyCanInstall) ctx.setLineDash([3, 3]);
+      ctx.strokeRect(boxX + 0.5, curY + 0.5, BOX_W - 1, boxH - 1);
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      // Content
+      const slotLabel = mount?.slot === 'engine' ? 'E' : String(i + 1);
+      const textY = curY + BOX_H / 2;
+
+      if (isInstalling) {
+        drawText(ctx, `[${slotLabel}] INSTALLING...`, boxX + 6, textY, GREEN,
+          { size: 10, align: 'left' });
+      } else if (mod) {
+        // Slot label + abbreviated name
+        const name = _truncate(mod.displayName, 14);
+        drawText(ctx, `[${slotLabel}]`, boxX + 6, textY, DIM_TEXT,
+          { size: 10, align: 'left' });
+        drawText(ctx, name, boxX + 28, textY, CYAN,
+          { size: 10, align: 'left' });
+
+        // Power
+        const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
+        const pwrStr = effOut > 0 ? `+${effOut}W` : mod.powerDraw > 0 ? `-${mod.powerDraw}W` : '';
+        if (pwrStr) {
+          drawText(ctx, pwrStr, boxX + BOX_W - 20, textY, effOut > 0 ? GREEN : AMBER,
+            { size: 10, align: 'right' });
+        }
+
+        // Condition dot
+        if (mod.condition) {
+          disc(ctx, boxX + BOX_W - 8, textY, 3, conditionColor(mod.condition), 0.9);
+        }
+
+        // Expanded tooltip rows on hover
+        if (isHovered) {
+          this._drawExpandedStats(ctx, mod, boxX + 6, curY + BOX_H + 4, BOX_W - 12);
+        }
+      } else {
+        // Empty slot
+        const emptyText = isEmptyCanInstall
+          ? `[${slotLabel}] CLICK TO INSTALL`
+          : `[${slotLabel}] ── EMPTY ──`;
+        const emptyColor = isEmptyCanInstall ? GREEN : VERY_DIM;
+        drawText(ctx, emptyText, boxX + 6, textY, emptyColor,
+          { size: 10, align: 'left' });
+      }
+
+      // Highlight mount point when this slot is hovered
+      if (isHovered) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(mountPos.x, mountPos.y, 10, 0, Math.PI * 2);
+        ctx.strokeStyle = CYAN;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.7;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      curY += boxH + BOX_GAP;
+    }
+  }
+
+  /** Check if a slot is compatible with the currently selected cargo module. */
+  _isSlotCompatible(slotIdx, game) {
+    if (this._selectedCargoModIdx === null) return false;
+    const player = game.player;
+    const mount = player._mountPoints?.[slotIdx];
+    const isEngineSlot = mount?.slot === 'engine';
+    const selectedMod = game.modules[this._selectedCargoModIdx];
+    if (!selectedMod) return false;
+    return (selectedMod.isEngine ?? false) === isEngineSlot;
+  }
+
+  // ── Expanded stat rows on hover ───────────────────────────────────────────
+
+  _drawExpandedStats(ctx, mod, x, y, maxW) {
+    const rows = this._moduleTooltipRows(mod);
+    let ry = y;
+    for (const { label, value, cls } of rows) {
+      const color = cls === 'green' ? GREEN : cls === 'red' ? RED : cls === 'amber' ? AMBER : cls === 'cyan' ? CYAN : cls === 'dim' ? DIM_TEXT : WHITE;
+      if (label) {
+        drawText(ctx, label, x, ry, DIM_TEXT, { size: 9, align: 'left', baseline: 'top' });
+        drawText(ctx, value, x + maxW, ry, color, { size: 9, align: 'right', baseline: 'top' });
+      } else {
+        drawText(ctx, value, x, ry, color, { size: 9, align: 'left', baseline: 'top' });
+      }
+      ry += 13;
+    }
   }
 
   // ── DOM Rendering ──────────────────────────────────────────────────────────
@@ -148,19 +435,9 @@ export class ShipScreen {
     this._el.innerHTML = '';
     this._el.classList.add('visible');
 
-    // Header
     this._el.appendChild(this._buildHeader());
-
-    // Stats
     this._el.appendChild(this._buildStats(player, game));
-
-    // Mass & Thrust
     this._el.appendChild(this._buildThrustWeight(player, game));
-
-    // Modules
-    this._el.appendChild(this._buildModules(player, game));
-
-    // Cargo
     this._el.appendChild(this._buildCargo(player, game));
   }
 
@@ -199,17 +476,8 @@ export class ShipScreen {
     const grid = document.createElement('div');
     grid.className = 'ship-stats-grid';
 
-    const hullRatio = player.hullCurrent / player.hullMax;
-    const hullCls = hullRatio > 0.5 ? 'green' : hullRatio > 0.25 ? '' : 'red';
-    this._addStatRow(grid, 'HULL', `${Math.round(player.hullCurrent)}/${Math.round(player.hullMax)}`, hullCls);
-
-    // Armor arcs
-    for (const [arc, label] of [['front', 'ARM-F'], ['port', 'ARM-P'], ['starboard', 'ARM-S'], ['aft', 'ARM-A']]) {
-      const cur = player.armorArcs[arc] || 0;
-      const max = player.armorArcsMax[arc] || 0;
-      const ratio = max > 0 ? cur / max : 0;
-      const cls = ratio > 0.5 ? 'green' : ratio > 0.25 ? '' : 'red';
-      this._addStatRow(grid, label, `${Math.round(cur)}/${Math.round(max)}`, cls);
+    for (const r of hullStats(player, { live: true })) {
+      this._addStatRow(grid, r.label, r.value, r.cls);
     }
 
     const cruiseSpeed = Math.round(player.speedMax * THROTTLE_RATIOS[4]);
@@ -251,159 +519,15 @@ export class ShipScreen {
     const grid = document.createElement('div');
     grid.className = 'ship-stats-grid';
 
-    // Weight breakdown
-    const totalWeight = player._totalWeight ?? 0;
-    const baseWeight = player.baseWeight ?? 0;
-    let moduleWeight = 0;
-    for (const mod of (player.moduleSlots || [])) {
-      if (mod) moduleWeight += mod.weight || 0;
+    for (const r of massStats(player, { fuel: game.fuel, cargoMass: game.totalCargoUsed })) {
+      this._addStatRow(grid, r.label, r.value, r.cls);
     }
-    const fuelWeight = Math.round((game.fuel ?? 0) * 0.5);  // FUEL_WEIGHT_PER_UNIT
-    const cargoWeight = Math.round((game.totalCargoUsed ?? 0) * 1.5);  // CARGO_WEIGHT_PER_UNIT
 
-    this._addStatRow(grid, 'HULL MASS', `${baseWeight}`, '');
-    this._addStatRow(grid, 'MODULES', `+${moduleWeight}`, '');
-    this._addStatRow(grid, 'FUEL', `+${fuelWeight}`, '');
-    this._addStatRow(grid, 'CARGO', `+${cargoWeight}`, cargoWeight > 0 ? 'amber' : '');
-    this._addStatRow(grid, 'TOTAL', `${Math.round(totalWeight)}`, 'cyan');
-
-    // Thrust and T/W
-    const totalThrust = player._totalThrust ?? 0;
-    const twRatio = player._twRatio ?? 0;
-    const refTW = player._refTwRatio ?? 0;
-    const twPct = refTW > 0 ? Math.round((twRatio / refTW) * 100) : 0;
-    const twCls = twPct >= 100 ? 'green' : twPct >= 80 ? '' : twPct >= 60 ? 'amber' : 'red';
-    this._addStatRow(grid, 'THRUST', `${Math.round(totalThrust)}`, 'green');
-    this._addStatRow(grid, 'T/W', `${twRatio.toFixed(2)} (${twPct}%)`, twCls);
-
-    // Derived stats
-    this._addStatRow(grid, 'ACCEL', `${Math.round(player.acceleration)} u/s²`, 'cyan');
-    this._addStatRow(grid, 'TOP SPD', `${Math.round(player.speedMax * THROTTLE_RATIOS[4])} u/s`, 'cyan');
-    this._addStatRow(grid, 'TURN', `${(player.turnRate * (180 / Math.PI)).toFixed(0)}°/s`, 'cyan');
+    for (const r of movementStats(player)) {
+      this._addStatRow(grid, r.label, r.value, r.cls);
+    }
 
     section.appendChild(grid);
-    return section;
-  }
-
-  _buildModules(player, game) {
-    const section = document.createElement('div');
-    section.className = 'ship-modules';
-
-    // Header with power budget
-    const header = document.createElement('div');
-    header.className = 'ship-modules-header';
-    const title = document.createElement('span');
-    title.className = 'ship-modules-title';
-    title.textContent = 'MODULES';
-    header.appendChild(title);
-
-    const slots = player.moduleSlots || [];
-    let totalOut = 0, totalDraw = 0;
-    for (const mod of slots) {
-      if (!mod) continue;
-      totalOut += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
-      totalDraw += mod.powerDraw || 0;
-    }
-    const net = totalOut - totalDraw;
-    const powerEl = document.createElement('span');
-    powerEl.className = 'ship-modules-power';
-    powerEl.style.color = net >= 0 ? 'var(--p-green)' : 'var(--p-red)';
-    powerEl.textContent = `${net >= 0 ? '+' : ''}${net}W`;
-    header.appendChild(powerEl);
-    section.appendChild(header);
-
-    const hasSelectedCargo = this._selectedCargoModIdx !== null;
-
-    for (let i = 0; i < slots.length; i++) {
-      const mod = slots[i];
-      const isInstalling = this._installTargetSlot === i && this._installing;
-
-      const slot = document.createElement('div');
-      slot.className = 'ship-module-slot';
-
-      if (isInstalling) {
-        slot.classList.add('installing');
-        const prog = document.createElement('div');
-        prog.className = 'ship-install-progress';
-        prog.dataset.slotIdx = String(i);
-        prog.style.width = `${Math.min(this._installProgress / 1.5, 1) * 100}%`;
-        slot.appendChild(prog);
-
-        const text = document.createElement('div');
-        text.className = 'ship-module-name';
-        text.style.color = 'var(--p-green)';
-        text.textContent = 'INSTALLING...';
-        text.style.position = 'relative';
-        text.style.zIndex = '1';
-        slot.appendChild(text);
-      } else if (mod) {
-        const top = document.createElement('div');
-        top.className = 'ship-module-slot-top';
-
-        const nameEl = document.createElement('span');
-        nameEl.className = 'ship-module-name';
-        nameEl.textContent = `[${i + 1}] ${mod.displayName}`;
-        top.appendChild(nameEl);
-
-        // Right side: condition + power at a glance
-        const rightEl = document.createElement('span');
-        rightEl.className = 'ship-module-right';
-
-        if (mod.condition) {
-          const cond = document.createElement('span');
-          cond.className = 'ship-module-condition-badge';
-          cond.style.color = conditionColor(mod.condition);
-          cond.textContent = mod.condition.toUpperCase();
-          rightEl.appendChild(cond);
-        }
-
-        const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
-        if (effOut > 0 || mod.powerDraw > 0) {
-          const pwr = document.createElement('span');
-          pwr.className = `ship-module-power ${effOut > 0 ? 'positive' : 'negative'}`;
-          pwr.textContent = effOut > 0 ? `+${effOut}W` : `-${mod.powerDraw}W`;
-          rightEl.appendChild(pwr);
-        }
-
-        top.appendChild(rightEl);
-        slot.appendChild(top);
-
-        // Tooltip on hover
-        this._attachModuleTooltip(slot, mod);
-
-        // Click to remove
-        slot.addEventListener('click', () => {
-          this._hideTooltip();
-          if (mod.onRemove) mod.onRemove(game.player);
-          game.modules.push(mod);
-          game.player.moduleSlots[i] = null;
-          game.player.recalcTW?.(game.fuel, game.totalCargoUsed);
-          this._render();
-        });
-      } else {
-        slot.classList.add('empty');
-        if (hasSelectedCargo) slot.classList.add('can-install');
-
-        const text = document.createElement('div');
-        text.className = `ship-module-empty-text${hasSelectedCargo ? ' can-install' : ''}`;
-        text.textContent = hasSelectedCargo ? `[${i + 1}] CLICK TO INSTALL` : `[${i + 1}] ─── EMPTY ───`;
-        slot.appendChild(text);
-
-        if (hasSelectedCargo) {
-          slot.addEventListener('click', () => {
-            this._installTargetSlot = i;
-            this._installModuleIdx = this._selectedCargoModIdx;
-            this._installing = true;
-            this._installProgress = 0;
-            this._selectedCargoModIdx = null;
-            this._render();
-          });
-        }
-      }
-
-      section.appendChild(slot);
-    }
-
     return section;
   }
 
@@ -411,7 +535,6 @@ export class ShipScreen {
     const section = document.createElement('div');
     section.className = 'ship-cargo';
 
-    // Header
     const header = document.createElement('div');
     header.className = 'ship-cargo-header';
     const title = document.createElement('span');
@@ -443,13 +566,12 @@ export class ShipScreen {
     }
     section.appendChild(filters);
 
-    // Cargo list
     const list = document.createElement('div');
     list.className = 'ship-cargo-list';
 
     let hasItems = false;
 
-    // Scrap (always first, under 'all' or 'commodities')
+    // Scrap
     if (game.scrap > 0 && (this._cargoFilter === 'all' || this._cargoFilter === 'commodities')) {
       const scrapUnits = Math.floor(game.scrap / 20);
       this._addCargoItem(list, 'SCRAP', `${game.scrap} (${scrapUnits}u)`, 'scrap',
@@ -468,7 +590,7 @@ export class ShipScreen {
       }
     }
 
-    // Modules in cargo
+    // Modules in cargo — click to select for installation
     if ((this._cargoFilter === 'all' || this._cargoFilter === 'modules') && game.modules?.length > 0) {
       const hasEmptySlot = (player.moduleSlots || []).some(s => !s);
       for (let mi = 0; mi < game.modules.length; mi++) {
@@ -531,7 +653,8 @@ export class ShipScreen {
     if ((this._cargoFilter === 'all' || this._cargoFilter === 'ammo') && game.ammo) {
       for (const [type, amt] of Object.entries(game.ammo)) {
         if (amt > 0) {
-          this._addCargoItem(list, type.toUpperCase(), `${amt}`, 'ammo',
+          const ammoName = AMMO[type]?.name || type.toUpperCase();
+          this._addCargoItem(list, ammoName, `${amt}`, 'ammo',
             () => this._jettison('ammo', type));
           hasItems = true;
         }
@@ -591,14 +714,6 @@ export class ShipScreen {
     return btn;
   }
 
-  _updateInstallProgress() {
-    if (!this._el) return;
-    const prog = /** @type {HTMLElement} */ (this._el.querySelector('.ship-install-progress'));
-    if (prog) {
-      prog.style.width = `${Math.min(this._installProgress / 1.5, 1) * 100}%`;
-    }
-  }
-
   // ── Tooltip ────────────────────────────────────────────────────────────────
 
   _showTooltip(e, rows) {
@@ -652,46 +767,12 @@ export class ShipScreen {
     el.addEventListener('mouseleave', () => this._hideTooltip());
   }
 
-  _moduleTooltipRows(mod) {
-    const rows = [];
-    if (mod.condition) {
-      const mult = mod.conditionMultiplier;
-      rows.push({ label: 'CONDITION', value: `${mod.condition.toUpperCase()} ×${mult.toFixed(2)}`, cls: mod.condition === 'good' ? 'green' : '' });
-    }
-    const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
-    if (effOut > 0) rows.push({ label: 'POWER', value: `+${effOut}W`, cls: 'green' });
-    if (mod.powerDraw > 0) rows.push({ label: 'DRAW', value: `-${mod.powerDraw}W`, cls: 'amber' });
-    if (mod.fuelDrainRate > 0) rows.push({ label: 'FUEL DRAIN', value: `${mod.fuelDrainRate.toFixed(3)}/s`, cls: 'amber' });
-    if (mod.thrust) rows.push({ label: 'THRUST', value: `${mod.thrust}`, cls: 'green' });
-    if (mod.weight) rows.push({ label: 'WEIGHT', value: `${mod.weight}`, cls: '' });
-    if (mod.fuelEffMult && mod.fuelEffMult !== 1.0) rows.push({ label: 'FUEL EFF', value: `×${mod.fuelEffMult.toFixed(2)}`, cls: '' });
-    if (mod.isFissionReactor) {
-      const interval = mod._overhaulInterval || 0;
-      const elapsed = mod.timeSinceOverhaul || 0;
-      if (mod.isOverdue) {
-        rows.push({ label: 'OVERHAUL', value: 'OVERDUE', cls: 'red' });
-      } else if (interval > 0) {
-        const remaining = Math.max(0, interval - elapsed);
-        const mins = Math.floor(remaining / 60);
-        const secs = Math.floor(remaining % 60);
-        rows.push({ label: 'OVERHAUL IN', value: `${mins}m ${secs}s`, cls: '' });
-      }
-      if (mod.overhaulCost) rows.push({ label: 'OVERHAUL COST', value: `${mod.overhaulCost} scrap`, cls: 'amber' });
-    }
-    if (mod.description) rows.push({ label: '', value: mod.description, cls: 'dim' });
-    return rows;
-  }
+  _moduleTooltipRows(mod) { return moduleTooltipRows(mod); }
 
-  _weaponTooltipRows(wep) {
-    const rows = [];
-    if (wep.damage) rows.push({ label: 'DAMAGE', value: `${wep.damage}`, cls: 'red' });
-    if (wep.hullDamage) rows.push({ label: 'HULL DMG', value: `${wep.hullDamage}`, cls: 'red' });
-    if (wep.maxRange) rows.push({ label: 'RANGE', value: `${wep.maxRange}`, cls: '' });
-    if (wep.cooldownMax) rows.push({ label: 'FIRE RATE', value: `${(1 / wep.cooldownMax).toFixed(1)}/s`, cls: '' });
-    if (wep.magSize) rows.push({ label: 'MAGAZINE', value: `${wep.magSize}`, cls: '' });
-    if (wep.isBeam) rows.push({ label: 'TYPE', value: 'BEAM', cls: 'cyan' });
-    if (wep.blastRadius) rows.push({ label: 'BLAST', value: `${wep.blastRadius}`, cls: 'amber' });
-    if (wep.isSecondary) rows.push({ label: 'SLOT', value: 'SECONDARY', cls: '' });
-    return rows;
-  }
+  _weaponTooltipRows(wep) { return weaponTooltipRows(wep); }
+}
+
+function _truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.slice(0, max - 1) + '…' : str;
 }

@@ -1,4 +1,4 @@
-import { GREEN, RED, RANGE_CIRCLE, AMBER, VERY_DIM, CYAN, WHITE, STARFIELD_TINT_WHITE, BG_CLEAR, BEAM_GLOW_OUTER, BEAM_GLOW_MID, conditionColor } from './rendering/colors.js';
+import { GREEN, RED, RANGE_CIRCLE, AMBER, VERY_DIM, CYAN, WHITE, BLACK, STARFIELD_TINT_WHITE, BG_CLEAR, BEAM_GLOW_OUTER, BEAM_GLOW_MID, conditionColor } from './rendering/colors.js';
 import { PROMPT } from './rendering/draw.js';
 import { input } from './input.js';
 
@@ -60,9 +60,6 @@ export class Renderer {
     this._renderStarfield(camera);
     this._renderBackground(camera);
     this._renderEntities(entities, camera);
-    if (game.isDocked && game.stationScreen?.visible) {
-      game.stationScreen.renderWorldLabels(ctx, camera);
-    }
     this._renderTacticalUI(game, camera);
     this._renderWeaponRangeCircle(game, camera);
     this._renderBeams(game, camera);
@@ -88,7 +85,7 @@ export class Renderer {
     ctx.drawImage(this._vignetteCanvas, 0, 0);
 
     // CRT phosphor flicker — subliminal brightness variation
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = BLACK;
     ctx.globalAlpha = 0.03 * Math.random();
     ctx.fillRect(0, 0, camera.width, camera.height);
     ctx.globalAlpha = 1;
@@ -606,6 +603,7 @@ export class Renderer {
       const bounds = entity.getBounds();
       if (!camera.isVisible(bounds.x, bounds.y, bounds.radius + 64)) continue;
       entity.render(this.ctx, camera);
+      if (entity.renderZoneLabels) entity.renderZoneLabels(this.ctx, camera);
     }
     for (const entity of entities) {
       if (!entity.active || !entity.isShip) continue;

@@ -16,11 +16,43 @@ export const PLASMA_GREEN    = '#44ff88';
 export const TORPEDO_AMBER   = '#cc8800';
 export const AUTOCANNON_GLOW = '#ffe0a0';
 
+// Core
+export const BLACK = '#000000';
+
 // Renderer / post-processing
 export const STARFIELD_TINT_WHITE = '#cceeee';
 export const BG_CLEAR = '#000005';
 export const BEAM_GLOW_OUTER = '#00ffaa';
 export const BEAM_GLOW_MID = '#88ffdd';
+
+// Projectile glows
+export const PROJ_GLOW_GREEN = '#ccffcc';   // player / gatling
+export const PROJ_GLOW_RED   = '#ffcccc';   // enemy
+export const PLASMA_CORE     = '#ccffee';   // plasma bolt center
+export const TORPEDO_TRAIL   = '#996633';   // torpedo exhaust
+export const TORPEDO_CORE    = '#ffcc66';   // torpedo head glow
+export const CANNON_AMBER    = '#dd8800';   // cannon projectile
+
+// Particle / FX
+export const EXPLOSION_ORANGE = '#ff8844';
+export const EXPLOSION_YELLOW = '#ffaa22';
+export const EXPLOSION_GOLD   = '#ffcc66';
+export const EXPLOSION_RED    = '#ff4400';
+export const EXPLOSION_RING_OUTER = '#ffaa44';
+export const EXPLOSION_RING_INNER = '#ff6622';
+export const MAGENTA_DARK  = '#aa0077';
+export const MAGENTA_LIGHT = '#ffaaff';
+export const SPARK_YELLOW  = '#ffff66';
+export const SPARK_WARM    = '#ffcc44';     // station sparks (The Coil)
+export const SMOKE_DARK    = '#555555';
+export const SMOKE_MID     = '#6a6a6a';
+export const SMOKE_TINT    = '#3a3a44';
+
+// Zone backgrounds
+export const ZONE_BG_STROKE = '#334455';
+
+// Minimap info text
+export const MINIMAP_INFO_TEXT = '#88aacc';
 
 // Panel / background
 export const PANEL_BG = 'rgba(0,8,16,0.85)';
@@ -150,3 +182,10 @@ export const MINIMAP_FLEET = GREEN;
 export const MINIMAP_PLAYER = GREEN;
 export const MINIMAP_LOOT = AMBER;
 export const MINIMAP_DERELICT = AMBER;
+
+// Designer harness
+export const DESIGNER_BG           = '#000810';
+export const DESIGNER_CROSSHAIR    = '#0d1e2e';
+export const DESIGNER_SCALE_RING   = '#091525';
+export const DESIGNER_GRID         = '#0a1520';
+export const DESIGNER_ORIGIN       = '#1a3a50';

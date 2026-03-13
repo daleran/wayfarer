@@ -1,6 +1,6 @@
 import { Entity } from '@/entities/entity.js';
-import { CYAN, AMBER, RED, GREEN, WHITE } from '@/rendering/colors.js';
-import { text, SUBTITLE } from '@/rendering/draw.js';
+import { CYAN, AMBER, RED, GREEN, WHITE, DIM_TEXT } from '@/rendering/colors.js';
+import { text, SUBTITLE, FLAVOR } from '@/rendering/draw.js';
 import { FACTION_MAP } from '@/systems/reputation.js';
 
 export class Station extends Entity {
@@ -19,13 +19,14 @@ export class Station extends Entity {
     this.flavorText = data.flavorText ?? null;
     this.dockingRadius = 150;
     this._navPulse = 0;
+    this._zoneFadeAlphas = {};  // zone.id → alpha (0–1) for flavor text proximity fade
   }
 
   // Accent color for nav lights, docking arms, labels.
   // Friendly → CYAN. Enemy → RED. Neutral (all factions initially) → AMBER.
   get accentColor() {
     if (this.relation === 'friendly') return CYAN;
-    if (this.relation === 'enemy')    return RED;
+    if (this.relation === 'enemy') return RED;
     return AMBER;
   }
 
@@ -35,12 +36,87 @@ export class Station extends Entity {
   // Fill color — dimmed version of accent, used for UI panel backgrounds.
   get fillColor() {
     if (this.relation === 'friendly') return 'rgba(0,255,204,0.15)';
-    if (this.relation === 'enemy')    return 'rgba(255,68,68,0.15)';
+    if (this.relation === 'enemy') return 'rgba(255,68,68,0.15)';
     return 'rgba(255,170,0,0.15)';
   }
 
   update(dt) {
     this._navPulse += dt;
+  }
+
+  /** Update per-zone flavor text fade based on player proximity. */
+  updateZoneFade(dt, playerX, playerY) {
+    const zones = this.layout?.zones;
+    if (!zones) return;
+    const FADE_RADIUS = 400;
+    const FADE_SPEED = 1.2;
+    for (const zone of zones) {
+      if (!zone.flavor?.length || !zone.labelOffset) continue;
+      const wx = this.x + (zone.worldOffset?.x ?? 0) + zone.labelOffset.x;
+      const wy = this.y + (zone.worldOffset?.y ?? 0) + zone.labelOffset.y;
+      const dx = wx - playerX;
+      const dy = wy - playerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const target = dist < FADE_RADIUS ? 1 : 0;
+      const cur = this._zoneFadeAlphas[zone.id] ?? 0;
+      this._zoneFadeAlphas[zone.id] = cur + (target - cur) * Math.min(1, FADE_SPEED * dt);
+    }
+  }
+
+  /** Render zone subtitle labels (always) and flavor text (proximity fade).
+   *  Drawn in world space so text scales with zoom like all other map labels. */
+  renderZoneLabels(ctx, camera) {
+    const zones = this.layout?.zones;
+    if (!zones) return;
+    const accent = this.accentColor;
+    const z = camera.zoom;
+    const screen = camera.worldToScreen(this.x, this.y);
+
+    ctx.save();
+    ctx.translate(screen.x, screen.y);
+    ctx.scale(z, z);
+
+    for (const zone of zones) {
+      if (!zone.labelOffset) continue;
+      const lx = (zone.worldOffset?.x ?? 0) + zone.labelOffset.x;
+      const ly = (zone.worldOffset?.y ?? 0) + zone.labelOffset.y;
+
+      // Zone subtitle — always visible, left-aligned
+      text(ctx, zone.label.toUpperCase(), lx, ly, accent, {
+        style: SUBTITLE, align: 'left',
+      });
+
+      // Flavor text — fades in on proximity, word-wrapped, left-aligned below subtitle
+      const fadeAlpha = this._zoneFadeAlphas[zone.id] ?? 0;
+      if (fadeAlpha > 0.01 && zone.flavor?.length) {
+        const firstLine = zone.flavor.find(l => l !== '');
+        if (firstLine) {
+          ctx.save();
+          ctx.font = `${FLAVOR.weight} ${FLAVOR.size}px monospace`;
+          ctx.fillStyle = DIM_TEXT;
+          ctx.globalAlpha = fadeAlpha * FLAVOR.alpha;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          const words = firstLine.split(' ');
+          let line = '';
+          let y = ly + 22;
+          for (const word of words) {
+            const test = line ? `${line} ${word}` : word;
+            if (ctx.measureText(test).width > 300 && line) {
+              ctx.fillText(line, lx, y);
+              line = word;
+              y += 16;
+            } else {
+              line = test;
+            }
+          }
+          if (line) ctx.fillText(line, lx, y);
+          ctx.restore();
+        }
+      }
+    }
+
+    ctx.restore();
   }
 
   render(ctx, camera) {

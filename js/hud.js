@@ -6,7 +6,7 @@ import {
   renderPauseIcon, renderDockPrompt, renderRepairPrompt,
   renderSalvageBar, renderRepairBar,
 } from './hud/prompts.js';
-import { armorArcColor } from './rendering/colors.js';
+import { armorArcColor, RED, GREEN, AMBER, BLUE } from './rendering/colors.js';
 
 const PICKUP_ABOVE = 90;
 
@@ -283,13 +283,12 @@ export class HUD {
     if (!p) return;
 
     // Weapon info
-    const GUIDANCE = { dumbfire: 'DUMB', wire: 'WIRE', heat: 'HEAT' };
     const primaries   = p._primaryWeapons;
     const secondaries = p._secondaryWeapons;
     const activePri   = primaries[p.primaryWeaponIdx];
     const activeSec   = secondaries[p.secondaryWeaponIdx];
-    r.priWeaponEl.textContent = activePri ? _weaponInfoText(activePri, GUIDANCE) : '';
-    r.secWeaponEl.textContent = activeSec ? _weaponInfoText(activeSec, GUIDANCE) : '';
+    r.priWeaponEl.textContent = activePri ? _weaponInfoText(activePri) : '';
+    r.secWeaponEl.textContent = activeSec ? _weaponInfoText(activeSec) : '';
 
     // Armor pips
     const arcs = p.armorArcs;
@@ -329,14 +328,14 @@ export class HUD {
     const hullCritical = hullRatio < 0.25;
     this._updateSegBar(r.hullBar, hullRatio, hullCritical ? 'critical' : null);
     r.hullValue.textContent = `${Math.floor(p.hullCurrent)}/${Math.floor(p.hullMax)}`;
-    r.hullValue.style.color = hullCritical ? '#ff4444' : '#00ff66';
+    r.hullValue.style.color = hullCritical ? RED : GREEN;
 
     // Fuel
     const fuelRatio = game.fuelMax > 0 ? game.fuel / game.fuelMax : 0;
     const fuelCritical = fuelRatio < 0.25;
     this._updateSegBar(r.fuelBar, fuelRatio, fuelCritical ? 'critical' : null);
     r.fuelValue.textContent = `${Math.floor(game.fuel)}/${Math.floor(game.fuelMax)}`;
-    r.fuelValue.style.color = fuelCritical ? '#ff4444' : '#ffaa00';
+    r.fuelValue.style.color = fuelCritical ? RED : AMBER;
     r.fuelBurn.textContent = game.fuelBurnRate > 0 ? `-${game.fuelBurnRate.toFixed(3)}/s` : '';
 
     // Power
@@ -356,7 +355,7 @@ export class HUD {
     const cargoFull = cargoUsed >= cargoCap;
     this._updateSegBar(r.cargoBar, cargoRatio, cargoFull ? 'full' : null);
     r.cargoValue.textContent = `${cargoUsed}/${cargoCap}`;
-    r.cargoValue.style.color = cargoFull ? '#ff4444' : '#4488ff';
+    r.cargoValue.style.color = cargoFull ? RED : BLUE;
 
     // Scrap
     r.scrapEl.textContent = `\u2699 ${game.scrap}`;
@@ -396,14 +395,12 @@ export class HUD {
   }
 }
 
-function _weaponInfoText(weapon, guidanceLabels) {
+function _weaponInfoText(weapon) {
   const rawName = weapon.displayName || weapon.constructor.name.toUpperCase();
   const name = rawName.replace(/\s*\[.*?\]$/, '').trim();
 
   let mode = '';
-  if (weapon.currentAmmoMode)   mode = weapon.currentAmmoMode.toUpperCase();
-  else if (weapon.guidanceMode) mode = (guidanceLabels[weapon.guidanceMode] ?? weapon.guidanceMode).toUpperCase();
-  else if (weapon.isBeam)       mode = 'BEAM';
+  if (weapon.isBeam) mode = 'BEAM';
 
   const modePart = mode ? `  ${mode}` : '';
   const ammoPart = weapon.ammo !== undefined ? `  ${weapon.ammo}/${weapon.magSize || '∞'}` : '';

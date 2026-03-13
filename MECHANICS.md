@@ -1,24 +1,22 @@
 # MECHANICS.md — Wayfarer Game Mechanics
 
-> **Stats, item lists, and specific numbers live in the CSV source files (`data/*.csv`, compiled to `data/compiledData.js`) and JS data files (`js/data/commodities.js`, `js/data/lootTables.js`, etc.). This document describes behavior only.**
-
-This is the source of truth for how game systems behave. No lore, no code architecture. For world/faction context see `LORE.md`. For visual conventions see `UX.md`.
+> **This document describes how systems behave — not what specific items, ships, or values exist.** Stats, item definitions, and tuning constants live in CSV source files (`data/*.csv`) and JS data files. For world/faction context see `LORE.md`. For visual conventions see `UX.md`.
 
 ---
 
 ## Movement & Throttle
 
-Six discrete throttle levels from Stop through Flank. W/S step up or down; the level persists until changed. Ships have momentum — acceleration and deceleration are gradual.
+Discrete throttle levels from Stop through Flank. W/S step up or down; the level persists until changed. Ships have momentum — acceleration and deceleration are gradual.
 
-Fuel consumption scales with throttle level. The lowest level is free; consumption increases nonlinearly toward Flank. Running out of fuel clamps the ship to the lowest powered throttle level — it can still crawl but cannot fight or flee effectively. Fuel efficiency is a per-ship multiplier that scales how fast each throttle step burns fuel.
+Fuel consumption scales with throttle level. The lowest level is free; consumption increases nonlinearly toward Flank. Running out of fuel clamps the ship to the lowest powered throttle level. Fuel efficiency is a per-ship multiplier that scales burn rate.
 
 ---
 
 ## Combat Mode
 
-**F key** toggles combat mode. The default state is standard mode — weapons cannot fire and the cursor is a simple navigation reticle. Entering combat mode enables all weapon firing (LMB, RMB, auto-fire turrets) and switches to a tactical crosshair with range feedback.
+**F key** toggles combat mode. Standard mode disables weapons and shows a navigation reticle. Combat mode enables weapon firing (LMB, RMB, auto-fire turrets) and switches to a tactical crosshair.
 
-Ammo/guidance mode cycling (`1`, `2`) is always available regardless of combat mode.
+Ammo cycling (`1`, `2`) is always available regardless of combat mode.
 
 ---
 
@@ -30,82 +28,40 @@ Ammo/guidance mode cycling (`1`, `2`) is always available regardless of combat m
 
 **Secondary weapons** (RMB) — rocket pods and torpedoes. Same targeting logic. Player fires the indexed secondary weapon; AI fires all. Requires combat mode.
 
-**Ammo/guidance cycling** — `1` cycles ammo mode on active primary. `2` cycles guidance mode on active secondary (or ammo mode if applicable).
+**Ammo cycling** — `1` cycles ammo type on active primary. `2` cycles on active secondary. Switching dumps the current magazine back to cargo reserves under the old ammo id and starts a reload from the new type's pool.
 
 ### Weapon Families
 
-Eight weapon families are implemented:
+Each weapon family has a distinct combat role — kinetic vs energy, projectile vs hitscan, armor-focused vs hull-focused, fixed vs turret mount. Some weapons support multiple ammo types (AP/HE, different guidance modes). Energy weapons (lance, plasma) have no ammo but use overheat/ramp mechanics. Specific families, variants, and stats are defined in `data/moduleWeapons.csv` and the weapon class files in `js/modules/weapons/`.
 
-- **Autocannon** — dumbfire kinetic bolt; moderate range; armor-focused; AP/HE ammo modes; magazine-fed
-- **Gatling Gun** — high rate-of-fire kinetic; short range; low damage per shot but high DPS; can intercept projectiles; magazine-fed
-- **Railgun** — extreme-velocity penetrator; long range; high damage; slow cooldown; three variants: small-fixed (SF), large-turret (LT), large-fixed (LF)
-- **Lance** — hitscan beam; ramps up damage over hold period; four variants: small-fixed (SF), small-turret (ST), large-fixed (LF), large-turret (LT); ST variant can intercept projectiles passing through the beam; SF/LF/LT also apply hull damage scaled by `hullFactor`
-- **Plasma Cannon** — hull-heavy blob; turret-aimed; damage falls off with distance traveled; small and large variants
-- **Cannon** — slow heavy shell; AoE on contact; AP/HE ammo modes; magazine-fed
-- **Rocket Pod** — dumbfire, wire-guided, or heat-seeking; detonates on contact and on expiry; interceptable; small (2-tube) and large (8-tube burst) variants; shared ammo pool
-- **Torpedo** — fixed-mount (fires along heading); slow; interceptable; very high damage AoE; long cooldown
+Weapons may have variants (size, mount type) that share the same base mechanics but differ in stats. Fixed-mount weapons fire along the ship's heading; turret-mount weapons aim toward the mouse cursor.
 
-**Removed weapons** (Wire Missile, Heat Missile, Flak Cannon are no longer separate weapons — rocket pods now cover guided and dumbfire roles; gatling gun provides flak-style interception.)
+### Ammo System
 
-### Ammo Modes
+Ammo is a first-class data object defined in `data/ammo.csv`. Each ammo item has an id, display name, HUD tag, weight (cargo mass per round), scrap value, and optional guidance properties. AP and HE rounds are separate items in cargo — you hold them independently.
 
-Autocannon and Cannon support switchable ammo modes (key `1` for primary, key `2` for secondary):
+Weapons declare which ammo ids they accept (`acceptedAmmoTypes`) and track what's currently loaded (`currentAmmoId`). Weapons with multiple accepted types can cycle between them. Switching ammo dumps the current magazine back to cargo reserves and starts a reload from the new type's pool.
 
-| Weapon | AP Mode | HE Mode |
-|---|---|---|
-| Autocannon | Standard armor damage | Reduced armor damage; AoE blast; hull damage; can intercept |
-| Cannon | Standard AoE armor+hull | Reduced armor damage; larger AoE; high hull damage; can intercept |
+Guided ordnance (wire-guided, heat-seeking) stores its guidance type and strength on the ammo data object, not in weapon code.
 
-Switching mode dumps the current magazine back to cargo reserves and starts a reload.
+### Projectile Behaviors
 
-### Guidance Modes (Rocket Pods)
-
-Rocket Pods support three guidance modes (cycle with key `2`):
-
-| Mode | Behavior |
-|---|---|
-| DUMBFIRE | Fires at click point; detonates at target or on contact |
-| WIRE | Guided by mouse cursor; interceptable |
-| HEAT | Homes on nearest hostile; interceptable |
-
-### Railgun Variants
-
-| Variant | Size | Mount | Notes |
-|---|---|---|---|
-| RAILGUN-SF | Small | Fixed | Fires along ship heading |
-| RAILGUN-LT | Large | Turret | Mouse-aimed |
-| RAILGUN-LF | Large | Fixed | Double damage/hull multipliers vs SF |
-
-### Lance Variants
-
-| Variant | Size | Mount | Hull Damage | Beam Intercept |
-|---|---|---|---|---|
-| LANCE-SF | Small | Fixed | Yes (1.0×) | No |
-| LANCE-ST | Small | Turret | No (0.0×) | Yes — intercepts projectiles passing through beam |
-| LANCE-LF | Large | Fixed | Yes (1.0×) | No |
-| LANCE-LT | Large | Turret | Yes (1.0×) | No |
-
-### Projectile Special Behaviors
-
-| Flag | Effect |
-|---|---|
-| `detonatesOnContact` | AoE explosion when hitting any ship |
-| `detonatesOnExpiry` | AoE explosion at target point when range runs out |
-| `isGuided + guidedType='wire'` | Steers toward mouse cursor each frame |
-| `isGuided + guidedType='heat'` | Steers toward nearest hostile |
-| `isInterceptable` | Can be shot down by weapons with `canIntercept` or `canInterceptBeam` |
-| `canIntercept` | Intercepts nearby enemy interceptable projectiles on contact (gatling) |
-| `canInterceptBeam` | Lance small-turret intercepts interceptable projectiles passing within 15px of beam |
-| `isPlasma` | Damage falls off proportionally as the projectile approaches max range |
-| `isBeam` | Lance only; hitscan on fire, rendered as a beam overlay |
+Projectiles can have special flags that modify their behavior:
+- **AoE detonation** — explode on contact and/or at target point
+- **Guided** — steer toward mouse cursor (wire) or nearest hostile (heat)
+- **Interceptable** — can be shot down by weapons with intercept capability
+- **Intercept** — destroy nearby enemy interceptable projectiles (point defense)
+- **Beam intercept** — lance turret intercepts projectiles passing through the beam
+- **Plasma falloff** — damage decreases proportionally with distance traveled
+- **Beam** — hitscan on fire, rendered as a beam overlay
 
 ### Hit Flash
 
-All ships flash red briefly when they take damage. Flash lasts 0.15 seconds and fades linearly.
+All ships flash red briefly when they take damage.
 
-### Weapons and the Offline Flag
+### Weapons Offline
 
-The `_weaponsOffline` flag on a ship disables all weapons. This flag is set by the hull degradation system at critical hull levels.
+The `_weaponsOffline` flag on a ship disables all weapons. Set by the hull degradation system at critical hull levels.
 
 ---
 
@@ -113,188 +69,76 @@ The `_weaponsOffline` flag on a ship disables all weapons. This flag is set by t
 
 ### Quad-Arc Positional Armor
 
-Each ship has four armor arcs: front, port, starboard, and aft. The arc that takes the hit is determined by the impact angle relative to the ship's facing — 90° quadrants. Damage depletes the hit arc first. When an arc reaches zero, excess damage bleeds through to hull.
+Each ship has four armor arcs: front, port, starboard, and aft. The arc that takes the hit is determined by the impact angle relative to the ship's facing. Damage depletes the hit arc first. When an arc reaches zero, excess damage bleeds through to hull.
 
 The aft arc has amplified hull bleed-through and a chance to damage engine integrity on each hull hit.
 
 ### Hull Degradation Cascade
 
-As hull health drops, the ship progressively loses capability. Each threshold adds an effect that persists until hull is repaired at a station:
-
-- **~50%** — engine begins to sputter; enemy ships darken visually; player sparks begin
-- **~40%** — enemy fire rate begins to slow (scales worse toward 0%)
-- **~30%** — engine cutouts; weapons misfire occasionally; turn rate reduced; smoke emitted from engines
-- **~25%** — player screen edges pulse red (gets worse toward 0%)
-- **~15%** — speed capped at a fraction of max
-- **~10%** — further speed reduction
-- **~5%** — barely functional; most weapons offline
-
-At 0% hull the ship is destroyed.
-
-### Enemy AI Fire Range Gate
-
-Before firing, enemy AI checks whether the player is within the weapon's max range. If the player is out of range, the shot is skipped. This prevents enemies from firing pointless shots at extreme distances.
+As hull health drops, the ship progressively loses capability. Each threshold adds an effect that persists until hull is repaired at a station. Effects include engine sputtering, fire rate reduction, weapon misfires, turn rate penalties, speed caps, visual damage indicators, and screen warnings. At 0% hull the ship is destroyed. Specific thresholds are tuned in code.
 
 ### Field Repair (R key)
 
 Press R when stopped (throttle 0) to enter repair mode. Both armor and module repair run simultaneously:
 
-- **Armor** — repairs the most-depleted arc first; costs scrap per armor point; auto-cancels when all arcs are full
-- **Module condition** — improves the worst-condition installed module one step at a time; costs scrap per step; 4 seconds per step
+- **Armor** — repairs the most-depleted arc first; costs scrap per armor point; auto-cancels when full
+- **Module condition** — improves the worst-condition installed module one step at a time; costs scrap per step
 
-Press R again to cancel. Also cancels automatically when armor is full and no modules need repair, or when scrap runs out.
-
-Hull damage cannot be repaired in the field — dock at a station.
+Press R again to cancel. Also cancels when all repairs are done or scrap runs out. Hull damage cannot be repaired in the field — dock at a station.
 
 ### Station Repair
 
-Docking allows full armor restoration across all four arcs and hull repair. Both cost scrap. Hull repair takes a moment (progress bar).
+Docking allows full armor restoration and hull repair. Both cost scrap. Hull repair shows a progress bar.
 
 ---
 
 ## Ship Classes
 
-Ships are organized as class templates extended by specific variants. Each class defines a hull shape, slot count, and base stats. Specific ships (player, enemy, neutral) extend a class and override multipliers.
+Ships are organized as class templates extended by specific variants. Each class defines a hull shape, slot count, and base stats. Specific ships (player, enemy, neutral) extend a class and override multipliers. All stat values are computed from base constants in CSVs via per-ship multipliers.
 
-The four hull classes:
-- **Onyx Class Tug** — heavy salvage tug; asymmetric hammerhead shape; moderate speed, high armor
-- **Maverick Class Courier** — fast personal craft; wide muscular body, twin side engines; high speed, low armor
-- **G100 Class Hauler** — wide cargo barge; raised cab, twin square engine pods; large cargo capacity, medium stats
-- **Garrison Class Frigate** — military workhorse; H/I-beam hull profile, rectangular nacelle pods; high hull, large fuel tank
-
-All stat values are computed from base constants in `data/*.csv` (compiled to `data/compiledData.js`) via per-ship multipliers.
-
-### Player Ship
-
-The **Hullbreaker** is a salvage-modified Onyx Class Tug — stripped armor for weight savings, enlarged fuel tank. Intended for extended solo operations in the Gravewake Zone.
-
-### Scavenger Enemy Ships
-
-- **Light Fighter** (Maverick hull) — fast stalker; autocannon
-- **Armed Hauler** (G100 hull) — kiter; autocannon + lance
-- **Salvage Mothership** (Garrison hull) — slow standoff; cannon + heat missiles
-- **Grave-Clan Ambusher** (Maverick hull) — lurker; autocannon + heat missile
-
-### Concord Enemy Ships
-
-Concord Remnants are geometric AI constructs — cold precision, machine-origin. They do not use scavenger tactics.
-
-- **Drone Control Frigate** (custom Garrison hull, concord geometric profile) — standoff AI; Lance beam weapon; 400 HP hull, 200/160/120 armor arcs; spawns up to 3 Snatcher Drones every 12 seconds from lateral bay notches. `_canRespawn = false`. Extreme frontal armor — prioritize flanking.
-- **Snatcher Drone** (Maverick hull) — stalker AI; no weapons; 30 HP, 10 per arc. Rushes the player at ~196 u/s. When within 35px it latches onto the hull (`_isLatched = true`) and drains 2 armor + 0.5 hull per 0.25 seconds (~8 armor/sec, 2 hull/sec). Drone dies if target goes inactive; player should shoot drones off first.
-
-#### Spawn Queue Pattern
-
-DroneControlFrigate builds Snatcher Drone instances during `update()` and pushes them to `this._spawnQueue`. After the entity update loop in `game.js`, the spawn queue processor pops each queued drone and adds it to `entities[]` and `ships[]`. This avoids mutating `entities[]` while iterating.
-
-#### Pickup Text Pattern
-
-SnatcHerDrone pushes `{ text, colorHint }` entries to `this._pickupTextQueue` when it latches. The same queue processor in `game.js` reads this queue and calls `hud.addPickupText()`. Both queues are safe for any entity — the processor skips entities with no queues.
-
-#### Latched Drone AI Exclusion
-
-The ship AI loop in `game.js` skips `updateShipAI()` for any ship with `_isLatched === true`. This prevents the AI from fighting the latch position update.
-
-### Neutral Ships
-
-- **Trader Convoy** (G100 hull) — follows trade routes between stations; no weapons; drops no loot
-- **Militia Patrol** (Garrison hull) — orbits The Coil; no weapons; drops no loot
+Ship classes, player ship, enemy ships, and neutral ships are defined in their respective JS files. See `js/ships/` for hull classes, `js/npcs/` for NPCs, and `js/ships/registry.js` for the registries.
 
 ---
 
 ## Combat AI
 
-All non-player ships — hostile, neutral, or friendly — share the same AI system (`js/ai/shipAI.js`). There are no separate hostile vs neutral tracking arrays. Every ship tracks in `GameManager.ships[]`. A ship's `relation` field drives behavior:
-
-- `'hostile'` — combat behavior active; counted as an enemy for targeting and loot
-- `'neutral'` — passive behavior active; turns hostile immediately if struck by the player
-- `'friendly'` — passive behavior active; never targeted
+All non-player ships share the same AI system. Every ship tracks in `GameManager.ships[]`. A ship's `relation` field drives behavior (`hostile`, `neutral`, `friendly`).
 
 ### Ship AI Profile
 
-Each ship carries a flat `ship.ai` object spread from an `AI_TEMPLATES` entry in `data/aiBehaviors.csv` (compiled to `data/compiledData.js`). Characters and spawn overrides can change individual values (e.g. a cautious enemy with longer `deaggroRange`) without touching the base template.
-
-Two keys define the full behavior:
-
-| Key | Controls |
-|---|---|
-| `combatBehavior` | What the ship does when `relation === 'hostile'` |
-| `passiveBehavior` | What the ship does when `relation !== 'hostile'` |
+Each ship carries a flat `ship.ai` object spread from a template defined in `data/aiBehaviors.csv`. Two keys define the full behavior: `combatBehavior` (what the ship does when hostile) and `passiveBehavior` (what it does otherwise). Characters and spawn overrides can change individual values without touching the base template.
 
 ### Combat Behaviors
 
-Hostile ships with `aggroRange > 0` patrol home when the player is far, then switch to their combat behavior when the player enters range. Hull below `fleeHullRatio` forces a flee regardless of behavior.
-
-| Behavior | Logic |
-|---|---|
-| **Stalker** | Positions at the player's aft; fires only when nose aligns with target |
-| **Kiter** | Backs away at close range; orbits and fires from max weapon range |
-| **Standoff** | Holds at long range; faces player; lobs cannon and missiles |
-| **Lurker** | Hides at spawn cover point; scans for nearby traders to pounce; switches to player if player enters aggro range |
-| **Flee** | Turns away from the player and runs at full throttle |
+Hostile ships patrol near home when the player is far, then switch to their combat behavior when the player enters aggro range. Low hull forces a flee regardless of behavior. Specific behaviors (stalker, kiter, standoff, lurker, flee) are defined in `data/aiBehaviors.csv`.
 
 ### Passive Behaviors
 
-Ships with `passiveBehavior` set follow it when not hostile:
-
-- **Trader** — state machine between `traveling` and `waiting`; follows `ship.ai._tradeRouteA` / `ship.ai._tradeRouteB`; reverses route when arriving. Combat fallback: `flee`
-- **Militia** — orbit loop around `ship.ai._orbitCenter`; steers toward computed point each tick. Combat fallback: `stalker`
+Non-hostile ships follow their passive behavior pattern. Traders follow two-point routes between stations. Militia orbit a fixed point. Both have combat fallback behaviors if attacked.
 
 ### Relation Transitions
 
-When a player projectile hits a neutral ship:
-1. Reputation penalty applied to Settlements faction
-2. `ship.relation` set to `'hostile'`
-3. `ship.ai._aggro` set to `true` — the ship immediately engages rather than patrolling
-
-Ships with `aggroRange === 0` (traders, militia) never turn hostile proactively — only through being attacked. Ships with `aggroRange > 0` (scavengers) turn hostile when the player enters range.
-
-All AI tuning constants are in `data/aiBehaviors.csv` (compiled to `data/compiledData.js`).
+When a player projectile hits a neutral ship: reputation penalty applied, relation set to hostile, AI immediately engages. Ships with zero aggro range only turn hostile through being attacked.
 
 ---
 
 ## World & Map
 
-The main map is the Gravewake Zone — a large debris-strewn region surrounding the shattered remains of a Pre-Collapse arkship. Named editor maps in `js/data/maps/` serve as development sandboxes.
-
-### Static Terrain
-
-- **Arkship Spines** — massive wireframe structural beams, remnants of the arkship hull
-- **Debris Clouds** — pre-generated fragment fields using golden-angle distribution
-- **CoilStation** — massive dockable station structure; hub for trade and transit
-
-### Planet Pale
-
-Rendered as a background element (not an entity) — only the curved atmospheric limb is visible from the playspace.
+The main map is the Gravewake Zone. Named editor maps in `js/data/maps/` serve as development sandboxes. Static terrain includes arkship spines, debris clouds, and stations. Planet Pale is rendered as a background element.
 
 ---
 
 ## Ship Modules
 
-Ships have a fixed number of module slots. Slot 0 is always the engine. Other slots are general-purpose. Modules are installed and removed via the Ship Screen (I key).
+Ships have a fixed number of module slots. Each slot has a physical mount point on the hull. **Engine slots** only accept engine modules and vice versa. Other slots are general-purpose. Modules are installed/removed via the Ship Screen (I key) — click installed modules to uninstall, click cargo modules then empty slots to install.
 
 ### Engine Modules & Thrust-to-Weight
 
-Ship performance is derived from the **thrust-to-weight ratio**. Engine modules provide thrust; all modules, cargo, and fuel contribute weight. Movement stats are computed as:
+Ship performance is derived from the **thrust-to-weight ratio**. Engine modules provide thrust; all modules, cargo, and fuel contribute weight. Derived stats (acceleration, top speed, turn rate) each have different sensitivities to T/W changes. All derived multipliers are clamped to a floor and ceiling.
 
-```
-totalWeight = baseHullWeight + sum(module.weight) + cargoUsed × CARGO_WEIGHT_PER_UNIT + fuel × FUEL_WEIGHT_PER_UNIT
-totalThrust = sum(engine.thrust × engine.conditionMultiplier)
-twRatio     = totalThrust / totalWeight
-```
-
-Each ship stores a reference T/W ratio (`_refTwRatio`) computed at construction with stock modules, full fuel, zero cargo. Performance is derived from the ratio of current T/W to reference T/W using power curves with different sensitivities:
-
-- **Acceleration** — most sensitive (exponent 1.4); cargo and engine changes hit accel hardest
-- **Top speed** — moderate sensitivity (exponent 0.6)
-- **Turn rate** — least sensitive (exponent 0.3); heavy ships can still turn reasonably
-
-All derived multipliers are clamped to [0.15, 2.0] — a ship with no engine still crawls at 15% base stats; the best engine caps at 200%.
+**Cargo capacity = mass budget.** Everything in the hold has mass: scrap, commodities, ammo, modules, weapons. Uninstalling a module moves its mass from "installed" to "cargo" — total ship mass stays the same.
 
 **Recalculation is event-based** — triggered on module swap, cargo change, salvage completion, dock/undock, and engine condition change. Not computed every tick.
-
-`fuelEffMult` scales the throttle-based fuel drain independently of thrust. Higher = more fuel burned per throttle level.
-
-**All NPC ships carry engine modules** in their `moduleSlots` — consistent with the player, and salvageable on defeat.
 
 ### Weapon Modules
 
@@ -302,52 +146,35 @@ Hardpoint modules that enable specific weapon types. Each draws power and occupi
 
 ### Power Generation Modules
 
-Power modules add wattage to the ship's power budget. Types:
-- **H2 Fuel Cell** — burns fuel continuously even at idle; moderate output
-- **Fission Reactor (S/L)** — no fuel burn; requires periodic overhaul at certified stations; output degrades when overdue
-- **Fusion Reactor (L)** — Pre-Collapse technology; very high output; trace fuel burn; no overhaul required
+Power modules add wattage to the ship's power budget. Types differ in fuel consumption, output, and maintenance requirements. Fission reactors require periodic overhaul at certified stations; output degrades when overdue.
+
+### Power Budget Enforcement
+
+When total power draw exceeds reactor output, modules are depowered by priority tier (sensors first, then weapons, then engines). Depowered modules are rendered dim, show "UNPOWERED" in tooltips, and stop functioning.
 
 ### Sensor / Passive Modules
 
-Passive modules that extend minimap range, enable ship tracking, add lead indicators, improve salvage information, and provide advanced combat telemetry.
-
-**Sensor capabilities:**
-
-| Capability | Effect | Provided by |
-|---|---|---|
-| `minimap_stations` | Show stations on minimap | All sensors |
-| `minimap_ships` | Show ships on minimap | Standard+, Combat Computer, Salvage Scanner, Long-Range |
-| `lead_indicators` | Lead reticles on hostiles | Combat Computer |
-| `health_pips` | Health pip bars above hostiles | Combat Computer |
-| `salvage_detail` | Detailed salvage info on derelicts | Salvage Scanner |
-| `trajectory_line` | Dashed line from player to lead indicator | Combat Computer, Long-Range Scanner |
-| `enemy_telemetry` | Speed/heading/hull text on mouse-nearest hostile | Combat Computer, Long-Range Scanner |
-| `module_inspection` | Module loadout list on mouse-nearest hostile | Long-Range Scanner |
+Passive modules that extend minimap range, enable ship tracking, add combat overlays (lead indicators, health pips, telemetry), and provide salvage information. Each sensor type grants a specific set of capabilities.
 
 ### Fission Reactor Overhaul
 
-Fission reactors track time since their last overhaul. When overdue:
-- Power output drops to a fraction of rated output
-- HUD shows a flashing magenta/red `REACTOR OVERHAUL REQUIRED` warning
-- Module slot shows power in magenta with `!` suffix
-- Tooltip shows overdue status
+Fission reactors track time since their last overhaul. When overdue, output degrades and the HUD shows a warning. Dock at a station with overhaul capability to pay for the reset. Overhauls can be performed early.
 
-To overhaul: dock at a station with `canOverhaulReactor: true` (currently Ashveil Anchorage). A button appears in the Services tab. Paying the overhaul cost resets the timer and restores full output. Overhauls can also be performed early to reset the timer proactively.
+### Utility Modules
 
-Overhaul intervals and costs are defined in `data/*.csv` (compiled to `data/compiledData.js`).
+Passive stat-modifying modules that trade one advantage for a drawback (e.g. more cargo but less armor, more fuel but more weight). Bonuses scale with module condition.
 
 ### Module Condition
 
-Modules salvaged from derelicts have a condition that affects their effectiveness: `good`, `worn`, `faulty`, `damaged`, or `destroyed`. Destroyed modules convert to scrap on pickup.
+Modules salvaged from derelicts have a condition that affects their effectiveness: `good`, `worn`, `faulty`, `damaged`, or `destroyed`. Destroyed modules convert to scrap on pickup. Power and weapon effectiveness scale by condition multiplier. Field repair (R key) improves condition one step at a time.
 
-- Power modules: effective output scales by condition multiplier
-- Weapon modules: damage scales by condition multiplier, applied at install
+### Mount Points & Module Visuals
 
-Condition is shown as a colored badge in the Ship Screen and in tooltip rows. Field module repair (R key) improves condition one step at a time.
+Each ship class defines mount points — fixed hull positions where modules are physically visible. Each mount has an `arc` field tying it to the ship's armor arc system. Modules render at their mount point using small icons colored by condition.
 
-### Hull Breach — Module Damage
+### Hull Breach — Positional Module Damage
 
-When the player takes hull damage while hull is below a threshold, each hit has a tiered chance to degrade a random installed module by one condition step. The chance increases as hull gets lower. This only applies when hull damage actually lands (not pure armor hits). Weapon modules immediately reapply their damage scaling after degradation.
+When the player takes hull damage below a threshold, each hit has a chance to damage a module by one condition step. The chance increases as hull gets lower. Breach candidates are filtered to modules whose mount arc matches the impact arc when possible.
 
 ---
 
@@ -355,64 +182,43 @@ When the player takes hull damage while hull is below a threshold, each hit has 
 
 Press **I** to toggle the Ship Status overlay. Closes with **I** or **Esc**.
 
-Three-column layout:
-- **Left panel** — hull and armor arc health, drive stats, scrap/cargo readout, module slots with power budget, idle fuel burn
-- **Center panel** — paper doll: ship silhouette with armor arc rings; each arc labeled with current/max; hull ratio bar below
-- **Right panel** — cargo bay contents, capacity bar, active weapon list; salvaged weapons in cargo shown separately
-- **Jettison** — each cargo item has a JETTISON button that ejects the item behind the ship as a loot drop (scrap ejects 20 at a time, ammo ejects 10 at a time)
+Layout:
+- **Left DOM panel** — hull/armor status, drive stats, scrap/cargo readout, cargo bay with filters (modules, commodities, ammo)
+- **Canvas overlay** — installed module stat boxes connected by lines to hull mount points
+
+**Jettison** — each cargo item can be ejected behind the ship as a loot drop.
 
 ---
 
 ## Navigation & Map (M key)
 
-Press **M** to open the full-screen system map overlay. The map uses its own zoom/pan (independent of the game camera). Scroll to zoom, drag to pan. The simulation continues running while the map is open.
+Press **M** to open the full-screen system map overlay with independent zoom/pan. The simulation continues while the map is open.
 
-**Left-click** a station or derelict on the map to set a navigation waypoint. Left-click empty space to set a freeform waypoint. **Right-click** to clear the waypoint. **M** or **Esc** closes the map.
+**Left-click** a station or derelict to set a waypoint. Left-click empty space for a freeform waypoint. **Right-click** to clear. **M** or **Esc** closes.
 
-Map layers (capability-gated — same sensor requirements as minimap):
-- Zone circles with labels
-- Planets, stations (faction-colored with names), derelicts
-- Bounty target markers (pulsing red diamond)
-- Hostile contacts within sensor range
-- Course line from player to waypoint (dotted amber)
-- Fuel range circle (amber dashed — estimated max travel distance at current fuel/burn/speed)
-- Waypoint marker (inverted amber triangle)
-- Player position (green triangle with heading)
+Map layers are gated by sensor capabilities: zones, stations, derelicts, hostile contacts, course line, fuel range circle, waypoint marker, player position.
 
-**Nav indicator** (when waypoint set and map closed): an amber chevron at the screen edge pointing toward the waypoint, with distance text. If the waypoint is on-screen, an inverted triangle is drawn above it instead.
-
-Below the minimap: current zone name, waypoint destination with distance and ETA.
+**Nav indicator** (waypoint set, map closed): an edge-of-screen chevron pointing toward the waypoint with distance text. Below the minimap: current zone name, waypoint destination with distance and ETA.
 
 ---
 
 ## Economy
 
-**Scrap** is the sole currency. No credits. Scrap also takes cargo space — the conversion rate between scrap and cargo units is defined in `data/*.csv` (compiled to `data/compiledData.js`).
+**Scrap** is the sole currency. Scrap has mass and takes cargo space.
 
 **Fuel** drives movement. Tank size and drain rate are per-ship. Fuel can be purchased at stations.
 
-Scrap is earned by destroying enemies, salvaging derelicts, and selling commodities.
+**Ammo takes cargo space.** Each ammo type has a per-round weight. Both magazine contents and cargo reserves contribute to ship mass.
 
-**Ammo takes cargo space.** Different ammo types consume different amounts of cargo. Autocannon rounds, rockets, and missiles all occupy hold space.
-
-### Commodities
-
-15 specific commodities defined in `js/data/commodities.js` with lore-flavored names. The trade screen shows only rows where the station stocks the commodity or the player is carrying it.
-
-Supply levels (surplus → deficit) apply a price multiplier to the base price. Surplus stations sell cheap; deficit stations buy high. Station commodity profiles are defined in map data.
+**Commodities** — tradeable goods with lore-flavored names. Supply levels (surplus/deficit) apply price multipliers. Station commodity profiles are defined in map data.
 
 ---
 
 ## Stations & Docking
 
-Press **E** within docking radius to dock. Docking pauses the simulation (`isDocked = true`).
+Press **E** within docking radius to dock. Docking pauses the simulation.
 
-Station screen tabs:
-- **Services** — armor repair, hull repair, refuel; all cost scrap; Allied standing applies a discount
-- **Trade** — buy/sell commodities
-- **Intel** — lore text per station (shown when `station.lore` is populated)
-- **Bounties** — kill contracts (shown when contracts exist or are active for this station)
-- **Relations** — all 6 faction standings
+Station screen tabs: Services (repair, refuel), Trade (commodities), Intel (lore), Bounties (kill contracts), Relations (faction standings). Allied standing applies a discount. Hostile standing refuses docking.
 
 Press **Esc** or **E** to undock.
 
@@ -420,148 +226,77 @@ Press **Esc** or **E** to undock.
 
 ## Bounty Board
 
-Stations post kill contracts against named enemy ships. Each contract has a target, a scrap reward, and an expiry timer.
+Stations post kill contracts against named enemy ships with a scrap reward and expiry timer.
 
 **Flow:**
-1. Accept a contract in the Bounties tab → target ship spawns at a fixed position; contract moves to YOUR CONTRACTS
-2. Hunt and kill the target → `status = 'completed'`; HUD shows "Bounty Complete: +N scrap"
-3. Dock at the posting station → completed bounties pay out automatically
-4. If the timer expires before completion → target despawns; contract clears on next dock
-
-Expiry timer is shown in YOUR CONTRACTS and flashes red when close to expiry. Bounty targets have `isBountyTarget = true` and do not respawn.
+1. Accept a contract → target spawns; contract moves to active list
+2. Kill the target → status completed; HUD notification
+3. Dock at the posting station → automatic payout
+4. Timer expires → target despawns; contract clears
 
 ---
 
 ## Reputation System
 
-`game.reputation` tracks a standing value per faction. Default is Neutral. Standing ranges from strongly negative (Hostile) to strongly positive (Allied).
+`game.reputation` tracks a standing value per faction. Standing ranges from Hostile to Allied.
 
-### Factions
+At Hostile, docking is refused. At Allied, a discount applies. Faction list and thresholds are defined in `data/reputation.csv`.
 
-| Key | Label |
-|---|---|
-| `settlements` | Settlements |
-| `scavengers` | Scavenger Clans |
-| `concord` | Concord Remnants |
-| `monastic` | Monastic Orders |
-| `communes` | Communes |
-| `zealots` | Zealots |
-
-### Standing Levels
-
-Five levels from Hostile through Allied. At Hostile, docking is refused. At Allied, a discount applies to all station services. Exact thresholds and discount rate are in `data/*.csv` (compiled to `data/compiledData.js`).
-
-### Triggers
-
-- Killing an enemy ship reduces standing with that ship's faction
-- Killing a scavenger or Concord ship grants a small bonus with Settlements (rival bonus)
-- Collecting a bounty at a station grants standing with that station's faction
-- Hitting a neutral ship with a projectile imposes a Settlements penalty
-
-Station `reputationFaction` is computed at construction from `FACTION_MAP` in `js/systems/reputation.js`.
+**Triggers:** killing enemies affects that faction's standing; killing certain factions grants rival bonuses; bounty collection grants standing; hitting neutrals penalizes.
 
 ---
 
 ## Salvage
 
-Press **E** near a derelict to begin salvage. A progress bar fills over several seconds; the player is frozen and vulnerable during this time. **E** or **Esc** cancels.
+### Enemy → Derelict Transition
 
-On completion: loot drops spawn from the derelict's loot table; the derelict is removed.
+Non-player ships become derelicts when their hull drops to a critical threshold. On cripple: ship loses crew, AI, and movement; relation changes to derelict; kill feed and reputation trigger immediately. No loot scatters on cripple — loot comes from salvage only. The player still dies normally at hull 0.
 
-### Derelict Classes
+### Salvage Process
 
-Derelicts are Ships with `crew = 0`. They use the same ship class constructors (G100, Maverick, Garrison, Onyx) but are inert — no AI, no movement, no weapons. The `isDerelict` getter identifies them.
+Press **E** near a derelict to begin salvage. A progress bar fills; the player is frozen and vulnerable. **E** or **Esc** cancels. On completion, loot drops are computed from the wreck's remaining stats (armor, fuel, weapon magazines). The derelict persists but cannot be re-salvaged.
 
-Four hull classes with distinct polygon shapes and HUD lore text:
+### Derelicts
 
-| Class | Shape | Color | Loot Focus |
-|---|---|---|---|
-| **hauler** | wide octagon | warm rust | Fuel, commodities, ammo, fuel cells |
-| **fighter** | narrow dart | muted green-grey | Weapon drops, autocannon/missile ammo |
-| **frigate** | H/I-beam | muted blue-grey | Heavy weapons, reactors, mixed cargo |
-| **unknown** | asymmetric | MAGENTA | Exotics, rare modules, minimal fuel |
-
-The first lore line from the derelict's `loreText[]` array is shown in the HUD approach prompt.
-
-### Loot Types from Derelicts
-
-- **Module drop** (cyan diamond) — module instance with a rolled condition; install via Ship Screen
-- **Weapon drop** (magenta diamond) — unequipped weapon stored in `game.weapons[]`; shown in Ship Screen cargo
-- **Ammo drop** (green diamond) — adds to `game.ammo[ammoType]` reserve
-- **Scrap / Fuel / Commodity** — standard loot drops with auto-pickup
-
-Condition distributions per derelict class are defined in `js/data/lootTables.js`.
+Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter). They use ship class constructors but are inert. Both pre-placed map derelicts and crippled enemies use the same salvage system. Each derelict has a hull class that determines its shape and color, plus lore text shown on approach.
 
 ---
 
 ## HUD / UI Mechanics
 
-- **Status box** — 4 colored arc segments (proportional to current armor), center hull fill; arc labels F/A/P/S; flashes white briefly on hit
-- **Integrity row** — `[R][E][S]` indicators for reactor, engine, sensor integrity
-- **Weapon readout** — active primary name + cooldown bar; active secondary name + ammo pips
-- **Throttle** — row of discrete pips; active pip filled cyan
-- **Fuel bar** — segmented amber/red bar
-- **Scrap / Cargo** — text readouts with cargo unit consumption
-- **Minimap** — bottom-right; player crosshair, stations (white squares), enemies (red dots), derelicts (amber squares), loot (amber dots)
-- **Context prompts** — dock / salvage prompts pulse near valid targets
-- **Pickup text** — floating text at pickup location; color-coded: amber (default), green (repair), orange (breach)
+- **Status box** — colored arc segments (proportional to current armor), center hull fill; flashes on hit
+- **Integrity row** — reactor, engine, sensor status indicators
+- **Weapon readout** — active weapon names, cooldown bars, ammo counts
+- **Throttle** — discrete pips; active pip highlighted
+- **Fuel bar** — segmented bar with low-fuel warning
+- **Scrap / Cargo** — text readouts
+- **Minimap** — player, stations, enemies, derelicts, loot
+- **Context prompts** — dock / salvage prompts near valid targets
+- **Pickup text** — floating text at pickup location, color-coded by type
 
 ---
 
 ## Neutral Traffic
 
-### Trade Convoys
+**Trade Convoys** follow two-point routes between stations with wait periods at each end. Ships on the same route are staggered at spawn.
 
-Trader Convoys follow two-point trade routes between stations. They travel to one endpoint, wait briefly, then reverse. Three routes connect the western entry, Kell's Stop, The Coil, and Ashveil Anchorage. Ships on the same route are staggered at spawn so they don't bunch up.
-
-### Militia Patrols
-
-Militia Patrols orbit The Coil in concentric rings at different speeds. Each patrol advances its orbit angle each tick and steers toward the computed orbit point. Multiple rings provide layered coverage.
+**Militia Patrols** orbit a fixed point in concentric rings at different speeds.
 
 ---
 
 ## Ship vs NPC Architecture
 
-**Ship** (`SHIP_REGISTRY`) — pure hull template. Shape, base stats, slot layout. No faction, no AI behavior, no identity. Four hulls: Onyx Class Tug, Maverick Class Courier, G100 Class Hauler, Garrison Class Frigate.
+**Ship** (`SHIP_REGISTRY`) — pure hull template. Shape, base stats, slot layout. No faction, no AI, no identity.
 
-**NPC** (`NPC_REGISTRY`) — a configured actor built on a hull. Carries `faction`, `behavior` (stalker/kiter/standoff/lurker/trader/militia/player), and `shipClass` (the hull it extends). `createShip(id, x, y)` looks up and spawns NPCs. New NPC types are added to `NPC_REGISTRY` only — hull files stay untouched.
-
-The designer shows both hulls and NPCs, grouping each NPC under its parent hull. The editor sidebar exposes SHIPS and NPCS as separate placement categories.
+**NPC** (`NPC_REGISTRY`) — a configured actor built on a hull. Carries faction, behavior, and ship class. `createShip(id, x, y)` spawns NPCs. New NPC types are added to `NPC_REGISTRY` — hull files stay untouched.
 
 ---
 
 ## Editor Harness
 
-The `editor.html` page is a live map viewer for layout and AI debugging. It runs a full `GameManager` with an `EditorOverlay` drawn on top.
+The `editor.html` page is a live map viewer for layout and AI debugging. Pass `?map=NAME` to select a map. Available maps are in `js/data/maps/`.
 
-### Map loading
-
-Pass `?map=NAME` to select a map at startup:
-
-| Param | Map |
-|---|---|
-| `?map=arena` (default) | `js/data/maps/arena.js` — combat sandbox around Pale |
-| `?map=tyr` | `js/data/maps/tyr.js` — full production map (Tyr) |
-| `?map=blank` | `js/data/maps/blank.js` — empty 18000×10000, player at center |
-
-### Editor controls (do not conflict with game controls)
-
-| Key | Action |
-|---|---|
-| `` ` `` (grave) | Toggle pan mode — WASD pans camera, scroll zooms (0.1–2.0) |
-| `G` | Toggle debug overlay |
-| `O` | Toggle object sidebar |
-| `↑/↓` | Change category (sidebar open) |
-| `←/→` | Cycle item (sidebar open) |
-| `U` | Place selected object at mouse cursor |
-
-### Debug overlay (G)
-
-When active, each entity in the world shows a stat block to its right: HP, ARM, SPD, and AI state. A green velocity vector extends from the entity toward its current movement direction; a magenta line shows its aim/rotation direction.
-
-### Object sidebar (O)
-
-A 240px panel slides in from the right edge. Categories are generated from `SHIP_REGISTRY` (grouped by faction) plus Stations, and Derelicts. Use `↑/↓` to change category, `←/→` to cycle items, `U` to place the selected item live in the world. Placed entities are fully live (AI active, shootable); position is logged to the browser console for pasting into map code. Clicking an item opens it in the designer at port 5176.
+Editor controls (do not conflict with game controls): pan mode, debug overlay, object sidebar, item menu, quick spawn. Debug overlay shows per-entity stat blocks and velocity/aim vectors. Object sidebar lets you place entities from registries. Item menu adds resources, modules, weapons, and ammo to player cargo.
 
 ---
 

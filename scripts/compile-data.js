@@ -147,7 +147,9 @@ const ENGINES = parseTabularCSV('moduleEngines.csv');
 const REACTORS = parseTabularCSV('moduleReactors.csv');
 const SENSORS = parseTabularCSV('moduleSensors.csv');
 const WEAPONS = parseTabularCSV('moduleWeapons.csv');
+const UTILITIES = parseTabularCSV('moduleUtility.csv');
 const AI_TEMPLATES = parseTabularCSV('aiBehaviors.csv');
+const AMMO = parseTabularCSV('ammo.csv');
 
 // Build nested objects
 const SPAWN = buildSpawn(shipBase);
@@ -215,8 +217,16 @@ lines.push('// ─── Weapon Modules ─────────────�
 lines.push(`export const WEAPONS = ${toJS(WEAPONS)};`);
 
 lines.push('');
+lines.push('// ─── Utility Modules ─────────────────────────────────────────────────────────');
+lines.push(`export const UTILITIES = ${toJS(UTILITIES)};`);
+
+lines.push('');
 lines.push('// ─── AI Templates ────────────────────────────────────────────────────────────');
 lines.push(`export const AI_TEMPLATES = ${toJS(AI_TEMPLATES)};`);
+
+lines.push('');
+lines.push('// ─── Ammo Items ──────────────────────────────────────────────────────────────');
+lines.push(`export const AMMO = ${toJS(AMMO)};`);
 
 lines.push('');
 

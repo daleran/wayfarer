@@ -92,8 +92,23 @@ Nav indicator (in-flight, waypoint set): amber chevron at screen edge with dista
 
 Below minimap: zone name (dim text), waypoint destination + distance + ETA (amber).
 
+### Module Visuals on Hull
+Modules render at defined mount points on the ship hull, drawn after `_drawShape` in ship-local coordinates. Each icon is 4–8px, stroked in `conditionColor(mod.condition)` with a dim fill. Destroyed modules show as dim outlines only (alpha 0.2). Empty slots render as a faint `DIM_OUTLINE` ring.
+
+| Category | Shape | Notes |
+|---|---|---|
+| Engine | Trapezoid (wide top, narrow bottom) | Nozzle silhouette |
+| Weapon:autocannon | Thin rectangle (2×8) | Barrel |
+| Weapon:cannon | Stubby rectangle (3×6) | Block |
+| Weapon:lance | Vertical line + dot | Emitter |
+| Weapon:rocket | Rectangle (6×5) + 2 inner dots | Tube rack |
+| Reactor | Chamfered square (7×7) + inner glow dot | Glow: cyan (fuel cell), amber (fission), magenta (fusion) |
+| Sensor | Ring + antenna line + tip dot | Dish/antenna |
+
+Source: `js/rendering/moduleVisuals.js`.
+
 ### Module Condition Colors
-Used in Ship Screen slot badges, cargo pill badges, and tooltip CONDITION/MULT rows. Helper: `conditionColor(condition)` from `colors.js`.
+Used in Ship Screen slot badges, cargo pill badges, tooltip CONDITION/MULT rows, and hull mount point module icons. Helper: `conditionColor(condition)` from `colors.js`.
 
 | Condition | Color | Hex | Mult |
 |---|---|---|---|
@@ -236,11 +251,18 @@ DOM panels (station overlay, ship screen, bottom HUD) use CSS with `font-family:
 
 ### Ship Panel (`js/ui/shipScreen.js`, `css/ship.css`)
 - **DOM-based left 30% panel** (`#ship-panel`), `height: calc(100vh - 48px)` to sit above the bottom HUD bar. Near-black background with scanline overlay, left border in cyan.
-- Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open. World remains visible in the remaining viewport.
+- Opens with `I`, closes with `I` or `Esc`. Pauses simulation while open. Camera zooms to 4× on the player ship. World remains visible in the remaining viewport.
 - **Header:** Ship name (HULLBREAKER), class description, `[I] / [Esc]` hint.
 - **Stats section:** 2-column grid of stat rows (HULL, ARM-F/P/S/A, SPEED, FUEL, SCRAP). Values colored by status (green=good, amber=normal, red=critical).
-- **Module slots:** Numbered list `[1]...[N]`. Each slot shows module name, power annotation (`+W` green / `-W` amber), condition badge. Click filled slot to remove. Select cargo module → click empty slot to install (1.5s progress bar).
-- **Cargo bay:** Header with used/capacity count. Filter buttons (ALL | MODULES | COMMODITIES | AMMO). Scrollable list: scrap always first, then commodities, modules (clickable for install), weapons, ammo reserves.
+- **Module mount UI (canvas, to the right of the DOM panel):** Replaces the old DOM module list. Stat boxes are drawn on canvas between the panel edge and the ship hull, connected by cyan lines to the actual mount points on the hull.
+  - **Installed slots:** One box per mount point, stacked vertically. Each box shows: `[E]`/`[N]` slot label, abbreviated module name, power (`+/-W`), condition dot. Empty slots show dashed cyan border with "EMPTY" label.
+  - **Cargo modules:** Below a divider line, uninstalled modules from inventory are listed in smaller boxes.
+  - **Connection lines:** Dashed CYAN lines (alpha 0.3) from right edge of each stat box to its hull mount point. Hovered: solid, alpha 0.9, lineWidth 1.5.
+  - **Hover:** Box or mount point → box expands to show full stats (condition, power, thrust, weight, fuel drain, etc.). Corresponding mount point gets a cyan ring highlight.
+  - **Click installed box:** Uninstalls module to cargo section.
+  - **Click empty slot box:** When a cargo module is selected in the DOM cargo list, clicking a compatible empty slot starts the 1.5s install. Engine modules → engine slots; non-engines → non-engine slots.
+  - **Inventory mode:** While ship screen is open, `ship._inventoryMode = true`. Mount point outlines render in CYAN with higher alpha. Installed module icons get a subtle cyan ring.
+- **Cargo bay (DOM):** Header with used/capacity count. Filter buttons (ALL | MODULES | COMMODITIES | AMMO). Scrollable list: scrap always first, then commodities, modules (clickable to select for install), weapons, ammo reserves. Selected module highlighted in green; click a compatible empty canvas slot to install.
 - **When docked with station open:** ship panel (left 30%) + station panel (right 30%) + world (middle 40%).
 - Input gating: `stopPropagation` on panel mousedown/click prevents canvas weapon fire.
 
@@ -329,6 +351,10 @@ Stations are **not** sleek, symmetric, corporate structures. This is a broken un
 7. **Approach beacon at the harbor mouth.** Two beacons at the harbor entrance corners, pulsing together. A faint trapezoidal gradient beam pointing away from the mouth. Beacon color = `accentColor`.
 
 8. **Label below the structure** in `outlineColor`, SUBTITLE style (24px, uppercase).
+
+9. **Zone flavor text proximity fade.** Each station zone's first flavor line fades in when the player flies near that area, using `FLAVOR` style (12px, accent color). Distance threshold: 400 world units from the zone's label position (`worldOffset + labelOffset`). Smooth lerp at 1.2/sec. Same principle as derelict lore text — discovery is gradual. Rendered by `Station.renderZoneFlavor()` in the entity pass. Per-zone alphas stored in `station._zoneFadeAlphas`.
+
+10. **Zone labels are data-driven and always visible.** Station area labels (e.g. "MARKETPLACE", "SLUMS") are rendered by `Station.renderZoneLabels()` in the entity render pass, using `SUBTITLE` style in the station's `accentColor`, left-aligned. Each layout zone has `labelOffset: { x, y }` (world-space offset from `worldOffset`) that positions the label near the corresponding structure. No separate inline labels in station renderers — zone names come from layout data only. The station title (e.g. "THE COIL") remains hardcoded in the renderer using `TITLE` style.
 
 **Anti-patterns to avoid:**
 - No hexagons
@@ -431,7 +457,7 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 ### 2026-03-11: UI Overhaul — Panels Replace Overlays (CA/CB/CC)
 - **Decision:** Three-part UI overhaul: (1) Station screen from full-screen overlay to 30% right-side DOM panel, (2) Ship screen from canvas overlay to 30% left-side DOM panel, (3) Bottom HUD strip from canvas to DOM fixed bar.
 - **Station panel (CB):** `#location-overlay` positioned `right:0; width:30%; height:calc(100vh-48px)`. Camera centers on station. Zone sidebar stacks below SVG. Service buttons become horizontal tab row. World remains visible in the remaining 70%.
-- **Ship panel (CA):** `#ship-panel` positioned `left:0; width:30%; height:calc(100vh-48px)`. Five sections: header, 2-column stat grid, **MASS & THRUST** section (weight breakdown, thrust, T/W ratio with percentage, derived accel/speed/turn), module slots (numbered, click-to-remove/install), scrollable cargo with filter buttons. `stopPropagation` on mouse events prevents canvas weapon fire. T/W percentage color-coded: green ≥100%, default ≥80%, amber ≥60%, red <60%.
+- **Ship panel (CA):** `#ship-panel` positioned `left:0; width:30%; height:calc(100vh-48px)`. DOM sections: header, 2-column stat grid, **MASS & THRUST** section, scrollable cargo (with modules). **Canvas module mount UI** renders installed module stat boxes to the right of the DOM panel, connected by cyan lines to hull mount points. Click canvas box to uninstall; select module in DOM cargo, then click empty canvas slot to install. Hover for expanded stats. `stopPropagation` on mouse events prevents canvas weapon fire. T/W percentage color-coded: green ≥100%, default ≥80%, amber ≥60%, red <60%.
 - **Bottom HUD (CA):** `#hud-bottom` fixed 48px bar at bottom. Single row: ARMOR pips, HULL bar, FUEL bar, PWR readout, CARGO bar, SCRAP count. DOM elements updated each frame via `_updateBottomStrip()`.
 - **Docked with ship screen:** Left 30% (ship) + right 30% (station) + middle 40% (world).
 - **Station renderers (CC):** AshveilStation custom renderer (~200px colony ship hull, 10 rectangular sections, docked ships, running lights, approach beam). Kell's Stop unchanged (~120px). The Coil unchanged (~300px).

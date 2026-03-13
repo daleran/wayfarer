@@ -103,6 +103,14 @@ const WING_SEAM_PORT = [{ x: -6, y: 1 }, { x: -11, y: 2 }];
 // Single center engine trail origin — at bell exit
 const ENGINE_POS = [{ x: 0, y: 23.5 }];
 
+// Mount point positions — index i maps to moduleSlots[i].
+// LightFighter/GraveClanAmbusher slots: [engine, autocannon, rocket/null]
+const MOUNT_POINTS = [
+  { x: 0,   y: 10,  arc: 'aft',       size: 'small', slot: 'engine' },  // engine — stern
+  { x: 0,   y: -12, arc: 'front',     size: 'small' },  // weapon-1 — nose
+  { x: 8,   y: 4,   arc: 'starboard', size: 'small' },  // weapon-2/utility — stbd wing
+];
+
 export class MaverickCourier extends Ship {
   constructor(x, y) {
     super(x, y);
@@ -127,6 +135,10 @@ export class MaverickCourier extends Ship {
 
   get _engineOffsets() {
     return ENGINE_POS;
+  }
+
+  get _mountPoints() {
+    return MOUNT_POINTS;
   }
 
   _drawShape(ctx) {

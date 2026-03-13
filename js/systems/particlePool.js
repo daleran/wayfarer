@@ -1,5 +1,11 @@
 import { createParticle } from '@/entities/particle.js';
 import { DrawBatch } from '@/rendering/draw.js';
+import {
+  WHITE, MAGENTA, PLASMA_GREEN,
+  EXPLOSION_ORANGE, EXPLOSION_YELLOW, EXPLOSION_GOLD, EXPLOSION_RED,
+  EXPLOSION_RING_OUTER, EXPLOSION_RING_INNER,
+  MAGENTA_DARK, MAGENTA_LIGHT,
+} from '@/rendering/colors.js';
 
 const POOL_SIZE = 200;
 
@@ -17,7 +23,7 @@ export class ParticlePool {
   }
 
   emit(x, y, count, opts = {}) {
-    const colors = opts.colors ?? ['#fff'];
+    const colors = opts.colors ?? [WHITE];
     const minSpeed = opts.minSpeed ?? 10;
     const maxSpeed = opts.maxSpeed ?? 80;
 
@@ -44,7 +50,7 @@ export class ParticlePool {
 
   explosion(x, y, count = 20) {
     this.emit(x, y, count, {
-      colors: ['#ff8844', '#ffaa22', '#ffcc66', '#ff4400'],
+      colors: [EXPLOSION_ORANGE, EXPLOSION_YELLOW, EXPLOSION_GOLD, EXPLOSION_RED],
       minSpeed: 30,
       maxSpeed: 120,
       life: 0.5,
@@ -58,7 +64,7 @@ export class ParticlePool {
       maxRadius: 60,
       life: 0.5,
       maxLife: 0.5,
-      color: '#ffaa44',
+      color: EXPLOSION_RING_OUTER,
     });
     this._rings.push({
       x, y,
@@ -66,13 +72,13 @@ export class ParticlePool {
       maxRadius: 40,
       life: 0.35,
       maxLife: 0.35,
-      color: '#ff6622',
+      color: EXPLOSION_RING_INNER,
     });
   }
 
   rocketTrail(x, y) {
     this.emit(x, y, 2, {
-      colors: ['#ff00aa', '#ffffff', '#aa0077'],
+      colors: [MAGENTA, WHITE, MAGENTA_DARK],
       minSpeed: 5,
       maxSpeed: 30,
       life: 0.3,
@@ -82,17 +88,17 @@ export class ParticlePool {
 
   rocketImpact(x, y) {
     this.emit(x, y, 30, {
-      colors: ['#ff00aa', '#ffffff', '#ffaaff', '#aa0077'],
+      colors: [MAGENTA, WHITE, MAGENTA_LIGHT, MAGENTA_DARK],
       minSpeed: 50,
       maxSpeed: 200,
       life: 0.7,
       r: 4,
     });
-    this._rings.push({ x, y, radius: 5, maxRadius: 120, life: 0.6, maxLife: 0.6, color: '#ff00aa' });
-    this._rings.push({ x, y, radius: 3, maxRadius: 80,  life: 0.4, maxLife: 0.4, color: '#ffffff' });
+    this._rings.push({ x, y, radius: 5, maxRadius: 120, life: 0.6, maxLife: 0.6, color: MAGENTA });
+    this._rings.push({ x, y, radius: 3, maxRadius: 80,  life: 0.4, maxLife: 0.4, color: WHITE });
   }
 
-  ping(x, y, color = '#44ff88') {
+  ping(x, y, color = PLASMA_GREEN) {
     this._rings.push({ x, y, radius: 8, maxRadius: 80, life: 1.2, maxLife: 1.2, color });
   }
 

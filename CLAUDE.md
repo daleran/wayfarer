@@ -42,7 +42,7 @@ Small tweaks and bug fixes live in **FIXES.md** (no codes, just a flat bullet li
 
 | File | Purpose | **Mandatory Update Triggers** |
 |---|---|---|
-| `MECHANICS.md` | Game mechanics — movement, weapons, damage, AI, economy, HUD | **ANY** mechanic added, removed, or changed. Controls changed. Economy changed. New systems. |
+| `MECHANICS.md` | Game mechanics — behavioral descriptions only (no specific items, values, or tuning) | New *system* or *behavior* added, removed, or changed. Controls changed. **NOT** triggered by adding items, ships, weapons, ammo types, or tuning values — those live in CSV/code. |
 | `LORE.md` | Worldbuilding — history, factions, locations, tone | Faction names/traits changed. Location names changed. World tone or setting changed. |
 | `UX.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. |
 | `DEVLOG.md` | Development progress log — major features only | Every session — append one line per major feature completed. |
@@ -57,7 +57,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 | URL | Mode | Purpose |
 |---|---|---|
 | `editor.html?map=<name>` | Editor | Full game on a named map with EditorOverlay dev controls |
-| `?designer` | Unified Designer | Browse all ships, POIs, and weapons with stats panels |
+| `designer.html` | Unified Designer | Browse all ships, POIs, and weapons with stats panels |
 
 ### `editor.html` — Editor / Playtest
 
@@ -80,11 +80,11 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 **Every development iteration**, update the relevant map in `js/data/maps/` to include new entities/features so they're easy to reach. Tell the user to open `editor.html?map=<name>` to validate.
 
-### `?designer` — Unified Designer
+### `designer.html` — Unified Designer
 
 - **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
 - **Navigation:** `↑/↓` change category, `←/→` cycle item, `T` toggle rotation (ships), `R` reset view, scroll/drag to zoom/pan
-- **Deep-link:** `?designer&category=<cat>&id=<slug>`
+- **Deep-link:** `designer.html?category=<cat>&id=<slug>`
 - **In scope:** `js/ships/**`, `js/npcs/**`, `js/world/**`, `js/modules/**`, `js/rendering/colors.js`
 - Item slugs are defined in `js/test/designer.js` — check there for current IDs.
 
@@ -102,7 +102,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **`js/systems/repairSystem.js` / `RepairSystem`** — owns repair state (`isRepairing`, `_repairAccum`, `_moduleRepairAccum`); `start()`, `update(dt, player, scrap)` → returns `{ scrapSpent }`, `cancel()`, `hasModulesToRepair(player)`, `maybeBreachModule(ship)` → returns `{ text, colorHint } | null`
 - **`js/systems/collisionSystem.js` / `CollisionSystem`** — projectile interception, beam interception, main collision loop, AoE explosions; `update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled })` → returns `{ newEntities: [] }`
 - **`js/systems/bountySystem.js` / `BountySystem`** — owns `activeBounties[]`; `onEnemyKilled()`, `acceptBounty()`, `collectCompleted()`, `updateExpiry()`
-- **`js/systems/weaponSystem.js` / `WeaponSystem`** — weapon reload ticks, manual reload, ammo/guidance mode cycling, guided projectile targeting; `updateReloads()`, `manualReload()`, `cycleAmmoMode()`, `cycleGuidanceMode()`, `updateGuidance()`
+- **`js/systems/weaponSystem.js` / `WeaponSystem`** — weapon reload ticks, manual reload, ammo cycling, guided projectile targeting; `updateReloads()`, `manualReload()`, `cycleAmmo()`, `updateGuidance()`
 - **`js/systems/interactionSystem.js` / `InteractionSystem`** — owns `nearbyStation`, `nearbyDerelict`; `updateDerelicts()`, `checkDocking()`, `checkLootPickups()`
 - **`js/systems/navigationSystem.js` / `NavigationSystem`** — owns `waypoint { x, y, name, entity }`, `mapOpen`, map zoom/pan state; `setWaypoint()`, `clearWaypoint()`, `distanceTo()`, `bearingTo()`, `etaSeconds()`, `toggleMap()`, `fuelRangeRadius()`, `currentZone()`
 - **`js/loop.js`** — fixed-timestep loop (60 ticks/sec), spiral-of-death protection
@@ -130,6 +130,7 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPC
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
 - **Centralized stats** — CSV files in `data/` are the single source of truth for all base stats, compiled at build time into `data/compiledData.js` by `scripts/compile-data.js`. Key-value CSVs: `shipBase.csv`, `weaponBase.csv`, `economy.csv`, `reputation.csv`. Tabular CSVs: `shipClasses.csv`, `shipsNamed.csv`, `moduleEngines.csv`, `moduleReactors.csv`, `moduleSensors.csv`, `moduleWeapons.csv`, `aiBehaviors.csv`. All JS files import from `@data/compiledData.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
 - **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate` from T/W ratio using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). `_refTwRatio` is set at construction; all derived stats are relative to it. Engine modules provide `thrust` and `weight`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
+- **Mount points** — each ship class defines `MOUNT_POINTS[]` and overrides `get _mountPoints()`. Index `i` maps to `moduleSlots[i]`. Each mount has `{ x, y, arc, size, slot? }` where `arc` is `'front'|'port'|'starboard'|'aft'`, `size` is `'small'|'large'`, and `slot` is `'engine'` for engine-only mounts (omitted for general-purpose). Used for: (1) drawing module icons on the hull via `_drawModules(ctx)` in `Ship.render()`, (2) positional module breach routing — hits to an arc preferentially damage modules in that arc, (3) install constraints in the Ship Screen — engine slots only accept engines and vice versa. Empty mounts render as dotted white squares; engine mounts show `[E]`. Module visuals: `js/rendering/moduleVisuals.js`.
 - **Weapon registry** — `js/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
 - **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, flavorText }`. No factory dispatcher — entities self-instantiate.
 - **UI overlays** — station panel (`#location-overlay`, right 30% DOM panel) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
@@ -202,4 +203,4 @@ After any architectural change (new file paths, renamed systems, changed pattern
 - File path changes (e.g. `js/data/tuning/*.js` → `data/*.csv` + `@data/compiledData.js`)
 - Renamed classes, modules, or behavior types
 - New or removed weapon/module/AI types listed in skill templates
-- Verification URL changes (`?test` is not a valid harness — use `editor.html?map=arena` or `?designer`)
+- Verification URL changes (use `editor.html?map=arena` or `designer.html`)

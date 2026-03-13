@@ -2,9 +2,9 @@
 // Renderer (CoilStation) + data + layout + instantiate(), all in one place.
 
 import { Station } from '@/world/station.js';
-import { AMBER, RED, GREEN } from '@/rendering/colors.js';
+import { AMBER, RED, GREEN, SPARK_WARM } from '@/rendering/colors.js';
 import { line, disc, ring, text, Shape } from '@/rendering/draw.js';
-import { TITLE, SUBTITLE } from '@/rendering/draw.js';
+import { TITLE } from '@/rendering/draw.js';
 
 // ── CoilStation renderer ────────────────────────────────────────────────────
 
@@ -13,7 +13,7 @@ const SHIP_FILL = 'rgba(4,8,12,0.9)';
 const WRECK_FILL = 'rgba(8,4,2,0.7)';
 const WINDOW_WARM = 'rgba(255,200,100,0.35)';
 const WINDOW_COOL = 'rgba(100,200,255,0.25)';
-const SPARK_COLOR = '#ffcc44';
+const SPARK_COLOR = SPARK_WARM;
 const TANK_FILL = 'rgba(255,170,0,0.08)';
 
 // Full layout (centered on 0,0):
@@ -293,7 +293,7 @@ class CoilStation extends Station {
     const ly = (wy - this.y) / STATION_SCALE;
     const halfS = DOCK_ZONE_SIZE / 2;
     return lx >= DOCK_ZONE_X - halfS && lx <= DOCK_ZONE_X + halfS &&
-           ly >= DOCK_ZONE_Y && ly <= DOCK_ZONE_Y + DOCK_ZONE_SIZE;
+      ly >= DOCK_ZONE_Y && ly <= DOCK_ZONE_Y + DOCK_ZONE_SIZE;
   }
 
   update(dt) {
@@ -882,12 +882,9 @@ class CoilStation extends Station {
     // ── DOCKING AREA — square zone with green gradient + blinking lights ──
     this._renderDockingArea(ctx);
 
-    // ── ALL TEXT LABELS — drawn last so they sit on top of everything ────
+    // ── STATION NAME — drawn last so it sits on top of everything ────
     text(ctx, 'THE COIL', -100, -280, accent, { style: TITLE });
-    text(ctx, 'SALVAGE YARD', dsCx, -110, accent, { style: SUBTITLE });
-    text(ctx, 'COIL MARKET', mCx, mR + 50, accent, { style: SUBTITLE });
-    text(ctx, 'SLUMS', -720, 160, accent, { style: SUBTITLE });
-    text(ctx, 'CITADEL', citCx - 80, citHalfH + 40, accent, { style: SUBTITLE });
+    // Zone labels rendered by LocationOverlay.renderWorldLabels()
 
     ctx.restore();
   }
@@ -966,89 +963,56 @@ const LAYOUT = {
   zones: [
     {
       id: 'zone-dock',
-      label: 'The Dock',
-      description: 'Berths, fuel lines, docking fees. Ships crammed into every slot.',
-      services: ['repair'],
+      label: 'Dock & Salvage',
+      services: ['repair', 'trade', 'bounties'],
       worldOffset: { x: -75, y: 0 },
+      labelOffset: { x: -50, y: -265 },
       flavor: [
-        'Rust-stained gantries.',
-        'Ships jammed into every berth.',
+        'Rust-stained gantries. Ships jammed into every berth. Hulks arrive in pieces — they leave the same way, or rebuilt, depending on who\'s paying.',
         '',
-        "The fee collector doesn't look up.",
-        '',
-        'Hull work and refueling available.',
-        'No questions asked.',
-      ],
-      requiredStanding: null,
-    },
-    {
-      id: 'zone-salvage-yard',
-      label: 'Salvage Yard',
-      description: 'Hulk trade, salvaged modules, kill contracts.',
-      services: ['trade', 'bounties'],
-      worldOffset: { x: -510, y: 0 },
-      flavor: [
-        'Hulks arrive in pieces.',
-        'They leave the same way,',
-        'or rebuilt — depending on',
-        "who's paying.",
-        '',
-        'The welders ask no questions.',
-        'Neither should you.',
+        'The fee collector doesn\'t look up. The welders ask no questions. Neither should you.',
       ],
       requiredStanding: null,
     },
     {
       id: 'zone-market',
-      label: 'Central Market',
-      description: 'Black-market goods, fenced salvage, archive contraband.',
+      label: 'Marketplace',
       services: ['trade', 'intel'],
       worldOffset: { x: -1500, y: 0 },
+      labelOffset: { x: -80, y: 220 },
       flavor: [
-        'Black-market goods.',
-        'Fenced salvage.',
-        'Contraband ROM cartridges',
-        'from pre-Exile archive runs.',
+        'Black-market goods. Fenced salvage. Contraband ROM cartridges from pre-Exile archive runs.',
         '',
-        'Prices are negotiable.',
-        'Arguments are not.',
+        'Prices are negotiable. Arguments are not.',
       ],
       requiredStanding: null,
-    },
-    {
-      id: 'zone-palace',
-      label: 'The Palace',
-      description: 'Salvage Lord court. Elite trade and faction relations.',
-      services: ['trade', 'relations'],
-      worldOffset: { x: 900, y: 0 },
-      requiredStanding: 'Trusted',
-      requiredFaction: 'scavengers',
-      flavor: [
-        'Part arena, part court,',
-        'part bazaar.',
-        '',
-        'The Salvage Lords hold court',
-        'at the back, elevated above',
-        'the floor where they watch',
-        'everything that enters.',
-        '',
-        '[ TRUSTED STANDING REQUIRED ]',
-      ],
     },
     {
       id: 'zone-slums',
       label: 'The Slums',
-      description: 'The informal quarter. Rumors, gossip, and loose intelligence.',
       services: ['intel'],
       worldOffset: { x: -1050, y: 0 },
+      labelOffset: { x: -80, y: -250 },
       flavor: [
-        'The harbor interior.',
-        'People without status',
-        'and ships without berths.',
+        'The harbor interior. People without status and ships without berths.',
         '',
         'Word travels here first.',
       ],
       requiredStanding: null,
+    },
+    {
+      id: 'zone-citadel',
+      label: 'The Citadel',
+      services: ['trade', 'relations'],
+      worldOffset: { x: 900, y: 0 },
+      labelOffset: { x: -170, y: 200 },
+      requiredStanding: 'Trusted',
+      requiredFaction: 'scavengers',
+      flavor: [
+        'Part arena, part court, part bazaar. The Salvage Lords hold court at the back, elevated above the floor where they watch everything that enters.',
+        '',
+        '[ TRUSTED STANDING REQUIRED ]',
+      ],
     },
   ],
 };

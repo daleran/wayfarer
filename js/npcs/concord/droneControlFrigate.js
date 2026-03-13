@@ -2,7 +2,6 @@ import { GarrisonFrigate } from '@/ships/classes/garrisonFrigate.js';
 import { LanceModuleSmall, OnyxDriveUnit } from '@/modules/shipModule.js';
 import { AI_TEMPLATES } from '@data/compiledData.js';
 import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
-import { engineGlow } from '@/rendering/draw.js';
 import { SnatcHerDrone } from './snatcHerDrone.js';
 
 const DRONE_MAX          = 3;
@@ -25,11 +24,6 @@ const HULL_POINTS = [
   { x: -55, y: -10 },  // [11] max-width port
   { x: -30, y: -30 },  // [12] shoulder flare port
   { x: -20, y: -55 },  // [13] nose-top port
-];
-
-const ENGINE_POS = [
-  { x:  20, y: 58 },  // starboard aft
-  { x: -20, y: 58 },  // port aft
 ];
 
 export class DroneControlFrigate extends GarrisonFrigate {
@@ -121,8 +115,6 @@ export class DroneControlFrigate extends GarrisonFrigate {
 
     ctx.globalAlpha = 1;
 
-    // Engine glows — twin aft corners
-    engineGlow(ctx, ENGINE_POS, this.engineColor, 4 + this.throttleLevel * 0.8, 3, 3, 0.25);
   }
 
   getBounds() {

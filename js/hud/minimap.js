@@ -5,7 +5,7 @@ import {
   MINIMAP_BG, MINIMAP_BORDER, MINIMAP_PLANET, MINIMAP_STATION,
   MINIMAP_ENEMY, MINIMAP_PLAYER,
   MINIMAP_LOOT, MINIMAP_DERELICT,
-  AMBER,
+  AMBER, MINIMAP_INFO_TEXT,
 } from '@/rendering/colors.js';
 import { MINIMAP as MINIMAP_TEXT, FONT } from '@/rendering/draw.js';
 
@@ -155,7 +155,7 @@ export function renderMinimap(ctx, game) {
     const zone = nav.currentZone(player.x, player.y, game.mapZones);
     const zoneName = zone?.name ?? 'Tyr System';
     ctx.font = `bold 12px ${FONT}`;
-    ctx.fillStyle = '#88aacc';
+    ctx.fillStyle = MINIMAP_INFO_TEXT;
     ctx.fillText(zoneName, ox, infoY);
     infoY += 16;
   }
@@ -175,7 +175,7 @@ export function renderMinimap(ctx, game) {
 
   // Map hint
   ctx.font = `normal 11px ${FONT}`;
-  ctx.fillStyle = '#88aacc';
+  ctx.fillStyle = MINIMAP_INFO_TEXT;
   ctx.globalAlpha = 0.7;
   ctx.fillText('M \u2014 MAP', ox, infoY);
   ctx.globalAlpha = 1;

@@ -14,6 +14,7 @@ import { PlanetPale }        from './gravewake/planetPale.js';
 import { ArkshipSpines }     from './gravewake/arkshipSpines.js';
 import { WallOfWrecks }      from './gravewake/wallOfWrecks.js';
 
+import { ZONE_BG_STROKE }       from '@/rendering/colors.js';
 import { createShip }           from '@/ships/registry.js';
 import { SPAWN }               from '@data/compiledData.js';
 
@@ -107,7 +108,7 @@ function createGravewakeAtmosphere(zone) {
       if (maxAlpha <= 0) return;
 
       ctx.save();
-      ctx.strokeStyle = '#334455';
+      ctx.strokeStyle = ZONE_BG_STROKE;
       ctx.lineWidth = 1;
 
       for (const frag of fragments) {

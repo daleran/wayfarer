@@ -1,7 +1,6 @@
 import { MaverickCourier } from '@/ships/classes/maverickCourier.js';
 import { AI_TEMPLATES } from '@data/compiledData.js';
 import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
-import { engineGlow } from '@/rendering/draw.js';
 
 const LATCH_RANGE          = 35;   // px
 const DRAIN_INTERVAL       = 0.25; // seconds per tick
@@ -17,8 +16,6 @@ const DRONE_POINTS = [
   { x: -4, y:   6 },
   { x: -9, y:   0 },
 ];
-
-const ENGINE_POS = [{ x: 0, y: 10 }];
 
 export class SnatcHerDrone extends MaverickCourier {
   constructor(x, y) {
@@ -115,8 +112,6 @@ export class SnatcHerDrone extends MaverickCourier {
     ctx.fillStyle = CONCORD_BLUE;
     ctx.fill();
 
-    // Engine glow — aft
-    engineGlow(ctx, ENGINE_POS, this.engineColor, 2 + this.throttleLevel * 0.5, 2, 2, 0.3);
   }
 
   getBounds() {

@@ -9,7 +9,7 @@ export const ColdRemnant = {
   lootTable: [
     { type: 'scrap',    amount: 30 },
     { type: 'weaponId', id: 'Autocannon' },
-    { type: 'ammo',     ammoType: 'autocannon', amount: 30 },
+    { type: 'ammo',     ammoType: '25mm-ap', amount: 30 },
   ],
   lore: `COLD REMNANT — Maverick-class courier, combat-modified.
 Grave Clan markings, third kin. Killed over disputed salvage rights.

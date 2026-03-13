@@ -1,7 +1,5 @@
-import { createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from '@/entities/lootDrop.js';
-import { createModuleById } from '@/modules/registry.js';
-import { createWeaponById } from '@/modules/weapons/registry.js';
-import { CONDITION_DISTRIBUTIONS } from '@/data/lootTables.js';
+import { createLootDrop, createAmmoDrop } from '@/entities/lootDrop.js';
+import { SALVAGE_EFFICIENCY, SALVAGE_FUEL_RATE, SALVAGE_AMMO_RATE } from '@data/compiledData.js';
 
 export class SalvageSystem {
   constructor() {
@@ -38,23 +36,27 @@ export class SalvageSystem {
   _complete() {
     const derelict = this.salvageTarget;
     derelict.salvaged = true;
-    derelict.active = false;
 
     const lootEntities = [];
-    for (const loot of derelict.lootTable) {
-      if (loot.type === 'moduleId') {
-        const mod = this._createModuleById(loot.id);
-        if (mod) {
-          mod.condition = loot.condition || this._rollCondition(derelict.derelictClass);
-          lootEntities.push(createModuleDrop(derelict.x, derelict.y, mod));
-        }
-      } else if (loot.type === 'weaponId') {
-        const wep = this._createWeaponById(loot.id);
-        if (wep) lootEntities.push(createWeaponDrop(derelict.x, derelict.y, wep));
-      } else if (loot.type === 'ammo') {
-        lootEntities.push(createAmmoDrop(derelict.x, derelict.y, loot.ammoType, loot.amount));
-      } else {
-        lootEntities.push(createLootDrop(derelict.x, derelict.y, loot.type, loot.amount));
+    const eff = SALVAGE_EFFICIENCY;
+    const mult = 1.0; // player salvage multiplier (future upgrade)
+    const rand = () => 0.5 + Math.random() * 0.5;
+
+    // Scrap from remaining armor
+    const { front, port, starboard, aft } = derelict.armorArcs;
+    const totalArmor = front + port + starboard + aft;
+    const scrap = Math.max(1, Math.floor(totalArmor * eff * mult * rand()));
+    lootEntities.push(createLootDrop(derelict.x, derelict.y, 'scrap', scrap));
+
+    // Fuel from tank size
+    const fuel = Math.floor((derelict.fuelMax || 0) * SALVAGE_FUEL_RATE * mult * rand());
+    if (fuel > 0) lootEntities.push(createLootDrop(derelict.x, derelict.y, 'fuel', fuel));
+
+    // Ammo from each weapon's magazine
+    for (const w of derelict.weapons) {
+      if (w.magSize && w.currentAmmoId) {
+        const ammo = Math.floor(w.magSize * SALVAGE_AMMO_RATE * mult * rand());
+        if (ammo > 0) lootEntities.push(createAmmoDrop(derelict.x, derelict.y, w.currentAmmoId, ammo));
       }
     }
 
@@ -65,27 +67,5 @@ export class SalvageSystem {
     this.salvageTarget = null;
 
     return { lootEntities, particlePos };
-  }
-
-  _rollCondition(derelictClass) {
-    const dist = CONDITION_DISTRIBUTIONS[derelictClass] ?? CONDITION_DISTRIBUTIONS.hauler;
-    let roll = Math.random();
-    for (const [condition, weight] of Object.entries(dist)) {
-      roll -= weight;
-      if (roll <= 0) return condition;
-    }
-    return 'worn';
-  }
-
-  _createModuleById(id) {
-    try {
-      return createModuleById(id);
-    } catch {
-      return null;
-    }
-  }
-
-  _createWeaponById(id) {
-    return createWeaponById(id);
   }
 }

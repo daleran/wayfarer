@@ -1,8 +1,7 @@
 // LocationOverlay — HTML overlay controller for station panel.
 // Single-level nav: district bar → zone content (flavor + service tabs + service panel).
 
-import { FACTION, CYAN, VERY_DIM, standingColor } from '@/rendering/colors.js';
-import { text } from '@/rendering/draw.js';
+import { FACTION, standingColor } from '@/rendering/colors.js';
 import { buildRepairPanel    } from './station/serviceRepair.js';
 import { buildTradePanel     } from './station/serviceTrade.js';
 import { buildBountiesPanel  } from './station/serviceBounties.js';
@@ -37,7 +36,7 @@ export class LocationOverlay {
     this._el.classList.remove('hidden');
 
     if (game?.camera) {
-      game.camera.pushZoom(2.75);
+      game.camera.pushZoom(4.0);
     }
 
     // Auto-select first unlocked zone
@@ -184,39 +183,6 @@ export class LocationOverlay {
   }
 
   // ── World-space district labels ─────────────────────────────────────────────
-
-  renderWorldLabels(ctx, camera) {
-    if (!this._station) return;
-    const zones = this._getZones(this._station);
-
-    for (const zone of zones) {
-      const locked = this._isZoneLocked(zone, this._station);
-      if (locked) continue;
-
-      const ox = zone.worldOffset?.x ?? 0;
-      const oy = zone.worldOffset?.y ?? 0;
-      const wx = this._station.x + ox;
-      const wy = this._station.y + oy;
-      const screen = camera.worldToScreen(wx, wy);
-
-      const isActive = zone.id === this._zoneId;
-      const alpha = isActive ? 0.8 : 0.3;
-
-      text(ctx, zone.label.toUpperCase(), screen.x, screen.y, CYAN, {
-        size: 10, alpha,
-      });
-
-      // Active zone: show first non-empty flavor line below
-      if (isActive && zone.flavor?.length > 0) {
-        const flavorLine = zone.flavor.find(l => l !== '');
-        if (flavorLine) {
-          text(ctx, flavorLine, screen.x, screen.y + 14, VERY_DIM, {
-            size: 8, alpha: alpha * 0.7,
-          });
-        }
-      }
-    }
-  }
 
   // ── Header ───────────────────────────────────────────────────────────────────
 

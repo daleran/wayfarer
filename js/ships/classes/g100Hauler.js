@@ -1,5 +1,5 @@
 import { Ship } from '@/entities/ship.js';
-import { engineGlow, lines, polygonStroke } from '@/rendering/draw.js';
+import { lines, polygonStroke } from '@/rendering/draw.js';
 
 const SPEED_MULT  = 0.85;  // ~71 u/s — reliable workhorse
 const ACCEL_MULT  = 0.85;  // moderate acceleration
@@ -82,6 +82,15 @@ const ENGINE_POS = [
   { x: -16, y: 30 },  // port pod
 ];
 
+// Mount point positions — index i maps to moduleSlots[i].
+// Slots: [engine, weapon-1, weapon-2, utility]
+const MOUNT_POINTS = [
+  { x: 0,    y: 24,  arc: 'aft',   size: 'small', slot: 'engine' },  // engine — between pods
+  { x: -10,  y: -18, arc: 'front', size: 'small' },  // weapon-1 — cab port
+  { x: 10,   y: -18, arc: 'front', size: 'small' },  // weapon-2 — cab stbd
+  { x: 0,    y: 6,   arc: 'port',  size: 'small' },  // utility — mid-deck
+];
+
 export class G100ClassHauler extends Ship {
   constructor(x, y) {
     super(x, y);
@@ -107,6 +116,10 @@ export class G100ClassHauler extends Ship {
 
   get _engineOffsets() {
     return ENGINE_POS;
+  }
+
+  get _mountPoints() {
+    return MOUNT_POINTS;
   }
 
   _drawShape(ctx) {
@@ -153,8 +166,6 @@ export class G100ClassHauler extends Ship {
     lines(ctx, [SEAM_CAB_BASE, SEAM_MID_DECK, SPINE_LINE, ENGINE_GAP], this.hullStroke, 1, 0.28);
     lines(ctx, [ENG_SEAM_S, ENG_SEAM_P], this.hullStroke, 1, 0.22);
 
-    // Engine glows — twin pods
-    engineGlow(ctx, ENGINE_POS, this.engineColor, 3 + this.throttleLevel * 0.65, 2.5, 2.5, 0.28);
   }
 
   getBounds() {

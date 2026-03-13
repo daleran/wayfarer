@@ -1,6 +1,7 @@
 import { Projectile } from '@/entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
-         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN } from '@data/compiledData.js';
+         PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
+         AMMO } from '@data/compiledData.js';
 import { normalizeToTarget } from '@/utils/math.js';
 
 const DAMAGE_MULT      = 5.3;   // ~90 armor damage per rocket
@@ -15,7 +16,6 @@ export class RocketPodLarge {
   constructor() {
     this.isSecondary = true;
     this.isAutoFire  = false;
-    this.ammoType    = 'rocket'; // shared pool with RocketPodSmall
     this.damage      = BASE_DAMAGE      * DAMAGE_MULT;
     this.hullDamage  = BASE_HULL_DAMAGE * HULL_DAMAGE_MULT;
     this.projectileSpeed = BASE_PROJECTILE_SPEED * SPEED_MULT * PROJECTILE_SPEED_FACTOR;
@@ -25,17 +25,17 @@ export class RocketPodLarge {
     this.ammo           = LARGE_MAG_SIZE;
     this.reloadTime     = LARGE_RELOAD_TIME;
     this._reloadTimer   = 0;
-    this.ammoCargoWeight = 1.0; // 1 cargo unit per rocket
     this.pipCount    = LARGE_MAG_SIZE;
-    // Guidance mode
-    this.guidanceModes = ['dumbfire', 'wire', 'heat'];
-    this.guidanceMode  = 'dumbfire';
+    // Ammo item system — each id is a different ordnance type
+    this.acceptedAmmoTypes = ['rkt', 'wg', 'ht'];
+    this.currentAmmoId     = 'rkt';
     // Tube alternation
     this._tubeIdx = 0;
   }
 
   get displayName() {
-    return 'RPOD-L';
+    const tag = AMMO[this.currentAmmoId]?.tag || this.currentAmmoId.toUpperCase();
+    return 'RPOD-L [' + tag + ']';
   }
 
   get isReloading() { return this._reloadTimer > 0; }
@@ -52,7 +52,8 @@ export class RocketPodLarge {
     const { nx, ny, dist } = n;
 
     const baseAngle = Math.atan2(ny, nx);
-    const tubeSpread = this.guidanceMode === 'dumbfire'
+    const isGuided = !!AMMO[this.currentAmmoId]?.guidedType;
+    const tubeSpread = !isGuided
       ? 0
       : (this._tubeIdx % 2 === 0 ? -TUBE_SPREAD / 2 : TUBE_SPREAD / 2);
     const a = baseAngle + tubeSpread;
@@ -68,18 +69,15 @@ export class RocketPodLarge {
     proj.blastRadius     = 280;
     proj.isInterceptable = true;
 
-    if (this.guidanceMode === 'dumbfire') {
+    const ammoData = AMMO[this.currentAmmoId];
+    if (ammoData?.guidedType) {
+      proj.isGuided         = true;
+      proj.guidedType       = ammoData.guidedType;
+      proj.guidanceStrength = ammoData.guidanceStrength;
+    } else {
       proj.isRocket      = true;
       proj.rocketTargetX = tx;
       proj.rocketTargetY = ty;
-    } else if (this.guidanceMode === 'wire') {
-      proj.isGuided         = true;
-      proj.guidedType       = 'wire';
-      proj.guidanceStrength = 3.0;
-    } else if (this.guidanceMode === 'heat') {
-      proj.isGuided         = true;
-      proj.guidedType       = 'heat';
-      proj.guidanceStrength = 2.5;
     }
 
     entities.push(proj);

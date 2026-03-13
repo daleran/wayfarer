@@ -6,7 +6,7 @@ import { REPUTATION } from '@data/compiledData.js';
 export class CollisionSystem {
   constructor() {}
 
-  update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled }) {
+  update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled, onEnemyCrippled }) {
     const newEntities = [];
 
     // --- Interception pass: canIntercept projectiles vs isInterceptable projectiles ---
@@ -60,6 +60,12 @@ export class CollisionSystem {
 
     // --- Main collision pass ---
     const onKill = (target) => onEnemyKilled(target);
+    const checkCripple = (target) => {
+      if (target._justCrippled) {
+        target._justCrippled = false;
+        if (onEnemyCrippled) onEnemyCrippled(target);
+      }
+    };
 
     for (const entity of entities) {
       if (!(entity instanceof Projectile)) continue;
@@ -69,7 +75,7 @@ export class CollisionSystem {
         const tx = entity.rocketTargetX ?? entity.x;
         const ty = entity.rocketTargetY ?? entity.y;
         const radius = entity.blastRadius || 280;
-        this._aoeExplode(tx, ty, entity.damage, entity.hullDamage ?? 0, radius, entities, player, { particlePool, hud, repair, reputation, onEnemyKilled });
+        this._aoeExplode(tx, ty, entity.damage, entity.hullDamage ?? 0, radius, entities, player, { particlePool, hud, repair, reputation, onEnemyKilled, onEnemyCrippled });
         particlePool.explosion(tx, ty, entity.isRocket ? 20 : 12);
         if (entity.isRocket) newEntities.push(new RocketExplosion(tx, ty, radius));
         entity.shouldDetonate = false;
@@ -100,7 +106,7 @@ export class CollisionSystem {
           if (proj.isRocket || proj.detonatesOnContact) {
             proj.active = false;
             const radius = proj.blastRadius || 280;
-            this._aoeExplode(proj.x, proj.y, proj.damage, proj.hullDamage ?? 0, radius, entities, player, { particlePool, hud, repair, reputation, onEnemyKilled });
+            this._aoeExplode(proj.x, proj.y, proj.damage, proj.hullDamage ?? 0, radius, entities, player, { particlePool, hud, repair, reputation, onEnemyKilled, onEnemyCrippled });
             particlePool.explosion(proj.x, proj.y, 20);
             if (proj.isRocket) newEntities.push(new RocketExplosion(proj.x, proj.y, radius));
           } else if (proj.isPlasma) {
@@ -110,11 +116,12 @@ export class CollisionSystem {
             const hullBefore = target.hullCurrent;
             target.takeDamage(armorDmg, hullDmg, proj.x, proj.y);
             if (target === player && target.hullCurrent < hullBefore) {
-              const breach = repair.maybeBreachModule(target);
+              const breach = repair.maybeBreachModule(target, target._lastHitArc);
               if (breach) hud.addPickupText(breach.text, target.x, target.y, breach.colorHint);
             }
             proj.active = false;
             particlePool.explosion(proj.x, proj.y, 5);
+            checkCripple(target);
             if (target.isDestroyed && target !== player && target.relation === 'hostile') {
               onKill(target);
             }
@@ -122,11 +129,12 @@ export class CollisionSystem {
             const hullBefore = target.hullCurrent;
             target.takeDamage(proj.damage, proj.hullDamage, proj.x, proj.y);
             if (target === player && target.hullCurrent < hullBefore) {
-              const breach = repair.maybeBreachModule(target);
+              const breach = repair.maybeBreachModule(target, target._lastHitArc);
               if (breach) hud.addPickupText(breach.text, target.x, target.y, breach.colorHint);
             }
             proj.active = false;
             particlePool.explosion(proj.x, proj.y, 5);
+            checkCripple(target);
             if (target.isDestroyed && target !== player && target.relation === 'hostile') {
               onKill(target);
             }
@@ -139,7 +147,7 @@ export class CollisionSystem {
     return { newEntities };
   }
 
-  _aoeExplode(x, y, damage, hullDamage, blastRadius, entities, player, { particlePool: _particlePool, hud, repair, reputation: _reputation, onEnemyKilled }) {
+  _aoeExplode(x, y, damage, hullDamage, blastRadius, entities, player, { particlePool: _particlePool, hud, repair, reputation: _reputation, onEnemyKilled, onEnemyCrippled }) {
     for (const entity of entities) {
       if (!entity.active || !(entity instanceof Ship)) continue;
       if (entity.isDerelict) continue;
@@ -152,8 +160,12 @@ export class CollisionSystem {
         const hullBefore = entity.hullCurrent;
         entity.takeDamage(damage * falloff, (hullDamage || 0) * falloff, x, y);
         if (entity === player && entity.hullCurrent < hullBefore) {
-          const breach = repair.maybeBreachModule(entity);
+          const breach = repair.maybeBreachModule(entity, entity._lastHitArc);
           if (breach) hud.addPickupText(breach.text, entity.x, entity.y, breach.colorHint);
+        }
+        if (entity._justCrippled) {
+          entity._justCrippled = false;
+          if (onEnemyCrippled) onEnemyCrippled(entity);
         }
         if (entity.isDestroyed && entity !== player && entity.relation !== 'neutral') {
           onEnemyKilled(entity);

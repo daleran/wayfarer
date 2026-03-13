@@ -1,11 +1,12 @@
 import { Entity } from './entity.js';
-import { RELATION_COLORS, RED, WHITE, AMBER, DIM_TEXT, armorArcColor } from '@/rendering/colors.js';
+import { RELATION_COLORS, RED, WHITE, AMBER, BLACK, DIM_TEXT, armorArcColor, conditionColor } from '@/rendering/colors.js';
 import { trail as drawTrail, FLAVOR, PROMPT } from '@/rendering/draw.js';
+import { drawEmptyMount, drawMountHighlight } from '@/rendering/moduleVisuals.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL, BASE_CARGO,
          BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
          THROTTLE_LEVELS, THROTTLE_RATIOS,
-         BASE_HULL_WEIGHT, CARGO_WEIGHT_PER_UNIT, FUEL_WEIGHT_PER_UNIT,
+         BASE_HULL_WEIGHT, FUEL_WEIGHT_PER_UNIT,
          TW_ACCEL_SENSITIVITY, TW_SPEED_SENSITIVITY, TW_TURN_SENSITIVITY,
          TW_MULT_MIN, TW_MULT_MAX } from '@data/compiledData.js';
 
@@ -107,6 +108,12 @@ export class Ship extends Entity {
     // Display / bounty metadata (set dynamically)
     this.displayName = null;
     this.isBountyTarget = false;
+
+    // Turret tracking — world-space target set by game each frame (player only)
+    this._turretTargetWorld = null;
+
+    // Ship screen inventory mode — when true, mount points render in CYAN
+    this._inventoryMode = false;
 
     // Spawn/respawn metadata (set dynamically by map loaders)
     this.homePosition = null;
@@ -235,6 +242,12 @@ export class Ship extends Entity {
     return [{ x: 0, y: 8 }];
   }
 
+  // Override in ship class subclasses to define module mount positions.
+  // Returns null for ships without mount points (graceful fallback).
+  get _mountPoints() {
+    return null;
+  }
+
   get isDestroyed() {
     return !this.active;
   }
@@ -330,9 +343,9 @@ export class Ship extends Entity {
    * Recalculate movement stats from thrust-to-weight ratio.
    * Call after: module swap, cargo change, salvage, dock, engine damage.
    * @param {number} [fuel] - current fuel (defaults to fuelMax)
-   * @param {number} [cargoUsed] - current cargo units used (defaults to 0)
+   * @param {number} [cargoMass] - total mass of cargo hold contents (defaults to 0)
    */
-  recalcTW(fuel, cargoUsed) {
+  recalcTW(fuel, cargoMass) {
     const modules = this.moduleSlots || [];
 
     // Sum module weights and engine thrust
@@ -344,7 +357,7 @@ export class Ship extends Entity {
     for (const mod of modules) {
       if (!mod) continue;
       moduleWeight += mod.weight || 0;
-      if (mod.isEngine) {
+      if (mod.isEngine && mod.isPowered !== false) {
         totalThrust += (mod.thrust || 0) * mod.conditionMultiplier;
         fuelEffMult = mod.fuelEffMult * mod.conditionMultiplier;
         hasEngine = true;
@@ -352,7 +365,7 @@ export class Ship extends Entity {
     }
 
     const fuelWeight = (fuel ?? this.fuelMax ?? 0) * FUEL_WEIGHT_PER_UNIT;
-    const cargoWeight = (cargoUsed ?? 0) * CARGO_WEIGHT_PER_UNIT;
+    const cargoWeight = cargoMass ?? 0;
     const totalWeight = (this.baseWeight || BASE_HULL_WEIGHT) + moduleWeight + fuelWeight + cargoWeight;
     const twRatio = totalThrust > 0 ? totalThrust / totalWeight : 0;
 
@@ -406,9 +419,9 @@ export class Ship extends Entity {
 
     for (const mod of this.moduleSlots) {
       if (!mod) continue;
-      const notDestroyed = mod.conditionMultiplier > 0;
-      // Boolean capabilities go offline when module is destroyed
-      if (notDestroyed) {
+      const operational = mod.conditionMultiplier > 0 && mod.isPowered !== false;
+      // Capabilities go offline when module is destroyed or unpowered
+      if (operational) {
         if (mod.minimap_stations)   this.capabilities.minimap_stations   = true;
         if (mod.minimap_ships)      this.capabilities.minimap_ships      = true;
         if (mod.lead_indicators)    this.capabilities.lead_indicators    = true;
@@ -435,14 +448,17 @@ export class Ship extends Entity {
     const primaries = this._primaryWeapons;
     for (let i = 0; i < primaries.length; i++) {
       if (onlyActive && i !== this.primaryWeaponIdx) continue;
+      if (primaries[i]._unpowered) continue;
       primaries[i].fire(this, tx, ty, entities);
     }
   }
 
   fireSecondary(tx, ty, entities, onlyActive = false) {
+    if (this._weaponsOffline) return;
     const secondaries = this._secondaryWeapons;
     for (let i = 0; i < secondaries.length; i++) {
       if (onlyActive && i !== this.secondaryWeaponIdx) continue;
+      if (secondaries[i]._unpowered) continue;
       secondaries[i].fire(this, tx, ty, entities);
     }
   }
@@ -450,7 +466,7 @@ export class Ship extends Entity {
   fireAutoWeapons(enemies, entities) {
     if (this._weaponsOffline) return;
     for (const w of this.weapons) {
-      if (!w.isAutoFire) continue;
+      if (!w.isAutoFire || w._unpowered) continue;
       let nearest = null;
       let nearestDist = w.maxRange;
       for (const e of enemies) {
@@ -486,11 +502,23 @@ export class Ship extends Entity {
     return 'aft';
   }
 
+  _becomeDerelict() {
+    this.crew = 0;
+    this.relation = 'derelict';
+    this.throttleLevel = 0;
+    this.speed = 0;
+    this.ai = null;
+    this.salvageTime = 3;
+    this.interactionRadius = 150;
+    this._justCrippled = true;
+  }
+
   takeDamage(amount, hullDamageOverride, hitX, hitY) {
     const arc = (hitX != null && hitY != null)
       ? this._getImpactArc(hitX, hitY)
       : 'front';
 
+    this._lastHitArc = arc;
     this._arcHitTimestamps[arc] = Date.now();
 
     let hullDmg;
@@ -520,7 +548,10 @@ export class Ship extends Entity {
     // Trigger hit flash
     this._hitFlashTimer = 0.15;
 
-    if (this.hullCurrent <= 0) {
+    // Non-player ships become derelicts at ≤10% hull instead of dying
+    if (this.hullCurrent <= this.hullMax * 0.1 && this.crew > 0 && this.relation !== 'player') {
+      this._becomeDerelict();
+    } else if (this.hullCurrent <= 0) {
       this.hullCurrent = 0;
       this.active = false;
       this.onDestroy();
@@ -616,6 +647,7 @@ export class Ship extends Entity {
     ctx.scale(camera.zoom, camera.zoom);
     ctx.rotate(this.rotation);
     this._drawShape(ctx);
+    this._drawModules(ctx);
 
     // Hit flash — brief red overlay on damage
     if (this._hitFlashTimer > 0) {
@@ -635,7 +667,7 @@ export class Ship extends Entity {
         const r = this.getBounds().radius;
         const alpha = ((0.5 - hullRatio) / 0.5) * 0.45;
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = BLACK;
         ctx.beginPath();
         ctx.arc(0, 0, r, 0, Math.PI * 2);
         ctx.fill();
@@ -667,6 +699,7 @@ export class Ship extends Entity {
     ctx.rotate(this.rotation);
     ctx.globalAlpha = 0.55;
     this._drawShape(ctx);
+    this._drawModules(ctx);
     ctx.globalAlpha = 1;
     ctx.restore();
 
@@ -718,6 +751,44 @@ export class Ship extends Entity {
     ctx.strokeStyle = this.hullStroke;
     ctx.lineWidth = 1.5;
     ctx.stroke();
+  }
+
+  _drawModules(ctx) {
+    const mounts = this._mountPoints;
+    if (!mounts) return;
+    const slots = this.moduleSlots;
+    const invMode = this._inventoryMode;
+    for (let i = 0; i < mounts.length; i++) {
+      const mod = slots && slots[i];
+      if (mod) {
+        const unpowered = mod.isPowered === false && mod.powerDraw > 0;
+        const color = unpowered ? '#555555' : conditionColor(mod.condition);
+        const alpha = mod.condition === 'destroyed' ? 0.2 : unpowered ? 0.35 : 0.7;
+
+        ctx.save();
+        ctx.translate(mounts[i].x, mounts[i].y);
+
+        // Rotate turret weapons to track target
+        if (mod.weapon && !mod.weapon.isFixed && this._turretTargetWorld) {
+          const dx = this._turretTargetWorld.x - this.x;
+          const dy = this._turretTargetWorld.y - this.y;
+          const cos = Math.cos(-this.rotation);
+          const sin = Math.sin(-this.rotation);
+          const localX = dx * cos - dy * sin;
+          const localY = dx * sin + dy * cos;
+          const mx = localX - mounts[i].x;
+          const my = localY - mounts[i].y;
+          ctx.rotate(Math.atan2(mx, -my));
+        }
+
+        mod.drawAtMount(ctx, color, alpha);
+        ctx.restore();
+
+        if (invMode) drawMountHighlight(ctx, mounts[i]);
+      } else {
+        drawEmptyMount(ctx, mounts[i], invMode);
+      }
+    }
   }
 
   getBounds() {

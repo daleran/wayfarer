@@ -1,5 +1,5 @@
 import { Ship } from '@/entities/ship.js';
-import { engineGlow, lines } from '@/rendering/draw.js';
+import { lines } from '@/rendering/draw.js';
 
 const SPEED_MULT  = 0.85;  // ~71 u/s — decent for its mass
 const ACCEL_MULT  = 0.7;   // heavy, slow to spin up
@@ -79,6 +79,16 @@ const ENGINE_POS = [
   { x: -41, y: 36 },  // port nacelle
 ];
 
+// Mount point positions — index i maps to moduleSlots[i].
+// SalvageMothership slots: [engine, cannon, rocketPod, null, null]
+const MOUNT_POINTS = [
+  { x: 0,    y: 36,  arc: 'aft',       size: 'large', slot: 'engine' },  // engine — stern center
+  { x: 0,    y: -44, arc: 'front',     size: 'large' },  // weapon-1 — bow tower
+  { x: -16,  y: -20, arc: 'port',      size: 'large' },  // weapon-2 — main hull port
+  { x: 16,   y: 0,   arc: 'starboard', size: 'large' },  // reactor — main hull stbd
+  { x: 0,    y: -50, arc: 'front',     size: 'small' },  // sensor — bow tower top
+];
+
 export class GarrisonFrigate extends Ship {
   constructor(x, y) {
     super(x, y);
@@ -105,6 +115,10 @@ export class GarrisonFrigate extends Ship {
 
   get _engineOffsets() {
     return ENGINE_POS;
+  }
+
+  get _mountPoints() {
+    return MOUNT_POINTS;
   }
 
   _drawShape(ctx) {
@@ -140,8 +154,6 @@ export class GarrisonFrigate extends Ship {
     lines(ctx, [KEEL, BOW_RIB_STBD, BOW_RIB_PORT, NACELLE_SEAM_STBD, NACELLE_SEAM_PORT], this.hullStroke, 1, 0.3);
     lines(ctx, [SEAM_FWD, SEAM_AFT], this.hullStroke, 1, 0.22);
 
-    // Engine glows — twin nacelle pods
-    engineGlow(ctx, ENGINE_POS, this.engineColor, 4 + this.throttleLevel * 0.8, 3, 3, 0.25);
   }
 
   getBounds() {

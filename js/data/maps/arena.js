@@ -17,7 +17,7 @@ function spawnEnemy(x, y, shipType) {
 
 export const MAP = {
   mapSize: { width: 8000, height: 6000 },
-  playerStart: { x: 4000, y: 5200 },
+  playerStart: { x: 4000, y: 5800 },
 
   background: [
     PlanetPale.backgroundData({ x: 4000, y: 3000 }),
@@ -39,7 +39,7 @@ export const MAP = {
       lootTable: [
         { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'faulty' },
-        { type: 'ammo', ammoType: 'autocannon', amount: 20 },
+        { type: 'ammo', ammoType: '25mm-ap', amount: 20 },
       ],
       loreText: [
         'DRIFTING VIGIL — Garrison-class frigate, registry struck.',
@@ -65,7 +65,7 @@ export const MAP = {
       lootTable: [
         { type: 'scrap', amount: 28 },
         { type: 'weaponId', id: 'Autocannon' },
-        { type: 'ammo', ammoType: 'autocannon', amount: 120 },
+        { type: 'ammo', ammoType: '25mm-ap', amount: 120 },
       ],
       loreText: [
         'COLD REMNANT — Maverick-class courier, combat-modified.',
@@ -79,7 +79,7 @@ export const MAP = {
         { type: 'scrap', amount: 20 },
         { type: 'fuel', amount: 12 },
         { type: 'moduleId', id: 'HydrogenFuelCell', condition: 'worn' },
-        { type: 'ammo', ammoType: 'rocket', amount: 3 },
+        { type: 'ammo', ammoType: 'rkt', amount: 3 },
       ],
       loreText: [
         'GUTTED PIONEER — G100-class hauler, cargo hold stripped.',
@@ -92,7 +92,7 @@ export const MAP = {
       lootTable: [
         { type: 'scrap', amount: 35 },
         { type: 'moduleId', id: 'SmallFissionReactor', condition: 'worn' },
-        { type: 'ammo', ammoType: 'autocannon', amount: 20 },
+        { type: 'ammo', ammoType: '25mm-ap', amount: 20 },
       ],
       loreText: [
         'BROKEN COVENANT — Garrison-class frigate, registry struck.',

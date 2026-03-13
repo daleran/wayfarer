@@ -7,7 +7,7 @@ export class Camera {
     this.zoom = 0.44;
     this._targetZoom = this.zoom;
     this._zoomMin = 0.2;
-    this._zoomMax = 2.75;
+    this._zoomMax = 4.0;
   }
 
   follow(target, dt) {
@@ -79,11 +79,12 @@ export class Camera {
 
   isVisible(wx, wy, margin = 0) {
     const s = this.worldToScreen(wx, wy);
+    const m = margin * this.zoom;
     return (
-      s.x >= -margin &&
-      s.x <= this.width + margin &&
-      s.y >= -margin &&
-      s.y <= this.height + margin
+      s.x >= -m &&
+      s.x <= this.width + m &&
+      s.y >= -m &&
+      s.y <= this.height + m
     );
   }
 }

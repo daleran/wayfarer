@@ -9,7 +9,7 @@ export const FracturedWake = {
   lootTable: [
     { type: 'scrap',    amount: 40 },
     { type: 'weaponId', id: 'Cannon' },
-    { type: 'ammo',     ammoType: 'rocket-large', amount: 2 },
+    { type: 'ammo',     ammoType: 'rkt', amount: 2 },
   ],
   lore: `FRACTURED WAKE — Garrison-class frigate, hull split at midship.
 Salvage Lords contract vessel, overloaded on exit run.

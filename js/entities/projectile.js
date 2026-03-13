@@ -1,5 +1,9 @@
 import { Entity } from './entity.js';
-import { GREEN, RED, AMBER, PLASMA_GREEN } from '@/rendering/colors.js';
+import {
+  GREEN, RED, AMBER, WHITE, PLASMA_GREEN,
+  PROJ_GLOW_GREEN, PROJ_GLOW_RED, PLASMA_CORE,
+  TORPEDO_TRAIL, TORPEDO_AMBER, TORPEDO_CORE, AUTOCANNON_GLOW,
+} from '@/rendering/colors.js';
 
 const ROCKET_TRAIL_MAX = 80;
 const BOLT_TRAIL_MAX   = 18;
@@ -127,7 +131,7 @@ export class Projectile extends Entity {
 
     const isPlayer = this.owner && (this.owner.faction === 'player');
     const baseColor  = this.color    || (isPlayer ? GREEN : RED);
-    const sharpColor = this.glowColor || (isPlayer ? '#ccffcc' : '#ffcccc');
+    const sharpColor = this.glowColor || (isPlayer ? PROJ_GLOW_GREEN : PROJ_GLOW_RED);
     const len = this.length;
 
     ctx.save();
@@ -179,7 +183,7 @@ export class Projectile extends Entity {
     ctx.arc(screen.x, screen.y, r * 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 0.55 + falloff * 0.45;
-    ctx.fillStyle = '#ccffee';
+    ctx.fillStyle = PLASMA_CORE;
     ctx.beginPath();
     ctx.arc(screen.x, screen.y, r * 0.7, 0, Math.PI * 2);
     ctx.fill();
@@ -191,7 +195,7 @@ export class Projectile extends Entity {
     ctx.lineCap = 'round';
 
     const trail = this._rocketTrail;
-    const trailColor = this.isTorpedo ? '#996633' : AMBER;
+    const trailColor = this.isTorpedo ? TORPEDO_TRAIL : AMBER;
     for (let i = 1; i < trail.length; i++) {
       const p0 = camera.worldToScreen(trail[i - 1].x, trail[i - 1].y);
       const p1 = camera.worldToScreen(trail[i].x, trail[i].y);
@@ -208,8 +212,8 @@ export class Projectile extends Entity {
     const screen = camera.worldToScreen(this.x, this.y);
     const pulse = 0.7 + 0.3 * Math.sin(this._rocketAge * 18);
 
-    const headColor  = this.isTorpedo ? '#cc8800' : AMBER;
-    const coreColor  = this.isTorpedo ? '#ffcc66' : '#ffe0a0';
+    const headColor  = this.isTorpedo ? TORPEDO_AMBER : AMBER;
+    const coreColor  = this.isTorpedo ? TORPEDO_CORE : AUTOCANNON_GLOW;
     const glowAlpha  = this.isTorpedo ? 0.12 : 0.18;
 
     ctx.globalAlpha = glowAlpha * pulse;
@@ -227,7 +231,7 @@ export class Projectile extends Entity {
     ctx.stroke();
 
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = WHITE;
     ctx.beginPath();
     ctx.arc(screen.x, screen.y, 1.2, 0, Math.PI * 2);
     ctx.fill();

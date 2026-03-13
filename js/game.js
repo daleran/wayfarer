@@ -28,6 +28,10 @@ import { ShipScreen } from './ui/shipScreen.js';
 import {
   DEFAULT_SCRAP, FUEL_RATES, SPAWN,
 } from '@data/compiledData.js';
+import {
+  SMOKE_DARK, SMOKE_MID, SMOKE_TINT,
+  SPARK_YELLOW, AMBER, CYAN, WHITE,
+} from './rendering/colors.js';
 import { ReputationSystem } from './systems/reputation.js';
 import { PlayerInventory } from './systems/playerInventory.js';
 import { NavigationSystem } from './systems/navigationSystem.js';
@@ -77,6 +81,9 @@ export class GameManager {
 
     // Combat mode — F key toggle
     this.combatMode = false;
+
+    // Player death screen (production mode only)
+    this._playerDead = false;
   }
 
   init() {
@@ -132,10 +139,16 @@ export class GameManager {
       this.player.addWeapon(new Torpedo());
 
       // Seed cargo ammo reserves for test mode
-      this.inventory.ammo['autocannon'] = 300;
-      this.inventory.ammo['cannon'] = 20;
-      this.inventory.ammo['gatling'] = 600;
-      this.inventory.ammo['rocket'] = 20;
+      this.inventory.ammo['25mm-ap'] = 300;
+      this.inventory.ammo['25mm-he'] = 100;
+      this.inventory.ammo['8mm'] = 600;
+      this.inventory.ammo['90mm-ap'] = 12;
+      this.inventory.ammo['90mm-he'] = 8;
+      this.inventory.ammo['rkt'] = 20;
+      this.inventory.ammo['wg'] = 10;
+      this.inventory.ammo['ht'] = 10;
+      this.inventory.ammo['30mm-kp'] = 10;
+      this.inventory.ammo['60mm-kp'] = 6;
     }
     // Normal mode: weapons come from installed modules (set up in ship constructor)
 
@@ -161,6 +174,14 @@ export class GameManager {
   update(dt) {
     input.tick();
     this.totalTime += dt;
+
+    // Player death — freeze game in production mode
+    if (this._playerDead) return;
+    if (!this.isTestMode && this.player && !this.player.active) {
+      this._playerDead = true;
+      this._showDeathScreen();
+      return;
+    }
 
     // Map toggle — M key (available any time except docked / ship screen)
     if (input.wasJustPressed('m') && !this.isDocked && !this.shipScreen.visible) {
@@ -229,6 +250,9 @@ export class GameManager {
       if (!entity.active) continue;
       if ((this.salvage.isSalvaging || this.repair.isRepairing) && entity === this.player) continue;
       entity.update(dt, this.entities);
+      if (entity instanceof Station && this.player) {
+        entity.updateZoneFade(dt, this.player.x, this.player.y);
+      }
     }
 
     // Process entity spawn queues (e.g. DroneControlFrigate → SnatcHerDrone)
@@ -279,6 +303,9 @@ export class GameManager {
       onEnemyKilled: (target) => this.bounty.onEnemyKilled(target, {
         particlePool: this.particlePool, hud: this.hud, reputation: this.reputation, entities: this.entities,
       }),
+      onEnemyCrippled: (target) => this.bounty.onEnemyCrippled(target, {
+        particlePool: this.particlePool, hud: this.hud, reputation: this.reputation,
+      }),
     });
     for (const e of collisionResult.newEntities) this.entities.push(e);
     this.interaction.checkLootPickups(this.entities, this.player, this);
@@ -318,7 +345,7 @@ export class GameManager {
     let burn = 0;
     burn += (FUEL_RATES[this.player.throttleLevel] || 0) * this.player.fuelEfficiency;
     for (const mod of (this.player.moduleSlots || [])) {
-      if (mod?.fuelDrainRate) burn += mod.fuelDrainRate;
+      if (mod?.fuelDrainRate && mod.isPowered !== false) burn += mod.fuelDrainRate;
     }
 
     this.inventory.fuelBurnRate = burn;
@@ -332,14 +359,49 @@ export class GameManager {
 
   _updatePowerBalance() {
     if (!this.player) return;
-    let out = 0, draw = 0;
-    for (const mod of (this.player.moduleSlots || [])) {
+    const modules = this.player.moduleSlots || [];
+    let out = 0, totalDraw = 0;
+    for (const mod of modules) {
       if (!mod) continue;
       out += (/** @type {any} */ (mod).effectivePowerOutput ?? mod.powerOutput) || 0;
-      draw += mod.powerDraw || 0;
+      totalDraw += mod.powerDraw || 0;
     }
     this.inventory.reactorOutput = out;
-    this.inventory.reactorDraw = draw;
+    this.inventory.reactorDraw = totalDraw;
+
+    // Enforce power budget — depower lowest-priority consumers first
+    const consumers = [];
+    for (const mod of modules) {
+      if (!mod || !mod.powerDraw) continue;
+      consumers.push(mod);
+    }
+    // Sort: lowest priority first, then highest draw first (greedy depower)
+    consumers.sort((a, b) => (a.powerPriority - b.powerPriority) || (b.powerDraw - a.powerDraw));
+
+    let remainingDraw = totalDraw;
+    let changed = false;
+
+    for (const mod of consumers) /** @type {any} */ (mod)._powerPending = true;
+
+    // Depower from lowest priority until draw fits in budget
+    for (const mod of consumers) {
+      if (remainingDraw <= out) break;
+      /** @type {any} */ (mod)._powerPending = false;
+      remainingDraw -= mod.powerDraw;
+    }
+
+    for (const mod of consumers) {
+      const wasPowered = mod.isPowered;
+      mod.isPowered = /** @type {any} */ (mod)._powerPending;
+      delete /** @type {any} */ (mod)._powerPending;
+      if (wasPowered !== mod.isPowered) changed = true;
+      if (mod.weapon) mod.weapon._unpowered = !mod.isPowered;
+    }
+
+    if (changed) {
+      this.player.refreshCapabilities();
+      this.player.recalcTW(this.fuel, this.totalCargoUsed);
+    }
   }
 
   _handleMapInput() {
@@ -420,6 +482,7 @@ export class GameManager {
     if (!p || !p.active) return;
 
     this._cachedMouseWorld = input.mouseWorld(this.camera);
+    p._turretTargetWorld = this._cachedMouseWorld;
 
     // Ship screen toggle — processed before everything else
     // Set flag so handleInput doesn't close it on the same tick
@@ -487,15 +550,14 @@ export class GameManager {
         p.fireSecondary(this._cachedMouseWorld.x, this._cachedMouseWorld.y, this.entities, true);
       }
 
-      // Ammo / guidance mode cycling: 1 for active primary, 2 for active secondary
+      // Ammo cycling: 1 for active primary, 2 for active secondary
       if (input.wasJustPressed('1')) {
         const w = p._primaryWeapons[p.primaryWeaponIdx];
-        if (w?.ammoModes?.length > 1) this.weaponSys.cycleAmmoMode(w, this.inventory.ammo, this.hud, this.player);
+        if (w?.acceptedAmmoTypes?.length > 1) this.weaponSys.cycleAmmo(w, this.inventory.ammo, this.hud, this.player);
       }
       if (input.wasJustPressed('2')) {
         const w = p._secondaryWeapons[p.secondaryWeaponIdx];
-        if (w?.guidanceModes?.length > 1) this.weaponSys.cycleGuidanceMode(w, this.hud, this.player);
-        else if (w?.ammoModes?.length > 1) this.weaponSys.cycleAmmoMode(w, this.inventory.ammo, this.hud, this.player);
+        if (w?.acceptedAmmoTypes?.length > 1) this.weaponSys.cycleAmmo(w, this.inventory.ammo, this.hud, this.player);
       }
     }
   }
@@ -531,7 +593,7 @@ export class GameManager {
             wx + (Math.random() - 0.5) * 6,
             wy + (Math.random() - 0.5) * 6,
             2, {
-            colors: ['#555555', '#6a6a6a', '#3a3a44'],
+            colors: [SMOKE_DARK, SMOKE_MID, SMOKE_TINT],
             minSpeed: 4, maxSpeed: 18,
             life: 1.2 + Math.random() * 0.8,
             r: 4 + Math.random() * 3,
@@ -549,7 +611,7 @@ export class GameManager {
             entity.x + (Math.random() - 0.5) * 16,
             entity.y + (Math.random() - 0.5) * 16,
             3, {
-            colors: ['#ffff66', '#ffaa00', '#00ffcc', '#ffffff'],
+            colors: [SPARK_YELLOW, AMBER, CYAN, WHITE],
             minSpeed: 40, maxSpeed: 110,
             life: 0.15 + Math.random() * 0.15,
             r: 1.5,
@@ -625,5 +687,54 @@ export class GameManager {
 
   render() {
     this.renderer.render(this);
+  }
+
+  _showDeathScreen() {
+    const overlay = document.createElement('div');
+    Object.assign(overlay.style, {
+      position: 'fixed', inset: '0', zIndex: '9999',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0)',
+      transition: 'background-color 3s ease',
+      pointerEvents: 'none',
+    });
+
+    const box = document.createElement('div');
+    Object.assign(box.style, {
+      border: '3px solid #ff4444',
+      backgroundColor: '#000',
+      padding: '40px 60px',
+      fontFamily: 'monospace',
+      textAlign: 'center',
+      opacity: '0',
+      transition: 'opacity 2s ease 2s',
+    });
+
+    const msg = document.createElement('div');
+    Object.assign(msg.style, { fontSize: '28px', color: '#ff4444', lineHeight: '1.6' });
+    msg.textContent = 'Another human lost to the void.';
+
+    const btn = document.createElement('button');
+    Object.assign(btn.style, {
+      marginTop: '30px', padding: '12px 40px',
+      fontFamily: 'monospace', fontSize: '18px',
+      color: '#ff4444', backgroundColor: '#000',
+      border: '2px solid #ff4444', cursor: 'pointer',
+      pointerEvents: 'auto',
+    });
+    btn.textContent = 'Restart';
+    btn.addEventListener('mouseenter', () => { btn.style.backgroundColor = '#1a0000'; });
+    btn.addEventListener('mouseleave', () => { btn.style.backgroundColor = '#000'; });
+    btn.addEventListener('click', () => location.reload());
+
+    box.appendChild(msg);
+    box.appendChild(btn);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      overlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+      box.style.opacity = '1';
+    });
   }
 }

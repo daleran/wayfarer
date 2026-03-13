@@ -4,8 +4,7 @@ import {
 } from '@/rendering/colors.js';
 import { LABEL } from '@/rendering/draw.js';
 import { input } from '@/input.js';
-
-const GUIDANCE_LABELS = { dumbfire: 'DUMB', wire: 'WIRE', heat: 'HEAT' };
+import { AMMO } from '@data/compiledData.js';
 const WEAPON_PANEL_GAP      = 38;
 const THROTTLE_BELOW_OFFSET = 55;
 const THROTTLE_LABELS = ['STOP', '1/4', '1/2', '3/4', 'FULL', 'FLANK'];
@@ -54,9 +53,13 @@ function _renderWeaponPanel(ctx, weapon, type, panelX, panelY, ammoReserve) {
   const name    = rawName.replace(/\s*\[.*?\]$/, '').trim();
 
   let modeTag = '';
-  if (weapon.currentAmmoMode)   modeTag = `[${weapon.currentAmmoMode.toUpperCase()}]`;
-  else if (weapon.guidanceMode) modeTag = `[${(GUIDANCE_LABELS[weapon.guidanceMode] ?? weapon.guidanceMode).toUpperCase()}]`;
-  else if (weapon.isBeam)       modeTag = '[BEAM]';
+  if (weapon.currentAmmoId) {
+    const tag = AMMO[weapon.currentAmmoId]?.tag;
+    if (tag) modeTag = `[${tag}]`;
+    else if (weapon.acceptedAmmoTypes?.length > 1) modeTag = `[${weapon.currentAmmoId.toUpperCase()}]`;
+  } else if (weapon.isBeam) {
+    modeTag = '[BEAM]';
+  }
 
   const BAR_W = 40;
   const BAR_H = 5;
@@ -88,7 +91,7 @@ function _renderWeaponPanel(ctx, weapon, type, panelX, panelY, ammoReserve) {
     _fillWeaponBar(ctx, weapon, barX, barY, BAR_W, BAR_H, nameColor);
 
     if (weapon.ammo !== undefined) {
-      const cargo   = ammoReserve[weapon.ammoType] ?? 0;
+      const cargo   = ammoReserve[weapon.currentAmmoId] ?? 0;
       ctx.font = LABEL.font;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
@@ -114,7 +117,7 @@ function _renderWeaponPanel(ctx, weapon, type, panelX, panelY, ammoReserve) {
     _fillWeaponBar(ctx, weapon, panelX, barY, BAR_W, BAR_H, nameColor);
 
     if (weapon.ammo !== undefined) {
-      const cargo   = ammoReserve[weapon.ammoType] ?? 0;
+      const cargo   = ammoReserve[weapon.currentAmmoId] ?? 0;
       ctx.font = LABEL.font;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
@@ -165,9 +168,11 @@ function _renderCursorSide(ctx, weapon, x, y, side, color) {
   if (weapon.ammo !== undefined) {
     // Ammo type on top
     let modeLabel = '';
-    if (weapon.currentAmmoMode)   modeLabel = weapon.currentAmmoMode.toUpperCase();
-    else if (weapon.guidanceMode) modeLabel = (GUIDANCE_LABELS[weapon.guidanceMode] ?? weapon.guidanceMode).toUpperCase();
-    else if (weapon.isBeam)       modeLabel = 'BEAM';
+    if (weapon.currentAmmoId) {
+      modeLabel = AMMO[weapon.currentAmmoId]?.tag || '';
+    } else if (weapon.isBeam) {
+      modeLabel = 'BEAM';
+    }
     if (modeLabel) {
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';

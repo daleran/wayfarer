@@ -16,14 +16,24 @@ import { WEAPON_REGISTRY } from '@/modules/weapons/registry.js';
 
 // POIs
 import { PlanetPale } from '@/data/zones/gravewake/planetPale.js';
-import { createDerelict } from '@/world/derelict.js';
 import { createArkshipSpine } from '@/world/arkshipSpine.js';
 import { createDebrisCloud } from '@/world/debrisCloud.js';
 
+// Named derelicts
+import { BrokenCovenant } from '@/data/ships/named/brokenCovenant.js';
+import { ColdRemnant }     from '@/data/ships/named/coldRemnant.js';
+import { FracturedWake }   from '@/data/ships/named/fracturedWake.js';
+import { GuttedPioneer }   from '@/data/ships/named/guttedPioneer.js';
+import { HollowMarch }     from '@/data/ships/named/hollowMarch.js';
+import { PaleWitness }     from '@/data/ships/named/paleWitness.js';
+
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
-  DIM_TEXT, DIM_OUTLINE,
+  DIM_TEXT, DIM_OUTLINE, VERY_DIM, conditionColor,
+  DESIGNER_BG, DESIGNER_CROSSHAIR, DESIGNER_SCALE_RING, DESIGNER_GRID, DESIGNER_ORIGIN,
 } from '@/rendering/colors.js';
+import { hullStats, massStats, movementStats, fuelStats, moduleTooltipRows } from '@/ui/shipStats.js';
+import { drawEmptyMount } from '@/rendering/moduleVisuals.js';
 
 // ─── SHIP GROUPING ────────────────────────────────────────────────────────────
 // Reorders the flat registry so each variant follows its parent class.
@@ -117,13 +127,52 @@ function _buildWeaponItems() {
 function _buildModuleItems() {
   return MODULE_REGISTRY.map(entry => {
     const sample = entry.create();
+    const isLarge = entry.id.endsWith('-l') || entry.id.endsWith('-large');
     return {
       id: entry.id,
       label: sample.displayName || entry.id,
       file: 'js/modules/shipModule.js',
       type: 'module',
       category: entry.category,
+      mountSize: isLarge ? 'large' : 'small',
       create: entry.create,
+    };
+  });
+}
+
+// ─── DERELICT ITEMS (from named derelict files) ──────────────────────────────
+
+const NAMED_DERELICTS = [
+  { def: BrokenCovenant, slug: 'broken-covenant', file: 'js/data/ships/named/brokenCovenant.js' },
+  { def: ColdRemnant,    slug: 'cold-remnant',    file: 'js/data/ships/named/coldRemnant.js' },
+  { def: FracturedWake,  slug: 'fractured-wake',  file: 'js/data/ships/named/fracturedWake.js' },
+  { def: GuttedPioneer,  slug: 'gutted-pioneer',  file: 'js/data/ships/named/guttedPioneer.js' },
+  { def: HollowMarch,    slug: 'hollow-march',    file: 'js/data/ships/named/hollowMarch.js' },
+  { def: PaleWitness,    slug: 'pale-witness',    file: 'js/data/ships/named/paleWitness.js' },
+];
+
+function _buildDerelictItems() {
+  return NAMED_DERELICTS.map(({ def, slug, file }) => {
+    const loot = def.lootTable.map(l => {
+      if (l.type === 'scrap' || l.type === 'fuel') return `${l.type}×${l.amount}`;
+      if (l.type === 'ammo') return `${l.ammoType}×${l.amount}`;
+      if (l.type === 'moduleId') return l.id;
+      if (l.type === 'weaponId') return l.id;
+      return l.type;
+    }).join(', ');
+    return {
+      id: slug,
+      label: def.name,
+      file,
+      type: 'poi',
+      flavorText: def.lore,
+      create: () => def.instantiate(0, 0),
+      info: {
+        Type: `Derelict (${def.derelictClass})`,
+        'Salvage Time': `${def.salvageTime}s`,
+        Loot: loot,
+        'Interact R': '120u',
+      },
     };
   });
 }
@@ -156,14 +205,7 @@ const CATEGORIES = [
   {
     id: 'derelicts',
     label: 'Derelicts',
-    items: [
-      {
-        id: 'derelict-hollow-march', label: 'Hollow March', file: 'js/world/derelict.js', type: 'poi',
-        flavorText: "The registration marks are burned off. Cargo manifests mention nothing that would explain the damage.",
-        create: () => createDerelict({ x: 0, y: 0, name: 'Hollow March', salvageTime: 5, lootTable: [{ type: 'scrap', amount: 40 }, { type: 'void_crystals', amount: 3 }] }),
-        info: { Type: 'Derelict', 'Salvage Time': '5s', Loot: 'scrap×40, void_crystals×3', 'Interact R': '120u' },
-      },
-    ],
+    items: _buildDerelictItems(),
   },
   {
     id: 'environment',
@@ -232,6 +274,13 @@ export class Designer {
     this._comparePanel = null;
     this._compareTable = null;
     this._compareCatId = null; // which category the table was built for
+
+    // Module slot hover state
+    this._slotBoxRects = [];  // { x, y, w, h, mod } per slot
+    this._hoveredSlotIdx = -1;
+
+    // Tooltip
+    this._tooltip = null;
   }
 
   // ── Init ────────────────────────────────────────────────────────────────────
@@ -291,8 +340,86 @@ export class Designer {
       if (isFinite(z) && z > 0) this._zoom = z;
     }
 
+    // Tooltip element
+    this._tooltip = document.createElement('div');
+    this._tooltip.className = 'ship-tooltip';
+    document.body.appendChild(this._tooltip);
+
+    // Track mouse for module slot hover
+    this._mouseX = 0;
+    this._mouseY = 0;
+    this.canvas.addEventListener('mousemove', (e) => {
+      this._mouseX = e.clientX;
+      this._mouseY = e.clientY;
+      this._updateSlotHover();
+    });
+
     this._load(false);
     this._initComparePanel();
+  }
+
+  // ── Slot hover & tooltip ─────────────────────────────────────────────────────
+
+  _updateSlotHover() {
+    const mx = this._mouseX;
+    const my = this._mouseY;
+    let found = -1;
+    for (let i = 0; i < this._slotBoxRects.length; i++) {
+      const r = this._slotBoxRects[i];
+      if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+        found = i;
+        break;
+      }
+    }
+    if (found !== this._hoveredSlotIdx) {
+      this._hoveredSlotIdx = found;
+      if (found >= 0 && this._slotBoxRects[found].mod) {
+        this._showSlotTooltip(this._slotBoxRects[found].mod);
+      } else {
+        this._hideTooltip();
+      }
+    }
+    if (found >= 0) this._positionTooltip();
+  }
+
+  _showSlotTooltip(mod) {
+    const tt = this._tooltip;
+    if (!tt) return;
+    const rows = moduleTooltipRows(mod);
+    if (rows.length === 0) { this._hideTooltip(); return; }
+    tt.innerHTML = '';
+    for (const { label, value, cls } of rows) {
+      const row = document.createElement('div');
+      row.className = 'ship-tooltip-row';
+      const l = document.createElement('span');
+      l.className = 'ship-tooltip-label';
+      l.textContent = label;
+      const v = document.createElement('span');
+      v.className = `ship-tooltip-value${cls ? ' ' + cls : ''}`;
+      v.textContent = value;
+      row.appendChild(l);
+      row.appendChild(v);
+      tt.appendChild(row);
+    }
+    tt.classList.add('visible');
+  }
+
+  _hideTooltip() {
+    if (this._tooltip) this._tooltip.classList.remove('visible');
+  }
+
+  _positionTooltip() {
+    const tt = this._tooltip;
+    if (!tt) return;
+    const pad = 12;
+    let x = this._mouseX + pad;
+    let y = this._mouseY - pad;
+    const rect = tt.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth) x = this._mouseX - rect.width - pad;
+    if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 4;
+    if (y < 4) y = 4;
+    tt.style.left = `${x}px`;
+    tt.style.top = `${y}px`;
   }
 
   // ── State helpers ────────────────────────────────────────────────────────────
@@ -305,6 +432,9 @@ export class Designer {
     this._entity = def.create();
     this._angle = 0;
     this._autoRotate = false;
+    this._slotBoxRects = [];
+    this._hoveredSlotIdx = -1;
+    this._hideTooltip();
 
     // Designer preview: no relation context → white silhouette
     if (def.type === 'ship') {
@@ -402,7 +532,7 @@ export class Designer {
     const def = this._item();
 
     // Background
-    ctx.fillStyle = '#000810';
+    ctx.fillStyle = DESIGNER_BG;
     ctx.fillRect(0, 0, W, H);
 
     // Preview area bounds
@@ -430,7 +560,7 @@ export class Designer {
   _renderShipPreview(ctx, W, H, pcx, pcy, def) {
     // Crosshair
     ctx.save();
-    ctx.strokeStyle = '#0d1e2e';
+    ctx.strokeStyle = DESIGNER_CROSSHAIR;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 10]);
     ctx.beginPath(); ctx.moveTo(PANEL_W, pcy); ctx.lineTo(W, pcy); ctx.stroke();
@@ -442,7 +572,7 @@ export class Designer {
     ctx.save();
     ctx.beginPath();
     ctx.arc(pcx, pcy, 25 * this._zoom, 0, Math.PI * 2);
-    ctx.strokeStyle = '#091525';
+    ctx.strokeStyle = DESIGNER_SCALE_RING;
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.restore();
@@ -453,6 +583,7 @@ export class Designer {
     ctx.scale(this._zoom, this._zoom);
     ctx.rotate(this._angle);
     this._entity._drawShape(ctx);
+    this._entity._drawModules(ctx);
     ctx.restore();
 
     // Scale label
@@ -463,6 +594,160 @@ export class Designer {
     ctx.fillStyle = DIM_TEXT;
     ctx.fillText(`${this._zoom.toFixed(1)}× zoom  •  ${def.file}`, pcx, 12);
     ctx.restore();
+
+    // Module slot boxes with cyan connection lines
+    this._renderModuleSlots(ctx, W, H, pcx, pcy);
+  }
+
+  // ── Module Slot Boxes (ship preview overlay) ─────────────────────────────────
+
+  _renderModuleSlots(ctx, W, H, pcx, pcy) {
+    const ship = this._entity;
+    const mounts = ship._mountPoints;
+    const slots = ship.moduleSlots;
+    if (!mounts || !slots || slots.length === 0) {
+      this._slotBoxRects = [];
+      return;
+    }
+
+    const BOX_W = 180;
+    const BOX_H = 28;
+    const BOX_GAP = 5;
+    const BOX_MARGIN_LEFT = 12;
+
+    // Position boxes on the left side, just past the stats panel
+    const panelRight = PANEL_W + BOX_MARGIN_LEFT;
+    const boxX = panelRight;
+    let curY = 60;
+
+    // Power budget header
+    let totalOut = 0, totalDraw = 0;
+    for (const mod of slots) {
+      if (!mod) continue;
+      totalOut += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
+      totalDraw += mod.powerDraw || 0;
+    }
+    const net = totalOut - totalDraw;
+
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.font = "bold 10px 'Fira Mono', monospace";
+    ctx.textAlign = 'left';
+    ctx.fillStyle = DIM_TEXT;
+    ctx.globalAlpha = 0.8;
+    ctx.fillText('MODULES', boxX, curY - 6);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = net >= 0 ? GREEN : RED;
+    ctx.fillText(`${net >= 0 ? '+' : ''}${net}W`, boxX + BOX_W, curY - 6);
+    ctx.restore();
+
+    // Compute mount screen positions
+    const sin = Math.sin(this._angle);
+    const cos = Math.cos(this._angle);
+
+    this._slotBoxRects = [];
+
+    for (let i = 0; i < slots.length; i++) {
+      const mod = slots[i];
+      const mount = mounts[i];
+      if (!mount) continue;
+
+      const isHovered = this._hoveredSlotIdx === i;
+
+      // Mount point in screen space
+      const mx = (mount.x * cos - mount.y * sin) * this._zoom + pcx + this._panX;
+      const my = (mount.x * sin + mount.y * cos) * this._zoom + pcy + this._panY;
+
+      // Connection line
+      const lineAlpha = isHovered ? 0.9 : mod ? 0.3 : 0.15;
+      const lineWidth = isHovered ? 1.5 : 0.8;
+      ctx.save();
+      ctx.globalAlpha = lineAlpha;
+      ctx.strokeStyle = CYAN;
+      ctx.lineWidth = lineWidth;
+      if (!isHovered && !mod) ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(boxX + BOX_W, curY + BOX_H / 2);
+      ctx.lineTo(mx, my);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      // Box background
+      const borderColor = isHovered ? CYAN : VERY_DIM;
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = 'rgba(0,4,12,0.88)';
+      ctx.fillRect(boxX, curY, BOX_W, BOX_H);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 1;
+      if (!mod) ctx.setLineDash([3, 3]);
+      ctx.strokeRect(boxX + 0.5, curY + 0.5, BOX_W - 1, BOX_H - 1);
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      // Content
+      const slotLabel = mount.slot === 'engine' ? 'E' : String(i + 1);
+      const textY = curY + BOX_H / 2;
+
+      ctx.save();
+      ctx.textBaseline = 'middle';
+      ctx.font = "10px 'Fira Mono', monospace";
+
+      if (mod) {
+        // Slot label
+        ctx.textAlign = 'left';
+        ctx.fillStyle = DIM_TEXT;
+        ctx.fillText(`[${slotLabel}]`, boxX + 6, textY);
+
+        // Module name
+        const name = (mod.displayName || '').length > 14
+          ? (mod.displayName || '').slice(0, 13) + '…' : (mod.displayName || '');
+        ctx.fillStyle = CYAN;
+        ctx.fillText(name, boxX + 28, textY);
+
+        // Power info
+        const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
+        const pwrStr = effOut > 0 ? `+${effOut}W` : mod.powerDraw > 0 ? `-${mod.powerDraw}W` : '';
+        if (pwrStr) {
+          ctx.textAlign = 'right';
+          ctx.fillStyle = effOut > 0 ? GREEN : AMBER;
+          ctx.fillText(pwrStr, boxX + BOX_W - 20, textY);
+        }
+
+        // Condition dot
+        if (mod.condition) {
+          ctx.beginPath();
+          ctx.arc(boxX + BOX_W - 8, textY, 3, 0, Math.PI * 2);
+          ctx.fillStyle = conditionColor(mod.condition);
+          ctx.globalAlpha = 0.9;
+          ctx.fill();
+        }
+      } else {
+        // Empty slot
+        ctx.textAlign = 'left';
+        ctx.fillStyle = VERY_DIM;
+        ctx.fillText(`[${slotLabel}] ── EMPTY ──`, boxX + 6, textY);
+      }
+
+      ctx.restore();
+
+      // Highlight mount point when hovered
+      if (isHovered) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(mx, my, 10, 0, Math.PI * 2);
+        ctx.strokeStyle = CYAN;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.7;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      this._slotBoxRects.push({ x: boxX, y: curY, w: BOX_W, h: BOX_H, mod });
+      curY += BOX_H + BOX_GAP;
+    }
   }
 
   // ── Module Preview ───────────────────────────────────────────────────────────
@@ -473,7 +758,7 @@ export class Designer {
 
     // Background grid
     ctx.save();
-    ctx.strokeStyle = '#0a1520';
+    ctx.strokeStyle = DESIGNER_GRID;
     ctx.lineWidth = 1;
     const step = 60;
     for (let x = PANEL_W; x < W; x += step) {
@@ -487,12 +772,79 @@ export class Designer {
     // Category badge
     const BADGE_COLORS = { ENGINE: AMBER, WEAPON: RED, POWER: GREEN, SENSOR: CYAN };
     const badgeColor = BADGE_COLORS[cat] ?? WHITE;
+    const previewW = W - PANEL_W;
+
+    // Module icon — drawn large at center
+    const iconScale = 8;
+
+    // Mount point outline for size reference
+    ctx.save();
+    ctx.translate(pcx, pcy - 140);
+    ctx.scale(iconScale, iconScale);
+    drawEmptyMount(ctx, { x: 0, y: 0, size: def.mountSize ?? 'small' }, true);
+    ctx.restore();
+
+    // Module icon
+    ctx.save();
+    ctx.translate(pcx, pcy - 140);
+    ctx.scale(iconScale, iconScale);
+    const mColor = conditionColor(mod.condition);
+    const mAlpha = mod.condition === 'destroyed' ? 0.2 : 0.7;
+    mod.drawAtMount(ctx, mColor, mAlpha);
+    ctx.restore();
+
+    // Weapon firing animation (below the module icon)
+    if (cat === 'WEAPON' && mod.weapon) {
+      const w = mod.weapon;
+      if (w.isBeam) {
+        // Beam animation
+        const beamLen = Math.min(previewW * 0.35, 180);
+        const t = (Math.sin(this._time * 0.8) + 1) / 2;
+        ctx.save();
+        ctx.translate(pcx, pcy - 60);
+        ctx.shadowColor = CYAN;
+        ctx.shadowBlur = 12 * t;
+        ctx.strokeStyle = CYAN;
+        ctx.globalAlpha = 0.2 + 0.7 * t;
+        ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(-beamLen, 0); ctx.lineTo(beamLen, 0); ctx.stroke();
+        ctx.globalAlpha = 0.5 + 0.5 * t;
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = WHITE;
+        ctx.beginPath(); ctx.moveTo(-beamLen, 0); ctx.lineTo(beamLen, 0); ctx.stroke();
+        ctx.restore();
+      } else {
+        // Projectile animation
+        const travelW = Math.min(previewW * 0.5, 260);
+        const speed = 140;
+        const xOff = ((this._time * speed) % travelW) - travelW / 2;
+        const projLen = Math.max(6, 5 * 3);
+        const projColor = AMBER;
+        ctx.save();
+        ctx.translate(pcx + xOff, pcy - 60);
+        // Trail
+        const grad = ctx.createLinearGradient(-projLen * 4, 0, 0, 0);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(1, projColor + '88');
+        ctx.fillStyle = grad;
+        ctx.fillRect(-projLen * 4, -1, projLen * 4, 2);
+        // Bolt
+        ctx.shadowColor = projColor;
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = WHITE;
+        ctx.fillRect(-projLen, -1.5, projLen, 3);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = projColor;
+        ctx.fillRect(-projLen, -1, projLen, 2);
+        ctx.restore();
+      }
+    }
 
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    let cy = pcy - 80;
+    let cy = pcy - 20;
 
     // Category label
     ctx.fillStyle = badgeColor;
@@ -573,7 +925,7 @@ export class Designer {
   _renderPoiPreview(ctx, W, H, pcx, pcy) {
     // Grid
     ctx.save();
-    ctx.strokeStyle = '#0a1520';
+    ctx.strokeStyle = DESIGNER_GRID;
     ctx.lineWidth = 1;
     const gridStep = Math.max(4, 100 * this._zoom);
     const gridOffX = ((this._panX % gridStep) + gridStep) % gridStep;
@@ -588,7 +940,7 @@ export class Designer {
     // Origin crosshair
     const cam = this._makeCam(pcx, pcy);
     const origin = cam.worldToScreen(0, 0);
-    ctx.strokeStyle = '#1a3a50';
+    ctx.strokeStyle = DESIGNER_ORIGIN;
     ctx.setLineDash([3, 6]);
     ctx.beginPath(); ctx.moveTo(PANEL_W, origin.y); ctx.lineTo(W, origin.y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, H); ctx.stroke();
@@ -637,7 +989,7 @@ export class Designer {
 
     // Background grid
     ctx.save();
-    ctx.strokeStyle = '#0a1520';
+    ctx.strokeStyle = DESIGNER_GRID;
     ctx.lineWidth = 1;
     const step = 60;
     for (let x = PANEL_W; x < W; x += step) {
@@ -792,36 +1144,42 @@ export class Designer {
 
   _renderShipStats(ctx, y, def) {
     const ship = this._entity;
+    const COLOR_MAP = { green: GREEN, red: RED, amber: AMBER, cyan: CYAN };
 
     // Controls hint
     ctx.fillStyle = DIM_TEXT;
     ctx.font = "10px 'Fira Mono', monospace";
     ctx.fillText(`T rotate [${this._autoRotate ? 'ON' : 'OFF'}]  •  R reset  •  scroll zoom  •  C compare`, MARGIN, y); y += 20;
 
-    this._header(ctx, 'HULL', y); y += 18;
-    this._row(ctx, 'Hull HP', ship.hullMax, GREEN, y); y += 16;
-    this._row(ctx, 'Cargo', ship.cargoCapacity, AMBER, y); y += 20;
+    // ── Hull & Armor ──
+    this._header(ctx, 'HULL & ARMOR', y); y += 18;
+    for (const r of hullStats(ship)) {
+      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
+    }
+    y += 4;
 
-    this._header(ctx, 'ARMOR ARCS', y); y += 18;
-    this._row(ctx, 'Front', ship.armorArcsMax.front, GREEN, y); y += 16;
-    this._row(ctx, 'Port', ship.armorArcsMax.port, GREEN, y); y += 16;
-    this._row(ctx, 'Starboard', ship.armorArcsMax.starboard, GREEN, y); y += 16;
-    this._row(ctx, 'Aft', ship.armorArcsMax.aft, GREEN, y); y += 20;
+    // ── Mass & Thrust ──
+    this._header(ctx, 'MASS & THRUST', y); y += 18;
+    for (const r of massStats(ship)) {
+      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
+    }
+    y += 4;
 
+    // ── Movement ──
     this._header(ctx, 'MOVEMENT', y); y += 18;
-    this._row(ctx, 'Speed Max', ship.speedMax, AMBER, y); y += 16;
-    this._row(ctx, 'Acceleration', ship.acceleration, AMBER, y); y += 16;
-    this._row(ctx, 'Turn Rate', ship.turnRate.toFixed(2) + ' r/s', AMBER, y); y += 20;
+    for (const r of movementStats(ship)) {
+      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
+    }
+    y += 4;
 
-    this._header(ctx, 'THROTTLE', y); y += 18;
-    ctx.fillStyle = WHITE;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(ship._throttleRatios.join(' / '), MARGIN, y); y += 20;
-
+    // ── Fuel ──
     this._header(ctx, 'FUEL', y); y += 18;
-    this._row(ctx, 'Tank', ship.fuelMax + ' u', AMBER, y); y += 16;
-    this._row(ctx, 'Efficiency', '×' + ship.fuelEfficiency.toFixed(2), AMBER, y); y += 20;
+    for (const r of fuelStats(ship)) {
+      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
+    }
+    y += 4;
 
+    // ── Weapons ──
     if (ship.weapons.length > 0) {
       this._header(ctx, 'WEAPONS', y); y += 18;
       for (const w of ship.weapons) {

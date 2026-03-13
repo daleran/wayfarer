@@ -20,7 +20,7 @@ export class GraveClanAmbusher extends MaverickCourier {
       'Strength: ambush timing, missile punch, high speed. ' +
       'Weakness: fragile hull, commits fully when it attacks — no fallback plan.';
 
-    this.moduleSlots = [new OnyxDriveUnit(), new AutocannonModule(), new RocketPodModule('small', 'heat')];
+    this.moduleSlots = [new OnyxDriveUnit(), new AutocannonModule(), new RocketPodModule('small', 'ht')];
     this._applyModules();
   }
 }
