@@ -4,19 +4,16 @@
 // for temporary entity placement (position scouting — coords logged to console).
 
 import { input } from '@/input.js';
-import { SHIP_REGISTRY, NPC_REGISTRY, createShip } from '@/ships/registry.js';
+import { SHIP_REGISTRY, CHARACTER_REGISTRY, createShip } from '@/ships/registry.js';
 import { STATION_REGISTRY } from '@/world/stationRegistry.js';
 import { createDerelict } from '@/world/derelict.js';
 import { createModuleById } from '@/modules/registry.js';
 import { WEAPON_REGISTRY } from '@/modules/weapons/registry.js';
 import { COMMODITIES } from '@/data/commodities.js';
 import {
-  CYAN, AMBER, GREEN, RED, MAGENTA, WHITE,
-  PANEL_BG, DIM_TEXT, DIM_OUTLINE,
+  CYAN, AMBER, GREEN, MAGENTA,
 } from '@/rendering/colors.js';
-
-const SIDEBAR_W = 240;
-const ITEM_SIDEBAR_W = 260;
+import { EditorHUDBar, EditorSidebar, EditorItemMenu, EditorPanBanner } from '@/ui/editorPanels.js';
 
 // Map editor category label → designer category id
 const DESIGNER_CAT = { SHIPS: 'ships', NPCS: 'ships', STATIONS: 'stations', DERELICTS: 'derelicts' };
@@ -137,12 +134,17 @@ export class EditorOverlay {
     this._itemCats     = _buildItemCategories();
     this._itemFlash    = 0; // flash timer for add confirmation
 
+    // DOM panels
+    this._hudBar     = new EditorHUDBar();
+    this._sidebar    = new EditorSidebar();
+    this._itemMenu   = new EditorItemMenu();
+    this._panBanner  = new EditorPanBanner();
   }
 
   // ── Registry ──────────────────────────────────────────────────────────────
 
   _buildBarItems() {
-    const npcItems = NPC_REGISTRY.map(n => ({
+    const npcItems = CHARACTER_REGISTRY.map(n => ({
       id: n.id,
       label: n.label,
       faction: n.faction,
@@ -338,32 +340,41 @@ export class EditorOverlay {
   render() {
     const game = this._game;
     const ctx  = game.ctx;
-    const W    = game.canvas.width;
-    const H    = game.canvas.height;
 
-    if (this._panMode)   this._renderPanBanner(ctx, W);
+    // Canvas-only: debug overlay (world-space)
     if (this._debugMode > 0) this._renderDebugOverlay(ctx, game, this._debugMode);
-    if (this._barOpen)   this._renderSidebar(ctx, W, H);
-    if (this._itemMenuOpen) this._renderItemMenu(ctx, W, H);
-    this._renderHUDBar(ctx, W, H);
-  }
 
-  // ── Pan mode banner ───────────────────────────────────────────────────────
+    // DOM panels
+    if (this._panMode) this._panBanner.show(); else this._panBanner.hide();
 
-  _renderPanBanner(ctx, W) {
-    const bw = 300, bh = 28;
-    const bx = W / 2 - bw / 2;
-    ctx.save();
-    ctx.fillStyle = PANEL_BG;
-    ctx.fillRect(bx, 8, bw, bh);
-    ctx.strokeStyle = MAGENTA;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, 8, bw, bh);
-    ctx.font = "bold 12px 'Fira Mono', monospace";
-    ctx.textAlign = 'center';
-    ctx.fillStyle = MAGENTA;
-    ctx.fillText('PAN MODE  \u2014  ` to exit  \u2014  scroll to zoom', W / 2, 28);
-    ctx.restore();
+    if (this._barOpen) {
+      this._sidebar.show();
+      this._sidebar.update(this._barItems, this._catIdx, this._itemIdx);
+    } else {
+      this._sidebar.hide();
+    }
+
+    if (this._itemMenuOpen) {
+      this._itemMenu.show();
+      this._itemMenu.update(this._itemCats, this._itemCatIdx, this._itemSelIdx, this._itemFlash, this._game.inventory);
+    } else {
+      this._itemMenu.hide();
+    }
+
+    // HUD bar (always visible)
+    const mapParam = new URLSearchParams(location.search).get('map') ?? 'test';
+    const aiFrozen = this._game.aiDisabled;
+    const segments = [
+      { text: '[`: PAN]',      active: this._panMode  },
+      { text: '[V: AI]',       active: aiFrozen, color: aiFrozen ? MAGENTA : undefined },
+      { text: '[=: DEBUG]',    active: this._debugMode > 0 },
+      { text: '[-: OBJECTS]',  active: this._barOpen  },
+      { text: '[[: ITEMS]',    active: this._itemMenuOpen, color: this._itemMenuOpen ? AMBER : undefined },
+      { text: '[Alt: PLACE]',  active: false },
+      { text: '[Z/X/C: SPAWN]', active: false },
+      { text: `[?map=${mapParam}]`, active: false },
+    ];
+    this._hudBar.update(segments);
   }
 
   // ── Debug overlay ─────────────────────────────────────────────────────────
@@ -454,15 +465,8 @@ export class EditorOverlay {
         ctx.fillText(`WT:  --`, ox, oy); oy += 14;
         ctx.fillText(`THT: --`, ox, oy); oy += 14;
 
-        const spdMult  = entity._baseSpeedMax     ? entity.speedMax     / entity._baseSpeedMax     : null;
-        const accMult  = entity._baseAcceleration ? entity.acceleration / entity._baseAcceleration : null;
-        const trnMult  = entity._baseTurnRate     ? entity.turnRate     / entity._baseTurnRate     : null;
-        const mods = [];
-        if (spdMult != null && Math.abs(spdMult - 1) > 0.001) mods.push(`SPD×${spdMult.toFixed(2)}`);
-        if (accMult != null && Math.abs(accMult - 1) > 0.001) mods.push(`ACC×${accMult.toFixed(2)}`);
-        if (trnMult != null && Math.abs(trnMult - 1) > 0.001) mods.push(`TRN×${trnMult.toFixed(2)}`);
-        for (const m of mods) {
-          ctx.fillText(m, ox, oy); oy += 14;
+        if (entity._twRatio != null) {
+          ctx.fillText(`T/W: ${entity._twRatio.toFixed(3)}`, ox, oy);
         }
       }
 
@@ -510,269 +514,6 @@ export class EditorOverlay {
     ctx.restore();
   }
 
-  // ── Object sidebar ────────────────────────────────────────────────────────
-
-  _renderSidebar(ctx, W, H) {
-    const x   = W - SIDEBAR_W;
-    const cat = this._barItems[this._catIdx];
-    const items = cat.items;
-
-    ctx.save();
-
-    // Panel background
-    ctx.fillStyle = 'rgba(0,6,14,0.94)';
-    ctx.fillRect(x, 0, SIDEBAR_W, H);
-    ctx.strokeStyle = CYAN;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, H);
-    ctx.stroke();
-
-    // Category header
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.textAlign = 'left';
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText('\u2190/\u2192 CATEGORY', x + 10, 22);
-
-    ctx.font = "bold 13px 'Fira Mono', monospace";
-    ctx.fillStyle = CYAN;
-    ctx.fillText(cat.label, x + 10, 42);
-
-    // Category indicator dots
-    for (let i = 0; i < this._barItems.length; i++) {
-      ctx.fillStyle = i === this._catIdx ? CYAN : DIM_TEXT;
-      ctx.beginPath();
-      ctx.arc(x + 10 + i * 14, 54, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Divider
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(x + 8, 64);
-    ctx.lineTo(x + SIDEBAR_W - 8, 64);
-    ctx.stroke();
-
-    // Item list
-    ctx.font = "11px 'Fira Mono', monospace";
-    const itemH      = 22;
-    const listTop    = 72;
-    const maxVisible = Math.floor((H - listTop - 52) / itemH);
-    const scrollOff  = Math.max(0, this._itemIdx - Math.floor(maxVisible / 2));
-
-    for (let i = scrollOff; i < Math.min(items.length, scrollOff + maxVisible); i++) {
-      const item       = items[i];
-      const iy         = listTop + (i - scrollOff) * itemH;
-      const isSelected = i === this._itemIdx;
-
-      if (isSelected) {
-        ctx.fillStyle   = 'rgba(0,255,204,0.08)';
-        ctx.fillRect(x + 4, iy - 14, SIDEBAR_W - 8, itemH);
-        ctx.strokeStyle = CYAN;
-        ctx.lineWidth   = 0.5;
-        ctx.strokeRect(x + 4, iy - 14, SIDEBAR_W - 8, itemH);
-      }
-
-      ctx.fillStyle = isSelected ? CYAN : DIM_TEXT;
-      ctx.textAlign = 'left';
-      ctx.fillText(item.label, x + 12, iy);
-
-      // Faction color dot
-      if (item.faction) {
-        const dotColors = { player: GREEN, neutral: AMBER, scavenger: RED };
-        ctx.fillStyle = dotColors[item.faction] ?? WHITE;
-        ctx.beginPath();
-        ctx.arc(x + SIDEBAR_W - 14, iy - 5, 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Selected item stats
-    const selItem = items[this._itemIdx];
-    if (selItem) {
-      const sy = H - 70;
-      ctx.strokeStyle = DIM_OUTLINE;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(x + 8, sy);
-      ctx.lineTo(x + SIDEBAR_W - 8, sy);
-      ctx.stroke();
-
-      ctx.font = "10px 'Fira Mono', monospace";
-      ctx.fillStyle = DIM_TEXT;
-      ctx.textAlign = 'left';
-      ctx.fillText(selItem.stats ?? '', x + 10, sy + 14);
-    }
-
-    // Hint row at bottom
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillStyle = DIM_TEXT;
-    ctx.textAlign = 'left';
-    ctx.fillText('\u2191/\u2193 select   Alt: place', x + 10, H - 36);
-    ctx.fillText('Bksp: open in designer', x + 10, H - 22);
-
-    ctx.restore();
-  }
-
-  // ── Item menu (left sidebar) ──────────────────────────────────────────────
-
-  _renderItemMenu(ctx, _W, H) {
-    const cats = this._itemCats;
-    const cat  = cats[this._itemCatIdx];
-    const items = cat.items;
-    const x = 0;
-    const w = ITEM_SIDEBAR_W;
-
-    ctx.save();
-
-    // Panel background
-    ctx.fillStyle = 'rgba(0,6,14,0.94)';
-    ctx.fillRect(x, 0, w, H);
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x + w, 0);
-    ctx.lineTo(x + w, H);
-    ctx.stroke();
-
-    // Category header
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.textAlign = 'left';
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText('\u2190/\u2192 CATEGORY', x + 10, 22);
-
-    ctx.font = "bold 13px 'Fira Mono', monospace";
-    ctx.fillStyle = AMBER;
-    ctx.fillText(cat.label, x + 10, 42);
-
-    // Category indicator dots
-    for (let i = 0; i < cats.length; i++) {
-      ctx.fillStyle = i === this._itemCatIdx ? AMBER : DIM_TEXT;
-      ctx.beginPath();
-      ctx.arc(x + 10 + i * 14, 54, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Divider
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(x + 8, 64);
-    ctx.lineTo(x + w - 8, 64);
-    ctx.stroke();
-
-    // Item list
-    ctx.font = "11px 'Fira Mono', monospace";
-    const itemH      = 22;
-    const listTop    = 72;
-    const maxVisible = Math.floor((H - listTop - 80) / itemH);
-    const scrollOff  = Math.max(0, this._itemSelIdx - Math.floor(maxVisible / 2));
-
-    for (let i = scrollOff; i < Math.min(items.length, scrollOff + maxVisible); i++) {
-      const item       = items[i];
-      const iy         = listTop + (i - scrollOff) * itemH;
-      const isSelected = i === this._itemSelIdx;
-
-      if (isSelected) {
-        // Flash green briefly on add
-        const flashAlpha = this._itemFlash > 0 ? 0.2 : 0.08;
-        const flashColor = this._itemFlash > 0 ? GREEN : AMBER;
-        ctx.fillStyle = this._itemFlash > 0
-          ? `rgba(0,255,100,${flashAlpha})`
-          : `rgba(255,200,80,${flashAlpha})`;
-        ctx.fillRect(x + 4, iy - 14, w - 8, itemH);
-        ctx.strokeStyle = flashColor;
-        ctx.lineWidth   = 0.5;
-        ctx.strokeRect(x + 4, iy - 14, w - 8, itemH);
-      }
-
-      ctx.fillStyle = isSelected ? AMBER : DIM_TEXT;
-      ctx.textAlign = 'left';
-      ctx.fillText(item.label, x + 12, iy);
-    }
-
-    // Selected item stats
-    const selItem = items[this._itemSelIdx];
-    if (selItem?.stats) {
-      const sy = H - 100;
-      ctx.strokeStyle = DIM_OUTLINE;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(x + 8, sy);
-      ctx.lineTo(x + w - 8, sy);
-      ctx.stroke();
-
-      ctx.font = "10px 'Fira Mono', monospace";
-      ctx.fillStyle = DIM_TEXT;
-      ctx.textAlign = 'left';
-      ctx.fillText(selItem.stats, x + 10, sy + 14);
-    }
-
-    // Inventory summary
-    const inv = this._game.inventory;
-    const sumY = H - 66;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillStyle = DIM_OUTLINE;
-    ctx.beginPath();
-    ctx.moveTo(x + 8, sumY);
-    ctx.lineTo(x + w - 8, sumY);
-    ctx.stroke();
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText(`SCRAP: ${inv.scrap}  FUEL: ${Math.round(inv.fuel)}/${inv.fuelMax}`, x + 10, sumY + 14);
-    ctx.fillText(`MODS: ${inv.modules.length}  WPNS: ${inv.weapons.length}`, x + 10, sumY + 28);
-
-    // Hint row at bottom
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillStyle = DIM_TEXT;
-    ctx.textAlign = 'left';
-    ctx.fillText('\u2191/\u2193 select   Enter: add to cargo', x + 10, H - 12);
-
-    ctx.restore();
-  }
-
-  // ── Bottom HUD bar ────────────────────────────────────────────────────────
-
-  _renderHUDBar(ctx, W, _H) {
-    const barH   = 22;
-    const barY   = 0;
-    const barW   = this._barOpen ? W - SIDEBAR_W : W;
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,6,14,0.92)';
-    ctx.fillRect(0, barY, barW, barH);
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(0, barY + barH);
-    ctx.lineTo(barW, barY + barH);
-    ctx.stroke();
-
-    const mapParam = new URLSearchParams(location.search).get('map') ?? 'test';
-    const aiFrozen = this._game.aiDisabled;
-    const segments = [
-      { text: '[`: PAN]',      active: this._panMode  },
-      { text: '[V: AI]',       active: aiFrozen, color: aiFrozen ? MAGENTA : undefined },
-      { text: '[=: DEBUG]',    active: this._debugMode },
-      { text: '[-: OBJECTS]',  active: this._barOpen  },
-      { text: '[[: ITEMS]',    active: this._itemMenuOpen, color: this._itemMenuOpen ? AMBER : undefined },
-      { text: '[Alt: PLACE]',  active: false },
-      { text: '[Z/X/C: SPAWN]', active: false },
-      { text: `[?map=${mapParam}]`, active: false },
-    ];
-
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.textAlign = 'left';
-    let cx = 10;
-    for (const seg of segments) {
-      ctx.fillStyle = seg.active ? CYAN : (seg.color ?? DIM_TEXT);
-      ctx.fillText(seg.text, cx, barY + 15);
-      cx += ctx.measureText(seg.text).width + 14;
-    }
-
-    ctx.restore();
-  }
 }
 
 // Wrap a string to maxLen characters per line

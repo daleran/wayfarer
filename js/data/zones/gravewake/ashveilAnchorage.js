@@ -237,7 +237,7 @@ const LAYOUT = {
       label:       'Repair Bay',
       description: 'Structural and armor work. Engine overhauls available.',
       services:    ['repair', 'reactor'],
-      worldOffset: { x: -50, y: 30 },
+      worldOffset: { x: -50, y: 33 },
       flavor: [
         'ASHVEIL ANCHORAGE — OPEN PORT',
         '',
@@ -253,7 +253,7 @@ const LAYOUT = {
       label:       'Trade Post',
       description: 'Outbound cargo accepted. Inbound prices reflect the run.',
       services:    ['trade'],
-      worldOffset: { x: 42, y: 20 },
+      worldOffset: { x: 70, y: 22 },
       flavor: [
         '[ TRADE POST ]',
         '',
@@ -266,7 +266,7 @@ const LAYOUT = {
       label:       'Bounty Board',
       description: 'Posted contracts from Anchorage operators.',
       services:    ['bounties'],
-      worldOffset: { x: 98, y: -20 },
+      worldOffset: { x: 120, y: -16 },
       flavor: [],
       requiredStanding: null,
     },
@@ -275,7 +275,7 @@ const LAYOUT = {
       label:       'Intel',
       description: 'Station intelligence and local knowledge.',
       services:    ['intel'],
-      worldOffset: { x: -82, y: -40 },
+      worldOffset: { x: -120, y: -10 },
       flavor: [],
       requiredStanding: null,
     },
@@ -284,7 +284,7 @@ const LAYOUT = {
       label:       'Relations',
       description: 'Faction standings.',
       services:    ['relations'],
-      worldOffset: { x: 0, y: -60 },
+      worldOffset: { x: -50, y: -50 },
       flavor: [],
       requiredStanding: null,
     },
@@ -328,6 +328,16 @@ export const AshveilAnchorage = {
     'reflect the difficulty of the run.',
   ],
   layout: LAYOUT,
+  conversations: {
+    hub: 'ashveilHub',
+    zones: {
+      'repair-bay':  'ashveilDock',
+      'trade-post':  'ashveilTrade',
+      bounties:      'ashveilBounties',
+      intel:         'ashveilIntel',
+      relations:     'ashveilRelations',
+    },
+  },
   bountyContracts: [
     {
       id: 'ashveil_b1', type: 'kill',

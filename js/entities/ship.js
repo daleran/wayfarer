@@ -4,11 +4,13 @@ import { trail as drawTrail, FLAVOR, PROMPT } from '@/rendering/draw.js';
 import { drawEmptyMount, drawMountHighlight } from '@/rendering/moduleVisuals.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL, BASE_CARGO,
-         BASE_ARMOR, BASE_FUEL_MAX, BASE_FUEL_EFFICIENCY,
+         BASE_ARMOR, BASE_FUEL_MAX,
          THROTTLE_LEVELS, THROTTLE_RATIOS,
          BASE_HULL_WEIGHT, FUEL_WEIGHT_PER_UNIT,
+         REFERENCE_TW,
          TW_ACCEL_SENSITIVITY, TW_SPEED_SENSITIVITY, TW_TURN_SENSITIVITY,
-         TW_MULT_MIN, TW_MULT_MAX } from '@data/compiledData.js';
+         TW_MULT_MIN, TW_MULT_MAX,
+         SLOT_CARGO_SMALL, SLOT_CARGO_LARGE, CARGO_EXPANSION_MULT } from '@data/compiledData.js';
 
 const TRAIL_MAX_POINTS = 120;
 
@@ -21,6 +23,7 @@ export class Ship extends Entity {
     this.faction = 'neutral';
     this.relation = 'none';   // 'none' | 'player' | 'friendly' | 'neutral' | 'hostile' | 'enemy'
     this.ai = null;            // set to { ...AI_TEMPLATES.x } in subclass constructors
+    this.captain = null;       // Character instance piloting this ship (null = unmanned)
     this.shipType = null;
 
     // Quad-arc armor: front (bow), port (left), starboard (right), aft (stern)
@@ -60,12 +63,12 @@ export class Ship extends Entity {
     this.throttleLevel   = 0;
     this._throttleRatios = [...THROTTLE_RATIOS];
 
-    // Cargo
-    this.cargoCapacity = 50;
+    // Cargo — base value; actual capacity computed by get cargoCapacity()
+    this._baseCargo = BASE_CARGO;
 
     // Fuel
     this.fuelMax = BASE_FUEL_MAX;
-    this.fuelEfficiency = BASE_FUEL_EFFICIENCY;
+    this.fuelEfficiency = 1.0;
 
     // Capabilities (set by modules)
     this.capabilities = {
@@ -103,6 +106,7 @@ export class Ship extends Entity {
     this.salvaged = false;
     this.loreText = null;
     this.interactionRadius = 0;
+    this.flavorText = '';
     this.isNearby = false;
     this.canSalvage = false;
     this._salvageBayActive = false;
@@ -260,6 +264,25 @@ export class Ship extends Entity {
     return this.crew === 0;
   }
 
+  get cargoCapacity() {
+    const mounts = this._mountPoints;
+    const slots = this.moduleSlots;
+    if (!mounts || !slots) return this._baseCargo;
+    let total = this._baseCargo;
+    for (let i = 0; i < slots.length; i++) {
+      const mount = mounts[i];
+      if (!mount) continue;
+      const slotValue = mount.size === 'large' ? SLOT_CARGO_LARGE : SLOT_CARGO_SMALL;
+      const mod = slots[i];
+      if (!mod) {
+        total += slotValue;
+      } else if (mod.isCargoExpansion) {
+        total += slotValue * CARGO_EXPANSION_MULT;
+      }
+    }
+    return total;
+  }
+
   get effectiveSpeedMax() {
     const ratio = this.hullCurrent / this.hullMax;
     if (ratio <= 0.05) return this.speedMax * 0.1;
@@ -310,41 +333,31 @@ export class Ship extends Entity {
   }
 
   /**
-   * Initialize all stat fields from multiplier config.
-   * @param {{ speed: number, accel: number, turn: number, hull: number, weight?: number, cargo?: number, fuelMax?: number, fuelEff?: number, armorFront?: number, armorSide?: number, armorAft?: number }} opts
+   * Initialize hull stat fields from multiplier config.
+   * Movement stats (speed, accel, turn) and fuel efficiency are engine-derived via recalcTW().
+   * @param {{ hull: number, weight?: number, cargo?: number, fuelMax?: number, armorFront?: number, armorSide?: number, armorAft?: number }} opts
    */
-  _initStats({ speed, accel, turn, hull, weight, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft }) {
-    this.speedMax      = BASE_SPEED        * speed * SPEED_FACTOR;
-    this.acceleration  = BASE_ACCELERATION * accel * SPEED_FACTOR;
-    this.turnRate      = BASE_TURN_RATE    * turn  * SPEED_FACTOR;
+  _initStats({ hull, weight, cargo, fuelMax, armorFront, armorSide, armorAft }) {
     this.hullMax       = BASE_HULL * hull;
     this.hullCurrent   = this.hullMax;
     if (weight !== undefined) this.baseWeight    = BASE_HULL_WEIGHT * weight;
-    if (cargo !== undefined)  this.cargoCapacity  = BASE_CARGO * cargo;
+    if (cargo !== undefined)  this._baseCargo      = BASE_CARGO * cargo;
     if (fuelMax !== undefined) this.fuelMax        = BASE_FUEL_MAX * fuelMax;
-    if (fuelEff !== undefined) this.fuelEfficiency = BASE_FUEL_EFFICIENCY * fuelEff;
     if (armorFront !== undefined) this._initArmorArcs(armorFront, armorSide, armorAft);
   }
 
   // Call at the end of any ship constructor that uses module-based weapons.
   _applyModules() {
-    // Freeze base movement stats before any module effects.
-    this._baseSpeedMax     = this.speedMax;
-    this._baseAcceleration = this.acceleration;
-    this._baseTurnRate     = this.turnRate;
-    this._baseFuelEff      = this.fuelEfficiency;
-
     for (const mod of (this.moduleSlots || [])) {
       if (mod?.onInstall) mod.onInstall(this);
     }
     this.refreshCapabilities();
-
-    // Compute initial T/W ratio — sets _refTwRatio on first call
     this.recalcTW();
   }
 
   /**
    * Recalculate movement stats from thrust-to-weight ratio.
+   * Speed, acceleration, turn rate, and fuel efficiency are purely engine-derived.
    * Call after: module swap, cargo change, salvage, dock, engine damage.
    * @param {number} [fuel] - current fuel (defaults to fuelMax)
    * @param {number} [cargoMass] - total mass of cargo hold contents (defaults to 0)
@@ -373,34 +386,29 @@ export class Ship extends Entity {
     const totalWeight = (this.baseWeight || BASE_HULL_WEIGHT) + moduleWeight + fuelWeight + cargoWeight;
     const twRatio = totalThrust > 0 ? totalThrust / totalWeight : 0;
 
-    // Store ref on first call (construction with stock modules, full fuel, zero cargo)
-    if (this._refTwRatio === undefined) {
-      this._refTwRatio = twRatio;
-    }
-
     // Store current values for UI
     this._twRatio = twRatio;
     this._totalWeight = totalWeight;
     this._totalThrust = totalThrust;
 
-    // Derive movement stats from T/W power curves
-    if (this._refTwRatio > 0 && totalThrust > 0) {
-      const r = twRatio / this._refTwRatio;
-      const clamp = (v) => Math.max(TW_MULT_MIN, Math.min(TW_MULT_MAX, v));
+    // Derive movement stats from T/W power curves against global reference
+    const clamp = (v) => Math.max(TW_MULT_MIN, Math.min(TW_MULT_MAX, v));
 
-      this.speedMax      = (this._baseSpeedMax     ?? this.speedMax)     * clamp(Math.pow(r, TW_SPEED_SENSITIVITY));
-      this.acceleration  = (this._baseAcceleration ?? this.acceleration) * clamp(Math.pow(r, TW_ACCEL_SENSITIVITY));
-      this.turnRate      = (this._baseTurnRate     ?? this.turnRate)     * clamp(Math.pow(r, TW_TURN_SENSITIVITY));
-    } else if (this._refTwRatio > 0) {
-      // No thrust (engine removed / destroyed) → floor values
-      this.speedMax     = (this._baseSpeedMax     ?? this.speedMax)     * TW_MULT_MIN;
-      this.acceleration = (this._baseAcceleration ?? this.acceleration) * TW_MULT_MIN;
-      this.turnRate     = (this._baseTurnRate     ?? this.turnRate)     * TW_MULT_MIN;
+    if (totalThrust > 0) {
+      const r = twRatio / REFERENCE_TW;
+      this.speedMax      = BASE_SPEED        * SPEED_FACTOR * clamp(Math.pow(r, TW_SPEED_SENSITIVITY));
+      this.acceleration  = BASE_ACCELERATION * SPEED_FACTOR * clamp(Math.pow(r, TW_ACCEL_SENSITIVITY));
+      this.turnRate      = BASE_TURN_RATE    * SPEED_FACTOR * clamp(Math.pow(r, TW_TURN_SENSITIVITY));
+    } else {
+      // No thrust (no engine / destroyed) → floor values
+      this.speedMax      = BASE_SPEED        * SPEED_FACTOR * TW_MULT_MIN;
+      this.acceleration  = BASE_ACCELERATION * SPEED_FACTOR * TW_MULT_MIN;
+      this.turnRate      = BASE_TURN_RATE    * SPEED_FACTOR * TW_MULT_MIN;
     }
 
-    // Fuel efficiency from engine
+    // Fuel efficiency purely from engine
     if (hasEngine) {
-      this.fuelEfficiency = (this._baseFuelEff ?? BASE_FUEL_EFFICIENCY) * fuelEffMult;
+      this.fuelEfficiency = fuelEffMult;
     }
   }
 

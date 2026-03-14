@@ -6,6 +6,7 @@ import { FACTION_MAP } from '@/systems/reputation.js';
 export class Station extends Entity {
   constructor(x, y, data) {
     super(x, y);
+    this.id = data.id ?? null;
     this.name = data.name;
     this.faction = data.faction ?? 'neutral';
     this.relation = data.relation ?? 'neutral';
@@ -16,6 +17,7 @@ export class Station extends Entity {
     this.bounties = [...(data.bountyContracts ?? [])];
     this.canOverhaulReactor = data.canOverhaulReactor ?? false;
     this.layout = data.layout ?? null;
+    this.conversations = data.conversations ?? null;
     this.flavorText = data.flavorText ?? null;
     this.dockingRadius = 150;
     this._navPulse = 0;

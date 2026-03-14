@@ -237,7 +237,7 @@ const LAYOUT = {
       label:       'Fuel Depot & Repairs',
       description: 'Cheap fuel, rationing enforced. Basic hull work only.',
       services:    ['repair'],
-      worldOffset: { x: 0, y: 0 },
+      worldOffset: { x: 90, y: 0 },
       flavor: [
         "KELL'S STOP — OPEN PORT",
         '',
@@ -256,7 +256,7 @@ const LAYOUT = {
       label:       'Trade Post',
       description: 'Surplus rations, alloys, machine parts.',
       services:    ['trade'],
-      worldOffset: { x: 30, y: 0 },
+      worldOffset: { x: -65, y: -25 },
       flavor: [
         '[ TRADE POST ]',
         '',
@@ -269,7 +269,7 @@ const LAYOUT = {
       label:       'Bounty Board',
       description: 'Contracts posted by local operators.',
       services:    ['bounties'],
-      worldOffset: { x: -20, y: 0 },
+      worldOffset: { x: -65, y: 17 },
       flavor: [
         '[ BOUNTY BOARD ]',
         '',
@@ -282,7 +282,7 @@ const LAYOUT = {
       label:       'Intel',
       description: 'Station history and local intelligence.',
       services:    ['intel'],
-      worldOffset: { x: -40, y: 0 },
+      worldOffset: { x: 0, y: -25 },
       flavor: [],
       requiredStanding: null,
     },
@@ -291,7 +291,7 @@ const LAYOUT = {
       label:       'Relations',
       description: 'Faction standings.',
       services:    ['relations'],
-      worldOffset: { x: 0, y: 0 },
+      worldOffset: { x: 0, y: 52 },
       flavor: [],
       requiredStanding: null,
     },
@@ -333,6 +333,16 @@ export const KellsStop = {
     "Don't expect it fast.",
   ],
   layout: LAYOUT,
+  conversations: {
+    hub: 'kellHub',
+    zones: {
+      dock:      'kellDock',
+      bounties:  'kellBounties',
+      intel:     'kellIntel',
+      trade:     'kellTrade',
+      relations: 'kellRelations',
+    },
+  },
   bountyContracts: [
     {
       id: 'kells_b1', type: 'kill',

@@ -185,7 +185,8 @@ export const MINIMAP_DERELICT = AMBER;
 
 // Designer harness
 export const DESIGNER_BG           = '#000810';
-export const DESIGNER_CROSSHAIR    = '#0d1e2e';
-export const DESIGNER_SCALE_RING   = '#091525';
-export const DESIGNER_GRID         = '#0a1520';
+export const DESIGNER_CROSSHAIR    = '#122840';
+export const DESIGNER_SCALE_RING   = '#122840';
+export const DESIGNER_GRID         = '#152535';
+export const DESIGNER_GRID_LABEL   = '#2a4a60';
 export const DESIGNER_ORIGIN       = '#1a3a50';

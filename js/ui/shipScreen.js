@@ -37,7 +37,7 @@ export class ShipScreen {
 
     // Tooltip
     this._tooltip = document.createElement('div');
-    this._tooltip.className = 'ship-tooltip';
+    this._tooltip.className = 'panel-tooltip ship-tooltip';
     document.body.appendChild(this._tooltip);
 
     // Prevent clicks on DOM panel from reaching canvas
@@ -729,12 +729,12 @@ export class ShipScreen {
     tt.innerHTML = '';
     for (const { label, value, cls } of rows) {
       const row = document.createElement('div');
-      row.className = 'ship-tooltip-row';
+      row.className = 'panel-tooltip-row ship-tooltip-row';
       const l = document.createElement('span');
-      l.className = 'ship-tooltip-label';
+      l.className = 'panel-tooltip-label ship-tooltip-label';
       l.textContent = label;
       const v = document.createElement('span');
-      v.className = `ship-tooltip-value${cls ? ' ' + cls : ''}`;
+      v.className = `panel-tooltip-value ship-tooltip-value${cls ? ' ' + cls : ''}`;
       v.textContent = value;
       row.appendChild(l);
       row.appendChild(v);

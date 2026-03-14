@@ -18,7 +18,36 @@
   --p-surface:   rgba(0,8,16,0.92);
   --p-border:    rgba(0,255,204,0.28);
   --p-accent:    #00ffcc;
+
+  /* Typography tiers */
+  --p-text:      13px;
+  --p-title:     16px;
+  --p-small:     11px;
 }
+
+/* ── Text color utilities ──────────────────────────────────────────────────── */
+
+.t-cyan     { color: var(--p-cyan); }
+.t-amber    { color: var(--p-amber); }
+.t-green    { color: var(--p-green); }
+.t-red      { color: var(--p-red); }
+.t-magenta  { color: var(--p-magenta); }
+.t-white    { color: var(--p-white); }
+.t-dim      { color: var(--p-dim); }
+.t-very-dim { color: var(--p-very-dim); }
+
+/* ── Typography patterns ───────────────────────────────────────────────────── */
+
+.p-heading    { font-size: var(--p-title); font-weight: bold; text-transform: uppercase; letter-spacing: 0.12em; }
+.p-subheading { font-size: var(--p-text); font-weight: bold; text-transform: uppercase; letter-spacing: 0.08em; }
+.p-text       { font-size: var(--p-text); }
+.p-label      { font-size: var(--p-text); text-transform: uppercase; letter-spacing: 0.08em; }
+.p-hint       { font-size: var(--p-text); color: var(--p-very-dim); }
+.p-small      { font-size: var(--p-small); }
+.p-bold       { font-weight: bold; }
+.p-upper      { text-transform: uppercase; }
+.p-italic     { font-style: italic; }
+.p-wide       { letter-spacing: 0.08em; }
 
 /* ── Base panel frame ───────────────────────────────────────────────────────── */
 
@@ -69,7 +98,7 @@
 }
 
 .panel-title {
-  font-size: 14px;
+  font-size: var(--p-title);
   font-weight: bold;
   color: var(--p-cyan);
   letter-spacing: 0.12em;
@@ -77,13 +106,13 @@
 }
 
 .panel-subtitle {
-  font-size: 10px;
+  font-size: var(--p-text);
   color: var(--p-dim);
   letter-spacing: 0.05em;
 }
 
 .panel-hint {
-  font-size: 10px;
+  font-size: var(--p-text);
   color: var(--p-very-dim);
   white-space: nowrap;
 }
@@ -91,7 +120,7 @@
 /* ── Section titles ─────────────────────────────────────────────────────────── */
 
 .panel-section-title {
-  font-size: 11px;
+  font-size: var(--p-text);
   font-weight: bold;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -116,7 +145,7 @@
   padding: 6px 10px;
   pointer-events: none;
   font-family: 'Fira Mono', monospace;
-  font-size: 9px;
+  font-size: var(--p-small);
   min-width: 140px;
   max-width: 260px;
   opacity: 0;
@@ -157,7 +186,8 @@
   background: transparent;
   border: 1px solid var(--p-very-dim);
   color: var(--p-dim);
-  font: 10px 'Fira Mono', monospace;
+  font-family: 'Fira Mono', monospace;
+  font-size: var(--p-text);
   letter-spacing: 0.05em;
   padding: 5px 10px;
   cursor: pointer;
@@ -184,14 +214,14 @@
 /* ── Stat row (label / value pair) ──────────────────────────────────────────── */
 
 .panel-stat-label {
-  font-size: 9px;
+  font-size: var(--p-small);
   color: var(--p-very-dim);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .panel-stat-value {
-  font-size: 12px;
+  font-size: var(--p-text);
   color: var(--p-amber);
 }
 
@@ -202,7 +232,7 @@
 /* ── Flavor / body text ─────────────────────────────────────────────────────── */
 
 .panel-flavor {
-  font-size: 11px;
+  font-size: var(--p-text);
   line-height: 1.7;
   color: var(--p-dim);
 }
@@ -233,7 +263,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--p-text);
   color: var(--p-white);
   letter-spacing: 0.05em;
 }

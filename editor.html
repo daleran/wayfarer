@@ -6,18 +6,23 @@
   <title>Wayfarer — Editor</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/panel.css">
-  <link rel="stylesheet" href="css/location.css">
+  <link rel="stylesheet" href="css/narrative.css">
   <link rel="stylesheet" href="css/hud.css">
   <link rel="stylesheet" href="css/hudBottom.css">
   <link rel="stylesheet" href="css/ship.css">
+  <link rel="stylesheet" href="css/editor.css">
 </head>
 <body>
+  <div id="editor-hud-bar" class="editor-hidden"></div>
+  <div id="editor-sidebar" class="editor-hidden"></div>
+  <div id="editor-item-menu" class="editor-hidden"></div>
+  <div id="editor-pan-banner" class="editor-hidden"></div>
   <canvas id="game"></canvas>
   <div id="hud-kill-log"></div>
   <div id="hud-pickup-container"></div>
   <div id="hud-bottom"></div>
   <div id="ship-panel" class="panel-base"></div>
-  <div id="location-overlay" class="location-overlay panel-base hidden"></div>
+  <div id="narrative-panel" class="panel-base hidden"></div>
   <script type="module" src="js/editor-main.js"></script>
 </body>
 </html>

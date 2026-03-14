@@ -6,6 +6,8 @@ import { OnyxClassTug }         from './classes/onyxTug.js';
 import { MaverickCourier }      from './classes/maverickCourier.js';
 import { G100ClassHauler }      from './classes/g100Hauler.js';
 import { GarrisonFrigate }      from './classes/garrisonFrigate.js';
+import { DroneControlHull }     from './classes/droneControlHull.js';
+import { SnatcHerDroneHull }    from './classes/snatcHerDroneHull.js';
 import { createHullbreaker }    from './player/hullbreaker.js';
 import { createLightFighter }   from '@/npcs/scavengers/lightFighter.js';
 import { createArmedHauler }    from '@/npcs/scavengers/armedHauler.js';
@@ -45,19 +47,32 @@ export const SHIP_REGISTRY = [
     file: 'js/ships/classes/garrisonFrigate.js',
     create: (x, y) => new GarrisonFrigate(x, y),
   },
+  {
+    id: 'drone-control-hull',
+    label: 'Drone Control Hull',
+    file: 'js/ships/classes/droneControlHull.js',
+    create: (x, y) => new DroneControlHull(x, y),
+  },
+  {
+    id: 'snatcher-drone-hull',
+    label: 'Snatcher Drone Hull',
+    file: 'js/ships/classes/snatcHerDroneHull.js',
+    create: (x, y) => new SnatcHerDroneHull(x, y),
+  },
 ];
 
-// ── NPC roster ─────────────────────────────────────────────────────────────────
-// Configured actor instantiations: a specific ship + faction + AI behavior + identity.
-// shipClass references a SHIP_REGISTRY id (the hull this NPC is built on).
+// ── Character roster ────────────────────────────────────────────────────────────
+// Each entry is a named ship instance (hull + modules) paired with its character.
+// hullClass references a SHIP_REGISTRY id (the hull type this ship is built on).
+// unmanned: true means the ship is an autonomous machine (no Character instance).
 
-export const NPC_REGISTRY = [
+export const CHARACTER_REGISTRY = [
   {
     id: 'hullbreaker',
     label: 'Hullbreaker',
     faction: 'player',
     behavior: 'player',
-    shipClass: 'onyx-tug',
+    hullClass: 'onyx-tug',
     file: 'js/ships/player/hullbreaker.js',
     create: (x, y) => createHullbreaker(x, y),
   },
@@ -66,7 +81,7 @@ export const NPC_REGISTRY = [
     label: 'Light Fighter',
     faction: 'scavenger',
     behavior: 'stalker',
-    shipClass: 'maverick-courier',
+    hullClass: 'maverick-courier',
     file: 'js/npcs/scavengers/lightFighter.js',
     create: (x, y) => createLightFighter(x, y),
   },
@@ -75,7 +90,7 @@ export const NPC_REGISTRY = [
     label: 'Armed Hauler',
     faction: 'scavenger',
     behavior: 'kiter',
-    shipClass: 'g100-hauler',
+    hullClass: 'g100-hauler',
     file: 'js/npcs/scavengers/armedHauler.js',
     create: (x, y) => createArmedHauler(x, y),
   },
@@ -84,7 +99,7 @@ export const NPC_REGISTRY = [
     label: 'Salvage Mothership',
     faction: 'scavenger',
     behavior: 'standoff',
-    shipClass: 'garrison-frigate',
+    hullClass: 'garrison-frigate',
     file: 'js/npcs/scavengers/salvageMothership.js',
     create: (x, y) => createSalvageMothership(x, y),
   },
@@ -93,7 +108,7 @@ export const NPC_REGISTRY = [
     label: 'Grave-Clan Ambusher',
     faction: 'scavenger',
     behavior: 'lurker',
-    shipClass: 'maverick-courier',
+    hullClass: 'maverick-courier',
     file: 'js/npcs/scavengers/graveClanAmbusher.js',
     create: (x, y) => createGraveClanAmbusher(x, y),
   },
@@ -102,7 +117,7 @@ export const NPC_REGISTRY = [
     label: 'Trader Convoy',
     faction: 'neutral',
     behavior: 'trader',
-    shipClass: 'g100-hauler',
+    hullClass: 'g100-hauler',
     file: 'js/npcs/settlements/traderConvoy.js',
     create: (x, y) => createTraderConvoy(x, y),
   },
@@ -111,7 +126,7 @@ export const NPC_REGISTRY = [
     label: 'Militia Patrol',
     faction: 'neutral',
     behavior: 'militia',
-    shipClass: 'garrison-frigate',
+    hullClass: 'garrison-frigate',
     file: 'js/npcs/settlements/militiaPatrol.js',
     create: (x, y) => createMilitiaPatrol(x, y),
   },
@@ -120,7 +135,8 @@ export const NPC_REGISTRY = [
     label: 'Drone Control Frigate',
     faction: 'concord',
     behavior: 'standoff',
-    shipClass: 'garrison-frigate',
+    unmanned: true,
+    hullClass: 'drone-control-hull',
     file: 'js/npcs/concord/droneControlFrigate.js',
     create: (x, y) => createDroneControlFrigate(x, y),
   },
@@ -128,19 +144,26 @@ export const NPC_REGISTRY = [
     id: 'snatcher-drone',
     label: 'Snatcher Drone',
     faction: 'concord',
-    behavior: 'stalker',
-    shipClass: 'maverick-courier',
+    behavior: 'latch',
+    unmanned: true,
+    hullClass: 'snatcher-drone-hull',
     file: 'js/npcs/concord/snatcHerDrone.js',
     create: (x, y) => createSnatcHerDrone(x, y),
   },
 ];
 
+// Backward-compat alias
+export const NPC_REGISTRY = CHARACTER_REGISTRY;
+
 // ── Lookup helpers ─────────────────────────────────────────────────────────────
 
-export function createShip(id, x, y) {
-  const entry = NPC_REGISTRY.find(n => n.id === id);
-  if (!entry) throw new Error(`Unknown NPC id: ${id}`);
+export function createActor(id, x, y) {
+  const entry = CHARACTER_REGISTRY.find(n => n.id === id);
+  if (!entry) throw new Error(`Unknown character id: ${id}`);
   const ship = entry.create(x, y);
   if (!ship.name) ship.name = generateShipName(entry.faction);
   return ship;
 }
+
+// Backward-compat alias
+export const createShip = createActor;

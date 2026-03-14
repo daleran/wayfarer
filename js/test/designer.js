@@ -4,8 +4,8 @@
 
 import { input } from '@/input.js';
 
-// Ships and NPCs — imported from central registry
-import { SHIP_REGISTRY, NPC_REGISTRY } from '@/ships/registry.js';
+// Ships and Characters — imported from central registry
+import { SHIP_REGISTRY, CHARACTER_REGISTRY } from '@/ships/registry.js';
 
 // Stations — imported from central registry
 import { STATION_REGISTRY } from '@/world/stationRegistry.js';
@@ -30,56 +30,59 @@ import { PaleWitness }     from '@/data/ships/named/paleWitness.js';
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
   DIM_TEXT, DIM_OUTLINE, VERY_DIM, conditionColor,
-  DESIGNER_BG, DESIGNER_CROSSHAIR, DESIGNER_SCALE_RING, DESIGNER_GRID, DESIGNER_ORIGIN,
+  DESIGNER_BG, DESIGNER_CROSSHAIR, DESIGNER_SCALE_RING, DESIGNER_GRID, DESIGNER_GRID_LABEL, DESIGNER_ORIGIN,
 } from '@/rendering/colors.js';
-import { hullStats, massStats, movementStats, fuelStats, moduleTooltipRows } from '@/ui/shipStats.js';
+import { moduleTooltipRows } from '@/ui/shipStats.js';
 import { drawEmptyMount } from '@/rendering/moduleVisuals.js';
+import { DesignerPanel } from '@/ui/designerPanel.js';
 
 // ─── SHIP GROUPING ────────────────────────────────────────────────────────────
 // Reorders the flat registry so each variant follows its parent class.
 
-function _buildShipItems() {
-  // Hulls first (no parent), then NPCs grouped under their hull via shipClass.
-  const flat = [
-    ...SHIP_REGISTRY.map(s => ({
-      id: s.id,
-      label: s.label,
-      file: s.file,
-      type: 'ship',
-      parentClass: null,
-      isVariant: false,
-      create: () => s.create(0, 0),
-    })),
-    ...NPC_REGISTRY.map(n => ({
-      id: n.id,
-      label: n.label,
+function _buildShipClassItems() {
+  return SHIP_REGISTRY.map(s => ({
+    id: s.id,
+    label: s.label,
+    file: s.file,
+    type: 'ship',
+    isVariant: false,
+    create: () => s.create(0, 0),
+  }));
+}
+
+function _buildNamedShipItems() {
+  return CHARACTER_REGISTRY.map(n => ({
+    id: n.id,
+    label: n.label,
+    file: n.file,
+    type: 'ship',
+    parentClass: n.hullClass,
+    isVariant: true,
+    create: () => n.create(0, 0),
+  }));
+}
+
+function _buildCharacterItems() {
+  return CHARACTER_REGISTRY.filter(n => !n.unmanned).map(n => {
+    const ship = n.create(0, 0);
+    const captain = ship.captain;
+    return {
+      id: `char-${n.id}`,
+      label: captain?.name || n.label,
       file: n.file,
-      type: 'ship',
-      parentClass: n.shipClass,
-      isVariant: false,
+      type: 'character',
+      flavorText: captain?.flavorText ?? null,
+      shipFlavorText: ship.flavorText ?? null,
       create: () => n.create(0, 0),
-    })),
-  ];
-
-  const result = [];
-  const added = new Set();
-
-  for (const item of flat) {
-    if (added.has(item.id) || item.parentClass) continue;
-    result.push(item);
-    added.add(item.id);
-    for (const child of flat) {
-      if (child.parentClass === item.id && !added.has(child.id)) {
-        result.push({ ...child, isVariant: true });
-        added.add(child.id);
-      }
-    }
-  }
-  // Orphans (parentClass set but parent missing — shouldn't happen normally)
-  for (const item of flat) {
-    if (!added.has(item.id)) result.push(item);
-  }
-  return result;
+      characterInfo: {
+        Name: captain?.name || n.label,
+        Faction: n.faction,
+        Behavior: n.behavior,
+        Ship: ship.name || n.label,
+        'Hull Class': n.hullClass,
+      },
+    };
+  });
 }
 
 // ─── STATION ITEMS (from registry) ────────────────────────────────────────────
@@ -179,11 +182,23 @@ function _buildDerelictItems() {
 
 // ─── CATEGORY DEFINITIONS ─────────────────────────────────────────────────────
 
+function _isShipCategory(id) { return id === 'ship-classes' || id === 'named-ships'; }
+
 const CATEGORIES = [
   {
-    id: 'ships',
-    label: 'Ships',
-    items: _buildShipItems(),
+    id: 'ship-classes',
+    label: 'Ship Classes',
+    items: _buildShipClassItems(),
+  },
+  {
+    id: 'named-ships',
+    label: 'Named Ships',
+    items: _buildNamedShipItems(),
+  },
+  {
+    id: 'characters',
+    label: 'Characters',
+    items: _buildCharacterItems(),
   },
   {
     id: 'stations',
@@ -240,7 +255,6 @@ const CATEGORIES = [
 // ─── DESIGNER CLASS ───────────────────────────────────────────────────────────
 
 const PANEL_W = 280;
-const MARGIN = 14;
 
 export class Designer {
   constructor() {
@@ -281,6 +295,10 @@ export class Designer {
 
     // Tooltip
     this._tooltip = null;
+
+    // DOM panel
+    /** @type {DesignerPanel|null} */
+    this._panel = null;
   }
 
   // ── Init ────────────────────────────────────────────────────────────────────
@@ -342,7 +360,7 @@ export class Designer {
 
     // Tooltip element
     this._tooltip = document.createElement('div');
-    this._tooltip.className = 'ship-tooltip';
+    this._tooltip.className = 'panel-tooltip ship-tooltip';
     document.body.appendChild(this._tooltip);
 
     // Track mouse for module slot hover
@@ -353,6 +371,8 @@ export class Designer {
       this._mouseY = e.clientY;
       this._updateSlotHover();
     });
+
+    this._panel = new DesignerPanel();
 
     this._load(false);
     this._initComparePanel();
@@ -390,12 +410,12 @@ export class Designer {
     tt.innerHTML = '';
     for (const { label, value, cls } of rows) {
       const row = document.createElement('div');
-      row.className = 'ship-tooltip-row';
+      row.className = 'panel-tooltip-row ship-tooltip-row';
       const l = document.createElement('span');
-      l.className = 'ship-tooltip-label';
+      l.className = 'panel-tooltip-label ship-tooltip-label';
       l.textContent = label;
       const v = document.createElement('span');
-      v.className = `ship-tooltip-value${cls ? ' ' + cls : ''}`;
+      v.className = `panel-tooltip-value ship-tooltip-value${cls ? ' ' + cls : ''}`;
       v.textContent = value;
       row.appendChild(l);
       row.appendChild(v);
@@ -435,6 +455,7 @@ export class Designer {
     this._slotBoxRects = [];
     this._hoveredSlotIdx = -1;
     this._hideTooltip();
+    if (this._panel) this._panel.invalidate();
 
     // Designer preview: no relation context → white silhouette
     if (def.type === 'ship') {
@@ -500,7 +521,7 @@ export class Designer {
     if (input.wasJustPressed('c')) this._toggleCompare();
 
     // T — toggle auto-rotate (ships only)
-    if (input.wasJustPressed('t') && this._cat().id === 'ships') {
+    if (input.wasJustPressed('t') && _isShipCategory(this._cat().id)) {
       this._autoRotate = !this._autoRotate;
     }
 
@@ -517,7 +538,7 @@ export class Designer {
     if (this._autoRotate) this._angle += dt * 0.5;
 
     // POI tick
-    if (this._entity && this._entity.update && this._cat().id !== 'ships') {
+    if (this._entity && this._entity.update && !_isShipCategory(this._cat().id)) {
       this._entity.update(dt);
     }
   }
@@ -541,8 +562,10 @@ export class Designer {
     const pcx = previewX + previewW / 2;
     const pcy = H / 2;
 
-    if (cat.id === 'ships') {
+    if (_isShipCategory(cat.id)) {
       this._renderShipPreview(ctx, W, H, pcx, pcy, def);
+    } else if (def.type === 'character') {
+      this._renderCharacterPreview(ctx, W, H, pcx, pcy, def);
     } else if (def.type === 'weapon') {
       this._renderWeaponPreview(ctx, W, H, pcx, pcy, def);
     } else if (def.type === 'module') {
@@ -551,13 +574,51 @@ export class Designer {
       this._renderPoiPreview(ctx, W, H, pcx, pcy);
     }
 
-    // Left panel
-    this._renderPanel(ctx, W, H, cat, def);
+    // Left panel (DOM)
+    this._panel.update(
+      this._catIdx, CATEGORIES.length, cat.label,
+      this._itemIdx, cat.items.length,
+      def, this._entity,
+      { autoRotate: this._autoRotate, zoom: this._zoom, panX: this._panX, panY: this._panY },
+    );
   }
 
   // ── Ship Preview ─────────────────────────────────────────────────────────────
 
   _renderShipPreview(ctx, W, H, pcx, pcy, def) {
+    // Background grid
+    ctx.save();
+    ctx.strokeStyle = DESIGNER_GRID;
+    ctx.lineWidth = 1;
+    const step = Math.max(4, 50 * this._zoom);
+    const worldStep = 50;
+    const gridOffX = ((this._panX % step) + step) % step;
+    const gridOffY = ((this._panY % step) + step) % step;
+    for (let x = PANEL_W + gridOffX; x < W; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = gridOffY; y < H; y += step) {
+      ctx.beginPath(); ctx.moveTo(PANEL_W, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    // Grid labels (world px from center)
+    ctx.font = "9px 'Fira Mono', monospace";
+    ctx.fillStyle = DESIGNER_GRID_LABEL;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+    for (let x = PANEL_W + gridOffX; x < W; x += step) {
+      const wx = Math.round((x - pcx - this._panX) / this._zoom);
+      const snapped = Math.round(wx / worldStep) * worldStep;
+      ctx.fillText(`${snapped}`, x, 2);
+    }
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    for (let y = gridOffY; y < H; y += step) {
+      const wy = Math.round((y - pcy - this._panY) / this._zoom);
+      const snapped = Math.round(wy / worldStep) * worldStep;
+      ctx.fillText(`${snapped}`, PANEL_W + 3, y);
+    }
+    ctx.restore();
+
     // Crosshair
     ctx.save();
     ctx.strokeStyle = DESIGNER_CROSSHAIR;
@@ -597,6 +658,147 @@ export class Designer {
 
     // Module slot boxes with cyan connection lines
     this._renderModuleSlots(ctx, W, H, pcx, pcy);
+  }
+
+  // ── Character Preview ────────────────────────────────────────────────────────
+
+  _renderCharacterPreview(ctx, W, H, pcx, pcy, def) {
+    const info = def.characterInfo || {};
+
+    // Background grid (subtle)
+    ctx.save();
+    ctx.strokeStyle = DESIGNER_GRID;
+    ctx.lineWidth = 1;
+    const step = 60;
+    for (let x = PANEL_W; x < W; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += step) {
+      ctx.beginPath(); ctx.moveTo(PANEL_W, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // Character portrait placeholder — large monogram circle
+    const FACTION_COLORS = {
+      scavenger: RED, neutral: AMBER, player: GREEN, concord: CYAN,
+    };
+    const factionColor = FACTION_COLORS[info.Faction] ?? WHITE;
+    const initials = (info.Name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+    // Portrait circle
+    const portraitR = 60;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(pcx, pcy - 80, portraitR, 0, Math.PI * 2);
+    ctx.strokeStyle = factionColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fill();
+    ctx.restore();
+
+    // Initials
+    ctx.save();
+    ctx.font = "bold 36px 'Fira Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = factionColor;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(initials, pcx, pcy - 80);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Name
+    ctx.save();
+    ctx.font = "bold 22px 'Fira Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = WHITE;
+    ctx.fillText(info.Name || def.label, pcx, pcy);
+    ctx.restore();
+
+    // Faction badge
+    ctx.save();
+    ctx.font = "bold 11px 'Fira Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = factionColor;
+    ctx.fillText(`[ ${(info.Faction || '').toUpperCase()} ]`, pcx, pcy + 30);
+    ctx.restore();
+
+    // Separator
+    ctx.save();
+    ctx.strokeStyle = DIM_OUTLINE;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pcx - 120, pcy + 52); ctx.lineTo(pcx + 120, pcy + 52);
+    ctx.stroke();
+    ctx.restore();
+
+    // Character info rows
+    const rows = [
+      { label: 'BEHAVIOR', value: info.Behavior },
+      { label: 'SHIP', value: info.Ship },
+      { label: 'HULL', value: info['Hull Class'] },
+    ];
+    let ry = pcy + 66;
+    ctx.save();
+    ctx.font = "10px 'Fira Mono', monospace";
+    ctx.textBaseline = 'top';
+    for (const row of rows) {
+      ctx.textAlign = 'left';
+      ctx.fillStyle = DIM_TEXT;
+      ctx.fillText(row.label, pcx - 100, ry);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = AMBER;
+      ctx.fillText(row.value || '—', pcx + 100, ry);
+      ry += 16;
+    }
+    ctx.restore();
+
+    // Backstory
+    if (def.flavorText) {
+      ry += 10;
+      ctx.save();
+      ctx.strokeStyle = DIM_OUTLINE;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pcx - 120, ry); ctx.lineTo(pcx + 120, ry);
+      ctx.stroke();
+      ctx.restore();
+      ry += 12;
+
+      ctx.save();
+      ctx.font = "10px 'Fira Mono', monospace";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = DIM_TEXT;
+      // Wrap text manually within preview area
+      const maxW = 260;
+      const words = def.flavorText.split(' ');
+      let line = '';
+      for (const word of words) {
+        const test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          ctx.fillText(line, pcx, ry);
+          ry += 13;
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      if (line) ctx.fillText(line, pcx, ry);
+      ctx.restore();
+    }
+
+    // File label
+    ctx.save();
+    ctx.font = "10px 'Fira Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = DIM_TEXT;
+    ctx.fillText(def.file, pcx, 12);
+    ctx.restore();
   }
 
   // ── Module Slot Boxes (ship preview overlay) ─────────────────────────────────
@@ -766,6 +968,21 @@ export class Designer {
     }
     for (let y = 0; y < H; y += step) {
       ctx.beginPath(); ctx.moveTo(PANEL_W, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    // Grid labels (px from center)
+    ctx.font = "9px 'Fira Mono', monospace";
+    ctx.fillStyle = DESIGNER_GRID_LABEL;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+    for (let x = PANEL_W; x < W; x += step) {
+      const px = Math.round(x - pcx);
+      ctx.fillText(`${px}`, x, 2);
+    }
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    for (let y = 0; y < H; y += step) {
+      const px = Math.round(y - pcy);
+      ctx.fillText(`${px}`, PANEL_W + 3, y);
     }
     ctx.restore();
 
@@ -937,6 +1154,25 @@ export class Designer {
       ctx.beginPath(); ctx.moveTo(PANEL_W, y); ctx.lineTo(W, y); ctx.stroke();
     }
 
+    // Grid labels (world-space coordinates)
+    const worldStep = 100; // each grid line = 100 world units
+    ctx.font = "9px 'Fira Mono', monospace";
+    ctx.fillStyle = DESIGNER_GRID_LABEL;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+    for (let x = PANEL_W + gridOffX; x < W; x += gridStep) {
+      const wx = Math.round((x - this._panX - PANEL_W) / this._zoom);
+      const snapped = Math.round(wx / worldStep) * worldStep;
+      ctx.fillText(`${snapped}`, x, 2);
+    }
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    for (let y = gridOffY; y < H; y += gridStep) {
+      const wy = Math.round((y - this._panY) / this._zoom);
+      const snapped = Math.round(wy / worldStep) * worldStep;
+      ctx.fillText(`${snapped}`, PANEL_W + 3, y);
+    }
+
     // Origin crosshair
     const cam = this._makeCam(pcx, pcy);
     const origin = cam.worldToScreen(0, 0);
@@ -997,6 +1233,21 @@ export class Designer {
     }
     for (let y = 0; y < H; y += step) {
       ctx.beginPath(); ctx.moveTo(PANEL_W, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    // Grid labels (px from center)
+    ctx.font = "9px 'Fira Mono', monospace";
+    ctx.fillStyle = DESIGNER_GRID_LABEL;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+    for (let x = PANEL_W; x < W; x += step) {
+      const px = Math.round(x - pcx);
+      ctx.fillText(`${px}`, x, 2);
+    }
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    for (let y = 0; y < H; y += step) {
+      const px = Math.round(y - pcy);
+      ctx.fillText(`${px}`, PANEL_W + 3, y);
     }
     ctx.restore();
 
@@ -1078,321 +1329,6 @@ export class Designer {
     function previewW() { return W - PANEL_W; }
   }
 
-  // ── Stats Panel ──────────────────────────────────────────────────────────────
-
-  _renderPanel(ctx, W, H, cat, def) {
-    // Panel background
-    ctx.fillStyle = 'rgba(0,6,14,0.95)';
-    ctx.fillRect(0, 0, PANEL_W, H);
-    ctx.strokeStyle = DIM_OUTLINE;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(PANEL_W, 0); ctx.lineTo(PANEL_W, H);
-    ctx.stroke();
-
-    ctx.save();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    let y = MARGIN;
-
-    // Header
-    ctx.fillStyle = CYAN;
-    ctx.font = "bold 11px 'Fira Mono', monospace";
-    ctx.fillText('[ DESIGNER ]', MARGIN, y);
-    y += 22;
-
-    this._divider(ctx, y); y += 8;
-
-    // Category breadcrumb
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(`↑↓ category   ← → item`, MARGIN, y); y += 14;
-
-    // Category row
-    ctx.fillStyle = AMBER;
-    ctx.font = "bold 10px 'Fira Mono', monospace";
-    ctx.fillText(`[ ${cat.label.toUpperCase()} ]  ${this._catIdx + 1}/${CATEGORIES.length}`, MARGIN, y); y += 18;
-
-    // Item name (variants shown with ↳ prefix)
-    const displayLabel = def.isVariant ? '↳ ' + def.label : def.label;
-    const nameColor = def.isVariant ? AMBER : WHITE;
-    ctx.fillStyle = nameColor;
-    ctx.font = "bold 13px 'Fira Mono', monospace";
-    y = this._wrapText(ctx, displayLabel, MARGIN, y, PANEL_W - MARGIN * 2, 16, nameColor, "bold 13px 'Fira Mono', monospace");
-    y += 4;
-
-    // Item index
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(`item ${this._itemIdx + 1} / ${cat.items.length}`, MARGIN, y); y += 16;
-
-    this._divider(ctx, y); y += 10;
-
-    // Type-specific stats
-    if (def.type === 'ship') {
-      this._renderShipStats(ctx, y, def);
-    } else if (def.type === 'weapon') {
-      this._renderWeaponStats(ctx, y, def);
-    } else if (def.type === 'module') {
-      this._renderModuleStats(ctx, y, def);
-    } else {
-      this._renderPoiStats(ctx, y, def);
-    }
-
-    ctx.restore();
-  }
-
-  _renderShipStats(ctx, y, def) {
-    const ship = this._entity;
-    const COLOR_MAP = { green: GREEN, red: RED, amber: AMBER, cyan: CYAN };
-
-    // Controls hint
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(`T rotate [${this._autoRotate ? 'ON' : 'OFF'}]  •  R reset  •  scroll zoom  •  C compare`, MARGIN, y); y += 20;
-
-    // ── Hull & Armor ──
-    this._header(ctx, 'HULL & ARMOR', y); y += 18;
-    for (const r of hullStats(ship)) {
-      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
-    }
-    y += 4;
-
-    // ── Mass & Thrust ──
-    this._header(ctx, 'MASS & THRUST', y); y += 18;
-    for (const r of massStats(ship)) {
-      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
-    }
-    y += 4;
-
-    // ── Movement ──
-    this._header(ctx, 'MOVEMENT', y); y += 18;
-    for (const r of movementStats(ship)) {
-      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
-    }
-    y += 4;
-
-    // ── Fuel ──
-    this._header(ctx, 'FUEL', y); y += 18;
-    for (const r of fuelStats(ship)) {
-      this._row(ctx, r.label, r.value, COLOR_MAP[r.cls] ?? WHITE, y); y += 16;
-    }
-    y += 4;
-
-    // ── Weapons ──
-    if (ship.weapons.length > 0) {
-      this._header(ctx, 'WEAPONS', y); y += 18;
-      for (const w of ship.weapons) {
-        const tag = w.isAutoFire ? '[auto]' : w.isSecondary ? '[sec]' : '[pri]';
-        ctx.fillStyle = DIM_TEXT;
-        ctx.font = "10px 'Fira Mono', monospace";
-        ctx.fillText((w.displayName ?? w.constructor.name) + ' ' + tag, MARGIN, y); y += 14;
-        if (w.damage != null || w.armorDamage != null) {
-          const dmg = w.damage ?? w.armorDamage;
-          const detail = [
-            dmg != null ? `${dmg} arm` : null,
-            w.hullDamage != null ? `${w.hullDamage} hull` : null,
-            w.cooldownMax != null ? `${(w.cooldownMax * 1000).toFixed(0)}ms cd` : null,
-            w.maxRange != null ? `${Math.round(w.maxRange)}u rng` : null,
-          ].filter(Boolean).join('  ');
-          ctx.fillStyle = AMBER;
-          ctx.fillText('  ' + detail, MARGIN, y); y += 14;
-        }
-      }
-    }
-
-    this._divider(ctx, y); y += 10;
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(def.file, MARGIN, y);
-    y += 20;
-
-    if (ship.flavorText) {
-      this._divider(ctx, y); y += 10;
-      this._header(ctx, 'LORE', y); y += 16;
-      y = this._wrapText(ctx, ship.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
-    }
-
-    return y;
-  }
-
-  _renderWeaponStats(ctx, y, def) {
-    const w = this._entity;
-
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText('R reset view  •  scroll zoom', MARGIN, y); y += 20;
-
-    this._header(ctx, 'DAMAGE', y); y += 18;
-
-    if (def.isBeam) {
-      this._row(ctx, 'Armor (base)', w.baseDamage + '/s', GREEN, y); y += 16;
-      this._row(ctx, 'Armor (max)', w.maxDamage + '/s', GREEN, y); y += 16;
-      this._row(ctx, 'Ramp time', w.rampTime + 's', AMBER, y); y += 20;
-    } else {
-      const armDmg = w.damage ?? w.armorDamage;
-      if (armDmg != null) { this._row(ctx, 'Armor', armDmg, GREEN, y); y += 16; }
-      if (w.hullDamage != null) { this._row(ctx, 'Hull', w.hullDamage, GREEN, y); y += 16; }
-      if (w.blastRadius != null) { this._row(ctx, 'Blast R', w.blastRadius + 'u', AMBER, y); y += 16; }
-
-      const armDps = (armDmg != null && w.cooldownMax != null) ? (armDmg / w.cooldownMax).toFixed(1) : null;
-      if (armDps != null) { this._row(ctx, 'DPS (armor)', armDps, GREEN, y); y += 16; }
-      y += 4;
-    }
-
-    this._header(ctx, 'PROFILE', y); y += 18;
-    if (w.cooldownMax != null) { this._row(ctx, 'Cooldown', (w.cooldownMax * 1000).toFixed(0) + 'ms', AMBER, y); y += 16; }
-    if (w.cooldown != null && w.cooldownMax == null) { this._row(ctx, 'Cooldown', (w.cooldown * 1000).toFixed(0) + 'ms', AMBER, y); y += 16; }
-    if (w.maxRange != null) { this._row(ctx, 'Range', Math.round(w.maxRange) + 'u', AMBER, y); y += 16; }
-    if (w.projectileSpeed != null) { this._row(ctx, 'Proj spd', Math.round(w.projectileSpeed) + 'u/s', AMBER, y); y += 16; }
-    if (w.ammo != null) { this._row(ctx, 'Ammo', `${w.ammo} / ${w.ammoMax}`, WHITE, y); y += 16; }
-    y += 4;
-
-    if (def.flags && def.flags.length > 0) {
-      this._header(ctx, 'FLAGS', y); y += 18;
-      ctx.fillStyle = MAGENTA;
-      ctx.font = "10px 'Fira Mono', monospace";
-      for (const f of def.flags) {
-        ctx.fillText('  · ' + f, MARGIN, y); y += 14;
-      }
-      y += 4;
-    }
-
-    this._divider(ctx, y); y += 10;
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(def.file, MARGIN, y);
-    y += 20;
-
-    if (def.flavorText) {
-      this._divider(ctx, y); y += 10;
-      this._header(ctx, 'LORE', y); y += 16;
-      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
-    }
-
-    return y;
-  }
-
-  _renderModuleStats(ctx, y, def) {
-    const mod = this._entity;
-    const cat = def.category ?? 'MODULE';
-
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText('← → cycle  •  C compare', MARGIN, y); y += 20;
-
-    // Category badge color
-    const BADGE_COLORS = { ENGINE: AMBER, WEAPON: RED, POWER: GREEN, SENSOR: CYAN };
-    const badgeColor = BADGE_COLORS[cat] ?? WHITE;
-    this._header(ctx, cat, y);
-    ctx.fillStyle = badgeColor;
-    ctx.font = "bold 10px 'Fira Mono', monospace";
-    ctx.fillText(cat, MARGIN, y); y += 18;
-
-    if (mod.isEngine) {
-      this._header(ctx, 'DRIVE STATS', y); y += 18;
-      this._row(ctx, 'Thrust', `${mod.thrust}`, GREEN, y); y += 16;
-      this._row(ctx, 'Weight', `${mod.weight}`, AMBER, y); y += 16;
-      this._row(ctx, 'FuelEff Mult', `×${mod.fuelEffMult.toFixed(2)}`, mod.fuelEffMult > 1 ? RED : GREEN, y); y += 20;
-    } else if (cat === 'WEAPON' && mod.weapon) {
-      this._header(ctx, 'WEAPON STATS', y); y += 18;
-      const w = mod.weapon;
-      const arm = w.damage ?? w.armorDamage;
-      if (arm != null) { this._row(ctx, 'Armor Dmg', arm, GREEN, y); y += 16; }
-      if (w.hullDamage != null) { this._row(ctx, 'Hull Dmg', w.hullDamage, GREEN, y); y += 16; }
-      if (w.cooldownMax != null) { this._row(ctx, 'Cooldown', `${(w.cooldownMax * 1000).toFixed(0)}ms`, AMBER, y); y += 16; }
-      if (w.maxRange != null) { this._row(ctx, 'Range', `${Math.round(w.maxRange)}u`, AMBER, y); y += 16; }
-      y += 4;
-    } else if (cat === 'POWER') {
-      this._header(ctx, 'POWER OUTPUT', y); y += 18;
-      const out = mod.effectivePowerOutput ?? mod.powerOutput;
-      if (out > 0) { this._row(ctx, 'Output', `+${out}W`, GREEN, y); y += 16; }
-      if (mod.overhaulCost) {
-        const interval = mod._overhaulInterval;
-        const hrs = interval ? `every ${(interval / 3600).toFixed(0)}h` : '—';
-        this._row(ctx, 'Overhaul', `${mod.overhaulCost} scrap`, MAGENTA, y); y += 16;
-        this._row(ctx, 'Interval', hrs, MAGENTA, y); y += 16;
-      }
-      y += 4;
-    } else if (cat === 'SENSOR') {
-      this._header(ctx, 'SENSOR CAPS', y); y += 18;
-      if (mod.sensor_range) { this._row(ctx, 'Range', `${mod.sensor_range}u`, CYAN, y); y += 16; }
-      const caps = [];
-      if (mod.minimap_stations) caps.push('stations');
-      if (mod.minimap_ships) caps.push('ships');
-      if (mod.lead_indicators) caps.push('lead');
-      if (mod.health_pips) caps.push('pips');
-      if (mod.salvage_detail) caps.push('salvage');
-      if (caps.length) {
-        ctx.fillStyle = DIM_TEXT; ctx.font = "10px 'Fira Mono', monospace";
-        ctx.fillText('Detects', MARGIN, y);
-        ctx.fillStyle = CYAN; ctx.textAlign = 'right';
-        ctx.fillText(caps.join(' · '), PANEL_W - MARGIN, y);
-        ctx.textAlign = 'left';
-        y += 16;
-      }
-      y += 4;
-    }
-
-    this._header(ctx, 'POWER / FUEL', y); y += 18;
-    const draw = mod.powerDraw ?? 0;
-    const out = mod.powerOutput ?? 0;
-    if (out > 0) { this._row(ctx, 'Pwr Output', `+${out}W`, GREEN, y); y += 16; }
-    if (draw > 0) { this._row(ctx, 'Pwr Draw', `-${draw}W`, MAGENTA, y); y += 16; }
-    const drain = mod.fuelDrainRate ?? 0;
-    if (drain > 0) { this._row(ctx, 'Fuel Drain', `+${drain.toFixed(3)}/s`, AMBER, y); y += 16; }
-    if (draw === 0 && out === 0 && drain === 0) {
-      ctx.fillStyle = DIM_TEXT; ctx.font = "10px 'Fira Mono', monospace";
-      ctx.fillText('  no power or fuel overhead', MARGIN, y); y += 16;
-    }
-    y += 8;
-
-    this._divider(ctx, y); y += 10;
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(def.file, MARGIN, y); y += 20;
-
-    if (mod.description) {
-      this._divider(ctx, y); y += 10;
-      this._header(ctx, 'DESCRIPTION', y); y += 16;
-      y = this._wrapText(ctx, mod.description, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
-    }
-
-    return y;
-  }
-
-  _renderPoiStats(ctx, y, def) {
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText('R reset  •  scroll zoom  •  drag pan', MARGIN, y); y += 20;
-
-    this._header(ctx, 'INFO', y); y += 18;
-    for (const [k, v] of Object.entries(def.info ?? {})) {
-      this._row(ctx, k, String(v), WHITE, y); y += 16;
-    }
-    y += 8;
-
-    // Zoom / pan readout
-    this._divider(ctx, y); y += 10;
-    ctx.fillStyle = AMBER;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.fillText(`Zoom: ${this._zoom.toFixed(3)}×`, MARGIN, y); y += 16;
-    const panWx = -(this._panX / this._zoom);
-    const panWy = -(this._panY / this._zoom);
-    ctx.fillStyle = DIM_TEXT;
-    ctx.fillText(`Pan: (${panWx.toFixed(0)}, ${panWy.toFixed(0)})`, MARGIN, y); y += 20;
-
-    ctx.fillText(def.file, MARGIN, y);
-    y += 20;
-
-    if (def.flavorText) {
-      this._divider(ctx, y); y += 10;
-      this._header(ctx, 'LORE', y); y += 16;
-      y = this._wrapText(ctx, def.flavorText, MARGIN, y, PANEL_W - MARGIN * 2, 13, DIM_TEXT, "10px 'Fira Mono', monospace");
-    }
-
-    return y;
-  }
 
   // ── Compare Panel ─────────────────────────────────────────────────────────────
 
@@ -1489,7 +1425,7 @@ export class Designer {
   _compareColumns(cat) {
     const v = (text, cls) => ({ text: String(text), cls: cls ?? '' });
 
-    if (cat.id === 'ships') {
+    if (_isShipCategory(cat.id)) {
       return [
         { label: 'FACTION', get: (d) => v(d.faction ?? '—', 'cmp-dim') },
         { label: 'HULL', get: (_, e) => v(e.hullMax, 'cmp-white') },
@@ -1570,46 +1506,4 @@ export class Designer {
     return [];
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-
-  _divider(ctx, y) {
-    ctx.fillStyle = DIM_OUTLINE;
-    ctx.fillRect(MARGIN, y, PANEL_W - MARGIN * 2, 1);
-  }
-
-  _header(ctx, label, y) {
-    ctx.fillStyle = CYAN;
-    ctx.font = "bold 10px 'Fira Mono', monospace";
-    ctx.fillText(label, MARGIN, y);
-  }
-
-  _row(ctx, label, value, color, y) {
-    ctx.fillStyle = DIM_TEXT;
-    ctx.font = "10px 'Fira Mono', monospace";
-    ctx.textAlign = 'left';
-    ctx.fillText(label, MARGIN, y);
-    ctx.fillStyle = color;
-    ctx.textAlign = 'right';
-    ctx.fillText(String(value), PANEL_W - MARGIN, y);
-    ctx.textAlign = 'left';
-  }
-
-  _wrapText(ctx, text, x, y, maxW, lineH, color, font) {
-    ctx.fillStyle = color;
-    ctx.font = font;
-    const words = text.split(' ');
-    let line = '';
-    for (const word of words) {
-      const test = line ? line + ' ' + word : word;
-      if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, x, y);
-        y += lineH;
-        line = word;
-      } else {
-        line = test;
-      }
-    }
-    if (line) { ctx.fillText(line, x, y); y += lineH; }
-    return y;
-  }
 }

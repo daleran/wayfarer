@@ -27,6 +27,8 @@ body {
   background: #000;
   overflow: hidden;
   font-family: 'Fira Mono', monospace;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ── Custom scrollbar — vector monitor style ───────────────────────────────── */

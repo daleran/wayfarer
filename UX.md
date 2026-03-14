@@ -241,9 +241,30 @@ Standardized text styles are defined in `js/rendering/draw.js` as named constant
 
 **Usage with raw ctx:** `ctx.font = PROMPT.font; ctx.globalAlpha = PROMPT.alpha;` — use `.font` for pre-built font string, `.alpha` for the standard opacity.
 
-### DOM Text (CSS)
+### DOM Text (CSS Utility System)
 
-DOM panels (station overlay, ship screen, bottom HUD) use CSS with `font-family: 'Fira Mono', monospace` and their own size/weight conventions defined in `css/location.css`, `css/ship.css`, and `css/hudBottom.css`. These are separate from the canvas text styles above.
+DOM panels use a shared CSS utility system defined in `css/panel.css`. Three typography tiers via CSS custom properties:
+
+| Variable | Size | Usage |
+|---|---|---|
+| `--p-text` | 13px | Body text, stat values, choices, dialogue |
+| `--p-title` | 16px | Panel/section titles, station names |
+| `--p-small` | 11px | Tooltips, cargo filters, barter labels, jettison buttons |
+
+**Typography utility classes** (defined in `panel.css`):
+- `.p-heading` — 16px bold uppercase, 0.12em spacing (panel titles)
+- `.p-subheading` — 13px bold uppercase, 0.08em spacing (section headers)
+- `.p-text` — 13px body text
+- `.p-label` — 13px uppercase, 0.08em spacing
+- `.p-hint` — 13px, very-dim color
+- `.p-small` — 11px compact text
+- `.p-bold`, `.p-upper`, `.p-italic`, `.p-wide` — modifiers
+
+**Color utility classes**: `.t-cyan`, `.t-amber`, `.t-green`, `.t-red`, `.t-magenta`, `.t-white`, `.t-dim`, `.t-very-dim`
+
+**Rule:** Never hardcode `px` font sizes in panel CSS. Use `var(--p-text)`, `var(--p-title)`, or `var(--p-small)`. Dev-only tool panels (designer, editor) may use `10px` for compact labels below the standard tiers.
+
+Panel-specific CSS files (`css/ship.css`, `css/narrative.css`, `css/designer.css`, `css/editor.css`) inherit variables and utilities from `panel.css`.
 
 ---
 
@@ -266,14 +287,17 @@ DOM panels (station overlay, ship screen, bottom HUD) use CSS with `font-family:
 - **When docked with station open:** ship panel (left 30%) + station panel (right 30%) + world (middle 40%).
 - Input gating: `stopPropagation` on panel mousedown/click prevents canvas weapon fire.
 
-### Station Panel (`js/ui/locationOverlay.js`, `css/location.css`)
-- **DOM-based right 30% panel** (`#location-overlay`), `height: calc(100vh - 48px)`, left border in cyan. World visible in remaining viewport. Camera centers on docked station.
-- **Two-level nav:** area list → area detail. No map or SVG schematic.
-- **Area list (top level):** Station name, faction badge + standing, flavor text (`station.flavorText`), then clickable area cards. Each card shows area name + short description. Locked areas dimmed with red LOCKED text.
-- **Area detail:** Back button, area name, zone flavor text, horizontal service tab row, scrollable service content below.
-- **Services:** Repair/refuel, trade table, bounty cards, faction relations, reactor overhaul, intel lore.
-- Esc navigates up: service → area list → close.
-- Zone gating by reputation standing (locked areas are non-interactive).
+### Narrative Panel (`js/ui/narrativePanel.js`, `css/narrative.css`)
+- **DOM-based right 30% panel** (`#narrative-panel`), `height: calc(100vh - 48px)`, left border in cyan. World visible in remaining viewport. Camera centers on docked station.
+- **Disco Elysium-style scrolling narrative log** — every interaction is a conversation. No tabs, no generic service panels. Navigation is narrative: zone choices are dialogue options.
+- **Header:** Station name, faction badge, standing, scrap count, `[Esc]` hint.
+- **Log area** (`.np-log`): Scrollable log of entries. Types: `narration` (flavor/title/system), `dialogue` (speaker + text), `action` (player's chosen action in green italic), `result` (outcome in amber/green/red). Entries fade in with 200ms animation.
+- **Choice buttons** (`.np-choices`): Pinned to bottom. Ephemeral — when picked, they become an `action` entry + whatever follows. Disabled choices shown greyed with reason text.
+- **Zone dividers** (`.np-divider`): Thin cyan line + zone label centered. Inserted on zone transitions — log is NOT cleared, entire docking session scrollable.
+- **Barter screen** (`.np-barter`): Renders inline in the log as a special entry. Item rows with +/- quantity controls, confirm/cancel buttons. Greyed out after completion.
+- **Conversation scripts**: Async functions in `js/ui/narrative/conversations/`. Each `await log.choices(...)` to pause for player input. Hub conversations loop zone choices + `[Undock]`.
+- **Esc** closes the panel (and undocks).
+- **Story flags**: `game.storyFlags` (session-only key→value map). First-visit narration, NPC memory, gated dialogue branches.
 
 ### HUD (In-Flight)
 
@@ -462,3 +486,15 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Docked with ship screen:** Left 30% (ship) + right 30% (station) + middle 40% (world).
 - **Station renderers (CC):** AshveilStation custom renderer (~200px colony ship hull, 10 rectangular sections, docked ships, running lights, approach beam). Kell's Stop unchanged (~120px). The Coil unchanged (~300px).
 - **Rationale:** Full-screen overlays broke immersion. Side panels keep the world visible, reinforce spatial context while docked. DOM-based UI is more maintainable than canvas text rendering and supports proper hover/click interactions. Bottom HUD bar clears the center viewport for combat readability.
+
+### 2026-03-14: Narrative Log Panel — Replaces Station UI (CM)
+- **Decision:** Replaced `LocationOverlay` (tabbed service panels) with `NarrativePanel` — a Disco Elysium-style scrolling conversation log where every station interaction is a conversation.
+- **Architecture:** `NarrativePanel` (`js/ui/narrativePanel.js`) orchestrates; `NarrativeLog` (`js/ui/narrativeLog.js`) renders entries/choices/barter; conversation scripts in `js/ui/narrative/conversations/` are async functions.
+- **Entry types:** `narration` (flavor/title/system styles), `dialogue` (speaker + text with character color), `action` (player's chosen action, green italic), `result` (outcome in amber/green/red/cyan). All entries fade in with 200ms animation.
+- **Zone navigation is narrative:** No tab buttons. Hub conversation presents zones as dialogue choices (`[Walk to the fuel bay]`). Zone dividers insert a cyan line + label but DO NOT clear the log — entire docking session is scrollable.
+- **Barter screen:** Inline in the log as a special entry. Item rows with +/- quantity controls, confirm/cancel. Replaces serviceTrade/serviceRepair.
+- **Authored conversations:** Kell's Stop (kellHub, kellDock, kellIntel, kellBounties, kellTrade, kellRelations) and Ashveil Anchorage (ashveilHub, ashveilDock, ashveilTrade, ashveilBounties, ashveilIntel, ashveilRelations). Generic fallbacks for unscripted stations.
+- **Station NPCs:** Each zone has named NPCs with personality — Ansa (Kell's mechanic), Harlan (barkeep), Venn (Ashveil trader), Chief Maro (repair chief), Dara (fixer), Sable (archivist). Speaker colors match faction/personality.
+- **Story flags:** `game.storyFlags = {}` enables first-visit narration, NPC memory, cross-station references. Session-only until save system ships.
+- **Deleted:** `locationOverlay.js`, all 6 `station/service*.js` files, `css/location.css`. Created `css/narrative.css`.
+- **Rationale:** Generic service panels made every station feel identical. Narrative conversations give each station a unique authored voice, support story progression, and create the Disco Elysium-style interaction depth the game targets.

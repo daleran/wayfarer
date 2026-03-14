@@ -25,7 +25,7 @@
 }
 
 .ship-header-name {
-  font-size: 14px;
+  font-size: var(--p-title);
   font-weight: bold;
   color: var(--p-cyan);
   letter-spacing: 0.12em;
@@ -33,13 +33,13 @@
 }
 
 .ship-header-class {
-  font-size: 10px;
+  font-size: var(--p-text);
   color: var(--p-dim);
   letter-spacing: 0.05em;
 }
 
 .ship-header-esc {
-  font-size: 10px;
+  font-size: var(--p-text);
   color: var(--p-very-dim);
 }
 
@@ -52,7 +52,7 @@
 }
 
 .ship-stats-title {
-  font-size: 11px;
+  font-size: var(--p-text);
   font-weight: bold;
   color: var(--p-dim);
   letter-spacing: 0.08em;
@@ -70,7 +70,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 10px;
+  font-size: var(--p-text);
 }
 
 .ship-stat-label {
@@ -102,7 +102,7 @@
 }
 
 .ship-cargo-title {
-  font-size: 11px;
+  font-size: var(--p-text);
   font-weight: bold;
   color: var(--p-dim);
   letter-spacing: 0.08em;
@@ -110,7 +110,7 @@
 }
 
 .ship-cargo-capacity {
-  font-size: 10px;
+  font-size: var(--p-text);
   color: var(--p-cyan);
 }
 
@@ -128,7 +128,8 @@
   background: transparent;
   border: 1px solid var(--p-very-dim);
   color: var(--p-dim);
-  font: 9px 'Fira Mono', monospace;
+  font-family: 'Fira Mono', monospace;
+  font-size: var(--p-small);
   padding: 2px 6px;
   cursor: pointer;
   text-transform: uppercase;
@@ -157,7 +158,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 10px;
+  font-size: var(--p-text);
   padding: 3px 4px;
   border: 1px solid transparent;
   cursor: default;
@@ -201,7 +202,8 @@
   background: transparent;
   border: 1px solid var(--p-very-dim);
   color: var(--p-very-dim);
-  font: 8px 'Fira Mono', monospace;
+  font-family: 'Fira Mono', monospace;
+  font-size: var(--p-small);
   padding: 1px 4px;
   cursor: pointer;
   letter-spacing: 0.05em;
@@ -214,54 +216,16 @@
 }
 
 .ship-cargo-empty {
-  font-size: 10px;
+  font-size: var(--p-text);
   color: var(--p-very-dim);
   padding: 6px 4px;
 }
 
 /* ── Tooltip ──────────────────────────────────────────────────────────────────── */
-/* Uses shared .panel-tooltip from panel.css — ship-specific aliases kept
-   for backwards compat with shipScreen.js DOM class names.                      */
+/* .ship-tooltip reuses .panel-tooltip from panel.css. Class aliases kept
+   for backwards compat with shipScreen.js and designer DOM class names.        */
 
-.ship-tooltip {
-  position: fixed;
-  z-index: 200;
-  background: rgba(0,4,12,0.95);
-  border: 1px solid var(--p-cyan);
-  padding: 6px 10px;
-  pointer-events: none;
-  font-family: 'Fira Mono', monospace;
-  min-width: 140px;
-  max-width: 260px;
-  opacity: 0;
-  transition: opacity 0.08s;
-}
-
-.ship-tooltip.visible {
-  opacity: 1;
-}
-
-.ship-tooltip-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 9px;
-  line-height: 1.6;
-}
-
-.ship-tooltip-label {
-  color: var(--p-dim);
-  white-space: nowrap;
-}
-
-.ship-tooltip-value {
-  color: var(--p-white);
-  text-align: right;
-  white-space: nowrap;
-}
-
-.ship-tooltip-value.green  { color: var(--p-green); }
-.ship-tooltip-value.red    { color: var(--p-red); }
-.ship-tooltip-value.cyan   { color: var(--p-cyan); }
-.ship-tooltip-value.amber  { color: var(--p-amber); }
-.ship-tooltip-value.dim    { color: var(--p-dim); font-style: italic; white-space: normal; text-align: left; }
+.ship-tooltip          { /* extends .panel-tooltip */ }
+.ship-tooltip-row      { /* extends .panel-tooltip-row */ }
+.ship-tooltip-label    { /* extends .panel-tooltip-label */ }
+.ship-tooltip-value    { /* extends .panel-tooltip-value */ }

@@ -468,7 +468,6 @@ class UtilityModule extends ShipModule {
   get armorBonus() { return Math.round(this._armorBonus * this.conditionMultiplier); }
 
   onInstall(ship) {
-    if (this.cargoBonus) ship.cargoCapacity = (ship.cargoCapacity || 0) + this.cargoBonus;
     if (this.fuelBonus)  ship.fuelMax       = (ship.fuelMax || 0)       + this.fuelBonus;
     if (this.armorBonus) {
       for (const arc of ['front', 'port', 'starboard', 'aft']) {
@@ -484,7 +483,6 @@ class UtilityModule extends ShipModule {
   }
 
   onRemove(ship) {
-    if (this.cargoBonus) ship.cargoCapacity = Math.max(0, (ship.cargoCapacity || 0) - this.cargoBonus);
     if (this.fuelBonus)  ship.fuelMax       = Math.max(0, (ship.fuelMax || 0)       - this.fuelBonus);
     if (this.armorBonus) {
       for (const arc of ['front', 'port', 'starboard', 'aft']) {
@@ -508,6 +506,7 @@ export class ExpandedHoldSmall extends UtilityModule {
     super();
     _initUtility(this, 'expanded-hold-s');
     this.description = 'Welded-in cargo frames. More hold space — heavier hull, thinner armor.';
+    this.isCargoExpansion = true;
   }
   drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, AMBER); }
 }
@@ -517,6 +516,7 @@ export class ExpandedHoldLarge extends UtilityModule {
     super();
     _initUtility(this, 'expanded-hold-l');
     this.description = 'Full cargo bay extension. Major capacity gain — significant mass and armor penalty.';
+    this.isCargoExpansion = true;
   }
   drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, AMBER); }
 }

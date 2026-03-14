@@ -1,12 +1,9 @@
 import { Ship } from '@/entities/ship.js';
 import { lines } from '@/rendering/draw.js';
 
-const SPEED_MULT  = 0.85;  // ~71 u/s — decent for its mass
-const ACCEL_MULT  = 0.7;   // heavy, slow to spin up
-const TURN_MULT   = 0.8;   // sluggish
 const HULL_MULT   = 2.5;   // 500 hp — military-grade frame
 const WEIGHT_MULT = 2.0;   // 2000 mass — heavy military frame
-const CARGO_MULT  = 1.5;   // 75 units — some salvage bays
+const CARGO_MULT  = 0.4;   // 20 base — empty slots add cargo capacity
 
 // Armor arc multipliers (× BASE_ARMOR = 100) — military-spec plate
 const ARMOR_FRONT = 2.5;  // 250 — hardened bow
@@ -14,7 +11,6 @@ const ARMOR_SIDE  = 2.0;  // 200 — heavy flank plating
 const ARMOR_AFT   = 1.5;  // 150 — protected stern
 
 const FUEL_MAX_MULT = 2.5; // 250 unit tank — long-range patrol capability
-const FUEL_EFF_MULT = 1.1; // burns at 110% base rate (thirsty engines)
 
 // Garrison-class workhorse frigate. H-profile hull: narrow bow tower, wide
 // rectangular mid-hull, narrow stern block. No elegance, no curves — just
@@ -108,9 +104,8 @@ export class GarrisonFrigate extends Ship {
     this.shipClassName = 'Garrison Class Frigate';
 
     this._initStats({
-      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,
-      fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
+      fuelMax: FUEL_MAX_MULT,
       armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
   }

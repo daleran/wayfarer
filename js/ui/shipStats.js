@@ -62,9 +62,8 @@ export function massStats(ship, opts = {}) {
 
   const totalThrust = ship._totalThrust ?? 0;
   const twRatio = ship._twRatio ?? 0;
-  const refTW = ship._refTwRatio ?? 0;
-  const twPct = refTW > 0 ? Math.round((twRatio / refTW) * 100) : 0;
-  const twCls = twPct >= 100 ? 'green' : twPct >= 80 ? '' : twPct >= 60 ? 'amber' : 'red';
+  const twPct = Math.round(twRatio * 100);
+  const twCls = twRatio >= 1.0 ? 'green' : twRatio >= 0.8 ? '' : twRatio >= 0.5 ? 'amber' : 'red';
 
   rows.push({ label: 'THRUST', value: `${Math.round(totalThrust)}`, cls: 'green' });
   rows.push({ label: 'T/W', value: `${twRatio.toFixed(2)} (${twPct}%)`, cls: twCls });

@@ -1,0 +1,394 @@
+/* ── Narrative Panel — scrolling log panel (right side) ───────────────────────── */
+/* Inherits palette and base patterns from panel.css                              */
+
+#narrative-panel {
+  right: 12px;
+  min-width: 320px;
+  z-index: 10;
+}
+
+#narrative-panel.hidden {
+  display: none;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+
+.np-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--p-border);
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+
+.np-title {
+  font-size: var(--p-title);
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.np-faction {
+  font-size: var(--p-text);
+  letter-spacing: 0.08em;
+}
+
+.np-standing {
+  font-size: var(--p-text);
+  letter-spacing: 0.05em;
+}
+
+.np-scrap {
+  font-size: var(--p-text);
+  color: var(--p-amber);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.np-esc-hint {
+  font-size: var(--p-text);
+  color: var(--p-very-dim);
+  white-space: nowrap;
+  padding-left: 8px;
+}
+
+/* ── Log scroll area ────────────────────────────────────────────────────────── */
+
+.np-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.np-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.np-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.np-log::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 204, 0.15);
+}
+
+/* ── Entry types ────────────────────────────────────────────────────────────── */
+
+.np-entry {
+  animation: np-fade-in 0.2s ease-out;
+}
+
+@keyframes np-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Narration */
+.np-narration {
+  font-size: var(--p-text);
+  line-height: 1.7;
+  color: var(--p-dim);
+}
+
+.np-narration.np-style-title {
+  font-size: var(--p-title);
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.np-narration.np-style-system {
+  font-size: var(--p-text);
+  color: var(--p-cyan);
+  letter-spacing: 0.05em;
+}
+
+.np-narration.np-style-flavor {
+  color: var(--p-dim);
+}
+
+/* Dialogue */
+.np-dialogue {
+  font-size: var(--p-text);
+  line-height: 1.7;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.np-speaker {
+  font-size: var(--p-text);
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.np-text {
+  color: var(--p-white);
+  padding-left: 8px;
+  opacity: 0.85;
+}
+
+/* Player action */
+.np-action {
+  font-size: var(--p-text);
+  color: var(--p-green);
+  opacity: 0.7;
+  font-style: italic;
+  padding-left: 4px;
+  margin: 2px 0;
+}
+
+/* Result */
+.np-result {
+  font-size: var(--p-text);
+  letter-spacing: 0.05em;
+  padding: 3px 0;
+}
+
+.np-result-amber { color: var(--p-amber); }
+.np-result-green { color: var(--p-green); }
+.np-result-red   { color: var(--p-red); }
+.np-result-cyan  { color: var(--p-cyan); }
+
+/* Zone divider */
+.np-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+  padding: 4px 0;
+}
+
+.np-divider-line {
+  position: absolute;
+  width: 100%;
+  border: none;
+  border-top: 1px solid rgba(0, 255, 204, 0.2);
+  margin: 0;
+}
+
+.np-divider-label {
+  position: relative;
+  background: var(--p-bg);
+  padding: 0 10px;
+  font-size: var(--p-text);
+  color: var(--p-cyan);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+/* ── Choice buttons (bottom bar — hidden, kept for barter cancel) ──────────── */
+
+.np-choices {
+  display: none;
+}
+
+/* ── Inline choices (in-log) ───────────────────────────────────────────────── */
+
+.np-inline-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0 2px;
+}
+
+.np-inline-choice {
+  font-size: var(--p-text);
+  line-height: 1.7;
+  color: var(--p-cyan);
+  cursor: pointer;
+  padding: 4px 6px 4px 12px;
+  border-left: 2px solid transparent;
+  transition: color 0.1s, border-color 0.1s;
+  user-select: none;
+  white-space: pre-wrap;
+}
+
+.np-inline-choice:hover:not(.disabled) {
+  color: var(--p-white);
+  border-left-color: var(--p-cyan);
+}
+
+.np-inline-choice.disabled {
+  color: var(--p-very-dim);
+  cursor: not-allowed;
+  font-style: italic;
+}
+
+/* After a choice is made, fade unchosen options */
+.np-choices-spent .np-inline-choice {
+  color: var(--p-very-dim);
+  cursor: default;
+  pointer-events: none;
+  border-left-color: transparent;
+}
+
+.np-choices-spent .np-inline-choice.chosen {
+  color: var(--p-cyan);
+  opacity: 0.5;
+}
+
+/* ── Barter (inline in log) ─────────────────────────────────────────────────── */
+
+.np-barter {
+  border: 1px solid var(--p-border);
+  padding: 10px 12px;
+  margin: 4px 0;
+}
+
+.np-barter.np-barter-done {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.np-barter-title {
+  font-size: var(--p-text);
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.np-barter-section-label {
+  font-size: var(--p-small);
+  color: var(--p-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 8px 0 4px;
+}
+
+.np-barter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.np-barter-item-name {
+  flex: 1;
+  font-size: var(--p-text);
+  color: var(--p-cyan);
+}
+
+.np-barter-item-price {
+  font-size: var(--p-text);
+  color: var(--p-amber);
+  min-width: 70px;
+  text-align: right;
+}
+
+.np-barter-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.np-barter-qty-btn {
+  background: transparent;
+  border: 1px solid var(--p-very-dim);
+  color: var(--p-cyan);
+  font-family: 'Fira Mono', monospace;
+  font-size: var(--p-text);
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.1s;
+}
+
+.np-barter-qty-btn:hover:not(:disabled) {
+  border-color: var(--p-cyan);
+}
+
+.np-barter-qty-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.np-barter-qty {
+  font-size: var(--p-text);
+  color: var(--p-amber);
+  min-width: 24px;
+  text-align: center;
+}
+
+.np-barter-empty {
+  font-size: var(--p-text);
+  color: var(--p-dim);
+  padding: 8px 0;
+}
+
+.np-barter-summary {
+  display: flex;
+  gap: 16px;
+  padding: 6px 0;
+  min-height: 20px;
+}
+
+.np-barter-cost {
+  font-size: var(--p-text);
+  color: var(--p-red);
+}
+
+.np-barter-earn {
+  font-size: var(--p-text);
+  color: var(--p-green);
+}
+
+.np-barter-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.np-barter-confirm,
+.np-barter-cancel {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--p-very-dim);
+  color: var(--p-dim);
+  font-family: 'Fira Mono', monospace;
+  font-size: var(--p-text);
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.np-barter-confirm {
+  border-color: rgba(0, 255, 204, 0.35);
+  color: var(--p-cyan);
+}
+
+.np-barter-confirm:hover:not(:disabled) {
+  border-color: var(--p-cyan);
+  background: rgba(0, 255, 204, 0.04);
+}
+
+.np-barter-confirm:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.np-barter-cancel:hover {
+  border-color: rgba(255, 68, 68, 0.35);
+  color: var(--p-red);
+}

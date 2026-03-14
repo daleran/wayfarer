@@ -170,21 +170,6 @@ Concord "ships" are not piloted in the human sense. They are automated, geometri
 
 ---
 
-## 9. Void Fauna: The Silent Guardians
-
-The Tyr system is not just a graveyard of human ambition; it is an ecosystem. Void Fauna are organisms that have evolved—or were engineered—to survive in the radiation-rich void and the thick gases of failed terraforming nebulae.
-
-### 9.1 Common Species
-- **Void Wurms:** Kilometer-long, serpentine creatures that feed on solar radiation. They are generally passive unless their "Sun-Basking" is interrupted by ship exhaust. They attack by ramming, using their massive mass as a weapon.
-- **Crystal Swarms:** Tiny, hive-minded organisms that cling to debris. They "eat" the residual energy from ship reactors. A swarm can quickly drain a ship's fuel or disable its engines if not brushed off or destroyed with area-of-effect weapons.
-- **Nebula Leviathans:** Massive, squid-like entities that inhabit the Ashveil. They use bio-electric pulses to "Jam" ship sensors (E-War) before dragging their prey into their central maw.
-- **Dust Scourge:** Microscopic "void-locusts" that appear as a shimmering cloud. They don't attack hulls but "corrode" ship modifiers, temporarily disabling ship perks like "Uparmored" or "Modded Engines."
-
-### 9.2 Nesting Grounds & Ecological Role
-Fauna cluster around **Radiation Hotspots** and **Nebula Cores**. Some researchers believe they were seeded by the Concord centuries ago as a biological "Quarantine" to prevent humans from venturing too far into the deep void. Seeing a Concord Shard "tame" or direct a Void Wurm is a rare and terrifying sight.
-
----
-
 ## 10. Culture, Politics, Myths, and Philosophy
 
 ## Technology

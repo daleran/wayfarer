@@ -1,58 +1,22 @@
-import { GarrisonFrigate } from '@/ships/classes/garrisonFrigate.js';
+import { DroneControlHull } from '@/ships/classes/droneControlHull.js';
 import { LanceModuleSmall, OnyxDriveUnit } from '@/modules/shipModule.js';
 import { AI_TEMPLATES } from '@data/compiledData.js';
-import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
-import { SnatcHerDrone } from './snatcHerDrone.js';
+import { createSnatcHerDrone } from './snatcHerDrone.js';
 
 const DRONE_MAX          = 3;
 const DRONE_COOLDOWN     = 12;  // seconds
 const DRONE_SPAWN_OFFSET = 80;  // px lateral offset
 
-// Concord command platform hull — wide sensor array, angular drone-bay notches
-const HULL_POINTS = [
-  { x:  20, y: -55 },  // [0]  nose-top starboard
-  { x:  30, y: -30 },  // [1]  shoulder flare
-  { x:  55, y: -10 },  // [2]  max-width starboard
-  { x:  55, y:  20 },  // [3]  starboard bay wall
-  { x:  40, y:  35 },  // [4]  bay aft step
-  { x:  25, y:  55 },  // [5]  aft pod outer starboard
-  { x:  10, y:  60 },  // [6]  aft starboard corner
-  { x: -10, y:  60 },  // [7]  aft port corner
-  { x: -25, y:  55 },  // [8]  aft pod outer port
-  { x: -40, y:  35 },  // [9]  bay aft step port
-  { x: -55, y:  20 },  // [10] port bay wall
-  { x: -55, y: -10 },  // [11] max-width port
-  { x: -30, y: -30 },  // [12] shoulder flare port
-  { x: -20, y: -55 },  // [13] nose-top port
-];
-
-export class DroneControlFrigate extends GarrisonFrigate {
+/** Drone Control Frigate — unmanned Concord command vessel with drone spawning. */
+class DroneControlFrigateShip extends DroneControlHull {
   constructor(x, y) {
     super(x, y);
-
-    this.faction     = 'concord';
-    this.relation    = 'hostile';
-    this.shipType    = 'drone-control-frigate';
-    this.ai          = { ...AI_TEMPLATES.standoff };
-
-    this.flavorText =
-      'A Concord Remnant command vessel — repurposed garrison hull stripped of ' +
-      'crew provisions and rebuilt as a drone carrier. Geometric sensor arrays ' +
-      'replace the bow tower. Bay notches on the flanks cycle drones continuously. ' +
-      'It does not rush. It does not retreat. It deploys and waits. ' +
-      'Strength: relentless drone harassment, fortress-grade frontal armor. ' +
-      'Weakness: drones are fragile; destroy them before focusing the hull.';
-
-    this.moduleSlots = [new OnyxDriveUnit(), new LanceModuleSmall(), null];
-    this._applyModules();
 
     // Drone management
     this._spawnQueue       = [];
     this._activeDrones     = [];
     this._droneSpawnTimer  = 0;
     this._canRespawn       = false;
-
-    // Pickup text queue (not used by frigate, but keep for consistency)
     this._pickupTextQueue  = [];
   }
 
@@ -72,55 +36,29 @@ export class DroneControlFrigate extends GarrisonFrigate {
       const spawnX = this.x + (-Math.cos(this.rotation) * side * DRONE_SPAWN_OFFSET);
       const spawnY = this.y + ( Math.sin(this.rotation) * side * DRONE_SPAWN_OFFSET);
 
-      const drone = new SnatcHerDrone(spawnX, spawnY);
+      const drone = createSnatcHerDrone(spawnX, spawnY);
       drone.rotation = this.rotation;
 
       this._activeDrones.push(drone);
       this._spawnQueue.push(drone);
     }
   }
-
-  _drawShape(ctx) {
-    // Main hull polygon — Concord geometric profile
-    ctx.beginPath();
-    ctx.moveTo(HULL_POINTS[0].x, HULL_POINTS[0].y);
-    for (let i = 1; i < HULL_POINTS.length; i++) {
-      ctx.lineTo(HULL_POINTS[i].x, HULL_POINTS[i].y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = ENEMY_FILL;
-    ctx.fill();
-    ctx.strokeStyle = CONCORD_BLUE;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Center spine — command module keel
-    ctx.beginPath();
-    ctx.moveTo(0, -48);
-    ctx.lineTo(0, 55);
-    ctx.strokeStyle = CONCORD_BLUE;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.35;
-    ctx.stroke();
-
-    // Lateral bay notch detail lines — drone bay slots
-    ctx.globalAlpha = 0.35;
-    for (const bx of [40, -40]) {
-      ctx.beginPath();
-      ctx.moveTo(bx, -5);
-      ctx.lineTo(bx,  30);
-      ctx.stroke();
-    }
-
-    ctx.globalAlpha = 1;
-
-  }
-
-  getBounds() {
-    return { x: this.x, y: this.y, radius: 58 };
-  }
 }
 
 export function createDroneControlFrigate(x, y) {
-  return new DroneControlFrigate(x, y);
+  const ship = new DroneControlFrigateShip(x, y);
+  ship.shipType = 'drone-control-frigate';
+  ship.faction   = 'concord';
+  ship.relation  = 'hostile';
+  ship.ai        = { ...AI_TEMPLATES.standoff };
+  ship.flavorText =
+    'A Concord Remnant command vessel — repurposed garrison hull stripped of ' +
+    'crew provisions and rebuilt as a drone carrier. Geometric sensor arrays ' +
+    'replace the bow tower. Bay notches on the flanks cycle drones continuously. ' +
+    'It does not rush. It does not retreat. It deploys and waits. ' +
+    'Strength: relentless drone harassment, fortress-grade frontal armor. ' +
+    'Weakness: drones are fragile; destroy them before focusing the hull.';
+  ship.moduleSlots = [new OnyxDriveUnit(), new LanceModuleSmall(), null];
+  ship._applyModules();
+  return ship;
 }

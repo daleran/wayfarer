@@ -20,7 +20,6 @@ Project instructions for Claude Code.
 - **Preview build:** `npm run preview`
 - **Lint:** `npm run lint` (ESLint)
 - **Type check:** `npm run check` (TypeScript `checkJs`, no emit)
-- **Compile data:** `npm run compile-data` (CSVs → `data/compiledData.js`)
 - **Both:** `npm run validate` (lint + check)
 
 ### Validate After Every Change
@@ -44,7 +43,7 @@ Small tweaks and bug fixes live in **FIXES.md** (no codes, just a flat bullet li
 
 | File | Purpose | **Mandatory Update Triggers** |
 |---|---|---|
-| `MECHANICS.md` | Game mechanics — behavioral descriptions only (no specific items, values, or tuning) | New *system* or *behavior* added, removed, or changed. Controls changed. **NOT** triggered by adding items, ships, weapons, ammo types, or tuning values — those live in CSV/code. |
+| `MECHANICS.md` | Game mechanics — behavioral descriptions only (no specific items, values, or tuning) | New *system* or *behavior* added, removed, or changed. Controls changed. **NOT** triggered by adding items, ships, weapons, ammo types, or tuning values — those live in `data/*.js`/code. |
 | `LORE.md` | Worldbuilding — history, factions, locations, tone | Faction names/traits changed. Location names changed. World tone or setting changed. |
 | `UX.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. |
 | `DEVLOG.md` | Development progress log — major features only | Every session — append one line per major feature completed. |
@@ -82,6 +81,16 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 **Every development iteration**, update the relevant map in `js/data/maps/` to include new entities/features so they're easy to reach. Tell the user to open `editor.html?map=<name>` to validate.
 
+### `editor.html` — DOM Panels
+
+Editor UI chrome is DOM-based (not canvas). Classes in `js/ui/editorPanels.js`, styled by `css/editor.css`:
+- **`EditorHUDBar`** — fixed top status bar with hotkey segments
+- **`EditorSidebar`** — right panel for object browsing/placement (toggle: `-` key)
+- **`EditorItemMenu`** — left panel for adding items to cargo (toggle: `[` key)
+- **`EditorPanBanner`** — pan mode indicator banner
+
+Only `_renderDebugOverlay()` remains on canvas (world-space entity tracking).
+
 ### `designer.html` — Unified Designer
 
 - **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
@@ -89,6 +98,10 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **Deep-link:** `designer.html?category=<cat>&id=<slug>`
 - **In scope:** `js/ships/**`, `js/npcs/**`, `js/world/**`, `js/modules/**`, `js/rendering/colors.js`
 - Item slugs are defined in `js/test/designer.js` — check there for current IDs.
+
+### `designer.html` — DOM Panel
+
+Stats panel is DOM-based. `DesignerPanel` class in `js/ui/designerPanel.js`, styled by `css/designer.css`. Preview renderers (ship silhouettes, grids, module icons, weapon animations, module slot boxes + connection lines) remain on canvas.
 
 ## Architecture
 
@@ -117,7 +130,9 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 `Entity` is the base class (`js/entities/entity.js`). `Ship` extends it with armor/hull/weapons/fuel. Ship subclasses override `_drawShape(ctx)` and `getBounds()`. Other entity types: `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`. Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter) — no separate Derelict class. Created via `createDerelict(data)` in `js/world/derelict.js`.
 
-Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPCs (enemies + neutrals) in `js/npcs/<faction>/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there.
+**Character** (`js/characters/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` syncs faction/relation/ai onto the ship and sets `ship.captain`; `leaveShip()` resets the ship to inert. Concord machines (drones, frigates) are unmanned — no Character, faction/relation/ai set directly on the ship.
+
+Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPCs (enemies + neutrals) in `js/npcs/<faction>/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there. `CHARACTER_REGISTRY` (aliased as `NPC_REGISTRY`) lists all configured actors. `createActor(id, x, y)` (aliased as `createShip()`) instantiates hull + character + modules. `game.characters[]` tracks all active Characters; `game.playerCharacter` is the player's Character.
 
 ### Key Patterns
 
@@ -130,13 +145,15 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPC
 - **Zone entities** — each world entity (station, derelict, terrain) is self-contained in `js/data/zones/<zone>/`. Named derelicts live in `js/data/ships/named/`. Every entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity. No factory dispatchers, no type-specific arrays.
 - **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
-- **Centralized stats** — CSV files in `data/` are the single source of truth for all base stats, compiled at build time into `data/compiledData.js` by `scripts/compile-data.js`. Key-value CSVs: `shipBase.csv`, `weaponBase.csv`, `economy.csv`, `reputation.csv`. Tabular CSVs: `shipClasses.csv`, `shipsNamed.csv`, `moduleEngines.csv`, `moduleReactors.csv`, `moduleSensors.csv`, `moduleWeapons.csv`, `aiBehaviors.csv`. All JS files import from `@data/compiledData.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
-- **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate` from T/W ratio using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). `_refTwRatio` is set at construction; all derived stats are relative to it. Engine modules provide `thrust` and `weight`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
+- **Centralized stats** — JS data files in `data/` are the single source of truth for all base stats. Three layers: (1) `data/tuning.js` — global scalar constants (SPEED_FACTOR, BASE_DAMAGE, etc.); (2) `data/dataRegistry.js` — mutable content tables (ENGINES, WEAPONS, SHIP_CLASSES, etc.) + `registerData()` helper; (3) content files (`data/engines.js`, `data/weapons.js`, `data/shipClasses.js`, etc.) that import a table and call `registerData()` to populate it. `data/index.js` boots all content files and re-exports everything. `data/compiledData.js` is a one-line facade re-exporting from `index.js`. All JS consumer files import from `@data/compiledData.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors. To add new content, create or extend a data file using the `registerData(TABLE, { ... })` pattern.
+- **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate`, and `fuelEfficiency` purely from engine modules. Hull classes define only mass, durability, cargo, fuel tank, and armor — no inherent speed or agility. T/W ratio is computed against a global `REFERENCE_TW` constant using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). Engine modules provide `thrust`, `weight`, and `fuelEffMult`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
 - **Mount points** — each ship class defines `MOUNT_POINTS[]` and overrides `get _mountPoints()`. Index `i` maps to `moduleSlots[i]`. Each mount has `{ x, y, arc, size, slot? }` where `arc` is `'front'|'port'|'starboard'|'aft'`, `size` is `'small'|'large'`, and `slot` is `'engine'` for engine-only mounts (omitted for general-purpose). Used for: (1) drawing module icons on the hull via `_drawModules(ctx)` in `Ship.render()`, (2) positional module breach routing — hits to an arc preferentially damage modules in that arc, (3) install constraints in the Ship Screen — engine slots only accept engines and vice versa. Empty mounts render as dotted white squares; engine mounts show `[E]`. Module visuals: `js/rendering/moduleVisuals.js`.
 - **Weapon registry** — `js/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
 - **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, flavorText }`. No factory dispatcher — entities self-instantiate.
-- **UI overlays** — station panel (`#location-overlay`, right 30% DOM panel) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
+- **UI overlays** — narrative panel (`#narrative-panel`, right 30% DOM panel, `js/ui/narrativePanel.js`) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
+- **Narrative system** — station interactions use scrolling conversation logs (Disco Elysium-style). `NarrativePanel` replaces the old `LocationOverlay`. Conversation scripts are async functions in `js/ui/narrative/conversations/` that `await log.choices(...)` for player input. Registry: `js/ui/narrative/conversationRegistry.js`. Station data includes `conversations: { hub, zones: {} }` pointing to script IDs. `game.storyFlags = {}` tracks first-visit flags and NPC memory (session-only)
 - **Color palette** — `js/rendering/colors.js` exports all color constants; never use inline hex strings
+- **CSS utility system** — `css/panel.css` defines CSS custom properties (`--p-text: 13px`, `--p-title: 16px`, `--p-small: 11px`), text color utilities (`.t-cyan`, `.t-amber`, etc.), and typography patterns (`.p-heading`, `.p-subheading`, `.p-text`, `.p-label`, `.p-hint`, `.p-small`). All DOM panel CSS files inherit from these. Never hardcode `px` font sizes in panel CSS — use `var()` references.
 - **Draw API** — `js/rendering/draw.js` exports reusable canvas primitives. Two layers:
   - **Immediate utilities** (take `ctx` as first arg): `polygon`, `polygonFill`, `polygonStroke`, `line`, `lines`, `disc`, `ring`, `trail`, `text`, `pulse`, `engineGlow`
   - **`Shape` class** — composable geometry templates with transform chaining (`.at()`, `.scaled()`, `.rotated()`, `.flipX()`, `.flipY()`) and draw methods (`.fill()`, `.stroke()`, `.draw()`). Factory methods: `Shape.rect()`, `Shape.chamferedRect()`, `Shape.cigar()`, `Shape.trapezoid()`, `Shape.wedge()`, `Shape.stadium()`, `Shape.cross()`, `Shape.ngon()`
@@ -178,9 +195,9 @@ When the user says:
 ## Rules & Conventions
 
 ### Stats: Multiplier Pattern
-Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `data/*.csv` (compiled to `data/compiledData.js`; see Key Patterns above). Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` (in `data/shipBase.csv`) and `PROJECTILE_SPEED_FACTOR` (in `data/weaponBase.csv`).
+Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `data/*.js` (see Key Patterns above). Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` and `PROJECTILE_SPEED_FACTOR` in `data/tuning.js`.
 
-Ship classes use `this._initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft })` from `Ship` base to set all stats in one call. Subclasses that only override a subset (e.g. enemies that don't set cargo/fuel) can omit those keys — they'll keep the parent's values.
+Ship classes use `this._initStats({ hull, weight, cargo, fuelMax, armorFront, armorSide, armorAft })` from `Ship` base to set hull stats. Movement stats (speed, acceleration, turn rate) and fuel efficiency are **purely engine-derived** via `recalcTW()` — hull classes never define them.
 
 ### Colors: Always Use `js/rendering/colors.js`
 Never use inline hex strings anywhere in the codebase. Import named constants from `js/rendering/colors.js`. If a new color is needed, add it there first.
@@ -200,12 +217,33 @@ Major features only — no tuning passes, no small fixes.
 ### Dead Code: Run `/dead-code` After Major Refactors
 After any major refactor (file moves, system extractions, renderer rewrites, UI overhauls), run `/dead-code` to scan for orphaned files, unused exports/imports, stale data fields, and dead CSS. Clean up before moving on.
 
-### Skills: Keep `.claude/commands/` in Sync
-After any architectural change (new file paths, renamed systems, changed patterns, new module types, new behaviors), scan the skill files in `.claude/commands/wayfarer/` and update any instructions that reference the changed paths or APIs. Specifically watch for:
-- File path changes (e.g. `js/data/tuning/*.js` → `data/*.csv` + `@data/compiledData.js`)
+### Skills & Designer: Keep in Sync
+
+**Content skills** (create or edit game content — each handles both new and existing items):
+
+| Skill | Scope | Key registries |
+|---|---|---|
+| `/ship-class` | Hull templates: shape, stats, mount points | `SHIP_REGISTRY` in `js/ships/registry.js` |
+| `/named-ship` | Configured ship instances (captained = NPC, no captain = derelict) | `CHARACTER_REGISTRY` in `js/ships/registry.js`; derelict list in `js/test/designer.js` |
+| `/character` | Named people who board ships | Character files in `js/characters/` |
+| `/station` | Dockable locations with services and renderers | `STATION_REGISTRY` in `js/world/stationRegistry.js` |
+| `/module` | Ship modules AND weapons (combined) | `MODULE_REGISTRY` in `js/modules/shipModule.js`; `WEAPON_REGISTRY` in `js/modules/weapons/registry.js`; ID registry in `js/modules/registry.js` |
+
+**Audit skills:** `/code-review`, `/stat-audit`, `/dead-code`
+
+**MANDATORY: After any substantive change to a system, registry, or content type:**
+1. Read all skill files in `.claude/commands/wayfarer/` that reference the changed system
+2. Update file paths, class names, registry formats, CSV columns, behavior types, and designer category IDs
+3. Update `js/test/designer.js` if the change affects how items are built, categorized, or displayed
+4. Verify designer deep-links still work (`designer.html?category=<cat>&id=<slug>`)
+
+**Watch for these specific changes:**
+- File path moves (e.g. data file reorganizations)
 - Renamed classes, modules, or behavior types
-- New or removed weapon/module/AI types listed in skill templates
-- Verification URL changes (use `editor.html?map=arena` or `designer.html`)
+- New or removed entries in any registry (`SHIP_REGISTRY`, `CHARACTER_REGISTRY`, `MODULE_REGISTRY`, `WEAPON_REGISTRY`, `STATION_REGISTRY`)
+- Data field additions/removals in `data/*.js`
+- Designer category changes in `js/test/designer.js` (`CATEGORIES` array)
+- New or changed `Character` fields in `js/characters/character.js`
 
 
 # === DEVLOG.md ===
@@ -276,6 +314,9 @@ CJ. 2026-MAR-13-0000: CSV-Based Tuning Data — build-time compilation: 11 CSVs 
 CE. 2026-MAR-13-0000: Visual Module System — mount points on all 4 ship classes; module icons drawn on hull (condition-colored); positional damage routing (hits to arc prefer modules in that arc); moduleVisuals.js renderer.
 AN. 2026-MAR-13-0000: Utility Modules — 8 passive stat-modifying modules (Expanded Hold S/L, Aux Tank S/L, Stripped Weight S/L, Extra Armor S/L); CSV-driven stats; condition-scaled bonuses; onInstall/onRemove apply additive cargo/fuel/armor/weight changes; utility category in moduleVisuals.js; ship screen tooltip rows.
 BN. 2026-MAR-13-0000: Salvage Bay & Engineering Bay — two large-slot utility modules; Salvage Bay extracts installed modules/weapons from derelict moduleSlots during salvage; Engineering Bay enables field hull repair (0.5 pts/sec, 3 scrap/pt); module size constraint (large modules require large mounts); lootTable arrays removed from named derelicts.
+CL. 2026-MAR-14-0000: Character/Ship Separation — Character class (js/characters/character.js) with boardShip/leaveShip; NPCs refactored from class-extends-ship to factory functions; Concord hulls (DroneControlHull, SnatcHerDroneHull) promoted to ship classes; CHARACTER_REGISTRY replaces NPC_REGISTRY; game.characters[] tracks active characters; designer Characters category.
+CM. 2026-MAR-14-0000: Narrative Log Panel — Disco Elysium-style scrolling conversation log replaces tabbed LocationOverlay; NarrativePanel/NarrativeLog/conversation scripts (async functions with await choices); barter screen inline in log; authored conversations for Kell's Stop (5 zones) and Ashveil Anchorage (5 zones); generic fallbacks; game.storyFlags; station NPCs with personality; zone nav is narrative choices not tabs.
+CN. 2026-MAR-14-0000: JS Data Migration — CSV data pipeline replaced with plain JS data files; 3-layer architecture (tuning.js scalars, dataRegistry.js mutable tables + registerData(), category content files); compiledData.js becomes one-line facade; CSV files and compile script deleted; zero consumer changes.
 
 
 # === PLAN.md ===
@@ -284,7 +325,7 @@ BN. 2026-MAR-13-0000: Salvage Bay & Engineering Bay — two large-slot utility m
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CK**
+**Next available code: CO**
 
 ---
 
@@ -316,6 +357,7 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
 | CE | Visual Module System | Ship Systems / Modules |
+| CK | Engine Module Expansion | Modules / Equipment |
 
 ---
 
@@ -634,6 +676,56 @@ Affixes are constrained by module type — not every affix applies to every modu
 
 ---
 
+### CK: Engine Module Expansion
+
+Five new engine types that fill out the propulsion landscape — from junkyard desperation to military precision. The current lineup (Onyx Drive, Chem Rocket, Mag-Plasma Torch, Ion Thruster) covers the mid-range well; these engines add clear low-end, high-end, and specialist options with distinct trade-off profiles.
+
+**Design intent:** Every engine should feel like a meaningful choice, not just a stat upgrade. The player should weigh thrust vs. fuel economy vs. reliability vs. cost and think about *how they fly* — short combat sprints or long endurance hauls.
+
+**1. Makeshift Thermal Rocket (S)**
+- **Lore:** A jury-rigged rocket engine cobbled from scavenged parts — mismatched injectors, salvaged combustion chambers, hand-welded fuel lines. It works, barely. The kind of engine a desperate pilot bolts on when the alternative is drifting. Common in the outer Gravewake fringe where proper parts don't reach.
+- **Stats profile:** Abysmal thrust (lowest of any rocket type), poor fuel efficiency, very low reliability (high breach chance, degrades quickly under use). Lightest rocket engine — mostly because half the housing is missing.
+- **Niche:** Rock-bottom acquisition cost. Starter engine for derelict recoveries or emergency replacement when stranded. The engine you *replace*, not the engine you want.
+- **Stat targets:** Thrust ~800 (below Onyx Drive's 1500), fuelEffMult ~2.0 (worse than Chem Rocket's 3.5 but not as bad as Milspec), weight ~35. Condition starts at 'worn' or 'faulty' when found as salvage.
+
+**2. Vintage Magplasma Thruster (S)**
+- **Lore:** A pre-Exile magnetic-plasma engine from the Arrival period — one of the original propulsion designs that carried the arkship tenders and scout craft during the first decades in-system. The engineering is elegant and far ahead of anything currently manufactured, but these units are centuries old. Replacement parts don't exist; mechanics nurse them along with hand-machined approximations and prayer. Finding one in working condition is a genuine stroke of luck.
+- **Stats profile:** Excellent thrust-to-efficiency ratio — significantly better than the current Mag-Plasma Torch line. Thrust sits between the Ion Thruster (300) and the Standard Pattern Rocket (~1800). Fuel efficiency is outstanding (low fuelEffMult). But reliability is poor — old components mean elevated breach chance and faster condition degradation. High power draw (plasma containment fields).
+- **Niche:** The connoisseur's engine. Superb performance *when it works*, but demands constant maintenance and repair investment. Rewards players who keep a stockpile of scrap for field repairs. A treasure find in high-tier derelicts.
+- **Stat targets:** Thrust ~1200, fuelEffMult ~0.4 (exceptional efficiency), fuelDrain ~0.012, powerDraw ~50, weight ~55. Elevated breach multiplier (1.5× base chance).
+
+**3. Standard Pattern Rocket Engine (S/L)**
+- **Lore:** The reliable workhorse. A mass-manufactured design whose blueprints predate the Exile, now produced by small engine forges scattered across Tyr's settlements. Every forge puts its own stamp on the housing and injector geometry, but the core design is standardized and time-tested. Parts are interchangeable and readily available. Nothing flashy — it just runs.
+- **Stats profile:** Average thrust, average fuel efficiency, very reliable when built well. The median engine — better than Makeshift in every way, cheaper and more available than Milspec. Comes in both Small and Large variants.
+- **Niche:** The backbone of civilian and light-military fleets. The engine most players will run through the mid-game. Predictable, affordable, repairable. Good middle of the road between the Makeshift's desperation and the Milspec's excess.
+- **Stat targets (S):** Thrust ~1800, fuelEffMult ~2.0, weight ~70, powerDraw ~2. Low breach multiplier (0.7× base).
+- **Stat targets (L):** Thrust ~3000, fuelEffMult ~3.0, weight ~130, powerDraw ~3. Same reliability profile.
+
+**4. Milspec Rocket Engine (S/L)**
+- **Lore:** High-performance military-grade propulsion designed for fleet operations. Manufactured exclusively by the **Prime Machinists Guild** — a powerful, politically neutral body of master engineers who control the precision ceramic kilns and exotic alloy forges required for high-output propulsion. The Guild sells to all factions without allegiance, but their prices reflect the monopoly. These engines are built for short, intense combat sorties near carrier groups with onboard fuel facilities — sustained independent cruising was never the design goal.
+- **Stats profile:** Very high thrust (highest in class), average reliability, but extremely poor fuel efficiency. Burns through fuel reserves fast. Military ships don't care — they refuel from fleet tenders. An independent salvager running one of these will feel the drain on every long transit.
+- **Niche:** Raw power for combat-focused builds. The player trades range and economy for acceleration and escape velocity. Best paired with large fuel tanks or operations near friendly stations. The engine you bolt on when you expect a fight, not a journey.
+- **Stat targets (S):** Thrust ~2800 (above Chem Rocket S's 2200), fuelEffMult ~6.0 (very thirsty), weight ~90, powerDraw ~3.
+- **Stat targets (L):** Thrust ~4500 (above Chem Rocket L's 3500), fuelEffMult ~9.0, weight ~170, powerDraw ~5.
+
+**5. Cruising Ion Thruster (S)**
+- **Lore:** Purpose-built for long-range cargo haulers and endurance transit. A refined variant of the standard Ion Thruster optimized for sustained output rather than raw thrust. The magnetic acceleration chamber is longer and more efficient, trading any pretense of combat agility for the ability to cross the entire Tyr system on a single fuel load at cruise speed. Popular with trade convoys and long-haul prospectors who value arrival over urgency.
+- **Stats profile:** Low thrust (comparable to the existing Ion Thruster), but exceptionally fuel-efficient — the most economical engine in the game by a wide margin. Very reliable; solid-state ion acceleration has almost no moving parts to fail. High power draw (ion containment).
+- **Niche:** The endurance specialist. For players who want maximum range per unit of fuel — exploration, long trade runs, operating far from fuel depots. Terrible in combat (can't accelerate out of trouble), but unmatched for getting from A to B cheaply.
+- **Stat targets:** Thrust ~350 (slightly above Ion Thruster's 300), fuelEffMult ~0.02 (best in game), fuelDrain ~0.001, powerDraw ~100, weight ~45.
+
+**New lore introduced:** The **Prime Machinists Guild** — a politically neutral engineering body that controls the high-precision manufacturing infrastructure (ceramic kilns, exotic alloy forges) required for military-grade propulsion. They sell to all factions and maintain independence through mutual dependence. Their monopoly on Milspec engine production makes them one of the quiet power brokers of the Tyr system.
+
+**Implementation notes:**
+- Add entries to `data/engines.js` for all 7 engines (5 types, Standard and Milspec each have S/L)
+- Create module classes in `js/modules/engines/` following existing patterns
+- Makeshift should have an elevated `breachMultiplier` field; Vintage Magplasma similar
+- Standard Pattern and Cruising Ion should have reduced breach chance
+- Add to loot tables: Makeshift common in low-tier derelicts, Vintage rare in high-tier, Standard available at most stations, Milspec at military-aligned stations only, Cruising Ion at trade hubs
+- Update `LORE.md` with Prime Machinists Guild entry when implemented
+
+---
+
 ### BR: Electronic Warfare
 
 Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-lethal combat options for disabling rather than destroying.
@@ -886,21 +978,6 @@ Concord "ships" are not piloted in the human sense. They are automated, geometri
 
 ---
 
-## 9. Void Fauna: The Silent Guardians
-
-The Tyr system is not just a graveyard of human ambition; it is an ecosystem. Void Fauna are organisms that have evolved—or were engineered—to survive in the radiation-rich void and the thick gases of failed terraforming nebulae.
-
-### 9.1 Common Species
-- **Void Wurms:** Kilometer-long, serpentine creatures that feed on solar radiation. They are generally passive unless their "Sun-Basking" is interrupted by ship exhaust. They attack by ramming, using their massive mass as a weapon.
-- **Crystal Swarms:** Tiny, hive-minded organisms that cling to debris. They "eat" the residual energy from ship reactors. A swarm can quickly drain a ship's fuel or disable its engines if not brushed off or destroyed with area-of-effect weapons.
-- **Nebula Leviathans:** Massive, squid-like entities that inhabit the Ashveil. They use bio-electric pulses to "Jam" ship sensors (E-War) before dragging their prey into their central maw.
-- **Dust Scourge:** Microscopic "void-locusts" that appear as a shimmering cloud. They don't attack hulls but "corrode" ship modifiers, temporarily disabling ship perks like "Uparmored" or "Modded Engines."
-
-### 9.2 Nesting Grounds & Ecological Role
-Fauna cluster around **Radiation Hotspots** and **Nebula Cores**. Some researchers believe they were seeded by the Concord centuries ago as a biological "Quarantine" to prevent humans from venturing too far into the deep void. Seeing a Concord Shard "tame" or direct a Void Wurm is a rare and terrifying sight.
-
----
-
 ## 10. Culture, Politics, Myths, and Philosophy
 
 ## Technology
@@ -1012,7 +1089,7 @@ This fusion of high survival knowledge with intentionally degraded tech defines 
 
 Discrete throttle levels from Stop through Flank. W/S step up or down; the level persists until changed. Ships have momentum — acceleration and deceleration are gradual.
 
-Fuel consumption scales with throttle level. The lowest level is free; consumption increases nonlinearly toward Flank. Running out of fuel clamps the ship to the lowest powered throttle level. Fuel efficiency is a per-ship multiplier that scales burn rate.
+Fuel consumption scales with throttle level. The lowest level is free; consumption increases nonlinearly toward Flank. Running out of fuel clamps the ship to the lowest powered throttle level. Fuel efficiency is an engine module property that scales burn rate.
 
 ---
 
@@ -1139,7 +1216,7 @@ Ships have a fixed number of module slots. Each slot has a physical mount point 
 
 ### Engine Modules & Thrust-to-Weight
 
-Ship performance is derived from the **thrust-to-weight ratio**. Engine modules provide thrust; all modules, cargo, and fuel contribute weight. Derived stats (acceleration, top speed, turn rate) each have different sensitivities to T/W changes. All derived multipliers are clamped to a floor and ceiling.
+Ship performance is **purely engine-derived**. Hull classes define only mass, durability, cargo capacity, fuel tank, and armor — no inherent speed or agility. Engine modules provide thrust; all modules, cargo, and fuel contribute weight. The thrust-to-weight ratio determines acceleration, top speed, and turn rate via power curves against a global reference T/W. Each stat has different sensitivity to T/W changes. All derived multipliers are clamped to a floor and ceiling. Fuel efficiency is also an engine property, not a hull property.
 
 **Cargo capacity = mass budget.** Everything in the hold has mass: scrap, commodities, ammo, modules, weapons. Uninstalling a module moves its mass from "installed" to "cargo" — total ship mass stays the same.
 
@@ -1297,11 +1374,15 @@ Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter). They use ship cl
 
 ---
 
-## Ship vs NPC Architecture
+## Ship / Character / Actor Architecture
 
 **Ship** (`SHIP_REGISTRY`) — pure hull template. Shape, base stats, slot layout. No faction, no AI, no identity.
 
-**NPC** (`NPC_REGISTRY`) — a configured actor built on a hull. Carries faction, behavior, and ship class. `createShip(id, x, y)` spawns NPCs. New NPC types are added to `NPC_REGISTRY` — hull files stay untouched.
+**Character** (`js/characters/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` syncs faction/relation/ai onto the ship; `leaveShip()` resets the ship to inert. Characters exist independently of ships — the same character can board different ships.
+
+**Actor** (`CHARACTER_REGISTRY`) — a configured ship + character pair. `createActor(id, x, y)` (aliased as `createShip()`) instantiates a hull, configures modules, creates a Character, and boards it. Unmanned actors (Concord machines) set faction/relation/ai directly on the ship with no Character instance.
+
+**Game state**: `game.characters[]` tracks all active Characters. `game.playerCharacter` is the player's Character. `game.ships[]` and `game.entities[]` are unchanged — all combat/rendering/AI code reads `ship.faction`/`ship.relation`/`ship.ai` as before.
 
 ---
 
@@ -1572,9 +1653,30 @@ Standardized text styles are defined in `js/rendering/draw.js` as named constant
 
 **Usage with raw ctx:** `ctx.font = PROMPT.font; ctx.globalAlpha = PROMPT.alpha;` — use `.font` for pre-built font string, `.alpha` for the standard opacity.
 
-### DOM Text (CSS)
+### DOM Text (CSS Utility System)
 
-DOM panels (station overlay, ship screen, bottom HUD) use CSS with `font-family: 'Fira Mono', monospace` and their own size/weight conventions defined in `css/location.css`, `css/ship.css`, and `css/hudBottom.css`. These are separate from the canvas text styles above.
+DOM panels use a shared CSS utility system defined in `css/panel.css`. Three typography tiers via CSS custom properties:
+
+| Variable | Size | Usage |
+|---|---|---|
+| `--p-text` | 13px | Body text, stat values, choices, dialogue |
+| `--p-title` | 16px | Panel/section titles, station names |
+| `--p-small` | 11px | Tooltips, cargo filters, barter labels, jettison buttons |
+
+**Typography utility classes** (defined in `panel.css`):
+- `.p-heading` — 16px bold uppercase, 0.12em spacing (panel titles)
+- `.p-subheading` — 13px bold uppercase, 0.08em spacing (section headers)
+- `.p-text` — 13px body text
+- `.p-label` — 13px uppercase, 0.08em spacing
+- `.p-hint` — 13px, very-dim color
+- `.p-small` — 11px compact text
+- `.p-bold`, `.p-upper`, `.p-italic`, `.p-wide` — modifiers
+
+**Color utility classes**: `.t-cyan`, `.t-amber`, `.t-green`, `.t-red`, `.t-magenta`, `.t-white`, `.t-dim`, `.t-very-dim`
+
+**Rule:** Never hardcode `px` font sizes in panel CSS. Use `var(--p-text)`, `var(--p-title)`, or `var(--p-small)`. Dev-only tool panels (designer, editor) may use `10px` for compact labels below the standard tiers.
+
+Panel-specific CSS files (`css/ship.css`, `css/narrative.css`, `css/designer.css`, `css/editor.css`) inherit variables and utilities from `panel.css`.
 
 ---
 
@@ -1597,14 +1699,17 @@ DOM panels (station overlay, ship screen, bottom HUD) use CSS with `font-family:
 - **When docked with station open:** ship panel (left 30%) + station panel (right 30%) + world (middle 40%).
 - Input gating: `stopPropagation` on panel mousedown/click prevents canvas weapon fire.
 
-### Station Panel (`js/ui/locationOverlay.js`, `css/location.css`)
-- **DOM-based right 30% panel** (`#location-overlay`), `height: calc(100vh - 48px)`, left border in cyan. World visible in remaining viewport. Camera centers on docked station.
-- **Two-level nav:** area list → area detail. No map or SVG schematic.
-- **Area list (top level):** Station name, faction badge + standing, flavor text (`station.flavorText`), then clickable area cards. Each card shows area name + short description. Locked areas dimmed with red LOCKED text.
-- **Area detail:** Back button, area name, zone flavor text, horizontal service tab row, scrollable service content below.
-- **Services:** Repair/refuel, trade table, bounty cards, faction relations, reactor overhaul, intel lore.
-- Esc navigates up: service → area list → close.
-- Zone gating by reputation standing (locked areas are non-interactive).
+### Narrative Panel (`js/ui/narrativePanel.js`, `css/narrative.css`)
+- **DOM-based right 30% panel** (`#narrative-panel`), `height: calc(100vh - 48px)`, left border in cyan. World visible in remaining viewport. Camera centers on docked station.
+- **Disco Elysium-style scrolling narrative log** — every interaction is a conversation. No tabs, no generic service panels. Navigation is narrative: zone choices are dialogue options.
+- **Header:** Station name, faction badge, standing, scrap count, `[Esc]` hint.
+- **Log area** (`.np-log`): Scrollable log of entries. Types: `narration` (flavor/title/system), `dialogue` (speaker + text), `action` (player's chosen action in green italic), `result` (outcome in amber/green/red). Entries fade in with 200ms animation.
+- **Choice buttons** (`.np-choices`): Pinned to bottom. Ephemeral — when picked, they become an `action` entry + whatever follows. Disabled choices shown greyed with reason text.
+- **Zone dividers** (`.np-divider`): Thin cyan line + zone label centered. Inserted on zone transitions — log is NOT cleared, entire docking session scrollable.
+- **Barter screen** (`.np-barter`): Renders inline in the log as a special entry. Item rows with +/- quantity controls, confirm/cancel buttons. Greyed out after completion.
+- **Conversation scripts**: Async functions in `js/ui/narrative/conversations/`. Each `await log.choices(...)` to pause for player input. Hub conversations loop zone choices + `[Undock]`.
+- **Esc** closes the panel (and undocks).
+- **Story flags**: `game.storyFlags` (session-only key→value map). First-visit narration, NPC memory, gated dialogue branches.
 
 ### HUD (In-Flight)
 
@@ -1794,216 +1899,18 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Station renderers (CC):** AshveilStation custom renderer (~200px colony ship hull, 10 rectangular sections, docked ships, running lights, approach beam). Kell's Stop unchanged (~120px). The Coil unchanged (~300px).
 - **Rationale:** Full-screen overlays broke immersion. Side panels keep the world visible, reinforce spatial context while docked. DOM-based UI is more maintainable than canvas text rendering and supports proper hover/click interactions. Bottom HUD bar clears the center viewport for combat readability.
 
+### 2026-03-14: Narrative Log Panel — Replaces Station UI (CM)
+- **Decision:** Replaced `LocationOverlay` (tabbed service panels) with `NarrativePanel` — a Disco Elysium-style scrolling conversation log where every station interaction is a conversation.
+- **Architecture:** `NarrativePanel` (`js/ui/narrativePanel.js`) orchestrates; `NarrativeLog` (`js/ui/narrativeLog.js`) renders entries/choices/barter; conversation scripts in `js/ui/narrative/conversations/` are async functions.
+- **Entry types:** `narration` (flavor/title/system styles), `dialogue` (speaker + text with character color), `action` (player's chosen action, green italic), `result` (outcome in amber/green/red/cyan). All entries fade in with 200ms animation.
+- **Zone navigation is narrative:** No tab buttons. Hub conversation presents zones as dialogue choices (`[Walk to the fuel bay]`). Zone dividers insert a cyan line + label but DO NOT clear the log — entire docking session is scrollable.
+- **Barter screen:** Inline in the log as a special entry. Item rows with +/- quantity controls, confirm/cancel. Replaces serviceTrade/serviceRepair.
+- **Authored conversations:** Kell's Stop (kellHub, kellDock, kellIntel, kellBounties, kellTrade, kellRelations) and Ashveil Anchorage (ashveilHub, ashveilDock, ashveilTrade, ashveilBounties, ashveilIntel, ashveilRelations). Generic fallbacks for unscripted stations.
+- **Station NPCs:** Each zone has named NPCs with personality — Ansa (Kell's mechanic), Harlan (barkeep), Venn (Ashveil trader), Chief Maro (repair chief), Dara (fixer), Sable (archivist). Speaker colors match faction/personality.
+- **Story flags:** `game.storyFlags = {}` enables first-visit narration, NPC memory, cross-station references. Session-only until save system ships.
+- **Deleted:** `locationOverlay.js`, all 6 `station/service*.js` files, `css/location.css`. Created `css/narrative.css`.
+- **Rationale:** Generic service panels made every station feel identical. Narrative conversations give each station a unique authored voice, support story progression, and create the Disco Elysium-style interaction depth the game targets.
+
 
 # === DATA (CSV) ===
-
-## aiBehaviors.csv
-
-```csv
-id,combatBehavior,passiveBehavior,aggroRange,deaggroRange,fireRange,orbitRadius,kiteRange,standoffRange,standoffFireRange,patrolRadius,fleeHullRatio,aftDistance,aimTolerance,orbitHoldThreshold,lurkerScanRange,lurkerHideRadius,travelThrottle,approachThrottle,arriveRadius,slowRadius,waitMin,waitMax
-stalker,stalker,,1400,2000,800,550,,,,300,0.3,300,0.4,80,,,,,,,,
-kiter,kiter,,1400,2000,800,,750,,,300,0.3,,,80,,,,,,,,
-standoff,standoff,,1400,2000,,,,1200,1400,300,0.3,,,,,,,,,,,,
-latch,latch,,1800,2400,,,,,,200,0,,,,,,,,,,,,
-lurker,lurker,,1400,2000,,,,,1400,,0.3,,,,700,150,,,,,,
-trader,flee,trader,0,,,,,,,,0.3,,,,,,3,1,120,400,5,8
-militia,stalker,militia,0,2000,800,550,,,,300,0.3,300,0.4,80,,,,,,,,
-```
-
-## ammo.csv
-
-```csv
-id,name,tag,weight,baseValue,guidedType,guidanceStrength
-8mm,8mm Ball,,0.005,0.05,,
-25mm-ap,25mm Armor Piercing,AP,0.01,0.2,,
-25mm-he,25mm High Explosive,HE,0.01,0.3,,
-90mm-ap,90mm Armor Piercing,AP,0.5,1.0,,
-90mm-he,90mm High Explosive,HE,0.5,1.5,,
-rkt,Dumbfire Rocket,RKT,1.0,2.0,,
-wg,Wire-Guided Missile,WG,1.5,3.0,wire,3.0
-ht,Heat-Seeking Missile,HT,1.5,3.0,heat,2.5
-30mm-kp,30mm Kinetic Penetrator,,0.5,1.5,,
-60mm-kp,60mm Kinetic Penetrator,,1.0,3.0,,
-```
-
-## economy.csv
-
-```csv
-key,value
-DEFAULT_SCRAP,20
-FUEL_RATES,0|0|0.1|0.2|0.5|1
-REPAIR_RATE,1.5
-REPAIR_COST_PER_PT,1
-MODULE_REPAIR_RATE,0.25
-MODULE_REPAIR_COST,15
-BOUNTY_EXPIRY_WARNING_SECS,60
-SALVAGE_EFFICIENCY,0.5
-SALVAGE_FUEL_RATE,0.25
-SALVAGE_AMMO_RATE,0.25
-SCRAP_MASS,0.1
-HULL_REPAIR_RATE,0.5
-HULL_REPAIR_COST,3
-```
-
-## moduleEngines.csv
-
-```csv
-id,displayName,size,thrust,fuelEffMult,fuelDrainRate,powerDraw,weight
-onyx-drive-unit,ONYX DRIVE UNIT (S),S,1500,1.0,0.005,1,50
-chem-rocket-s,CHEM ROCKET (S),S,2200,3.5,0,2,80
-chem-rocket-l,CHEM ROCKET (L),L,3500,5.5,0,3,150
-magplasma-torch-s,MAG-PLASMA TORCH (S),S,1700,1.3,0.010,40,60
-magplasma-torch-l,MAG-PLASMA TORCH (L),L,2000,1.6,0.020,80,100
-ion-thruster,ION THRUSTER (S),S,300,0.05,0.002,120,40
-```
-
-## moduleReactors.csv
-
-```csv
-id,displayName,size,powerOutput,fuelDrainRate,overhaulInterval,overhaulCost,degradedOutput,weight
-hydrogen-fuel-cell,H2 FUEL CELL (S),S,80,0.025,,,0,20
-fission-reactor-s,FISSION REACTOR (S),S,160,0,10800,800,0.6,40
-fission-reactor-l,FISSION REACTOR (L),L,300,0,14400,1500,0.6,80
-fusion-reactor-l,FUSION REACTOR (L),L,500,0.005,,,0,100
-```
-
-## moduleSensors.csv
-
-```csv
-id,displayName,powerDraw,weight,sensorRange,minimapStations,minimapShips,leadIndicators,healthPips,salvageDetail,trajectoryLine,enemyTelemetry,moduleInspection
-salvaged-sensor-suite,SALVAGED SENSORS (S),2,10,0,1,0,0,0,0,0,0,0
-standard-sensor-suite,STANDARD SENSORS (S),8,15,3000,1,1,0,0,0,0,0,0
-combat-computer,COMBAT COMPUTER (S),15,20,2000,1,1,1,1,0,1,1,0
-salvage-scanner,SALVAGE SCANNER (S),12,15,2500,1,1,0,0,1,0,0,0
-long-range-scanner,LONG-RANGE SENSORS (S),20,25,8000,1,1,0,0,0,1,1,1
-```
-
-## moduleUtility.csv
-
-```csv
-id,displayName,size,weight,cargoBonus,fuelBonus,armorBonus
-expanded-hold-s,EXPANDED HOLD (S),S,30,30,0,-15
-expanded-hold-l,EXPANDED HOLD (L),L,60,60,0,-25
-aux-tank-s,AUX TANK (S),S,25,0,20,-10
-aux-tank-l,AUX TANK (L),L,50,0,40,-20
-stripped-weight-s,STRIPPED WEIGHT (S),S,-40,0,0,-20
-stripped-weight-l,STRIPPED WEIGHT (L),L,-80,0,0,-40
-extra-armor-s,EXTRA ARMOR (S),S,40,0,0,30
-extra-armor-l,EXTRA ARMOR (L),L,80,0,0,60
-salvage-bay,SALVAGE BAY (L),L,40,0,0,0
-engineering-bay,ENGINEERING BAY (L),L,35,0,0,0
-```
-
-## moduleWeapons.csv
-
-```csv
-id,displayName,size,weight,powerDraw,damageMult,hullDamageMult,rangeMult,speedMult,cooldownMult,magSize,reloadTime,blastRadius,acceptedAmmoTypes,isBeam,isFixed,isSecondary,canIntercept,isInterceptable,guidanceStrength,burstSpread
-autocannon,AUTOCANNON,S,30,20,1.0,,1.0,1.0,1.04,60,10.0,,25mm,,,,,,,
-cannon,CANNON,S,50,30,3.24,4.5,0.933,0.65,3.0,4,14.0,,90mm,,,,,,,
-lance-sf,LANCE-SF,S,25,30,,,0.4,,,,,,,1,1,,,,
-lance-st,LANCE-ST,S,25,15,,,0.340,,,,,,,1,,,,,
-lance-lf,LANCE-LF,L,25,60,,,0.7,,,,,,,1,1,,,,
-lance-lt,LANCE-LT,L,25,50,,,0.4,,,,,,,1,,,,,
-railgun-sf,RAILGUN-SF,S,,,10.6,12.0,2.0,4.5,,1,5.4,,30mm-kp,,1,,,,,
-railgun-lt,RAILGUN-LT,S,,,10.6,12.0,2.0,4.5,,1,5.4,,60mm-kp,,,,,,,
-railgun-lf,RAILGUN-LF,L,,,21.2,24.0,2.0,4.5,,2,8.5,,60mm-kp,,1,,,,,
-gatling,GATLING,S,,,0.24,0.2,0.333,2.0,0.06,200,8.0,,8mm,,,,1,,,
-plasma-s,PLASMA-S,S,,,1.47,8.0,0.27,1.6,1.0,,,,,,,,,,,
-plasma-l,PLASMA-L,L,,,2.94,12.0,0.40,1.6,1.6,,,,,,,,,,,
-rocket-s,RPOD-S,S,35,10,5.3,6.5,,1.4,1.0,2,13.0,,RKT|WG|HT,,,1,,1,2.5|3.0,0.07
-rocket-l,RPOD-L,L,60,10,5.3,6.5,,1.4,1.5,8,13.0,280,RKT|WG|HT,,,1,,1,2.5|3.0,0.07
-torpedo,TORPEDO,L,,,17.65,22.0,1.467,0.45,15.0,3,,200,,,1,1,,1,,
-```
-
-## reputation.csv
-
-```csv
-key,value
-KILL_PENALTY,-10
-RIVAL_BONUS,5
-BOUNTY_BONUS,20
-ATTACK_NEUTRAL_PENALTY,-25
-HOSTILE_THRESHOLD,-50
-ALLIED_THRESHOLD,50
-DISCOUNT_RATE,0.15
-```
-
-## shipBase.csv
-
-```csv
-key,value
-SPEED_FACTOR,1.4
-BASE_SPEED,70
-BASE_ACCELERATION,9
-BASE_TURN_RATE,0.55
-BASE_HULL,200
-BASE_ARMOR,100
-BASE_CARGO,50
-BASE_FUEL_MAX,100
-BASE_FUEL_EFFICIENCY,1.0
-BASE_HULL_WEIGHT,1000
-FUEL_WEIGHT_PER_UNIT,0.5
-TW_ACCEL_SENSITIVITY,1.4
-TW_SPEED_SENSITIVITY,0.6
-TW_TURN_SENSITIVITY,0.3
-TW_MULT_MIN,0.15
-TW_MULT_MAX,2.0
-THROTTLE_LEVELS,6
-THROTTLE_RATIOS,0|0.15|0.35|0.55|0.8|1.5
-SPAWN_ENEMY_RADIUS_MIN,150
-SPAWN_ENEMY_RADIUS_MAX,200
-SPAWN_LURKER_RADIUS_MIN,60
-SPAWN_LURKER_RADIUS_MAX,80
-```
-
-## shipClasses.csv
-
-```csv
-id              , label                 , speedMult, accelMult, turnMult, hullMult, weightMult, cargoMult, armorFront, armorSide, armorAft, fuelMaxMult, fuelEffMult
-onyx-tug        , Onyx Class Tug        ,      0.55,      0.65,     0.65,     1.8 ,        1.2,       2.5,        2.0,       1.5,     1.2 ,         0.8,         0.5
-g100-hauler     , G100 Class Hauler     ,      0.85,      0.85,     0.9 ,     1.1 ,        1.4,       3.5,        1.3,       1.2,     1.0 ,         1.3,         0.9
-garrison-frigate, Garrison Class Frigate,      0.85,      0.7 ,     0.8 ,     2.5 ,        2.0,       1.5,        2.5,       2.0,     1.5 ,         2.5,         1.1
-maverick-courier, Maverick Class Courier,      1.3 ,      1.2 ,     1.15,     0.85,        0.5,       0.3,        1.0,       1.0,     0.85,         0.8,         0.9
-```
-
-## shipsNamed.csv
-
-```csv
-id                   , label                , shipClass       , faction  , relation, aiBehavior, modules
-hullbreaker          , Hullbreaker          , onyx-tug        , player   , player  ,           , onyx-drive-unit|autocannon|hydrogen-fuel-cell|salvaged-sensor-suite|null
-light-fighter        , Light Fighter        , maverick-courier, scavenger, hostile , stalker   , onyx-drive-unit|autocannon|null
-armed-hauler         , Armed Hauler         , g100-hauler     , scavenger, hostile , kiter     , onyx-drive-unit|autocannon|lance-s|null
-salvage-mothership   , Salvage Mothership   , garrison-frigate, scavenger, hostile , standoff  , onyx-drive-unit|cannon|rocket-pod-l:heat|null|null
-grave-clan-ambusher  , Grave-Clan Ambusher  , maverick-courier, scavenger, hostile , lurker    , onyx-drive-unit|autocannon|rocket-pod-s:heat
-trader-convoy        , Trader Convoy        , g100-hauler     , neutral  , neutral , trader    , onyx-drive-unit
-militia-patrol       , Militia Patrol       , garrison-frigate, neutral  , neutral , militia   , onyx-drive-unit
-drone-control-frigate, Drone Control Frigate, garrison-frigate, concord  , hostile , standoff  , onyx-drive-unit|lance-s|null
-snatcher-drone       , Snatcher Drone       , maverick-courier, concord  , hostile , latch     ,
-```
-
-## weaponBase.csv
-
-```csv
-key,value
-PROJECTILE_SPEED_FACTOR,1.4
-BASE_PROJECTILE_SPEED,200
-BASE_WEAPON_RANGE,1400
-BASE_DAMAGE,19
-BASE_HULL_DAMAGE,12
-BASE_COOLDOWN,0.9
-AUTOCANNON_MAG_SIZE,60
-AUTOCANNON_RELOAD_TIME,10.0
-CANNON_MAG_SIZE,4
-CANNON_RELOAD_TIME,14.0
-GATLING_MAG_SIZE,200
-GATLING_RELOAD_TIME,8.0
-ROCKET_MAG_SIZE,2
-ROCKET_RELOAD_TIME,13.0
-HE_AUTOCANNON_BLAST,60
-HE_CANNON_BLAST,150
-MODULE_BREACH_HULL_THRESHOLD,0.60
-MODULE_BREACH_CHANCE_LOW,0.12
-MODULE_BREACH_CHANCE_MID,0.25
-MODULE_BREACH_CHANCE_HIGH,0.40
-```
 

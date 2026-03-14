@@ -8,7 +8,7 @@
 
 Discrete throttle levels from Stop through Flank. W/S step up or down; the level persists until changed. Ships have momentum — acceleration and deceleration are gradual.
 
-Fuel consumption scales with throttle level. The lowest level is free; consumption increases nonlinearly toward Flank. Running out of fuel clamps the ship to the lowest powered throttle level. Fuel efficiency is a per-ship multiplier that scales burn rate.
+Fuel consumption scales with throttle level. The lowest level is free; consumption increases nonlinearly toward Flank. Running out of fuel clamps the ship to the lowest powered throttle level. Fuel efficiency is an engine module property that scales burn rate.
 
 ---
 
@@ -135,7 +135,7 @@ Ships have a fixed number of module slots. Each slot has a physical mount point 
 
 ### Engine Modules & Thrust-to-Weight
 
-Ship performance is derived from the **thrust-to-weight ratio**. Engine modules provide thrust; all modules, cargo, and fuel contribute weight. Derived stats (acceleration, top speed, turn rate) each have different sensitivities to T/W changes. All derived multipliers are clamped to a floor and ceiling.
+Ship performance is **purely engine-derived**. Hull classes define only mass, durability, cargo capacity, fuel tank, and armor — no inherent speed or agility. Engine modules provide thrust; all modules, cargo, and fuel contribute weight. The thrust-to-weight ratio determines acceleration, top speed, and turn rate via power curves against a global reference T/W. Each stat has different sensitivity to T/W changes. All derived multipliers are clamped to a floor and ceiling. Fuel efficiency is also an engine property, not a hull property.
 
 **Cargo capacity = mass budget.** Everything in the hold has mass: scrap, commodities, ammo, modules, weapons. Uninstalling a module moves its mass from "installed" to "cargo" — total ship mass stays the same.
 
@@ -293,11 +293,15 @@ Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter). They use ship cl
 
 ---
 
-## Ship vs NPC Architecture
+## Ship / Character / Actor Architecture
 
 **Ship** (`SHIP_REGISTRY`) — pure hull template. Shape, base stats, slot layout. No faction, no AI, no identity.
 
-**NPC** (`NPC_REGISTRY`) — a configured actor built on a hull. Carries faction, behavior, and ship class. `createShip(id, x, y)` spawns NPCs. New NPC types are added to `NPC_REGISTRY` — hull files stay untouched.
+**Character** (`js/characters/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` syncs faction/relation/ai onto the ship; `leaveShip()` resets the ship to inert. Characters exist independently of ships — the same character can board different ships.
+
+**Actor** (`CHARACTER_REGISTRY`) — a configured ship + character pair. `createActor(id, x, y)` (aliased as `createShip()`) instantiates a hull, configures modules, creates a Character, and boards it. Unmanned actors (Concord machines) set faction/relation/ai directly on the ship with no Character instance.
+
+**Game state**: `game.characters[]` tracks all active Characters. `game.playerCharacter` is the player's Character. `game.ships[]` and `game.entities[]` are unchanged — all combat/rendering/AI code reads `ship.faction`/`ship.relation`/`ship.ai` as before.
 
 ---
 

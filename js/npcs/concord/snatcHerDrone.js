@@ -1,49 +1,38 @@
-import { MaverickCourier } from '@/ships/classes/maverickCourier.js';
+import { SnatcHerDroneHull } from '@/ships/classes/snatcHerDroneHull.js';
 import { AI_TEMPLATES } from '@data/compiledData.js';
-import { CONCORD_BLUE, ENEMY_FILL } from '@/rendering/colors.js';
 
 const LATCH_RANGE          = 35;   // px
 const DRAIN_INTERVAL       = 0.25; // seconds per tick
 const ARMOR_DRAIN_PER_TICK = 2.6;  // ~10.4/sec
 const HULL_DRAIN_PER_TICK  = 0.65; // ~2.6/sec bleed
 
-// Tiny hexagonal dart — ~14px
-const DRONE_POINTS = [
-  { x:  0, y: -14 },
-  { x:  9, y:   0 },
-  { x:  4, y:   6 },
-  { x:  0, y:  10 },
-  { x: -4, y:   6 },
-  { x: -9, y:   0 },
-];
-
-export class SnatcHerDrone extends MaverickCourier {
+/** Snatcher Drone — unmanned Concord intercept unit with latch/drain behavior. */
+class SnatcHerDroneShip extends SnatcHerDroneHull {
   constructor(x, y) {
     super(x, y);
 
-    this.faction     = 'concord';
-    this.relation    = 'hostile';
-    this.shipType    = 'snatcher-drone';
-    this.ai          = { ...AI_TEMPLATES.latch };
-
-    this.flavorText =
-      'A Concord Remnant autonomous intercept unit. No weapons, no crew, ' +
-      'no hesitation. Designed to latch onto a hull and drain it from the outside. ' +
-      'Fragile under fire — priority target when latched.';
-
     this.weapons = [];  // no weapons — latch mechanic only
-
     this._canRespawn = false;
 
     // Latch state
     this._isLatched     = false;
+    /** @type {import('../../entities/ship.js').Ship | null} */
     this._latchTarget   = null;
     this._latchOffset   = { x: 0, y: 0 };
     this._drainAccum    = 0;
 
-    // HUD notifications for game.js to dispatch
+    // HUD notification queues
     this._pickupTextQueue = [];
     this._spawnQueue      = [];  // unused but safe for generic queue processor
+  }
+
+  onDestroy() {
+    if (this._isLatched) {
+      this._isLatched = false;
+      this._latchTarget = null;
+      this._pickupTextQueue.push({ text: 'DRONE DETACHED', colorHint: 'repair' });
+    }
+    super.onDestroy();
   }
 
   update(dt, entities) {
@@ -71,7 +60,9 @@ export class SnatcHerDrone extends MaverickCourier {
 
     // Cache player target once
     if (!this._latchTarget) {
-      this._latchTarget = entities.find(e => e.relation === 'player' && e.active) ?? null;
+      this._latchTarget = /** @type {import('../../entities/ship.js').Ship | null} */ (
+        entities.find(e => e.relation === 'player' && e.active) ?? null
+      );
     }
 
     super.update(dt, entities);
@@ -90,34 +81,17 @@ export class SnatcHerDrone extends MaverickCourier {
       }
     }
   }
-
-  _drawShape(ctx) {
-    // Tiny hexagonal dart — Concord machine aesthetic
-    ctx.beginPath();
-    ctx.moveTo(DRONE_POINTS[0].x, DRONE_POINTS[0].y);
-    for (let i = 1; i < DRONE_POINTS.length; i++) {
-      ctx.lineTo(DRONE_POINTS[i].x, DRONE_POINTS[i].y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = ENEMY_FILL;
-    ctx.fill();
-    ctx.strokeStyle = CONCORD_BLUE;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Core dot
-    ctx.beginPath();
-    ctx.arc(0, 0, 3, 0, Math.PI * 2);
-    ctx.fillStyle = CONCORD_BLUE;
-    ctx.fill();
-
-  }
-
-  getBounds() {
-    return { x: this.x, y: this.y, radius: 14 };
-  }
 }
 
 export function createSnatcHerDrone(x, y) {
-  return new SnatcHerDrone(x, y);
+  const ship = new SnatcHerDroneShip(x, y);
+  ship.shipType = 'snatcher-drone';
+  ship.faction   = 'concord';
+  ship.relation  = 'hostile';
+  ship.ai        = { ...AI_TEMPLATES.latch };
+  ship.flavorText =
+    'A Concord Remnant autonomous intercept unit. No weapons, no crew, ' +
+    'no hesitation. Designed to latch onto a hull and drain it from the outside. ' +
+    'Fragile under fire — priority target when latched.';
+  return ship;
 }

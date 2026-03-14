@@ -1,0 +1,113 @@
+/* ── Designer Panel — left sidebar for stats/info ──────────────────────────── */
+/* Reuses panel.css variables (--p-*) and typography utilities (.t-*, .p-*).  */
+
+#designer-panel {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 280px;
+  height: 100vh;
+  background: rgba(0,6,14,0.95);
+  border-right: 1px solid var(--p-border);
+  font-family: 'Fira Mono', monospace;
+  color: var(--p-dim);
+  overflow-y: auto;
+  overflow-x: hidden;
+  pointer-events: auto;
+  z-index: 10;
+  padding: 14px;
+  box-sizing: border-box;
+}
+
+/* ── Stat row (label / value flex pair) ────────────────────────────────────── */
+
+.dsg-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--p-small);
+  line-height: 1.5;
+}
+
+.dsg-row-label {
+  color: var(--p-dim);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.dsg-row-value {
+  color: var(--p-white);
+  font-size: 10px;
+  text-align: right;
+}
+
+/* ── Section heading ───────────────────────────────────────────────────────── */
+
+.dsg-section {
+  color: var(--p-cyan);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+/* ── Divider line ──────────────────────────────────────────────────────────── */
+
+.dsg-divider {
+  border: none;
+  border-top: 1px solid var(--p-border);
+  margin: 6px 0;
+}
+
+/* ── Wrapped text (lore / flavor) ──────────────────────────────────────────── */
+
+.dsg-flavor {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--p-dim);
+  margin-top: 2px;
+  word-wrap: break-word;
+}
+
+/* ── Header badge ──────────────────────────────────────────────────────────── */
+
+.dsg-title {
+  color: var(--p-cyan);
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+}
+
+.dsg-hint {
+  color: var(--p-very-dim);
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.dsg-name {
+  font-size: 13px;
+  font-weight: bold;
+  word-wrap: break-word;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.dsg-index {
+  color: var(--p-dim);
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+.dsg-file {
+  color: var(--p-dim);
+  font-size: 10px;
+}
+
+/* ── Flag pills ────────────────────────────────────────────────────────────── */
+
+.dsg-flag {
+  color: var(--p-magenta);
+  font-size: 10px;
+  line-height: 1.5;
+}

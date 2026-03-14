@@ -1,9 +1,6 @@
 import { Ship } from '@/entities/ship.js';
 import { polygonFill, polygonStroke, lines, pulse } from '@/rendering/draw.js';
 
-const SPEED_MULT  = 1.3;   // ~109 u/s — fast but not a racer
-const ACCEL_MULT  = 1.2;   // responsive, not twitchy
-const TURN_MULT   = 1.15;  // handles well, not a sports car
 const HULL_MULT   = 0.85;  // 170 hp — solid everyday frame
 const WEIGHT_MULT = 0.5;   // 500 mass — light courier frame
 const CARGO_MULT  = 0.3;   // 15 units — small trunk
@@ -14,7 +11,6 @@ const ARMOR_SIDE = 1.0;  // 100 — protected flanks
 const ARMOR_AFT = 0.85; //  85 — decent stern
 
 const FUEL_MAX_MULT = 0.8;  // 80 unit tank — decent range
-const FUEL_EFF_MULT = 0.9;  // burns at 90% base rate — economical
 
 // Sleek needle-nose courier. Long sharp nose, set-back cockpit with
 // shoulder flare, tapered engine block. X-wing proportions scaled to
@@ -128,9 +124,8 @@ export class MaverickCourier extends Ship {
     this.shipClassName = 'Maverick Class Courier';
 
     this._initStats({
-      speed: SPEED_MULT, accel: ACCEL_MULT, turn: TURN_MULT,
       hull: HULL_MULT, weight: WEIGHT_MULT, cargo: CARGO_MULT,
-      fuelMax: FUEL_MAX_MULT, fuelEff: FUEL_EFF_MULT,
+      fuelMax: FUEL_MAX_MULT,
       armorFront: ARMOR_FRONT, armorSide: ARMOR_SIDE, armorAft: ARMOR_AFT,
     });
   }

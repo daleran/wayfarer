@@ -18,7 +18,6 @@ Project instructions for Claude Code.
 - **Preview build:** `npm run preview`
 - **Lint:** `npm run lint` (ESLint)
 - **Type check:** `npm run check` (TypeScript `checkJs`, no emit)
-- **Compile data:** `npm run compile-data` (CSVs → `data/compiledData.js`)
 - **Both:** `npm run validate` (lint + check)
 
 ### Validate After Every Change
@@ -42,7 +41,7 @@ Small tweaks and bug fixes live in **FIXES.md** (no codes, just a flat bullet li
 
 | File | Purpose | **Mandatory Update Triggers** |
 |---|---|---|
-| `MECHANICS.md` | Game mechanics — behavioral descriptions only (no specific items, values, or tuning) | New *system* or *behavior* added, removed, or changed. Controls changed. **NOT** triggered by adding items, ships, weapons, ammo types, or tuning values — those live in CSV/code. |
+| `MECHANICS.md` | Game mechanics — behavioral descriptions only (no specific items, values, or tuning) | New *system* or *behavior* added, removed, or changed. Controls changed. **NOT** triggered by adding items, ships, weapons, ammo types, or tuning values — those live in `data/*.js`/code. |
 | `LORE.md` | Worldbuilding — history, factions, locations, tone | Faction names/traits changed. Location names changed. World tone or setting changed. |
 | `UX.md` | UI aesthetic guide — color palette, component patterns, decision log | New UI component added. Color usage changed. Layout changed. Visual conventions changed. |
 | `DEVLOG.md` | Development progress log — major features only | Every session — append one line per major feature completed. |
@@ -80,6 +79,16 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 **Every development iteration**, update the relevant map in `js/data/maps/` to include new entities/features so they're easy to reach. Tell the user to open `editor.html?map=<name>` to validate.
 
+### `editor.html` — DOM Panels
+
+Editor UI chrome is DOM-based (not canvas). Classes in `js/ui/editorPanels.js`, styled by `css/editor.css`:
+- **`EditorHUDBar`** — fixed top status bar with hotkey segments
+- **`EditorSidebar`** — right panel for object browsing/placement (toggle: `-` key)
+- **`EditorItemMenu`** — left panel for adding items to cargo (toggle: `[` key)
+- **`EditorPanBanner`** — pan mode indicator banner
+
+Only `_renderDebugOverlay()` remains on canvas (world-space entity tracking).
+
 ### `designer.html` — Unified Designer
 
 - **Source:** `js/test/designer.js`, entry: `js/designer-main.js`
@@ -87,6 +96,10 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 - **Deep-link:** `designer.html?category=<cat>&id=<slug>`
 - **In scope:** `js/ships/**`, `js/npcs/**`, `js/world/**`, `js/modules/**`, `js/rendering/colors.js`
 - Item slugs are defined in `js/test/designer.js` — check there for current IDs.
+
+### `designer.html` — DOM Panel
+
+Stats panel is DOM-based. `DesignerPanel` class in `js/ui/designerPanel.js`, styled by `css/designer.css`. Preview renderers (ship silhouettes, grids, module icons, weapon animations, module slot boxes + connection lines) remain on canvas.
 
 ## Architecture
 
@@ -115,7 +128,9 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 `Entity` is the base class (`js/entities/entity.js`). `Ship` extends it with armor/hull/weapons/fuel. Ship subclasses override `_drawShape(ctx)` and `getBounds()`. Other entity types: `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`. Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter) — no separate Derelict class. Created via `createDerelict(data)` in `js/world/derelict.js`.
 
-Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPCs (enemies + neutrals) in `js/npcs/<faction>/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there.
+**Character** (`js/characters/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` syncs faction/relation/ai onto the ship and sets `ship.captain`; `leaveShip()` resets the ship to inert. Concord machines (drones, frigates) are unmanned — no Character, faction/relation/ai set directly on the ship.
+
+Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPCs (enemies + neutrals) in `js/npcs/<faction>/`. The ship registry (`js/ships/registry.js`) is the single import point — add new ships there. `CHARACTER_REGISTRY` (aliased as `NPC_REGISTRY`) lists all configured actors. `createActor(id, x, y)` (aliased as `createShip()`) instantiates hull + character + modules. `game.characters[]` tracks all active Characters; `game.playerCharacter` is the player's Character.
 
 ### Key Patterns
 
@@ -128,13 +143,15 @@ Ship classes live in `js/ships/classes/`, player ship in `js/ships/player/`, NPC
 - **Zone entities** — each world entity (station, derelict, terrain) is self-contained in `js/data/zones/<zone>/`. Named derelicts live in `js/data/ships/named/`. Every entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity. No factory dispatchers, no type-specific arrays.
 - **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `js/data/maps/tyr.js` is the full production map; `js/data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
-- **Centralized stats** — CSV files in `data/` are the single source of truth for all base stats, compiled at build time into `data/compiledData.js` by `scripts/compile-data.js`. Key-value CSVs: `shipBase.csv`, `weaponBase.csv`, `economy.csv`, `reputation.csv`. Tabular CSVs: `shipClasses.csv`, `shipsNamed.csv`, `moduleEngines.csv`, `moduleReactors.csv`, `moduleSensors.csv`, `moduleWeapons.csv`, `aiBehaviors.csv`. All JS files import from `@data/compiledData.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors.
-- **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate` from T/W ratio using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). `_refTwRatio` is set at construction; all derived stats are relative to it. Engine modules provide `thrust` and `weight`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
+- **Centralized stats** — JS data files in `data/` are the single source of truth for all base stats. Three layers: (1) `data/tuning.js` — global scalar constants (SPEED_FACTOR, BASE_DAMAGE, etc.); (2) `data/dataRegistry.js` — mutable content tables (ENGINES, WEAPONS, SHIP_CLASSES, etc.) + `registerData()` helper; (3) content files (`data/engines.js`, `data/weapons.js`, `data/shipClasses.js`, etc.) that import a table and call `registerData()` to populate it. `data/index.js` boots all content files and re-exports everything. `data/compiledData.js` is a one-line facade re-exporting from `index.js`. All JS consumer files import from `@data/compiledData.js`. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors. To add new content, create or extend a data file using the `registerData(TABLE, { ... })` pattern.
+- **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate`, and `fuelEfficiency` purely from engine modules. Hull classes define only mass, durability, cargo, fuel tank, and armor — no inherent speed or agility. T/W ratio is computed against a global `REFERENCE_TW` constant using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). Engine modules provide `thrust`, `weight`, and `fuelEffMult`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
 - **Mount points** — each ship class defines `MOUNT_POINTS[]` and overrides `get _mountPoints()`. Index `i` maps to `moduleSlots[i]`. Each mount has `{ x, y, arc, size, slot? }` where `arc` is `'front'|'port'|'starboard'|'aft'`, `size` is `'small'|'large'`, and `slot` is `'engine'` for engine-only mounts (omitted for general-purpose). Used for: (1) drawing module icons on the hull via `_drawModules(ctx)` in `Ship.render()`, (2) positional module breach routing — hits to an arc preferentially damage modules in that arc, (3) install constraints in the Ship Screen — engine slots only accept engines and vice versa. Empty mounts render as dotted white squares; engine mounts show `[E]`. Module visuals: `js/rendering/moduleVisuals.js`.
 - **Weapon registry** — `js/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
 - **Station registry** — `js/world/stationRegistry.js` is a designer-only catalog. Each entry: `{ entity, id, flavorText }`. No factory dispatcher — entities self-instantiate.
-- **UI overlays** — station panel (`#location-overlay`, right 30% DOM panel) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
+- **UI overlays** — narrative panel (`#narrative-panel`, right 30% DOM panel, `js/ui/narrativePanel.js`) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
+- **Narrative system** — station interactions use scrolling conversation logs (Disco Elysium-style). `NarrativePanel` replaces the old `LocationOverlay`. Conversation scripts are async functions in `js/ui/narrative/conversations/` that `await log.choices(...)` for player input. Registry: `js/ui/narrative/conversationRegistry.js`. Station data includes `conversations: { hub, zones: {} }` pointing to script IDs. `game.storyFlags = {}` tracks first-visit flags and NPC memory (session-only)
 - **Color palette** — `js/rendering/colors.js` exports all color constants; never use inline hex strings
+- **CSS utility system** — `css/panel.css` defines CSS custom properties (`--p-text: 13px`, `--p-title: 16px`, `--p-small: 11px`), text color utilities (`.t-cyan`, `.t-amber`, etc.), and typography patterns (`.p-heading`, `.p-subheading`, `.p-text`, `.p-label`, `.p-hint`, `.p-small`). All DOM panel CSS files inherit from these. Never hardcode `px` font sizes in panel CSS — use `var()` references.
 - **Draw API** — `js/rendering/draw.js` exports reusable canvas primitives. Two layers:
   - **Immediate utilities** (take `ctx` as first arg): `polygon`, `polygonFill`, `polygonStroke`, `line`, `lines`, `disc`, `ring`, `trail`, `text`, `pulse`, `engineGlow`
   - **`Shape` class** — composable geometry templates with transform chaining (`.at()`, `.scaled()`, `.rotated()`, `.flipX()`, `.flipY()`) and draw methods (`.fill()`, `.stroke()`, `.draw()`). Factory methods: `Shape.rect()`, `Shape.chamferedRect()`, `Shape.cigar()`, `Shape.trapezoid()`, `Shape.wedge()`, `Shape.stadium()`, `Shape.cross()`, `Shape.ngon()`
@@ -176,9 +193,9 @@ When the user says:
 ## Rules & Conventions
 
 ### Stats: Multiplier Pattern
-Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `data/*.csv` (compiled to `data/compiledData.js`; see Key Patterns above). Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` (in `data/shipBase.csv`) and `PROJECTILE_SPEED_FACTOR` (in `data/weaponBase.csv`).
+Never hardcode raw stat numbers in ship/weapon constructors. All base values live in `data/*.js` (see Key Patterns above). Each ship/weapon file defines a multiplier (e.g. `HULL_MULT = 1.5`) and computes the final value as `BASE_HULL * HULL_MULT`. Global pacing knobs: `SPEED_FACTOR` and `PROJECTILE_SPEED_FACTOR` in `data/tuning.js`.
 
-Ship classes use `this._initStats({ speed, accel, turn, hull, cargo, fuelMax, fuelEff, armorFront, armorSide, armorAft })` from `Ship` base to set all stats in one call. Subclasses that only override a subset (e.g. enemies that don't set cargo/fuel) can omit those keys — they'll keep the parent's values.
+Ship classes use `this._initStats({ hull, weight, cargo, fuelMax, armorFront, armorSide, armorAft })` from `Ship` base to set hull stats. Movement stats (speed, acceleration, turn rate) and fuel efficiency are **purely engine-derived** via `recalcTW()` — hull classes never define them.
 
 ### Colors: Always Use `js/rendering/colors.js`
 Never use inline hex strings anywhere in the codebase. Import named constants from `js/rendering/colors.js`. If a new color is needed, add it there first.
@@ -198,9 +215,30 @@ Major features only — no tuning passes, no small fixes.
 ### Dead Code: Run `/dead-code` After Major Refactors
 After any major refactor (file moves, system extractions, renderer rewrites, UI overhauls), run `/dead-code` to scan for orphaned files, unused exports/imports, stale data fields, and dead CSS. Clean up before moving on.
 
-### Skills: Keep `.claude/commands/` in Sync
-After any architectural change (new file paths, renamed systems, changed patterns, new module types, new behaviors), scan the skill files in `.claude/commands/wayfarer/` and update any instructions that reference the changed paths or APIs. Specifically watch for:
-- File path changes (e.g. `js/data/tuning/*.js` → `data/*.csv` + `@data/compiledData.js`)
+### Skills & Designer: Keep in Sync
+
+**Content skills** (create or edit game content — each handles both new and existing items):
+
+| Skill | Scope | Key registries |
+|---|---|---|
+| `/ship-class` | Hull templates: shape, stats, mount points | `SHIP_REGISTRY` in `js/ships/registry.js` |
+| `/named-ship` | Configured ship instances (captained = NPC, no captain = derelict) | `CHARACTER_REGISTRY` in `js/ships/registry.js`; derelict list in `js/test/designer.js` |
+| `/character` | Named people who board ships | Character files in `js/characters/` |
+| `/station` | Dockable locations with services and renderers | `STATION_REGISTRY` in `js/world/stationRegistry.js` |
+| `/module` | Ship modules AND weapons (combined) | `MODULE_REGISTRY` in `js/modules/shipModule.js`; `WEAPON_REGISTRY` in `js/modules/weapons/registry.js`; ID registry in `js/modules/registry.js` |
+
+**Audit skills:** `/code-review`, `/stat-audit`, `/dead-code`
+
+**MANDATORY: After any substantive change to a system, registry, or content type:**
+1. Read all skill files in `.claude/commands/wayfarer/` that reference the changed system
+2. Update file paths, class names, registry formats, CSV columns, behavior types, and designer category IDs
+3. Update `js/test/designer.js` if the change affects how items are built, categorized, or displayed
+4. Verify designer deep-links still work (`designer.html?category=<cat>&id=<slug>`)
+
+**Watch for these specific changes:**
+- File path moves (e.g. data file reorganizations)
 - Renamed classes, modules, or behavior types
-- New or removed weapon/module/AI types listed in skill templates
-- Verification URL changes (use `editor.html?map=arena` or `designer.html`)
+- New or removed entries in any registry (`SHIP_REGISTRY`, `CHARACTER_REGISTRY`, `MODULE_REGISTRY`, `WEAPON_REGISTRY`, `STATION_REGISTRY`)
+- Data field additions/removals in `data/*.js`
+- Designer category changes in `js/test/designer.js` (`CATEGORIES` array)
+- New or changed `Character` fields in `js/characters/character.js`

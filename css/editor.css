@@ -1,0 +1,229 @@
+/* ── Editor Overlay — DOM panels for the map editor ──────────────────────────── */
+
+/* ── Hidden utility ────────────────────────────────────────────────────────── */
+
+.editor-hidden { display: none !important; }
+
+/* ── HUD bar (top strip) ───────────────────────────────────────────────────── */
+
+#editor-hud-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 22px;
+  background: rgba(0,6,14,0.92);
+  border-bottom: 1px solid var(--p-very-dim);
+  font-family: 'Fira Mono', monospace;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 10px;
+  z-index: 80;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.edt-seg {
+  color: var(--p-dim);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.edt-seg.active {
+  color: var(--p-cyan);
+}
+
+/* ── Right sidebar (object browser) ────────────────────────────────────────── */
+
+#editor-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 240px;
+  height: 100vh;
+  background: rgba(0,6,14,0.94);
+  border-left: 1px solid var(--p-cyan);
+  font-family: 'Fira Mono', monospace;
+  color: var(--p-dim);
+  z-index: 81;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ── Left sidebar (item menu) ──────────────────────────────────────────────── */
+
+#editor-item-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100vh;
+  background: rgba(0,6,14,0.94);
+  border-right: 1px solid var(--p-amber);
+  font-family: 'Fira Mono', monospace;
+  color: var(--p-dim);
+  z-index: 81;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ── Pan mode banner ───────────────────────────────────────────────────────── */
+
+#editor-pan-banner {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 28px;
+  background: rgba(0,6,14,0.92);
+  border: 1px solid var(--p-magenta);
+  font-family: 'Fira Mono', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--p-magenta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 82;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* ── Shared panel internals ────────────────────────────────────────────────── */
+
+.edt-cat-hint {
+  font-size: 10px;
+  color: var(--p-dim);
+  padding: 8px 10px 0;
+  user-select: none;
+}
+
+.edt-cat-label {
+  font-size: var(--p-text);
+  font-weight: bold;
+  padding: 4px 10px 0;
+  user-select: none;
+}
+
+.edt-cat-label.cyan   { color: var(--p-cyan); }
+.edt-cat-label.amber  { color: var(--p-amber); }
+
+.edt-dots {
+  display: flex;
+  gap: 8px;
+  padding: 6px 10px 0;
+}
+
+.edt-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--p-dim);
+}
+
+.edt-dot.active       { background: var(--p-cyan); }
+.edt-dot.active.amber { background: var(--p-amber); }
+
+.edt-divider {
+  height: 1px;
+  margin: 6px 8px;
+  background: var(--p-very-dim);
+}
+
+/* ── Scrollable item list ──────────────────────────────────────────────────── */
+
+.edt-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+  min-height: 0;
+}
+
+.edt-list::-webkit-scrollbar { width: 4px; }
+.edt-list::-webkit-scrollbar-track { background: transparent; }
+.edt-list::-webkit-scrollbar-thumb { background: var(--p-very-dim); border-radius: 2px; }
+
+/* ── Item rows ─────────────────────────────────────────────────────────────── */
+
+.edt-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 22px;
+  padding: 0 12px 0 12px;
+  font-size: var(--p-small);
+  color: var(--p-dim);
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.edt-item.selected {
+  background: rgba(0,255,204,0.08);
+  outline: 1px solid rgba(0,255,204,0.3);
+  outline-offset: -1px;
+  color: var(--p-cyan);
+}
+
+.edt-item.selected.amber-sel {
+  background: rgba(255,200,80,0.08);
+  outline-color: rgba(255,170,0,0.3);
+  color: var(--p-amber);
+}
+
+/* ── Faction dot ───────────────────────────────────────────────────────────── */
+
+.edt-faction-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Stats / hint footer ──────────────────────────────────────────────────── */
+
+.edt-footer {
+  flex-shrink: 0;
+  padding: 6px 10px 8px;
+  border-top: 1px solid var(--p-very-dim);
+}
+
+.edt-footer-stats {
+  font-size: 10px;
+  color: var(--p-dim);
+  margin-bottom: 4px;
+}
+
+.edt-footer-hint {
+  font-size: 10px;
+  color: var(--p-dim);
+  line-height: 1.6;
+}
+
+.edt-footer-inv {
+  font-size: 10px;
+  color: var(--p-dim);
+  margin-bottom: 4px;
+  border-top: 1px solid var(--p-very-dim);
+  padding-top: 6px;
+}
+
+/* ── Flash animation for item add ──────────────────────────────────────────── */
+
+@keyframes edt-flash-green {
+  0%   { background: rgba(0,255,100,0.2); outline-color: var(--p-green); }
+  100% { background: rgba(255,200,80,0.08); outline-color: rgba(255,170,0,0.3); }
+}
+
+.edt-item.flash {
+  animation: edt-flash-green 0.4s ease-out forwards;
+  color: var(--p-green);
+}

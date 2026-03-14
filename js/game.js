@@ -14,7 +14,7 @@ import { WeaponSystem } from './systems/weaponSystem.js';
 import { InteractionSystem } from './systems/interactionSystem.js';
 import { updateShipAI } from './ai/shipAI.js';
 import { Station } from './world/station.js';
-import { LocationOverlay } from './ui/locationOverlay.js';
+import { NarrativePanel } from './ui/narrativePanel.js';
 import { ShipScreen } from './ui/shipScreen.js';
 import {
   DEFAULT_SCRAP, FUEL_RATES, SPAWN,
@@ -34,6 +34,8 @@ export class GameManager {
     this.ctx = null;
     this.entities = [];
     this.player = null;
+    this.playerCharacter = null;  // Character instance piloting the player ship
+    this.characters = [];         // all active Characters (NPCs + player)
     this.ships = [];   // all non-player ships; relation drives hostile/neutral/friendly
     this.camera = null;
     this.renderer = null;
@@ -52,6 +54,7 @@ export class GameManager {
     this._respawnQueue = [];
     this._prevMouseRight = false;
     this.reputation = new ReputationSystem();
+    this.storyFlags = {};
     this.totalTime = 0;
 
     // Subsystems
@@ -91,7 +94,7 @@ export class GameManager {
 
     this.camera = new Camera(this.canvas.width, this.canvas.height);
     this.hud = new HUD();
-    this.stationScreen = new LocationOverlay();
+    this.stationScreen = new NarrativePanel();
     this.shipScreen = new ShipScreen();
     this.renderer = new Renderer(this.ctx, this.map.mapSize, this.map.background);
     this.particlePool = new ParticlePool();
@@ -104,13 +107,21 @@ export class GameManager {
     this.inventory.bindPlayer(this.player);
     this.inventory.initFromPlayer(this.player);
 
+    // Track player character
+    if (this.player.captain) {
+      this.playerCharacter = this.player.captain;
+      this.characters.push(this.playerCharacter);
+    }
 
     this.entities.push(this.player);
 
     // World entities — pre-instantiated by zone manifests / map files
     for (const entity of this.map.entities ?? []) {
       this.entities.push(entity);
-      if (entity.isShip) this.ships.push(entity);
+      if (entity.isShip) {
+        this.ships.push(entity);
+        if (entity.captain) this.characters.push(entity.captain);
+      }
     }
 
     this.mapZones = this.map.zones || [];
@@ -169,7 +180,7 @@ export class GameManager {
         // Recalc T/W after undocking — fuel/cargo may have changed at station
         if (this.player?.active) this.player.recalcTW(this.fuel, this.totalCargoUsed);
       }
-      return;
+      // Don't return — let the simulation continue while docked
     }
 
     if (this.salvage.isSalvaging) {
@@ -185,7 +196,7 @@ export class GameManager {
     // Pause toggle — space bar; checked before processInput so fire is skipped
     if (input.wasJustPressed(' ')) this.isPaused = !this.isPaused;
 
-    if (!this.navigation.mapOpen) this._processInput(dt);
+    if (!this.isDocked && !this.navigation.mapOpen) this._processInput(dt);
 
     if (this.shipScreen.visible && !this.isDocked) {
       this.shipScreen.update(dt, this);
@@ -217,6 +228,7 @@ export class GameManager {
         const drone = entity._spawnQueue.shift();
         this.entities.push(drone);
         this.ships.push(drone);
+        if (drone.captain) this.characters.push(drone.captain);
       }
       while (entity._pickupTextQueue?.length > 0) {
         const msg = entity._pickupTextQueue.shift();
@@ -273,16 +285,18 @@ export class GameManager {
     this._updateDamageEffects(dt);
     this._purgeInactive();
 
-    this.interaction.updateDerelicts(dt, this.entities, this.player, this.salvage, input);
-    if (!this.salvage.isSalvaging) {
-      const dockResult = this.interaction.checkDocking(this.entities, this.player, input, {
-        reputation: this.reputation, hud: this.hud, stationScreen: this.stationScreen,
-        bounty: this.bounty, game: this,
-      });
-      if (dockResult.isDocked) this.isDocked = true;
+    if (!this.isDocked) {
+      this.interaction.updateDerelicts(dt, this.entities, this.player, this.salvage, input);
+      if (!this.salvage.isSalvaging) {
+        const dockResult = this.interaction.checkDocking(this.entities, this.player, input, {
+          reputation: this.reputation, hud: this.hud, stationScreen: this.stationScreen,
+          bounty: this.bounty, game: this,
+        });
+        if (dockResult.isDocked) this.isDocked = true;
+      }
     }
 
-    if (this.player && this.player.active && !this.isPanMode) {
+    if (this.player && this.player.active && !this.isPanMode && !this.isDocked) {
       this.camera.follow(this.player, dt);
     }
 
@@ -596,6 +610,7 @@ export class GameManager {
         ship._canRespawn = true;
         this.entities.push(ship);
         this.ships.push(ship);
+        if (ship.captain) this.characters.push(ship.captain);
         this._respawnQueue.splice(i, 1);
       }
     }
@@ -615,6 +630,7 @@ export class GameManager {
     }
     this.entities = this.entities.filter(e => e.active);
     this.ships = this.ships.filter(s => s.active);
+    this.characters = this.characters.filter(c => c.inShip?.active !== false);
   }
 
   // Computed view: all ships currently flagged hostile (for renderer/HUD)

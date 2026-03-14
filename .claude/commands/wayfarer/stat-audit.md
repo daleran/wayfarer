@@ -1,51 +1,51 @@
 # Stat Audit — Find Convention Violations
 
-Scan the codebase for stat and color convention violations. The CSV files in `data/` are the single source of truth. Report every violation with a suggested fix. Do not automatically apply fixes — report first, then ask the user which to fix.
+Scan the codebase for stat and color convention violations. The JS data files in `data/` are the single source of truth. Report every violation with a suggested fix. Do not automatically apply fixes — report first, then ask the user which to fix.
 
 ## Data Pipeline Overview
 
-`data/*.csv` → `scripts/compile-data.js` → `data/compiledData.js` → imported as `@data/compiledData.js`
+`data/*.js` content files → `data/dataRegistry.js` tables → `data/index.js` boot → `data/compiledData.js` facade → imported as `@data/compiledData.js`
 
-**Key-value CSVs** (exported as individual constants):
-- `data/shipBase.csv` — `SPEED_FACTOR`, `BASE_SPEED`, `BASE_ACCELERATION`, `BASE_TURN_RATE`, `BASE_HULL`, `BASE_ARMOR`, `BASE_CARGO`, `BASE_FUEL_MAX`, `BASE_FUEL_EFFICIENCY`, `BASE_HULL_WEIGHT`, `FUEL_WEIGHT_PER_UNIT`, `TW_*`, `THROTTLE_*`, `SPAWN_*`
-- `data/weaponBase.csv` — `PROJECTILE_SPEED_FACTOR`, `BASE_PROJECTILE_SPEED`, `BASE_WEAPON_RANGE`, `BASE_DAMAGE`, `BASE_HULL_DAMAGE`, `BASE_COOLDOWN`, magazine/reload constants, blast radii, module breach constants
-- `data/economy.csv` — `DEFAULT_SCRAP`, `FUEL_RATES`, `REPAIR_RATE`, `REPAIR_COST_PER_PT`, `MODULE_REPAIR_RATE`, `MODULE_REPAIR_COST`, `BOUNTY_EXPIRY_WARNING_SECS`, `SCRAP_MASS`
-- `data/reputation.csv` — `KILL_PENALTY`, `RIVAL_BONUS`, `BOUNTY_BONUS`, `ATTACK_NEUTRAL_PENALTY`, threshold/discount constants
+**Tuning constants** (`data/tuning.js`, exported as individual constants):
+- Ship base: `SPEED_FACTOR`, `BASE_SPEED`, `BASE_ACCELERATION`, `BASE_TURN_RATE`, `BASE_HULL`, `BASE_ARMOR`, `BASE_CARGO`, `BASE_FUEL_MAX`, `BASE_HULL_WEIGHT`, `FUEL_WEIGHT_PER_UNIT`, `TW_*`, `THROTTLE_*`, `SPAWN`
+- Weapon base: `PROJECTILE_SPEED_FACTOR`, `BASE_PROJECTILE_SPEED`, `BASE_WEAPON_RANGE`, `BASE_DAMAGE`, `BASE_HULL_DAMAGE`, `BASE_COOLDOWN`, magazine/reload constants, blast radii, module breach constants
+- Economy: `DEFAULT_SCRAP`, `FUEL_RATES`, `REPAIR_RATE`, `REPAIR_COST_PER_PT`, `MODULE_REPAIR_RATE`, `MODULE_REPAIR_COST`, `BOUNTY`, `SCRAP_MASS`
+- Reputation: `REPUTATION` object with KILL_PENALTY, RIVAL_BONUS, thresholds, etc.
 
-**Tabular CSVs** (exported as lookup objects/arrays):
-- `data/shipClasses.csv` — `SHIP_CLASSES[id]` → `{ speedMult, accelMult, turnMult, hullMult, weightMult, cargoMult, armorFront, armorSide, armorAft, fuelMaxMult, fuelEffMult }`
-- `data/shipsNamed.csv` — `SHIPS_NAMED[id]` → `{ shipClass, faction, relation, aiBehavior, modules }`
-- `data/moduleWeapons.csv` — `MODULE_WEAPONS[id]` → `{ damageMult, hullDamageMult, rangeMult, speedMult, cooldownMult, magSize, reloadTime, blastRadius, ammoType, isBeam, isFixed, isSecondary, canIntercept, isInterceptable, guidanceStrength, burstSpread, ... }`
-- `data/moduleEngines.csv` — `MODULE_ENGINES[id]` → `{ thrust, fuelEffMult, fuelDrainRate, powerDraw, weight }`
-- `data/moduleReactors.csv` — `MODULE_REACTORS[id]` → `{ powerOutput, fuelDrainRate, overhaulInterval, overhaulCost, degradedOutput, weight }`
-- `data/moduleSensors.csv` — `MODULE_SENSORS[id]` → `{ powerDraw, weight, sensorRange, feature flags... }`
-- `data/aiBehaviors.csv` — `AI_TEMPLATES[id]` → `{ combatBehavior, passiveBehavior, aggroRange, deaggroRange, fireRange, ... }`
+**Content tables** (populated via `registerData()` in `data/dataRegistry.js`):
+- `data/shipClasses.js` — `SHIP_CLASSES[id]` → `{ hullMult, weightMult, cargoMult, armorFront, armorSide, armorAft, fuelMaxMult }`
+- `data/namedShips.js` — `NPC_SHIPS[id]` → `{ shipClass, faction, relation, aiBehavior, modules }`
+- `data/weapons.js` — `WEAPONS[id]` → `{ damageMult, hullDamageMult, rangeMult, speedMult, cooldownMult, magSize, reloadTime, blastRadius, acceptedAmmoTypes, isBeam, isFixed, isSecondary, canIntercept, isInterceptable, guidanceStrength, burstSpread, ... }`
+- `data/engines.js` — `ENGINES[id]` → `{ thrust, fuelEffMult, fuelDrainRate, powerDraw, weight }`
+- `data/reactors.js` — `REACTORS[id]` → `{ powerOutput, fuelDrainRate, overhaulInterval, overhaulCost, degradedOutput, weight }`
+- `data/sensors.js` — `SENSORS[id]` → `{ powerDraw, weight, sensorRange, feature flags... }`
+- `data/aiBehaviors.js` — `AI_TEMPLATES[id]` → `{ combatBehavior, passiveBehavior, aggroRange, deaggroRange, fireRange, ... }`
 
 ## What to Audit
 
-### 1. CSV ↔ JS Consistency
+### 1. Data ↔ JS Consistency
 
-**Check that tabular CSV rows are consumed correctly in JS:**
+**Check that content table entries are consumed correctly in JS:**
 
-For each ship class in `data/shipClasses.csv`:
+For each ship class in `data/shipClasses.js`:
 - Find the corresponding JS file in `js/ships/classes/` and verify it imports and uses the class multipliers from `SHIP_CLASSES`
-- Flag any JS file that hardcodes a multiplier value instead of reading it from the CSV data
+- Flag any JS file that hardcodes a multiplier value instead of reading it from the data
 
-For each named ship in `data/shipsNamed.csv`:
+For each named ship in `data/namedShips.js`:
 - Verify the JS file references the correct `shipClass` and `aiBehavior`
-- Verify module loadout matches between CSV and JS
+- Verify module loadout matches between data and JS
 
-For each weapon in `data/moduleWeapons.csv`:
-- Verify the JS weapon file in `js/modules/weapons/` uses the CSV stats (damageMult, rangeMult, etc.) rather than hardcoding them
+For each weapon in `data/weapons.js`:
+- Verify the JS weapon file in `js/modules/weapons/` uses the data stats (damageMult, rangeMult, etc.) rather than hardcoding them
 
-For each module in `data/moduleEngines.csv`, `data/moduleReactors.csv`, `data/moduleSensors.csv`:
+For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
 - Verify the JS module in `js/modules/` reads stats from compiled data rather than hardcoding
 
 **What to flag:**
-- JS file hardcodes a value that exists in a CSV column: `this.hullMult = 1.8` when `shipClasses.csv` already has `hullMult=1.8` for that class
-- JS file uses a different value than what's in the CSV
-- CSV row exists with no corresponding JS consumer
-- JS file defines stats that should be in a CSV but aren't
+- JS file hardcodes a value that exists in a data entry: `this.hullMult = 1.8` when `data/shipClasses.js` already has `hullMult: 1.8` for that class
+- JS file uses a different value than what's in the data
+- Data entry exists with no corresponding JS consumer
+- JS file defines stats that should be in a data file but aren't
 
 ### 2. Hardcoded stats in ship/weapon constructors
 
@@ -66,7 +66,7 @@ For each module in `data/moduleEngines.csv`, `data/moduleReactors.csv`, `data/mo
 **What to flag:**
 - Any of the above assigned a raw number literal: `this.speedMax = 180` ❌
 - Any stat that doesn't trace back to a `BASE_*` constant and a multiplier: `this.hullMax = BASE_HULL` (missing multiplier) ⚠️
-- Multiplier constants defined as hardcoded numbers are fine: `const SPEED_MULT = 1.2` ✅ (though these should ideally come from the CSV)
+- Multiplier constants defined as hardcoded numbers are fine: `const SPEED_MULT = 1.2` ✅ (though these should ideally come from the data file)
 
 ### 3. Inline hex color strings
 
@@ -80,29 +80,29 @@ For each module in `data/moduleEngines.csv`, `data/moduleReactors.csv`, `data/mo
 
 ### 4. Rogue BASE_ constants
 
-**The rule:** `BASE_*` constants live only in `data/compiledData.js`. No JS file should define its own `const BASE_*`.
+**The rule:** `BASE_*` constants live only in `data/tuning.js` (re-exported via `data/compiledData.js`). No JS file should define its own `const BASE_*`.
 
 **Files to scan:** All `js/**/*.js`
 
 **What to flag:**
-- Any `const BASE_` declaration outside `data/compiledData.js`
+- Any `const BASE_` declaration outside `data/tuning.js`
 
-### 5. Stats that should be in CSV but aren't
+### 5. Stats that should be in data files but aren't
 
-**Check for numeric constants in JS files that represent gameplay stats and should be centralized in a CSV.**
+**Check for numeric constants in JS files that represent gameplay stats and should be centralized in a data file.**
 
 **What to flag:**
 - Magic numbers in ship/weapon/module constructors that aren't cosmetic (e.g. draw offsets are fine, but `this.sensorRange = 3000` is a stat)
-- Module stats (weight, powerDraw, powerOutput, thrust, etc.) hardcoded in `js/modules/` files instead of coming from the corresponding CSV
+- Module stats (weight, powerDraw, powerOutput, thrust, etc.) hardcoded in `js/modules/` files instead of coming from the corresponding data file
 
 ## Audit Output Format
 
 ```
 === STAT AUDIT RESULTS ===
 
-[CSV ↔ JS Mismatches]
-  data/shipClasses.csv:onyx-tug — hullMult=1.8 but js/ships/classes/onyxTug.js uses HULL_MULT=1.6
-  data/moduleWeapons.csv:autocannon — damageMult=1.0 but js/modules/weapons/autocannon.js hardcodes damage
+[Data ↔ JS Mismatches]
+  data/shipClasses.js:onyx-tug — hullMult=1.8 but js/ships/classes/onyxTug.js uses HULL_MULT=1.6
+  data/weapons.js:autocannon — damageMult=1.0 but js/modules/weapons/autocannon.js hardcodes damage
 
 [Hardcoded Stats]
   js/ships/classes/someShip.js:42 — this.speedMax = 180
@@ -114,10 +114,10 @@ For each module in `data/moduleEngines.csv`, `data/moduleReactors.csv`, `data/mo
 [Rogue BASE_ Constants]
   (none)
 
-[Stats Missing from CSV]
-  js/modules/shipModule.js:120 — SmallFissionReactor powerOutput=160 should be in moduleReactors.csv
+[Stats Missing from Data]
+  js/modules/shipModule.js:120 — SmallFissionReactor powerOutput=160 should be in data/reactors.js
 
-TOTAL: X csv mismatches, X stat violations, X color violations, X rogue constants, X missing csv entries
+TOTAL: X data mismatches, X stat violations, X color violations, X rogue constants, X missing data entries
 ```
 
 If no violations are found in a category, show `(none)`.
@@ -127,10 +127,8 @@ If no violations are found in a category, show `(none)`.
 Ask the user: "Which violations would you like me to fix?" Then fix only the ones they confirm.
 
 **Fixing priorities:**
-1. **CSV ↔ JS mismatches**: Update the JS to read from compiled data, or update the CSV if the JS value is intentionally different
+1. **Data ↔ JS mismatches**: Update the JS to read from compiled data, or update the data file if the JS value is intentionally different
 2. **Hardcoded stats**: Add a multiplier constant and use `BASE_X * MULT * FACTOR`
-3. **Stats missing from CSV**: Add the stat to the appropriate CSV, run `npm run compile-data`, then update the JS to import from compiled data
+3. **Stats missing from data**: Add the stat to the appropriate `data/*.js` file, then update the JS to import from compiled data
 4. **Inline colors**: Import from `js/rendering/colors.js` (add new constant there if needed)
 5. **Rogue BASE_ constants**: Remove and import from `@data/compiledData.js` instead
-
-After any CSV changes, run `npm run compile-data` to regenerate `data/compiledData.js`.
