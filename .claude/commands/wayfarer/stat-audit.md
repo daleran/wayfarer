@@ -4,7 +4,7 @@ Scan the codebase for stat and color convention violations. The JS data files in
 
 ## Data Pipeline Overview
 
-`data/*.js` content files → `data/dataRegistry.js` tables → `data/index.js` boot → `data/compiledData.js` facade → imported as `@data/compiledData.js`
+`data/*.js` content files → `data/dataRegistry.js` tables → `data/index.js` boot → imported as `@data/index.js`
 
 **Tuning constants** (`data/tuning.js`, exported as individual constants):
 - Ship base: `SPEED_FACTOR`, `BASE_SPEED`, `BASE_ACCELERATION`, `BASE_TURN_RATE`, `BASE_HULL`, `BASE_ARMOR`, `BASE_CARGO`, `BASE_FUEL_MAX`, `BASE_HULL_WEIGHT`, `FUEL_WEIGHT_PER_UNIT`, `TW_*`, `THROTTLE_*`, `SPAWN`
@@ -14,7 +14,7 @@ Scan the codebase for stat and color convention violations. The JS data files in
 
 **Content tables** (populated via `registerData()` in `data/dataRegistry.js`):
 - `data/shipClasses.js` — `SHIP_CLASSES[id]` → `{ hullMult, weightMult, cargoMult, armorFront, armorSide, armorAft, fuelMaxMult }`
-- `data/namedShips.js` — `NPC_SHIPS[id]` → `{ shipClass, faction, relation, aiBehavior, modules }`
+- `data/actors/<faction>/*.js` — actor entries in `CONTENT.actors` → `{ shipClass, faction, relation, aiBehavior, modules }`
 - `data/weapons.js` — `WEAPONS[id]` → `{ damageMult, hullDamageMult, rangeMult, speedMult, cooldownMult, magSize, reloadTime, blastRadius, acceptedAmmoTypes, isBeam, isFixed, isSecondary, canIntercept, isInterceptable, guidanceStrength, burstSpread, ... }`
 - `data/engines.js` — `ENGINES[id]` → `{ thrust, fuelEffMult, fuelDrainRate, powerDraw, weight }`
 - `data/reactors.js` — `REACTORS[id]` → `{ powerOutput, fuelDrainRate, overhaulInterval, overhaulCost, degradedOutput, weight }`
@@ -28,18 +28,18 @@ Scan the codebase for stat and color convention violations. The JS data files in
 **Check that content table entries are consumed correctly in JS:**
 
 For each ship class in `data/shipClasses.js`:
-- Find the corresponding JS file in `js/ships/classes/` and verify it imports and uses the class multipliers from `SHIP_CLASSES`
+- Find the corresponding hull file in `data/hulls/*/hull.js` and verify it imports and uses the class multipliers from `SHIP_CLASSES`
 - Flag any JS file that hardcodes a multiplier value instead of reading it from the data
 
-For each named ship in `data/namedShips.js`:
-- Verify the JS file references the correct `shipClass` and `aiBehavior`
+For each actor in `data/actors/<faction>/*.js` (registered in `CONTENT.actors`):
+- Verify the entry references the correct `shipClass` and `aiBehavior`
 - Verify module loadout matches between data and JS
 
 For each weapon in `data/weapons.js`:
-- Verify the JS weapon file in `js/modules/weapons/` uses the data stats (damageMult, rangeMult, etc.) rather than hardcoding them
+- Verify the JS weapon file in `src/modules/weapons/` uses the data stats (damageMult, rangeMult, etc.) rather than hardcoding them
 
 For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
-- Verify the JS module in `js/modules/` reads stats from compiled data rather than hardcoding
+- Verify the JS module in `src/modules/` reads stats from compiled data rather than hardcoding
 
 **What to flag:**
 - JS file hardcodes a value that exists in a data entry: `this.hullMult = 1.8` when `data/shipClasses.js` already has `hullMult: 1.8` for that class
@@ -52,10 +52,10 @@ For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
 **The rule:** Ship stats come from `BASE_* × classMult × FACTOR`. Weapon stats come from `BASE_* × weaponMult`. Raw numbers are never allowed for gameplay-affecting stats.
 
 **Files to scan:**
-- `js/ships/**/*.js`
-- `js/npcs/**/*.js`
-- `js/modules/weapons/**/*.js`
-- `js/modules/shipModule.js`
+- `data/hulls/*/hull.js`
+- `data/actors/**/*.js`
+- `src/modules/weapons/**/*.js`
+- `src/modules/shipModule.js`
 
 **Properties that must use the multiplier pattern:**
 - Ship movement: `speedMax`, `acceleration`, `turnRate` (via `_initStats` or direct assignment)
@@ -70,19 +70,19 @@ For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
 
 ### 3. Inline hex color strings
 
-**The rule:** No hex color strings anywhere except `js/rendering/colors.js`. All colors import from there.
+**The rule:** No hex color strings anywhere except `src/rendering/colors.js`. All colors import from there.
 
-**Files to scan:** All `js/**/*.js` files
+**Files to scan:** All `src/**/*.js` files
 
 **What to flag:**
 - Any string matching `'#[0-9a-fA-F]{3,8}'` or `"#[0-9a-fA-F]{3,8}"` used as a color
-- **Exception:** `js/rendering/colors.js` itself (the definition file)
+- **Exception:** `src/rendering/colors.js` itself (the definition file)
 
 ### 4. Rogue BASE_ constants
 
-**The rule:** `BASE_*` constants live only in `data/tuning.js` (re-exported via `data/compiledData.js`). No JS file should define its own `const BASE_*`.
+**The rule:** `BASE_*` constants live only in `data/tuning.js` (re-exported via `data/index.js`). No JS file should define its own `const BASE_*`.
 
-**Files to scan:** All `js/**/*.js`
+**Files to scan:** All `src/**/*.js`
 
 **What to flag:**
 - Any `const BASE_` declaration outside `data/tuning.js`
@@ -93,7 +93,7 @@ For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
 
 **What to flag:**
 - Magic numbers in ship/weapon/module constructors that aren't cosmetic (e.g. draw offsets are fine, but `this.sensorRange = 3000` is a stat)
-- Module stats (weight, powerDraw, powerOutput, thrust, etc.) hardcoded in `js/modules/` files instead of coming from the corresponding data file
+- Module stats (weight, powerDraw, powerOutput, thrust, etc.) hardcoded in `src/modules/` files instead of coming from the corresponding data file
 
 ## Audit Output Format
 
@@ -101,21 +101,21 @@ For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
 === STAT AUDIT RESULTS ===
 
 [Data ↔ JS Mismatches]
-  data/shipClasses.js:onyx-tug — hullMult=1.8 but js/ships/classes/onyxTug.js uses HULL_MULT=1.6
-  data/weapons.js:autocannon — damageMult=1.0 but js/modules/weapons/autocannon.js hardcodes damage
+  data/shipClasses.js:onyx-tug — hullMult=1.8 but data/hulls/onyx-tug/hull.js uses HULL_MULT=1.6
+  data/weapons.js:autocannon — damageMult=1.0 but src/modules/weapons/autocannon.js hardcodes damage
 
 [Hardcoded Stats]
-  js/ships/classes/someShip.js:42 — this.speedMax = 180
-  js/npcs/scavengers/lightFighter.js:55 — this.damage = 25
+  data/hulls/some-ship/hull.js:42 — this.speedMax = 180
+  data/actors/scavenger/lightFighter.js:55 — this.damage = 25
 
 [Inline Colors]
-  js/world/someRenderer.js:88 — ctx.strokeStyle = '#ff4422'
+  src/world/someRenderer.js:88 — ctx.strokeStyle = '#ff4422'
 
 [Rogue BASE_ Constants]
   (none)
 
 [Stats Missing from Data]
-  js/modules/shipModule.js:120 — SmallFissionReactor powerOutput=160 should be in data/reactors.js
+  src/modules/shipModule.js:120 — SmallFissionReactor powerOutput=160 should be in data/reactors.js
 
 TOTAL: X data mismatches, X stat violations, X color violations, X rogue constants, X missing data entries
 ```
@@ -130,5 +130,5 @@ Ask the user: "Which violations would you like me to fix?" Then fix only the one
 1. **Data ↔ JS mismatches**: Update the JS to read from compiled data, or update the data file if the JS value is intentionally different
 2. **Hardcoded stats**: Add a multiplier constant and use `BASE_X * MULT * FACTOR`
 3. **Stats missing from data**: Add the stat to the appropriate `data/*.js` file, then update the JS to import from compiled data
-4. **Inline colors**: Import from `js/rendering/colors.js` (add new constant there if needed)
-5. **Rogue BASE_ constants**: Remove and import from `@data/compiledData.js` instead
+4. **Inline colors**: Import from `src/rendering/colors.js` (add new constant there if needed)
+5. **Rogue BASE_ constants**: Remove and import from `@data/index.js` instead

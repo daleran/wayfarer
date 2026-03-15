@@ -11,10 +11,10 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./js/*"],
+      "@/*": ["./src/*"],
       "@data/*": ["./data/*"]
     }
   },
-  "include": ["js/**/*.js"],
+  "include": ["src/**/*.js", "data/**/*.js"],
   "exclude": ["node_modules", "dist"]
 }

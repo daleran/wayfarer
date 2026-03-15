@@ -20,12 +20,12 @@ Create a new ship hull class or edit an existing one. Ship classes are pure vess
 ## Step 2 — Read reference files
 
 Before writing any code:
-- `js/entities/ship.js` — `_initStats()`, `_drawHullArcs()`, `_playerHullFill()`, `_strokeArcCurrent()`, mount point system
-- `js/rendering/colors.js` — all color constants
-- `js/rendering/draw.js` — Shape factories and Draw API
+- `src/entities/ship.js` — `_initStats()`, `_drawHullArcs()`, `_playerHullFill()`, `_strokeArcCurrent()`, mount point system
+- `src/rendering/colors.js` — all color constants
+- `src/rendering/draw.js` — Shape factories and Draw API
 - `data/shipClasses.js` — existing class stat multipliers
 - `UX.md` — visual conventions and color palette
-- Existing ship classes in `js/ships/classes/` for pattern reference
+- Existing ship hull classes in `data/hulls/*/hull.js` for pattern reference
 
 ## Step 3 — Data stats
 
@@ -48,10 +48,10 @@ Before writing any code:
 
 ## Step 4 — Ship class file
 
-Location: `js/ships/classes/<camelCaseName>.js`
+Location: `data/hulls/<slug>/hull.js`
 
 Key requirements:
-- Import stats from `SHIP_CLASSES['<id>']` via `@data/compiledData.js`
+- Import stats from `SHIP_CLASSES['<id>']` via `@data/index.js`
 - Use `this._initStats({ speed, accel, turn, hull, armorFront, armorSide, armorAft })` with data multipliers
 - Set `this.shipClassName` and `this.shipType`
 - Define `HULL_POINTS[]` array and `ARC_MAP { front, starboard, aft, port }` with index ranges
@@ -62,26 +62,26 @@ Key requirements:
   - NPC: `this.hullFill` fill + `this.hullStroke` outline
 - Override `getBounds()` with collision radius
 - Export `HULL_POINTS` (used by HUD minimap for player ship silhouette)
-- Use colors from `js/rendering/colors.js` — NEVER inline hex
-- Use Shape factories from `js/rendering/draw.js` where possible
+- Use colors from `src/rendering/colors.js` — NEVER inline hex
+- Use Shape factories from `src/rendering/draw.js` where possible
 
 For ships with separate components (nacelles, pods), use `_strokeArcCurrent(ctx, arcKey)` per sub-polygon. See `garrisonFrigate.js` and `g100Hauler.js` for examples.
 
 ## Step 5 — Register
 
-Open `js/ships/registry.js`:
-1. Import the class
-2. Add to `SHIP_REGISTRY`:
+`SHIP_REGISTRY` in `src/entities/registry.js` is now a Proxy that reads from `CONTENT.hulls`. Hull files self-register at import time via `registerContent()` from `data/dataRegistry.js`:
+
 ```js
-{
-  id: '<slug>',
+// In data/hulls/<slug>/hull.js
+import { CONTENT, registerContent } from '@data/dataRegistry.js';
+
+registerContent(CONTENT.hulls, '<slug>', {
   label: '<Display Name>',
-  file: 'js/ships/classes/<fileName>.js',
   create: (x, y) => new <ClassName>(x, y),
-},
+});
 ```
 
-The designer auto-discovers from `SHIP_REGISTRY` — no separate designer entry needed.
+The designer auto-discovers from `CONTENT.hulls` — no separate designer entry needed.
 
 ## Step 6 — Validate & verify
 

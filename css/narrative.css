@@ -392,3 +392,63 @@
   border-color: rgba(255, 68, 68, 0.35);
   color: var(--p-red);
 }
+
+/* ── Continuation (press-to-continue pause) ────────────────────────────────── */
+
+.np-continuation {
+  margin: 4px 0 2px;
+  padding-left: 4px;
+}
+
+.np-continuation-link {
+  font-size: var(--p-small);
+  color: var(--p-dim);
+  font-style: italic;
+  cursor: pointer;
+  transition: color 0.1s;
+  user-select: none;
+}
+
+.np-continuation-link:hover {
+  color: var(--p-cyan);
+}
+
+.np-continuation-spent .np-continuation-link {
+  color: var(--p-very-dim);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ── Tooltips (inline in narration/dialogue) ───────────────────────────────── */
+
+.np-tooltip {
+  border-bottom: 1px dotted var(--p-dim);
+  cursor: help;
+  position: relative;
+}
+
+.np-tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--p-bg);
+  border: 1px solid var(--p-border);
+  color: var(--p-dim);
+  font-size: var(--p-small);
+  font-style: normal;
+  padding: 4px 8px;
+  white-space: nowrap;
+  max-width: 260px;
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 20;
+}
+
+.np-tooltip:hover::after {
+  opacity: 1;
+}

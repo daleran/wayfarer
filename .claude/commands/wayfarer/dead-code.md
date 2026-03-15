@@ -9,30 +9,30 @@ Scan the codebase for dead code: unused exports, orphaned files, unreachable bra
 **The rule:** Every `export` from a JS file should be imported somewhere. Orphaned exports are dead weight.
 
 **How to check:**
-- For each `js/**/*.js` file, find all named exports (`export const`, `export class`, `export function`, `export default`, `export {`)
+- For each `src/**/*.js` file, find all named exports (`export const`, `export class`, `export function`, `export default`, `export {`)
 - For each export name, grep the rest of the codebase for imports of that name
-- Exception: entry points (`js/main.js`, `js/editor-main.js`, `js/designer-main.js`) — these are consumed by HTML, not other JS files
-- Exception: registry objects (`SHIP_REGISTRY`, `NPC_REGISTRY`, `WEAPON_REGISTRY`, `STATION_REGISTRY`) — these are lookup tables consumed dynamically
+- Exception: entry points (`src/main.js`, `src/editor-main.js`, `src/designer-main.js`) — these are consumed by HTML, not other JS files
+- Exception: registry objects (`SHIP_REGISTRY`, `NPC_REGISTRY`, `WEAPON_REGISTRY`, `CONTENT`) — these are lookup tables consumed dynamically
 
 **Report format:**
 ```
-FILE: js/some/module.js
+FILE: src/some/module.js
 EXPORT: someFunction (line 42)
 IMPORTED BY: (none)
 ```
 
 ### 2. Orphaned files
 
-**The rule:** Every JS file under `js/` should be imported by at least one other file or referenced in HTML.
+**The rule:** Every JS file under `src/` should be imported by at least one other file or referenced in HTML.
 
 **How to check:**
-- For each `js/**/*.js` file, check if any other file imports from its path
-- Exception: entry points loaded by HTML (`js/main.js`, `js/editor-main.js`, `js/designer-main.js`)
-- Exception: map files in `js/data/maps/` (loaded dynamically via URL param)
+- For each `src/**/*.js` file, check if any other file imports from its path
+- Exception: entry points loaded by HTML (`src/main.js`, `src/editor-main.js`, `src/designer-main.js`)
+- Exception: map files in `data/maps/` (loaded dynamically via URL param)
 
 **Report format:**
 ```
-ORPHAN: js/old/unusedHelper.js
+ORPHAN: src/old/unusedHelper.js
   Not imported by any file
 ```
 
@@ -46,7 +46,7 @@ ORPHAN: js/old/unusedHelper.js
 
 **Report format:**
 ```
-FILE: js/some/module.js
+FILE: src/some/module.js
 LINE: 3
 UNUSED IMPORT: AMBER from '../../rendering/colors.js'
 ```
@@ -56,13 +56,13 @@ UNUSED IMPORT: AMBER from '../../rendering/colors.js'
 **The rule:** Layout/data objects should not contain fields that nothing reads.
 
 **How to check:**
-- For station/zone data objects, check if every field key is read by consumer code (e.g. `locationOverlay.js`, `game.js`, `stationRegistry.js`)
+- For station/location data objects, check if every field key is read by consumer code (e.g. `narrativePanel.js`, `game.js`)
 - Common culprits: `svg`, `svgId`, `type` fields left over from refactors
 - Check `layout` objects on stations for dead keys
 
 **Report format:**
 ```
-FILE: js/data/zones/gravewake/theCoil.js
+FILE: data/locations/the-coil/station.js
 OBJECT: LAYOUT
 FIELD: svg (line 55)
 READ BY: (none)
@@ -126,16 +126,16 @@ Group findings by category:
 === DEAD CODE SCAN RESULTS ===
 
 [Unused Imports]
-  js/foo.js:3 — AMBER from '../../rendering/colors.js'
+  src/foo.js:3 — AMBER from '../../rendering/colors.js'
 
 [Unused Exports]
-  js/bar.js:42 — export function helperFn()
+  src/bar.js:42 — export function helperFn()
 
 [Orphaned Files]
-  js/old/legacy.js — not imported anywhere
+  src/old/legacy.js — not imported anywhere
 
 [Stale Data Fields]
-  js/data/zones/.../theCoil.js — LAYOUT.svg never read
+  data/locations/the-coil/station.js — LAYOUT.svg never read
 
 [Unreferenced CSS]
   css/station.css — .zone-hotspot never referenced

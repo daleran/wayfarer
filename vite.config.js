@@ -7,7 +7,7 @@ export default defineConfig({
   root: './',
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'js'),
+      '@': path.resolve(__dirname, 'src'),
       '@data': path.resolve(__dirname, 'data'),
     },
   },

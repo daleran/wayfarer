@@ -22,27 +22,43 @@ Create a new character or edit an existing one. Characters are **people** (or ro
 
 ## Step 2 — Read reference files
 
-- `js/characters/character.js` — `Character` class, `boardShip()`/`leaveShip()`
-- The NPC file where the character is currently defined (e.g. `js/npcs/scavengers/lightFighter.js`)
-- `js/ships/registry.js` — `CHARACTER_REGISTRY` entries
+- `src/entities/character.js` — `Character` class, `boardShip()`/`leaveShip()`
+- The NPC file where the character is currently defined (e.g. `data/actors/scavenger/lightFighter.js`)
+- `src/entities/registry.js` — `CHARACTER_REGISTRY` entries (auto-generated from `CONTENT.actors`)
 - `LORE.md` — faction descriptions and world tone
 
 ## Step 3 — Create or edit the character
 
-Characters are currently defined inline in their named ship's factory function. The Character is constructed and boarded onto the ship:
+Characters are defined inline in their actor file under `data/actors/<faction>/`. The `createActor()` factory reads the character data and creates a `Character` instance automatically. Content self-registers at import time via `registerContent()` from `data/dataRegistry.js`.
 
 ```js
-// In js/npcs/<faction>/<shipFile>.js
+// In data/actors/<faction>/<actorName>.js — character data is embedded in the actor entry
+import { CONTENT, registerContent } from '@data/dataRegistry.js';
 
-const captain = new Character({
-  id: '<kebab-id>',
+registerContent(CONTENT.actors, '<slug>', {
+  label: '<Ship Name>',
+  shipClass: '<hull-class>',
+  // ... ship fields ...
+  character: {
+    id: '<character-id>',
+    name: '<Display Name>',
+    faction: '<faction>',
+    relation: '<hostile|neutral|player>',
+    behavior: '<stalker|kiter|standoff|lurker|flee|trader|militia>',
+    flavorText: '<Backstory. Who they are, their reputation, what drives them.>',
+  },
+});
+```
+
+For named NPCs with bounties and backstories, add an entry to `data/actors/scavenger/characters.js`:
+```js
+registerContent(CONTENT.actors, '<character_id>', {
   name: '<Display Name>',
   faction: '<faction>',
-  relation: '<hostile|neutral|player>',
-  behavior: '<stalker|kiter|standoff|lurker|flee|trader|militia>',
-  flavorText: '<Backstory. Who they are, their reputation, what drives them.>',
+  behavior: '<behavior>',
+  bounty: { value: 100, reason: '<Bounty Title>' },
+  flavorText: '<Backstory.>',
 });
-captain.boardShip(ship);
 ```
 
 **Key fields:**
@@ -52,20 +68,9 @@ captain.boardShip(ship);
 
 **Concord exception:** Concord machines (drones, frigates) are unmanned — no Character instance. Set `faction`/`relation`/`ai` directly on the ship instead.
 
-## Step 4 — Verify registry entry
+## Step 4 — Verify registry
 
-Check `CHARACTER_REGISTRY` in `js/ships/registry.js` for the entry. Each entry needs:
-```js
-{
-  id: '<slug>',
-  label: '<Named Ship Label>',
-  faction: '<faction>',
-  behavior: '<behavior>',
-  hullClass: '<base-hull-slug>',
-  file: 'js/npcs/<faction>/<fileName>.js',
-  create: (x, y) => create<ShipName>(x, y),
-}
-```
+`CHARACTER_REGISTRY` in `src/entities/registry.js` is auto-generated from `CONTENT.actors`. No manual registry editing needed — content self-registers at import time. Just verify the actor file exists under `data/actors/<faction>/`.
 
 ## Step 5 — Validate & verify
 

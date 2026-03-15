@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CO**
+**Next available code: CQ**
 
 ---
 
@@ -33,7 +33,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
-| CE | Visual Module System | Ship Systems / Modules |
 | CK | Engine Module Expansion | Modules / Equipment |
 
 ---
@@ -466,15 +465,6 @@ All audio generated via Web Audio API — no asset files required.
 
 ## Ship Systems / Modules
 
-### CE: Visual Module System (Phase 3 remaining)
-
-Phases 1–2 shipped: mount points, module visuals on hull, positional damage routing. Remaining:
-
-**Phase 3 — Ship Screen Paper Doll (deferred):**
-- Canvas element in ship panel header rendering hull silhouette + mount points
-- Module visuals at mount positions, condition-colored, click-to-install on mount point
-- Module tooltip with small canvas preview of module visual
-- Drag-and-drop onto paper-doll hull view
 
 **Future ideas (unshipped):**
 - Wear & Tear: low-quality modules degrade during regular use, not just combat

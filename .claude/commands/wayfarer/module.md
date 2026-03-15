@@ -34,20 +34,20 @@ Create a new module/weapon or edit an existing one. Modules are installable ship
 ## Step 2 — Read reference files
 
 ### For modules:
-- `js/modules/shipModule.js` — all module class definitions and `MODULE_REGISTRY`
-- `js/modules/registry.js` — ID-to-constructor registry (used by `createModuleById`)
+- `src/modules/shipModule.js` — all module class definitions and `MODULE_REGISTRY`
+- `src/modules/registry.js` — ID-to-constructor registry (used by `createModuleById`)
 - Relevant data files: `data/engines.js`, `data/reactors.js`, `data/sensors.js`, `data/weapons.js`
 
 ### For weapons:
-- `js/modules/weapons/registry.js` — `WEAPON_REGISTRY` with designer metadata
-- Existing weapon files in `js/modules/weapons/` for pattern reference
+- `src/modules/weapons/registry.js` — `WEAPON_REGISTRY` with designer metadata
+- Existing weapon files in `src/modules/weapons/` for pattern reference
 - `data/weapons.js` — weapon stat multipliers
-- `js/entities/projectile.js` — projectile behavior flags
-- `js/rendering/colors.js` — projectile/beam color constants
+- `src/entities/projectile.js` — projectile behavior flags
+- `src/rendering/colors.js` — projectile/beam color constants
 
 ### Always:
 - `UX.md` — visual conventions
-- `data/compiledData.js` imports — `BASE_DAMAGE`, `BASE_HULL_DAMAGE`, `BASE_PROJECTILE_SPEED`, `BASE_WEAPON_RANGE`, `BASE_COOLDOWN`, `PROJECTILE_SPEED_FACTOR`
+- `data/index.js` imports — `BASE_DAMAGE`, `BASE_HULL_DAMAGE`, `BASE_PROJECTILE_SPEED`, `BASE_WEAPON_RANGE`, `BASE_COOLDOWN`, `PROJECTILE_SPEED_FACTOR`
 
 ## Step 3 — Data stats
 
@@ -60,7 +60,7 @@ Add/update entries in the relevant data file using `registerData(TABLE, { ... })
 
 ## Step 4 — Create or edit the code
 
-### Module class (in `js/modules/shipModule.js`)
+### Module class (in `src/modules/shipModule.js`)
 
 #### Passive / utility module:
 ```js
@@ -134,16 +134,16 @@ export class <ClassName> extends ShipModule {
 }
 ```
 
-### Weapon class (new file in `js/modules/weapons/`)
+### Weapon class (new file in `src/modules/weapons/`)
 
-Location: `js/modules/weapons/<camelCaseName>.js`
+Location: `src/modules/weapons/<camelCaseName>.js`
 
 ```js
 import {
   BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
   BASE_WEAPON_RANGE, BASE_COOLDOWN, PROJECTILE_SPEED_FACTOR,
   MODULE_WEAPONS,
-} from '@data/compiledData.js';
+} from '@data/index.js';
 import { <PROJ_COLOR> } from '@/rendering/colors.js';
 
 const W = MODULE_WEAPONS['<weapon-id>'];
@@ -192,19 +192,19 @@ export class <WeaponName> {
 
 ## Step 5 — Register
 
-### Module registry (`js/modules/shipModule.js`)
+### Module registry (`src/modules/shipModule.js`)
 Add to `MODULE_REGISTRY` array:
 ```js
 { id: '<kebab-id>', category: '<ENGINE|WEAPON|POWER|SENSOR|UTILITY>', create: () => new <ClassName>() },
 ```
 
-### ID registry (`js/modules/registry.js`)
+### ID registry (`src/modules/registry.js`)
 Add to `MODULE_REGISTRY` object:
 ```js
 '<kebab-id>': <ClassName>,
 ```
 
-### Weapon registry (weapons only — `js/modules/weapons/registry.js`)
+### Weapon registry (weapons only — `src/modules/weapons/registry.js`)
 Add to `WEAPON_REGISTRY` array:
 ```js
 {
@@ -218,7 +218,7 @@ Add to `WEAPON_REGISTRY` array:
 
 ## Step 6 — Add to loot tables (if salvageable)
 
-If the module/weapon should drop from derelicts, open `js/data/lootTables.js` and add the ID to the appropriate derelict class loot table.
+If the module/weapon should drop from derelicts, open `data/lootTables.js` and add the ID to the appropriate derelict class loot table.
 
 ## Step 7 — Validate & verify
 
@@ -231,4 +231,4 @@ If the module/weapon should drop from derelicts, open `js/data/lootTables.js` an
 ## Step 8 — Update docs
 
 - New weapon family or module category → `MECHANICS.md`
-- New projectile/beam colors → `UX.md` and `js/rendering/colors.js`
+- New projectile/beam colors → `UX.md` and `src/rendering/colors.js`

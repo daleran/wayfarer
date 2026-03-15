@@ -7,18 +7,18 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 **Creating new?** Ask the user for:
 - **Display name** — e.g. "Void Cutter"
 - **Slug** — kebab-case, e.g. `void-cutter`
-- **Base ship class** — one of the hulls in `SHIP_REGISTRY` (check `js/ships/registry.js`):
+- **Base ship class** — one of the hulls in `CONTENT.hulls` (check `src/entities/registry.js`, which proxies to `CONTENT.hulls`):
   - `onyx-tug`, `maverick-courier`, `g100-hauler`, `garrison-frigate`, `drone-control-hull`, `snatcher-drone-hull`
   - Or a new class if none fits (see `/ship-class`)
 - **Has a captain?** — Yes = active NPC/player. No = derelict wreck.
-- **Modules** — pick from `MODULE_REGISTRY` in `js/modules/shipModule.js`
+- **Modules** — pick from `MODULE_REGISTRY` in `src/modules/shipModule.js`
 - **Flavor text** — one paragraph tactical/lore description
 
 **If captained**, also ask:
 - **Faction** — `'scavenger'`, `'concord'`, `'settlements'`, `'monastic'`, `'communes'`, `'zealots'`, or `'player'`
 - **Relation** — `'hostile'`, `'neutral'`, or `'player'`
 - **Combat behavior** — `stalker`, `kiter`, `standoff`, `lurker`, `flee` (hostile); `trader`, `militia` (neutral passive)
-- **Character** — create new (see `/character`) or reference existing from `js/characters/`
+- **Character** — create new (see `/character`) or reference existing from `data/actors/<faction>/` or `data/actors/scavenger/characters.js`
 
 **If derelict (no captain)**, also ask:
 - **Derelict class** — `'hauler'`, `'fighter'`, `'frigate'`, `'unknown'` (affects salvage color/condition distributions)
@@ -33,48 +33,51 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 
 ## Step 2 — Read reference files
 
-- `js/ships/registry.js` — `CHARACTER_REGISTRY` format, `createActor()` helper
-- `js/characters/character.js` — Character class, `boardShip()` pattern
-- `js/modules/shipModule.js` — `MODULE_REGISTRY` for available modules
-- `js/modules/weapons/registry.js` — `WEAPON_REGISTRY` for available weapons
-- Existing named ships in `js/npcs/<faction>/` for pattern reference
-- Existing derelicts in `js/data/ships/named/` for derelict pattern
-- `data/namedShips.js` — existing named ship definitions
+- `src/entities/registry.js` — `CHARACTER_REGISTRY` format, `createActor()` helper
+- `src/entities/character.js` — Character class, `boardShip()` pattern
+- `src/modules/shipModule.js` — `MODULE_REGISTRY` for available modules
+- `src/modules/weapons/registry.js` — `WEAPON_REGISTRY` for available weapons
+- `data/actors/<faction>/` — actor definitions (self-register into `CONTENT.actors`)
+- `data/actors/scavenger/characters.js` — named NPC characters with backstories/bounties
+- Existing derelicts in `data/actors/` (derelict entries) for derelict pattern
 
 ## Step 3 — Data entry (if applicable)
 
-If the named ship needs a data entry, add/update in `data/namedShips.js` using `registerData(NPC_SHIPS, { ... })`.
+If the named ship needs a data entry, add/update in `data/actors/<faction>/<actorName>.js` using `registerContent(CONTENT.actors, '<slug>', { ... })` from `data/dataRegistry.js`. Content self-registers at import time.
 
-## Step 4 — Create or edit the ship file
+## Step 4 — Create or edit the ship entry
 
 ### Captained ship (active NPC or player)
 
-Location: `js/npcs/<faction>/<camelCaseName>.js`
+Location: `data/actors/<faction>/<actorName>.js` — register into `CONTENT.actors`:
 
 ```js
-import { <BaseClass> } from '@/ships/classes/<baseFile>.js';
-import { <Module1>, <Module2> } from '@/modules/shipModule.js';
-import { Character } from '@/characters/character.js';
+import { CONTENT, registerContent } from '@data/dataRegistry.js';
 
-export function create<ClassName>(x, y) {
-  const ship = new <BaseClass>(x, y);
-  ship.shipType = '<slug>';
-  ship.moduleSlots = [new <Module1>(), new <Module2>(), null];
-  ship._applyModules();
-  ship.flavorText = '<One paragraph description.>';
-
-  const captain = new Character({
+registerContent(CONTENT.actors, '<slug>', {
+  label: '<Display Name>',
+  shipClass: '<base-class-slug>',
+  faction: '<faction>',
+  relation: '<hostile|neutral|player>',
+  aiBehavior: '<stalker|kiter|standoff|lurker|flee|trader|militia>',
+  modules: ['<module-id>', '<module-id>', 'null'],
+  flavorText: '<One paragraph ship description.>',
+  character: {
     id: '<slug>',
+    name: '<Character Name>',
     faction: '<faction>',
     relation: '<hostile|neutral|player>',
-    behavior: '<stalker|kiter|standoff|lurker|flee|trader|militia>',
-  });
-  captain.boardShip(ship);
-  return ship;
-}
+    behavior: '<behavior>',
+    flavorText: '<Character backstory.>',
+  },
+});
 ```
 
-**Named characters:** If the ship has a named character with backstory, create a character file first (see `/character`), import and use it instead of inline construction.
+Module IDs use `MODULE_REGISTRY` keys from `src/modules/registry.js`. Use `'null'` string for empty slots. For rocket pods with guidance: `'rocket-pod-s:ht'` or `'rocket-pod-l:ht'`.
+
+**Unmanned ships (Concord machines):** Add `unmanned: true` and `entityClass: '<entity-class-id>'` instead of `character`. Entity subclasses live in `src/entities/concord/`.
+
+**Named characters with bounties:** Add an entry to `data/actors/scavenger/characters.js` using `registerContent(CONTENT.actors, '<id>', { ... })`.
 
 **Behavior setup notes:**
 - `lurker`: spawn code must set `ship.ai._coverPoint = { x, y }` post-creation
@@ -83,12 +86,13 @@ export function create<ClassName>(x, y) {
 
 ### Derelict (no captain)
 
-Location: `js/data/ships/named/<camelCaseName>.js`
+Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Location: `data/actors/<faction>/<camelCaseName>.js` (or a dedicated derelict file).
 
 ```js
-import { createDerelict } from '@/world/derelict.js';
+import { CONTENT, registerContent } from '@data/dataRegistry.js';
+import { createDerelict } from '@/entities/registry.js';
 
-export const <PascalName> = {
+registerContent(CONTENT.derelicts, '<slug>', {
   name: '<Display Name>',
   derelictClass: '<hauler|fighter|frigate|unknown>',
   salvageTime: 5,
@@ -102,35 +106,18 @@ Third line.`,
       loreText: this.lore.split('\n'),
     });
   },
-};
+});
 ```
 
 ## Step 5 — Register
 
-Open `js/ships/registry.js`:
-1. Import the create function
-2. Add to `CHARACTER_REGISTRY`:
-```js
-{
-  id: '<slug>',
-  label: '<Display Name>',
-  faction: '<faction>',
-  behavior: '<behavior>',
-  hullClass: '<base-class-slug>',
-  file: 'js/npcs/<faction>/<fileName>.js',
-  create: (x, y) => create<ClassName>(x, y),
-  unmanned: true, // only for derelicts / autonomous drones
-},
-```
+**Captained ships:** Content self-registers at import time via `registerContent()`. `CHARACTER_REGISTRY` in `src/entities/registry.js` is auto-generated from `CONTENT.actors`. No manual registry editing needed.
 
-**For derelicts:** Also add to the `NAMED_DERELICTS` array in `js/test/designer.js`:
-```js
-{ def: <PascalName>, slug: '<slug>', file: 'js/data/ships/named/<fileName>.js' },
-```
+**For derelicts:** Content self-registers into `CONTENT.derelicts` at import time. The designer auto-discovers from `CONTENT.derelicts` — no separate designer entry needed.
 
 ## Step 6 — Add to maps
 
-Add spawn entries to `js/data/maps/arena.js` (testing) and the relevant zone manifest / `js/data/maps/tyr.js` (production).
+Add spawn entries to `data/maps/arena.js` (testing) and the relevant zone manifest / `data/maps/tyr.js` (production).
 
 - Captained ships: `createActor('<slug>', x, y)` from registry
 - Derelicts: `<PascalName>.instantiate(x, y)`
