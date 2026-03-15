@@ -4,6 +4,7 @@
 // =============================================================================
 
 // Boot — import content files to trigger registration
+import './factions.js';
 import './modules/engines.js';
 import './modules/reactors.js';
 import './modules/sensors.js';
@@ -74,6 +75,7 @@ import './ships/named/paleWitness.js';
 
 // Re-export everything consumers need
 export * from './tuning.js';
+export { FACTIONS, FACTION_LABELS, FACTION_MAP, RIVALS } from './factions.js';
 export {
   SHIP_CLASSES,
   ENGINES,

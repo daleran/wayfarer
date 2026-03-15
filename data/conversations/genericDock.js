@@ -3,7 +3,7 @@
 
 import { REPUTATION } from '@data/index.js';
 import { COMMODITIES, getBuyPrice, getSellPrice } from '@data/commodities.js';
-import { FACTIONS, FACTION_LABELS } from '@/systems/reputation.js';
+import { FACTIONS, FACTION_LABELS } from '@data/index.js';
 import { registerContent } from '@data/dataRegistry.js';
 
 export async function genericDock(ctx) {

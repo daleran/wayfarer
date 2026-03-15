@@ -12,7 +12,7 @@ Scan the codebase for dead code: unused exports, orphaned files, unreachable bra
 - For each `src/**/*.js` file, find all named exports (`export const`, `export class`, `export function`, `export default`, `export {`)
 - For each export name, grep the rest of the codebase for imports of that name
 - Exception: entry points (`src/main.js`, `src/editor-main.js`, `src/designer-main.js`) — these are consumed by HTML, not other JS files
-- Exception: registry objects (`SHIP_REGISTRY`, `NPC_REGISTRY`, `WEAPON_REGISTRY`, `CONTENT`) — these are lookup tables consumed dynamically
+- Exception: registry objects (`CONTENT`, `CHARACTERS`) — these are lookup tables consumed dynamically
 
 **Report format:**
 ```

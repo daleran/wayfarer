@@ -34,14 +34,15 @@ Create a new module/weapon or edit an existing one. Modules are installable ship
 ## Step 2 — Read reference files
 
 ### For modules:
-- `src/modules/shipModule.js` — all module class definitions and `MODULE_REGISTRY`
-- `src/modules/registry.js` — ID-to-constructor registry (used by `createModuleById`)
-- Relevant data files: `data/engines.js`, `data/reactors.js`, `data/sensors.js`, `data/weapons.js`
+- `src/modules/shipModule.js` — all module class definitions
+- `src/modules/registry.js` — exports `createModuleById(id)`, reads from `CONTENT.modules`
+- Module data files in `data/modules/` — self-register into `CONTENT.modules` via `registerContent()`
+- Relevant data files: `data/modules/engines.js`, `data/modules/reactors.js`, `data/modules/sensors.js`, `data/modules/weapons.js`
 
 ### For weapons:
-- `src/modules/weapons/registry.js` — `WEAPON_REGISTRY` with designer metadata
+- `src/modules/weapons/registry.js` — exports `createWeaponById(id)`, reads from `CONTENT.weapons`
+- Weapon data in `data/modules/weapons.js` — self-registers into `CONTENT.weapons` via `registerContent()`
 - Existing weapon files in `src/modules/weapons/` for pattern reference
-- `data/weapons.js` — weapon stat multipliers
 - `src/entities/projectile.js` — projectile behavior flags
 - `src/rendering/colors.js` — projectile/beam color constants
 
@@ -192,29 +193,32 @@ export class <WeaponName> {
 
 ## Step 5 — Register
 
-### Module registry (`src/modules/shipModule.js`)
-Add to `MODULE_REGISTRY` array:
+### Module registration (in the data file, e.g. `data/modules/<type>.js`)
+Modules self-register into `CONTENT.modules` at import time via `registerContent()`:
 ```js
-{ id: '<kebab-id>', category: '<ENGINE|WEAPON|POWER|SENSOR|UTILITY>', create: () => new <ClassName>() },
+import { registerContent } from '@data/dataRegistry.js';
+
+registerContent('modules', '<kebab-id>', {
+  category: '<ENGINE|WEAPON|POWER|SENSOR|UTILITY>',
+  create: () => new <ClassName>(),
+});
 ```
 
-### ID registry (`src/modules/registry.js`)
-Add to `MODULE_REGISTRY` object:
-```js
-'<kebab-id>': <ClassName>,
-```
+No need to edit `src/modules/registry.js` — it auto-reads from `CONTENT.modules`.
 
-### Weapon registry (weapons only — `src/modules/weapons/registry.js`)
-Add to `WEAPON_REGISTRY` array:
+### Weapon registration (in `data/modules/weapons.js`)
+Weapons self-register into `CONTENT.weapons` at import time via `registerContent()`:
 ```js
-{
-  id: '<WeaponClassName>', slug: '<kebab-slug>', label: '<Display Name>',
+registerContent('weapons', '<kebab-slug>', {
+  label: '<Display Name>',
   create: () => new <WeaponName>(),
   flavorText: '<Lore blurb.>',
   projColor: <COLOR_CONST>, projLen: 5, projTrail: false,
   flags: ['manual', 'ammo', ...],
-},
+});
 ```
+
+No need to edit `src/modules/weapons/registry.js` — it auto-reads from `CONTENT.weapons`.
 
 ## Step 6 — Add to loot tables (if salvageable)
 

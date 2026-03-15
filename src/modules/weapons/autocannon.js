@@ -11,23 +11,29 @@ const RANGE_MULT   = 1.0;
 const SPEED_MULT   = 1.0;
 const COOLDOWN_MULT = 1.04;
 
-// Ballistic behavior keyed by ammo id
-const AMMO_BEHAVIOR = {
-  '25mm-ap': {
-    damageMult:    1.0,
-    hullDamageBase: null,
-    blastRadius:   0,
-    detonatesOnContact: false,
-    canIntercept:  false,
-  },
-  '25mm-he': {
-    damageMult:    0.25,
-    hullDamageBase: BASE_HULL_DAMAGE * 1.65,
-    blastRadius:   HE_AUTOCANNON_BLAST,
-    detonatesOnContact: true,
-    canIntercept:  true,
-  },
-};
+// Ballistic behavior keyed by ammo id (lazily initialized to avoid circular import)
+let _ammoBehavior;
+function getAmmoBehavior() {
+  if (!_ammoBehavior) {
+    _ammoBehavior = {
+      '25mm-ap': {
+        damageMult:    1.0,
+        hullDamageBase: null,
+        blastRadius:   0,
+        detonatesOnContact: false,
+        canIntercept:  false,
+      },
+      '25mm-he': {
+        damageMult:    0.25,
+        hullDamageBase: BASE_HULL_DAMAGE * 1.65,
+        blastRadius:   HE_AUTOCANNON_BLAST,
+        detonatesOnContact: true,
+        canIntercept:  true,
+      },
+    };
+  }
+  return _ammoBehavior;
+}
 
 export class Autocannon {
   constructor() {
@@ -66,7 +72,8 @@ export class Autocannon {
     const n = normalizeToTarget(ship.x, ship.y, tx, ty);
     if (!n) return;
     const { nx, ny, dist } = n;
-    const behavior = AMMO_BEHAVIOR[this.currentAmmoId] ?? AMMO_BEHAVIOR['25mm-ap'];
+    const ammoBehavior = getAmmoBehavior();
+    const behavior = ammoBehavior[this.currentAmmoId] ?? ammoBehavior['25mm-ap'];
     const proj = new Projectile(
       ship.x, ship.y,
       nx * this.projectileSpeed,

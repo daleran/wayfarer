@@ -37,7 +37,6 @@ export class ShipModule {
     this.isPowered     = true;   // set by power balance; false when insufficient reactor output
     this.powerPriority = 0;      // depower order: lower = depowered first (sensors 1, weapons 2, engines 3)
     // Sensor capabilities (set by sensor subclasses via _initSensor)
-    this.minimap_stations = false;
     this.minimap_ships    = false;
     this.sensor_range     = 0;
     this.lead_indicators    = false;
@@ -141,7 +140,7 @@ export class RocketPodModule extends ShipModule {
     super();
     const id = rocketSize === 'large' ? 'rocket-l' : 'rocket-s';
     const W = WEAPONS[id];
-    this.name        = rocketSize === 'large' ? 'rocket-pod-l' : 'rocket-pod-s';
+    this.name        = rocketSize === 'large' ? 'rocket-l' : 'rocket-s';
     this.displayName = rocketSize === 'large' ? 'RPOD-L' : 'RPOD-S';
     this.description = 'Rocket pod. Fires RKT (dumbfire), WG (wire-guided), or HT (heat-seeking) ordnance.';
     this.powerDraw   = W.powerDraw;
@@ -372,8 +371,8 @@ function _initSensor(mod, id) {
   mod.displayName      = S.displayName;
   mod.powerDraw        = S.powerDraw;
   mod.weight           = S.weight;
+  mod.size             = S.size === 'L' ? 'large' : 'small';
   mod.powerPriority    = 1; // sensors: first to lose power
-  mod.minimap_stations = !!S.minimapStations;
   mod.minimap_ships    = !!S.minimapShips;
   mod.sensor_range     = S.sensorRange;
   mod.lead_indicators    = !!S.leadIndicators;
@@ -391,15 +390,6 @@ function _drawSensorIcon(ctx, color, alpha) {
   disc(ctx, 0, 1 - SENSOR_DISH - SENSOR_LINE, 1, color, alpha * 0.6);
 }
 
-export class SalvagedSensorSuite extends ShipModule {
-  constructor() {
-    super();
-    _initSensor(this, 'salvaged-sensor-suite');
-    this.description = 'Pre-Collapse array. Only detects static landmarks (planets/stations).';
-  }
-  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
-}
-
 export class StandardSensorSuite extends ShipModule {
   constructor() {
     super();
@@ -413,7 +403,7 @@ export class CombatComputerModule extends ShipModule {
   constructor() {
     super();
     _initSensor(this, 'combat-computer');
-    this.description = 'Displays lead-indicators and ship integrity pips. Range: 2000.';
+    this.description = 'Targeting assist with lead indicators and integrity readout. Range: 2000.';
   }
   drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
 }
@@ -431,7 +421,25 @@ export class LongRangeScannerModule extends ShipModule {
   constructor() {
     super();
     _initSensor(this, 'long-range-scanner');
-    this.description = 'Pulls contacts from deep space. Minimap range: 8000.';
+    this.description = 'Deep-space array. Reveals salvage and module details at extreme range.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
+
+export class BattleDirectionCenterModule extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'battle-direction-center');
+    this.description = 'Full-spectrum tactical suite. Lead indicators, telemetry, and module scans.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
+
+export class EnforcementScannerModule extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'enforcement-scanner');
+    this.description = 'Inspection-grade scanner. Module readout and integrity pips at medium range.';
   }
   drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
 }
@@ -595,45 +603,3 @@ export class EngineeringBayModule extends UtilityModule {
   drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, GREEN); }
 }
 
-// ─── Module registry ────────────────────────────────────────────────────────
-// Single source of truth for all installable modules.
-// Designer and game systems iterate this instead of maintaining parallel lists.
-// Each entry: { id, category, create() }. All other data comes from the instance.
-
-export const MODULE_REGISTRY = [
-  // Engines
-  { id: 'onyx-drive-unit',    category: 'ENGINE', create: () => new OnyxDriveUnit() },
-  { id: 'chem-rocket-s',      category: 'ENGINE', create: () => new ChemRocketSmall() },
-  { id: 'chem-rocket-l',      category: 'ENGINE', create: () => new ChemRocketLarge() },
-  { id: 'magplasma-torch-s',  category: 'ENGINE', create: () => new MagplasmaTorchSmall() },
-  { id: 'magplasma-torch-l',  category: 'ENGINE', create: () => new MagplasmaTorchLarge() },
-  { id: 'ion-thruster',       category: 'ENGINE', create: () => new IonThruster() },
-  // Weapons
-  { id: 'mod-autocannon',     category: 'WEAPON', create: () => new AutocannonModule() },
-  { id: 'mod-lance-s',        category: 'WEAPON', create: () => new LanceModuleSmall() },
-  { id: 'mod-cannon',         category: 'WEAPON', create: () => new CannonModule() },
-  { id: 'mod-rpod-s',         category: 'WEAPON', create: () => new RocketPodModule('small', 'rkt') },
-  { id: 'mod-rpod-l',         category: 'WEAPON', create: () => new RocketPodModule('large', 'rkt') },
-  // Power
-  { id: 'h2-fuel-cell',       category: 'POWER',  create: () => new HydrogenFuelCell() },
-  { id: 'fission-s',          category: 'POWER',  create: () => new SmallFissionReactor() },
-  { id: 'fission-l',          category: 'POWER',  create: () => new LargeFissionReactor() },
-  { id: 'fusion-l',           category: 'POWER',  create: () => new LargeFusionReactor() },
-  // Sensors
-  { id: 'salvaged-sensors',   category: 'SENSOR', create: () => new SalvagedSensorSuite() },
-  { id: 'standard-sensors',   category: 'SENSOR', create: () => new StandardSensorSuite() },
-  { id: 'combat-computer',    category: 'SENSOR', create: () => new CombatComputerModule() },
-  { id: 'salvage-scanner',    category: 'SENSOR', create: () => new SalvageScannerModule() },
-  { id: 'long-range-sensors', category: 'SENSOR', create: () => new LongRangeScannerModule() },
-  // Utility
-  { id: 'expanded-hold-s',   category: 'UTILITY', create: () => new ExpandedHoldSmall() },
-  { id: 'expanded-hold-l',   category: 'UTILITY', create: () => new ExpandedHoldLarge() },
-  { id: 'aux-tank-s',        category: 'UTILITY', create: () => new AuxTankSmall() },
-  { id: 'aux-tank-l',        category: 'UTILITY', create: () => new AuxTankLarge() },
-  { id: 'stripped-weight-s',  category: 'UTILITY', create: () => new StrippedWeightSmall() },
-  { id: 'stripped-weight-l',  category: 'UTILITY', create: () => new StrippedWeightLarge() },
-  { id: 'extra-armor-s',     category: 'UTILITY', create: () => new ExtraArmorSmall() },
-  { id: 'extra-armor-l',     category: 'UTILITY', create: () => new ExtraArmorLarge() },
-  { id: 'salvage-bay',       category: 'UTILITY', create: () => new SalvageBayModule() },
-  { id: 'engineering-bay',   category: 'UTILITY', create: () => new EngineeringBayModule() },
-];

@@ -70,9 +70,9 @@ export class Ship extends Entity {
     this.fuelMax = BASE_FUEL_MAX;
     this.fuelEfficiency = 1.0;
 
-    // Capabilities (set by modules)
+    // Capabilities (set by modules; minimap_stations is always on)
     this.capabilities = {
-      minimap_stations: false,
+      minimap_stations: true,
       minimap_ships: false,
       sensor_range: 0,
       lead_indicators: false,
@@ -102,7 +102,6 @@ export class Ship extends Entity {
     // Derelict support — when crew === 0 the ship is inert wreckage
     this.crew = 1;
     this.lootTable = null;
-    this.salvageTime = 0;
     this.salvaged = false;
     this.loreText = null;
     this.interactionRadius = 0;
@@ -427,9 +426,9 @@ export class Ship extends Entity {
 
   // Recalculates based on currently installed modules.
   refreshCapabilities() {
-    // Reset to defaults
+    // Reset to defaults (minimap_stations is always on — built-in)
     this.capabilities = {
-      minimap_stations: false,
+      minimap_stations: true,
       minimap_ships: false,
       sensor_range: 0,
       lead_indicators: false,
@@ -449,7 +448,6 @@ export class Ship extends Entity {
       const operational = mod.conditionMultiplier > 0 && mod.isPowered !== false;
       // Capabilities go offline when module is destroyed or unpowered
       if (operational) {
-        if (mod.minimap_stations)    this.capabilities.minimap_stations   = true;
         if (mod.minimap_ships)       this.capabilities.minimap_ships      = true;
         if (mod.lead_indicators)     this.capabilities.lead_indicators    = true;
         if (mod.health_pips)         this.capabilities.health_pips        = true;
@@ -537,7 +535,6 @@ export class Ship extends Entity {
     this._machineAi = null;
     this.throttleLevel = 0;
     this.speed = 0;
-    this.salvageTime = 3;
     this.interactionRadius = 150;
     this._justCrippled = true;
   }

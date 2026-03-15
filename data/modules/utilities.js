@@ -1,4 +1,11 @@
-import { registerData, UTILITIES } from '../dataRegistry.js';
+import { registerData, registerContent, UTILITIES } from '../dataRegistry.js';
+import {
+  ExpandedHoldSmall, ExpandedHoldLarge,
+  AuxTankSmall, AuxTankLarge,
+  StrippedWeightSmall, StrippedWeightLarge,
+  ExtraArmorSmall, ExtraArmorLarge,
+  SalvageBayModule, EngineeringBayModule,
+} from '@/modules/shipModule.js';
 
 registerData(UTILITIES, {
   'expanded-hold-s': {
@@ -82,3 +89,15 @@ registerData(UTILITIES, {
     armorBonus: 0,
   },
 });
+
+// Self-register into CONTENT.modules
+registerContent('modules', 'expanded-hold-s',  { category: 'UTILITY', create: () => new ExpandedHoldSmall() });
+registerContent('modules', 'expanded-hold-l',  { category: 'UTILITY', create: () => new ExpandedHoldLarge() });
+registerContent('modules', 'aux-tank-s',       { category: 'UTILITY', create: () => new AuxTankSmall() });
+registerContent('modules', 'aux-tank-l',       { category: 'UTILITY', create: () => new AuxTankLarge() });
+registerContent('modules', 'stripped-weight-s', { category: 'UTILITY', create: () => new StrippedWeightSmall() });
+registerContent('modules', 'stripped-weight-l', { category: 'UTILITY', create: () => new StrippedWeightLarge() });
+registerContent('modules', 'extra-armor-s',    { category: 'UTILITY', create: () => new ExtraArmorSmall() });
+registerContent('modules', 'extra-armor-l',    { category: 'UTILITY', create: () => new ExtraArmorLarge() });
+registerContent('modules', 'salvage-bay',      { category: 'UTILITY', create: () => new SalvageBayModule() });
+registerContent('modules', 'engineering-bay',   { category: 'UTILITY', create: () => new EngineeringBayModule() });

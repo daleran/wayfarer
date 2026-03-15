@@ -7,7 +7,6 @@ import { input } from '@/input.js';
 import { createNPC, createDerelict, getNamedShipRegistry, getCharacterRegistry } from '@/entities/registry.js';
 import { CONTENT } from '@data/index.js';
 import { createModuleById } from '@/modules/registry.js';
-import { WEAPON_REGISTRY } from '@/modules/weapons/registry.js';
 import { COMMODITIES } from '@data/commodities.js';
 import {
   CYAN, AMBER, GREEN, MAGENTA,
@@ -17,13 +16,15 @@ import { EditorHUDBar, EditorSidebar, EditorItemMenu, EditorPanBanner } from '@/
 // Map editor category label → designer category id
 const DESIGNER_CAT = { SHIPS: 'ships', NPCS: 'characters', STATIONS: 'stations', DERELICTS: 'derelicts' };
 
-// Module categories for the item menu
-const MODULE_CATEGORIES = {
-  'WEAPONS': ['autocannon-module', 'lance-small', 'cannon-module', 'rocket-pod-s', 'rocket-pod-l'],
-  'ENGINES': ['onyx-drive-unit', 'chem-rocket-s', 'chem-rocket-l', 'magplasma-torch-s', 'magplasma-torch-l', 'ion-thruster'],
-  'POWER':   ['HydrogenFuelCell', 'SmallFissionReactor', 'LargeFissionReactor', 'LargeFusionReactor'],
-  'SENSORS': ['SalvagedSensorSuite', 'StandardSensorSuite', 'CombatComputer', 'SalvageScanner', 'LongRangeScanner'],
-};
+// Auto-discover module categories from CONTENT.modules
+function _buildModuleCategories() {
+  const groups = {};
+  for (const [id, entry] of Object.entries(CONTENT.modules)) {
+    const cat = entry.category || 'OTHER';
+    (groups[cat] ??= []).push(id);
+  }
+  return groups;
+}
 
 function _buildItemCategories() {
   const cats = [];
@@ -41,7 +42,7 @@ function _buildItemCategories() {
   });
 
   // Modules — grouped by type
-  for (const [groupLabel, ids] of Object.entries(MODULE_CATEGORIES)) {
+  for (const [groupLabel, ids] of Object.entries(_buildModuleCategories())) {
     cats.push({
       label: `MOD: ${groupLabel}`,
       items: ids.map(id => {
@@ -59,10 +60,10 @@ function _buildItemCategories() {
   // Weapons
   cats.push({
     label: 'WEAPONS',
-    items: WEAPON_REGISTRY.map(entry => {
+    items: Object.entries(CONTENT.weapons).map(([id, entry]) => {
       const sample = /** @type {*} */ (entry.create());
       return {
-        id: entry.id,
+        id,
         label: sample.displayName || entry.label,
         stats: `DMG:${sample.damage ?? '?'} RNG:${sample.maxRange ?? '?'}`,
         action: g => { g.inventory.weapons.push(entry.create()); },
@@ -187,12 +188,12 @@ export class EditorOverlay {
       },
       {
         label: 'DERELICTS',
-        items: ['hauler', 'fighter', 'frigate', 'unknown'].map(cls => ({
-          id: `derelict-${cls}`,
-          label: cls.charAt(0).toUpperCase() + cls.slice(1),
+        items: Object.entries(CONTENT.hulls).map(([id, hull]) => ({
+          id: `derelict-${id}`,
+          label: hull.label,
           faction: null,
-          create: (x, y) => createDerelict({ x, y, derelictClass: cls, name: `Derelict ${cls}` }),
-          stats: `class: ${cls}`,
+          create: (x, y) => createDerelict({ x, y, shipClass: id, name: `Derelict ${hull.label}` }),
+          stats: `hull: ${id}`,
         })),
       },
     ];

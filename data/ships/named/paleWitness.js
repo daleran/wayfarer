@@ -5,8 +5,7 @@ import { registerContent } from '@data/dataRegistry.js';
 
 export const PaleWitness = {
   name: 'Pale Witness',
-  derelictClass: 'hauler',
-  salvageTime: 3,
+  shipClass: 'g100-hauler',
   lore: `PALE WITNESS — G100-class hauler, running dark below Pale.
 No distress signal. No survivors recovered.
 Scanner array still drawing power from backup cells.`,

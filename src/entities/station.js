@@ -1,7 +1,7 @@
 import { Entity } from '@/entities/entity.js';
 import { CYAN, AMBER, RED, GREEN, WHITE, DIM_TEXT } from '@/rendering/colors.js';
 import { text, SUBTITLE, FLAVOR } from '@/rendering/draw.js';
-import { FACTION_MAP } from '@/systems/reputation.js';
+import { FACTION_MAP } from '@data/index.js';
 
 export class Station extends Entity {
   constructor(x, y, data) {

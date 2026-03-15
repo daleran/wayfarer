@@ -5,8 +5,7 @@ import { registerContent } from '@data/dataRegistry.js';
 
 export const BrokenCovenant = {
   name: 'Broken Covenant',
-  derelictClass: 'frigate',
-  salvageTime: 5,
+  shipClass: 'garrison-frigate',
   lore: `BROKEN COVENANT — Garrison-class frigate, registry struck.
 Concord Remnant designation. Last port: Ashveil, 14 cycles ago.
 Drive section intact. Reactor: unsecured.`,

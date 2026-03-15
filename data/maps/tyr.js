@@ -9,6 +9,4 @@ export const MAP = {
   mapSize: { width: 18000, height: 10000 },
   playerStart: { x: 15000, y: 3000 },
   ...GRAVEWAKE,
-  asteroidFields: [],
-  nebulae: [],
 };

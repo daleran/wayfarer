@@ -419,8 +419,8 @@ export class Renderer {
       const canvas = this._starCanvases[li];
       if (!canvas) continue;
 
-      const dx = ((-camera.x * layer.parallax * camera.zoom) % w + w) % w;
-      const dy = ((-camera.y * layer.parallax * camera.zoom) % h + h) % h;
+      const dx = ((-camera.x * layer.parallax) % w + w) % w;
+      const dy = ((-camera.y * layer.parallax) % h + h) % h;
 
       // Tile up to 4 draws to cover wrapping
       ctx.drawImage(canvas, dx, dy);

@@ -31,7 +31,6 @@ export class NarrativePanel {
         <span class="np-faction"></span>
         <span class="np-standing"></span>
         <span class="np-scrap"></span>
-        <span class="np-esc-hint">[Esc]</span>
       </div>
       <div class="np-log"></div>
       <div class="np-choices hidden"></div>
@@ -104,12 +103,8 @@ export class NarrativePanel {
     this._updateHeader();
   }
 
-  handleInput(input, _game) {
-    if (!this.visible) return;
-    if (this._isOriginSelection) return; // Cannot close during origin selection
-    if (input.wasJustPressed('escape')) {
-      this.close();
-    }
+  handleInput(_input, _game) {
+    // Conversations control their own lifecycle — no escape-to-close
   }
 
   // ── Header ─────────────────────────────────────────────────────────────────
@@ -120,18 +115,14 @@ export class NarrativePanel {
     const factionEl = /** @type {HTMLElement} */ (this._el.querySelector('.np-faction'));
     const standingEl = /** @type {HTMLElement} */ (this._el.querySelector('.np-standing'));
     const scrapEl = /** @type {HTMLElement} */ (this._el.querySelector('.np-scrap'));
-    const escHint = /** @type {HTMLElement} */ (this._el.querySelector('.np-esc-hint'));
 
     if (this._isOriginSelection) {
       titleEl.textContent = 'GRAVEWAKE';
       factionEl.textContent = '';
       standingEl.textContent = '';
       scrapEl.textContent = '';
-      if (escHint) escHint.style.display = 'none';
       return;
     }
-
-    if (escHint) escHint.style.display = '';
 
     const station = this._station;
     if (!station) return;

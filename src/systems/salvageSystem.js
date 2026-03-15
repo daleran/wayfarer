@@ -1,5 +1,5 @@
 import { createLootDrop, createAmmoDrop, createModuleDrop, createWeaponDrop } from '@/entities/lootDrop.js';
-import { SALVAGE_EFFICIENCY, SALVAGE_FUEL_RATE, SALVAGE_AMMO_RATE } from '@data/index.js';
+import { SALVAGE_EFFICIENCY, SALVAGE_TIME_PER_ARMOR } from '@data/index.js';
 
 export class SalvageSystem {
   constructor() {
@@ -10,9 +10,11 @@ export class SalvageSystem {
   }
 
   start(derelict, player) {
+    const { front, port, starboard, aft } = derelict.armorArcs;
+    const totalArmor = front + port + starboard + aft;
     this.isSalvaging = true;
     this.salvageProgress = 0;
-    this.salvageTotal = derelict.salvageTime;
+    this.salvageTotal = totalArmor * SALVAGE_TIME_PER_ARMOR;
     this.salvageTarget = derelict;
     player.throttleLevel = 0;
   }
@@ -42,20 +44,25 @@ export class SalvageSystem {
     const mult = 1.0; // player salvage multiplier (future upgrade)
     const rand = () => 0.5 + Math.random() * 0.5;
 
-    // Scrap from remaining armor
+    // Armor ratio — damaged ships yield less of everything
     const { front, port, starboard, aft } = derelict.armorArcs;
     const totalArmor = front + port + starboard + aft;
+    const maxArcs = derelict.armorArcsMax;
+    const totalArmorMax = maxArcs.front + maxArcs.port + maxArcs.starboard + maxArcs.aft;
+    const armorRatio = totalArmorMax > 0 ? totalArmor / totalArmorMax : 0;
+
+    // Scrap from remaining armor
     const scrap = Math.max(1, Math.floor(totalArmor * eff * mult * rand()));
     lootEntities.push(createLootDrop(derelict.x, derelict.y, 'scrap', scrap));
 
-    // Fuel from tank size
-    const fuel = Math.floor((derelict.fuelMax || 0) * SALVAGE_FUEL_RATE * mult * rand());
+    // Fuel scaled by armor ratio
+    const fuel = Math.floor((derelict.fuelMax || 0) * armorRatio * mult * rand());
     if (fuel > 0) lootEntities.push(createLootDrop(derelict.x, derelict.y, 'fuel', fuel));
 
-    // Ammo from each weapon's magazine
+    // Ammo scaled by armor ratio
     for (const w of derelict.weapons) {
       if (w.magSize && w.currentAmmoId) {
-        const ammo = Math.floor(w.magSize * SALVAGE_AMMO_RATE * mult * rand());
+        const ammo = Math.floor(w.magSize * armorRatio * mult * rand());
         if (ammo > 0) lootEntities.push(createAmmoDrop(derelict.x, derelict.y, w.currentAmmoId, ammo));
       }
     }

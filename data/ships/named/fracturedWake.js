@@ -5,8 +5,7 @@ import { registerContent } from '@data/dataRegistry.js';
 
 export const FracturedWake = {
   name: 'Fractured Wake',
-  derelictClass: 'frigate',
-  salvageTime: 5,
+  shipClass: 'garrison-frigate',
   lore: `FRACTURED WAKE — Garrison-class frigate, hull split at midship.
 Salvage Lords contract vessel, overloaded on exit run.
 Heavy ordnance still aboard. Handle with care.`,

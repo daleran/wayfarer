@@ -12,23 +12,29 @@ const COOLDOWN_MULT    = 3.0;
 const SPEED_MULT       = 0.65;
 const RANGE_MULT       = 0.933; // ~1400u
 
-// Ballistic behavior keyed by ammo id
-const AMMO_BEHAVIOR = {
-  '90mm-ap': {
-    damageMult:         1.0,
-    hullDamageBase:     BASE_HULL_DAMAGE * HULL_DAMAGE_MULT,
-    blastRadius:        0,
-    detonatesOnContact: false,
-    canIntercept:       false,
-  },
-  '90mm-he': {
-    damageMult:         0.3,
-    hullDamageBase:     BASE_HULL_DAMAGE * 5.0,
-    blastRadius:        HE_CANNON_BLAST,
-    detonatesOnContact: true,
-    canIntercept:       true,
-  },
-};
+// Ballistic behavior keyed by ammo id (lazily initialized to avoid circular import)
+let _ammoBehavior;
+function getAmmoBehavior() {
+  if (!_ammoBehavior) {
+    _ammoBehavior = {
+      '90mm-ap': {
+        damageMult:         1.0,
+        hullDamageBase:     BASE_HULL_DAMAGE * HULL_DAMAGE_MULT,
+        blastRadius:        0,
+        detonatesOnContact: false,
+        canIntercept:       false,
+      },
+      '90mm-he': {
+        damageMult:         0.3,
+        hullDamageBase:     BASE_HULL_DAMAGE * 5.0,
+        blastRadius:        HE_CANNON_BLAST,
+        detonatesOnContact: true,
+        canIntercept:       true,
+      },
+    };
+  }
+  return _ammoBehavior;
+}
 
 export class Cannon {
   constructor() {
@@ -67,7 +73,8 @@ export class Cannon {
     const n = normalizeToTarget(ship.x, ship.y, tx, ty);
     if (!n) return;
     const { nx, ny, dist } = n;
-    const behavior = AMMO_BEHAVIOR[this.currentAmmoId] ?? AMMO_BEHAVIOR['90mm-ap'];
+    const ammoBehavior = getAmmoBehavior();
+    const behavior = ammoBehavior[this.currentAmmoId] ?? ammoBehavior['90mm-ap'];
     const proj = new Projectile(ship.x, ship.y, nx * this.projectileSpeed, ny * this.projectileSpeed, this.damage * behavior.damageMult, ship);
     proj.hullDamage = behavior.hullDamageBase;
     proj.color      = TORPEDO_AMBER;

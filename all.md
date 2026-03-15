@@ -132,7 +132,7 @@ Stats panel is DOM-based. `DesignerPanel` class in `src/ui/designerPanel.js`, st
 
 **Character** (`src/entities/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` sets `ship.captain` (ship then delegates faction/relation/ai to the character via getters); `leaveShip()` clears `ship.captain`, reverting the ship to its machine defaults. Concord machines (drones, frigates) are unmanned — no Character, faction/relation/ai set via `_machine*` fields directly on the ship.
 
-Ship hull classes live in `data/hulls/*/hull.js` — each self-registers into `CONTENT.hulls` at import time. Concord entity subclasses (with custom behavior like drone spawning, latching) live in `src/entities/concord/`. The registry (`src/entities/registry.js`) provides `createNPC()`/`createDerelict()`/`createShip()` factories that read from `CONTENT.hulls`, `CONTENT.ships`, and `CHARACTERS`. `CHARACTER_REGISTRY` (aliased as `NPC_REGISTRY`) is built from `CONTENT.characters`. `game.characters[]` tracks all active Characters; `game.playerCharacter` is the player's Character.
+Ship hull classes live in `data/hulls/*/hull.js` — each self-registers into `CONTENT.hulls` at import time. Concord entity subclasses (with custom behavior like drone spawning, latching) live in `src/entities/concord/`. The registry (`src/entities/registry.js`) provides `createNPC()`/`createDerelict()`/`createShip()` factories that read from `CONTENT.hulls`, `CONTENT.ships`, and `CHARACTERS`. `game.characters[]` tracks all active Characters; `game.playerCharacter` is the player's Character.
 
 **Data-driven NPC creation** — Ship definitions live in `data/ships/<faction>/*.js` (loadouts, flavorText) — each self-registers into `CONTENT.ships`. Character definitions live in `data/characters/*.js` — each self-registers into `CHARACTERS` + `CONTENT.characters`. `createNPC(characterId, x, y)` looks up the character, creates a ship from `charData.shipId`, creates a Character, and boards it. `createShip(shipId, x, y)` creates a configured ship from `CONTENT.ships` (used for unmanned Concord ships). No per-NPC factory files.
 
@@ -147,11 +147,12 @@ Ship hull classes live in `data/hulls/*/hull.js` — each self-registers into `C
 - **Zone entities** — content is co-located: stations in `data/locations/<id>/` (station data + renderer + conversations), terrain in `data/terrain/<id>/` (renderer + placement data merged), derelicts in `data/ships/named/`, ship configs in `data/ships/<faction>/`, characters in `data/characters/`. All self-register into `CONTENT` tables at import time. Every data entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity.
 - **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `data/maps/tyr.js` is the full production map; `data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
-- **Centralized stats** — JS data files in `data/` are the single source of truth for all base stats and content definitions. Single registry file `data/dataRegistry.js` holds both equipment tables (ENGINES, WEAPONS, etc.) and content tables (`CONTENT.hulls`, `.ships`, `.stations`, `.conversations`, `.derelicts`, `.terrain`, `.characters`). Two helpers: `registerData(table, entries)` for bulk-assigning equipment entries, `registerContent(type, id, entry)` for single content entries. Content files self-register at import time. `data/index.js` boots all content files and re-exports everything. Content locations: `data/hulls/` (hull classes), `data/ships/<faction>/` (ship configs), `data/characters/` (character data), `data/locations/` (station data + renderers + conversations), `data/terrain/` (terrain renderers + data), `data/ships/named/` (derelict descriptors), `data/modules/` (equipment), `data/maps/` (map definitions). `data/tuning.js` holds global scalar constants. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors. To add new content, create a file in the appropriate `data/` subdirectory using `registerContent()` and/or `registerData()`, then import it in `data/index.js`.
+- **Centralized stats** — JS data files in `data/` are the single source of truth for all base stats and content definitions. Single registry file `data/dataRegistry.js` holds both equipment tables (ENGINES, WEAPONS, etc.) and content tables (`CONTENT.hulls`, `.ships`, `.stations`, `.conversations`, `.derelicts`, `.terrain`, `.characters`). Two helpers: `registerData(table, entries)` for bulk-assigning equipment entries, `registerContent(type, id, entry)` for single content entries. Content files self-register at import time. `data/index.js` boots all content files and re-exports everything. Content locations: `data/hulls/` (hull classes), `data/ships/<faction>/` (ship configs), `data/characters/` (character data), `data/locations/` (station data + renderers + conversations), `data/terrain/` (terrain renderers + data), `data/ships/named/` (derelict descriptors), `data/modules/` (equipment), `data/maps/` (map definitions), `data/factions.js` (faction keys, labels, mappings, rival bonuses). `data/tuning.js` holds global scalar constants. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors. To add new content, create a file in the appropriate `data/` subdirectory using `registerContent()` and/or `registerData()`, then import it in `data/index.js`.
 - **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate`, and `fuelEfficiency` purely from engine modules. Hull classes define only mass, durability, cargo, fuel tank, and armor — no inherent speed or agility. T/W ratio is computed against a global `REFERENCE_TW` constant using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). Engine modules provide `thrust`, `weight`, and `fuelEffMult`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
 - **Mount points** — each ship class defines `MOUNT_POINTS[]` and overrides `get _mountPoints()`. Index `i` maps to `moduleSlots[i]`. Each mount has `{ x, y, arc, size, slot? }` where `arc` is `'front'|'port'|'starboard'|'aft'`, `size` is `'small'|'large'`, and `slot` is `'engine'` for engine-only mounts (omitted for general-purpose). Used for: (1) drawing module icons on the hull via `_drawModules(ctx)` in `Ship.render()`, (2) positional module breach routing — hits to an arc preferentially damage modules in that arc, (3) install constraints in the Ship Screen — engine slots only accept engines and vice versa. Empty mounts render as dotted white squares; engine mounts show `[E]`. Module visuals: `src/rendering/moduleVisuals.js`.
-- **Weapon registry** — `src/modules/weapons/registry.js` exports `WEAPON_REGISTRY` (id → factory map) and `createWeaponById(id)`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
-- **Content registry** — `data/dataRegistry.js` exports `CONTENT` (type-keyed sub-objects) and `registerContent(type, id, entry)`. Content files call `registerContent()` at import time. Designer and editor read from `CONTENT.stations`, `CONTENT.derelicts`, etc. instead of hand-maintained registry arrays.
+- **Weapon registry** — `src/modules/weapons/registry.js` exports `createWeaponById(id)`, which reads from `CONTENT.weapons`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
+- **Module registry** — `src/modules/registry.js` exports `createModuleById(id)`, which reads from `CONTENT.modules`. Used by ship configs and loot tables to instantiate modules by string ID.
+- **Content registry** — `data/dataRegistry.js` exports `CONTENT` (type-keyed sub-objects) and `registerContent(type, id, entry)`. Content files call `registerContent()` at import time. Designer and editor read from `CONTENT.stations`, `CONTENT.derelicts`, `CONTENT.modules`, `CONTENT.weapons`, etc. instead of hand-maintained registry arrays.
 - **UI overlays** — narrative panel (`#narrative-panel`, right 30% DOM panel, `src/ui/narrativePanel.js`) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
 - **Narrative system** — station interactions use scrolling conversation logs (Disco Elysium-style). `NarrativePanel` reads from `CONTENT.conversations`. Conversation scripts are async functions in `data/locations/<station>/conversations/` (station-specific) or `data/conversations/` (generic) that `await log.choices(...)` for player input. Each self-registers via `registerContent('conversations', id, fn)`. Station data includes `conversations: { hub, zones: {} }` pointing to script IDs. `game.storyFlags = {}` tracks first-visit flags and NPC memory (session-only)
 - **Color palette** — `src/rendering/colors.js` exports all color constants; never use inline hex strings
@@ -226,10 +227,10 @@ After any major refactor (file moves, system extractions, renderer rewrites, UI 
 | Skill | Scope | Key registries |
 |---|---|---|
 | `/ship-class` | Hull templates: shape, stats, mount points | `CONTENT.hulls` via self-registration; hull files in `data/hulls/*/hull.js` |
-| `/named-ship` | Configured ship instances (captained = NPC, no captain = derelict) | `CONTENT.ships` in `data/ships/<faction>/*.js`; `CHARACTER_REGISTRY` in `src/entities/registry.js`; `CONTENT.derelicts` in `data/ships/named/` |
+| `/named-ship` | Configured ship instances (captained = NPC, no captain = derelict) | `CONTENT.ships` in `data/ships/<faction>/*.js`; `CONTENT.characters` in `data/characters/*.js`; `CONTENT.derelicts` in `data/ships/named/` |
 | `/character` | Named people who board ships | `CHARACTERS` + `CONTENT.characters` in `data/characters/*.js`; Character class in `src/entities/character.js` |
 | `/station` | Dockable locations with services and renderers | `CONTENT.stations` in `data/locations/*/station.js`; renderers in `data/locations/*/renderer.js`; conversations in `data/locations/*/conversations/` |
-| `/module` | Ship modules AND weapons (combined) | `MODULE_REGISTRY` in `src/modules/shipModule.js`; `WEAPON_REGISTRY` in `src/modules/weapons/registry.js`; ID registry in `src/modules/registry.js` |
+| `/module` | Ship modules AND weapons (combined) | `CONTENT.modules` (self-registered from `data/modules/*.js`); `CONTENT.weapons` (self-registered from `data/modules/weapons.js`); `createModuleById()` in `src/modules/registry.js`; `createWeaponById()` in `src/modules/weapons/registry.js` |
 
 **Audit skills:** `/code-review`, `/stat-audit`, `/dead-code`
 
@@ -242,7 +243,7 @@ After any major refactor (file moves, system extractions, renderer rewrites, UI 
 **Watch for these specific changes:**
 - File path moves (e.g. data file reorganizations)
 - Renamed classes, modules, or behavior types
-- New or removed entries in any registry (`CONTENT.hulls`, `CONTENT.ships`, `CONTENT.characters`, `CONTENT.stations`, `CONTENT.derelicts`, `CONTENT.conversations`, `CHARACTERS`, `CHARACTER_REGISTRY`, `MODULE_REGISTRY`, `WEAPON_REGISTRY`)
+- New or removed entries in any registry (`CONTENT.hulls`, `CONTENT.ships`, `CONTENT.characters`, `CONTENT.stations`, `CONTENT.derelicts`, `CONTENT.conversations`, `CONTENT.modules`, `CONTENT.weapons`, `CHARACTERS`)
 - Data field additions/removals in `data/**/*.js`
 - Designer category changes in `src/test/designer.js` (`CATEGORIES` array)
 - New or changed `Character` fields in `src/entities/character.js`
@@ -325,6 +326,7 @@ CO. 2026-MAR-14-1800: Source Restructure — js/ renamed to src/; data files reo
 CP. 2026-MAR-14-2000: NarrativeLog Enhancements — NPC context (setNpcContext/clearNpcContext/dln), seq() shorthand (prefix::text batch lines), contd() continuation pause, tooltip()/narrateHTML() for inline hover definitions; all 14 conversation scripts converted to use new API.
 CQ. 2026-MAR-14-2200: Ship/Character Data Separation — Ship getter delegation (faction/relation/ai delegate to captain via getters, fall back to _machine* fields for unmanned); data/actors/ split into data/ships/ (ship configs → CONTENT.ships) and data/characters/ (character data → CHARACTERS + CONTENT.characters); createNPC()/createShip() replace createActor(); bounty contracts carry targetCharacterId; NPC_SHIPS and CONTENT.actors removed.
 CR. 2026-MAR-14-2359: Character Origin Selection — New game flow with narrative origin selection (Runaway/Deserter/Scavenger); Cutter Class Scout hull; House Casimir faction; 3 origin ship configs; flashback conversations with sub-choices; deferred player creation in production mode.
+CS. 2026-MAR-15-0000: Content Registry Unification — Modules and weapons self-register into CONTENT.modules/CONTENT.weapons; MODULE_REGISTRY/WEAPON_REGISTRY replaced; derelicts use real hull IDs (shipClass) instead of derelictClass; backward-compat aliases removed; factions data extracted to data/factions.js; data lint script; sensor rebalance (minimap_stations always-on); proportional salvage time and yield (armor-based scaling).
 
 
 # === PLAN.md ===
@@ -333,7 +335,7 @@ CR. 2026-MAR-14-2359: Character Origin Selection — New game flow with narrativ
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CQ**
+**Next available code: CT**
 
 ---
 
@@ -1248,7 +1250,7 @@ When total power draw exceeds reactor output, modules are depowered by priority 
 
 ### Sensor / Passive Modules
 
-Passive modules that extend minimap range, enable ship tracking, add combat overlays (lead indicators, health pips, telemetry), and provide salvage information. Each sensor type grants a specific set of capabilities.
+Passive modules that enable ship tracking on the minimap, add combat overlays (lead indicators, health pips, telemetry), and provide salvage information. Each sensor type grants a specific set of capabilities. Basic minimap functionality (planets, stations, derelicts, loot) is built-in and requires no sensor module.
 
 ### Fission Reactor Overhaul
 
@@ -1298,7 +1300,7 @@ Press **M** to open the full-screen system map overlay with independent zoom/pan
 
 **Left-click** a station or derelict to set a waypoint. Left-click empty space for a freeform waypoint. **Right-click** to clear. **M** or **Esc** closes.
 
-Map layers are gated by sensor capabilities: zones, stations, derelicts, hostile contacts, course line, fuel range circle, waypoint marker, player position.
+Zones, stations, planets, derelicts, course line, fuel range circle, waypoint marker, and player position are always visible. Hostile contacts are gated by sensor capabilities and range.
 
 **Nav indicator** (waypoint set, map closed): an edge-of-screen chevron pointing toward the waypoint with distance text. Below the minimap: current zone name, waypoint destination with distance and ETA.
 
@@ -1388,11 +1390,11 @@ Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter). They use ship cl
 
 ## Ship / Character / Actor Architecture
 
-**Ship** (`SHIP_REGISTRY`) — pure hull template. Shape, base stats, slot layout. No faction, no AI, no identity.
+**Ship** (`CONTENT.hulls`) — pure hull template. Shape, base stats, slot layout. No faction, no AI, no identity.
 
-**Character** (`js/characters/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` syncs faction/relation/ai onto the ship; `leaveShip()` resets the ship to inert. Characters exist independently of ships — the same character can board different ships.
+**Character** (`src/entities/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` sets `ship.captain`; `leaveShip()` clears it, reverting ship to machine defaults. Characters exist independently of ships — the same character can board different ships.
 
-**Actor** (`CHARACTER_REGISTRY`) — a configured ship + character pair. `createActor(id, x, y)` (aliased as `createShip()`) instantiates a hull, configures modules, creates a Character, and boards it. Unmanned actors (Concord machines) set faction/relation/ai directly on the ship with no Character instance.
+**Named Ship** (`CONTENT.ships`) — a configured ship instance: hull + modules + optionally a captain. `createNPC(characterId, x, y)` instantiates a hull, configures modules, creates a Character, and boards it. `createShip(shipId, x, y)` creates unmanned ships (Concord machines) with faction/relation/ai set directly on the ship, no Character instance.
 
 **Game state**: `game.characters[]` tracks all active Characters. `game.playerCharacter` is the player's Character. `game.ships[]` and `game.entities[]` are unchanged — all combat/rendering/AI code reads `ship.faction`/`ship.relation`/`ship.ai` as before.
 

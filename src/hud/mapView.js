@@ -25,7 +25,6 @@ export function renderMapView(ctx, game) {
     };
   }
 
-  const canSeeStations = player.capabilities.minimap_stations;
   const canSeeShips    = player.capabilities.minimap_ships;
 
   ctx.save();
@@ -55,7 +54,7 @@ export function renderMapView(ctx, game) {
   }
 
   // ── Planets ─────────────────────────────────────────────────────────────
-  if (canSeeStations) {
+  {
     for (const e of entities) {
       if (!e.isPlanet || !e.active) continue;
       const p = worldToMap(e.x, e.y);

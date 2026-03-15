@@ -161,7 +161,7 @@ When total power draw exceeds reactor output, modules are depowered by priority 
 
 ### Sensor / Passive Modules
 
-Passive modules that extend minimap range, enable ship tracking, add combat overlays (lead indicators, health pips, telemetry), and provide salvage information. Each sensor type grants a specific set of capabilities.
+Passive modules that enable ship tracking on the minimap, add combat overlays (lead indicators, health pips, telemetry), and provide salvage information. Each sensor type grants a specific set of capabilities. Basic minimap functionality (planets, stations, derelicts, loot) is built-in and requires no sensor module.
 
 ### Fission Reactor Overhaul
 
@@ -211,7 +211,7 @@ Press **M** to open the full-screen system map overlay with independent zoom/pan
 
 **Left-click** a station or derelict to set a waypoint. Left-click empty space for a freeform waypoint. **Right-click** to clear. **M** or **Esc** closes.
 
-Map layers are gated by sensor capabilities: zones, stations, derelicts, hostile contacts, course line, fuel range circle, waypoint marker, player position.
+Zones, stations, planets, derelicts, course line, fuel range circle, waypoint marker, and player position are always visible. Hostile contacts are gated by sensor capabilities and range.
 
 **Nav indicator** (waypoint set, map closed): an edge-of-screen chevron pointing toward the waypoint with distance text. Below the minimap: current zone name, waypoint destination with distance and ETA.
 
@@ -301,11 +301,11 @@ Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter). They use ship cl
 
 ## Ship / Character / Actor Architecture
 
-**Ship** (`SHIP_REGISTRY`) — pure hull template. Shape, base stats, slot layout. No faction, no AI, no identity.
+**Ship** (`CONTENT.hulls`) — pure hull template. Shape, base stats, slot layout. No faction, no AI, no identity.
 
-**Character** (`js/characters/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` syncs faction/relation/ai onto the ship; `leaveShip()` resets the ship to inert. Characters exist independently of ships — the same character can board different ships.
+**Character** (`src/entities/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` sets `ship.captain`; `leaveShip()` clears it, reverting ship to machine defaults. Characters exist independently of ships — the same character can board different ships.
 
-**Actor** (`CHARACTER_REGISTRY`) — a configured ship + character pair. `createActor(id, x, y)` (aliased as `createShip()`) instantiates a hull, configures modules, creates a Character, and boards it. Unmanned actors (Concord machines) set faction/relation/ai directly on the ship with no Character instance.
+**Named Ship** (`CONTENT.ships`) — a configured ship instance: hull + modules + optionally a captain. `createNPC(characterId, x, y)` instantiates a hull, configures modules, creates a Character, and boards it. `createShip(shipId, x, y)` creates unmanned ships (Concord machines) with faction/relation/ai set directly on the ship, no Character instance.
 
 **Game state**: `game.characters[]` tracks all active Characters. `game.playerCharacter` is the player's Character. `game.ships[]` and `game.entities[]` are unchanged — all combat/rendering/AI code reads `ship.faction`/`ship.relation`/`ship.ai` as before.
 

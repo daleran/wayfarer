@@ -5,7 +5,7 @@ const SHIP = {
   label: 'Swift Exit',
   shipClass: 'maverick-courier',
   name: 'Swift Exit',
-  modules: ['magplasma-torch-s', 'null', 'SalvagedSensorSuite'],
+  modules: ['magplasma-torch-s', 'null', 'null'],
   flavorText:
     'A stolen Maverick courier with the serial numbers ground off and the transponder ' +
     'pulled. The previous owner — a settlement foreman — kept it docked and polished. ' +

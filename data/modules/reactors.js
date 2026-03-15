@@ -1,4 +1,7 @@
-import { registerData, REACTORS } from '../dataRegistry.js';
+import { registerData, registerContent, REACTORS } from '../dataRegistry.js';
+import {
+  HydrogenFuelCell, SmallFissionReactor, LargeFissionReactor, LargeFusionReactor,
+} from '@/modules/shipModule.js';
 
 registerData(REACTORS, {
   'hydrogen-fuel-cell': {
@@ -38,3 +41,9 @@ registerData(REACTORS, {
     weight: 100,
   },
 });
+
+// Self-register into CONTENT.modules
+registerContent('modules', 'hydrogen-fuel-cell', { category: 'POWER', create: () => new HydrogenFuelCell() });
+registerContent('modules', 'fission-reactor-s',  { category: 'POWER', create: () => new SmallFissionReactor() });
+registerContent('modules', 'fission-reactor-l',  { category: 'POWER', create: () => new LargeFissionReactor() });
+registerContent('modules', 'fusion-reactor-l',   { category: 'POWER', create: () => new LargeFusionReactor() });

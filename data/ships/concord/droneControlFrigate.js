@@ -10,7 +10,7 @@ const SHIP = {
   relation: 'hostile',
   aiBehavior: 'standoff',
   entityClass: 'drone-control-frigate',
-  modules: ['onyx-drive-unit', 'lance-small', 'null'],
+  modules: ['onyx-drive-unit', 'lance-st', 'null'],
   flavorText:
     'A Concord Remnant command vessel — repurposed garrison hull stripped of ' +
     'crew provisions and rebuilt as a drone carrier. Geometric sensor arrays ' +

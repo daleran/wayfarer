@@ -3,7 +3,6 @@ import { Renderer } from './renderer.js';
 import { HUD } from './hud.js';
 import { input } from './input.js';
 import { MAP } from '@data/maps/tyr.js';
-import { createNPC } from './entities/registry.js';
 import { ParticlePool } from './systems/particlePool.js';
 import { SalvageSystem } from './systems/salvageSystem.js';
 import { RepairSystem } from './systems/repairSystem.js';
@@ -25,7 +24,7 @@ import {
 import { ReputationSystem } from './systems/reputation.js';
 import { PlayerInventory } from './systems/playerInventory.js';
 import { NavigationSystem } from './systems/navigationSystem.js';
-import { createShip, createActor } from './entities/registry.js';
+import { createShip, createNPC } from './entities/registry.js';
 
 export class GameManager {
   constructor(options = {}) {
@@ -679,7 +678,7 @@ export class GameManager {
         const rx = entry.homePosition.x + Math.sin(angle) * dist;
         const ry = entry.homePosition.y - Math.cos(angle) * dist;
         const ship = entry.captainId
-          ? createActor(entry.captainId, rx, ry)
+          ? createNPC(entry.captainId, rx, ry)
           : createShip(entry.shipType, rx, ry);
         ship.homePosition = { x: entry.homePosition.x, y: entry.homePosition.y };
         ship._canRespawn = true;

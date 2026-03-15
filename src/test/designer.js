@@ -5,14 +5,10 @@
 import { input } from '@/input.js';
 
 // Ships and Characters — imported from central registry
-import { SHIP_REGISTRY, getNamedShipRegistry, getCharacterRegistry } from '@/entities/registry.js';
+import { getShipRegistry, getNamedShipRegistry, getCharacterRegistry } from '@/entities/registry.js';
 
-// Content registry — stations self-register here
+// Content registry — all content self-registers here
 import { CONTENT } from '@data/index.js';
-
-// Modules and weapons — from their registries (designer auto-discovers all entries)
-import { MODULE_REGISTRY } from '@/modules/shipModule.js';
-import { WEAPON_REGISTRY } from '@/modules/weapons/registry.js';
 
 // POIs
 import { PlanetPale } from '@data/terrain/planet-pale/index.js';
@@ -32,10 +28,10 @@ import { DesignerPanel } from '@/ui/designerPanel.js';
 // Reorders the flat registry so each variant follows its parent class.
 
 function _buildShipClassItems() {
-  return SHIP_REGISTRY.map(s => ({
+  return getShipRegistry().map(s => ({
     id: s.id,
     label: s.label,
-    file: s.file,
+    file: `data/hulls/${s.id}/hull.js`,
     type: 'ship',
     isVariant: false,
     create: () => s.create(0, 0),
@@ -99,7 +95,7 @@ function _buildStationItems() {
 // ─── WEAPON ITEMS (from registry) ─────────────────────────────────────────────
 
 function _buildWeaponItems() {
-  return WEAPON_REGISTRY.map(entry => {
+  return Object.values(CONTENT.weapons).map(entry => {
     const sample = entry.create();
     return {
       id: entry.slug,
@@ -120,12 +116,12 @@ function _buildWeaponItems() {
 // ─── MODULE ITEMS (from registry) ─────────────────────────────────────────────
 
 function _buildModuleItems() {
-  return MODULE_REGISTRY.map(entry => {
+  return Object.entries(CONTENT.modules).map(([id, entry]) => {
     const sample = entry.create();
-    const isLarge = entry.id.endsWith('-l') || entry.id.endsWith('-large');
+    const isLarge = id.endsWith('-l') || id.endsWith('-large');
     return {
-      id: entry.id,
-      label: sample.displayName || entry.id,
+      id,
+      label: sample.displayName || id,
       file: 'js/modules/shipModule.js',
       type: 'module',
       category: entry.category,
@@ -154,8 +150,8 @@ function _buildDerelictItems() {
       flavorText: def.lore,
       create: () => def.instantiate(0, 0),
       info: {
-        Type: `Derelict (${def.derelictClass})`,
-        'Salvage Time': `${def.salvageTime}s`,
+        Type: `Derelict (${def.shipClass})`,
+
         Loot: loot,
         'Interact R': '120u',
       },
@@ -1100,7 +1096,6 @@ export class Designer {
       if (mod.sensor_range) statLine('SENSOR RANGE', `${mod.sensor_range}u`, CYAN);
       if (mod.powerDraw > 0) statLine('POWER DRAW', `-${mod.powerDraw}W`, MAGENTA);
       const caps = [];
-      if (mod.minimap_stations) caps.push('stations');
       if (mod.minimap_ships) caps.push('ships');
       if (mod.lead_indicators) caps.push('lead');
       if (mod.health_pips) caps.push('pips');

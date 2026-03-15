@@ -1,4 +1,8 @@
-import { registerData, ENGINES } from '../dataRegistry.js';
+import { registerData, registerContent, ENGINES } from '../dataRegistry.js';
+import {
+  OnyxDriveUnit, ChemRocketSmall, ChemRocketLarge,
+  MagplasmaTorchSmall, MagplasmaTorchLarge, IonThruster,
+} from '@/modules/shipModule.js';
 
 registerData(ENGINES, {
   'onyx-drive-unit': {
@@ -56,3 +60,11 @@ registerData(ENGINES, {
     weight: 40,
   },
 });
+
+// Self-register into CONTENT.modules
+registerContent('modules', 'onyx-drive-unit',   { category: 'ENGINE', create: () => new OnyxDriveUnit() });
+registerContent('modules', 'chem-rocket-s',      { category: 'ENGINE', create: () => new ChemRocketSmall() });
+registerContent('modules', 'chem-rocket-l',      { category: 'ENGINE', create: () => new ChemRocketLarge() });
+registerContent('modules', 'magplasma-torch-s',  { category: 'ENGINE', create: () => new MagplasmaTorchSmall() });
+registerContent('modules', 'magplasma-torch-l',  { category: 'ENGINE', create: () => new MagplasmaTorchLarge() });
+registerContent('modules', 'ion-thruster',       { category: 'ENGINE', create: () => new IonThruster() });

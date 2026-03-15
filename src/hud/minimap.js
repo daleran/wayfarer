@@ -16,9 +16,7 @@ export function renderMinimap(ctx, game) {
   const { player, entities, hostiles } = game;
   if (!player || !player.active) return;
 
-  const canSeeStations = player.capabilities.minimap_stations;
   const canSeeShips    = player.capabilities.minimap_ships;
-  if (!canSeeStations && !canSeeShips) return;
 
   const mapW  = game.map.mapSize.width;
   const mapH  = game.map.mapSize.height;
@@ -51,7 +49,8 @@ export function renderMinimap(ctx, game) {
   ctx.rect(ox, oy, MM_PANEL, MM_PANEL);
   ctx.clip();
 
-  if (canSeeStations) {
+  // Planets, stations, derelicts, loot — always visible (built-in minimap)
+  {
     for (const e of entities) {
       if (!e.isPlanet || !e.active) continue;
       const mx = ox + e.x * SCALE;

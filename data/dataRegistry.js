@@ -31,6 +31,8 @@ export const CONTENT = {
   derelicts: {},      // id → { ...data, instantiate(x,y) }
   terrain: {},        // id → { ...data, instantiate(x,y) }
   characters: {},     // id → { name, faction, relation, behavior, shipId, bounty?, flavorText? }
+  modules: {},        // id → { category, create() }
+  weapons: {},        // id → { create(), slug, label, flavorText, projColor, ... }
 };
 
 /** Register a content entry into the appropriate CONTENT sub-table. */

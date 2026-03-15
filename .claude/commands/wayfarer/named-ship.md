@@ -11,7 +11,7 @@ Create a new named ship or edit an existing one. Named ships are configured inst
   - `onyx-tug`, `maverick-courier`, `g100-hauler`, `garrison-frigate`, `drone-control-hull`, `snatcher-drone-hull`
   - Or a new class if none fits (see `/ship-class`)
 - **Has a captain?** — Yes = active NPC/player. No = derelict wreck.
-- **Modules** — pick from `MODULE_REGISTRY` in `src/modules/shipModule.js`
+- **Modules** — pick from `CONTENT.modules` (browse via designer or data files in `data/modules/`)
 - **Flavor text** — one paragraph tactical/lore description
 
 **If captained**, also ask:
@@ -21,7 +21,7 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 - **Character** — create new (see `/character`) or reference existing from `data/characters/*.js`
 
 **If derelict (no captain)**, also ask:
-- **Derelict class** — `'hauler'`, `'fighter'`, `'frigate'`, `'unknown'` (affects salvage color/condition distributions)
+- **Ship class** — a hull ID from `CONTENT.hulls` (e.g. `'g100-hauler'`, `'maverick-courier'`, `'garrison-frigate'`, `'onyx-tug'`)
 - **Salvage time** — seconds to complete salvage
 - **Lore text** — multi-line flavor shown on approach
 
@@ -35,8 +35,8 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 
 - `src/entities/registry.js` — `getCharacterRegistry()`, `createNPC()` / `createShip()` helpers
 - `src/entities/character.js` — Character class, `boardShip()` pattern
-- `src/modules/shipModule.js` — `MODULE_REGISTRY` for available modules
-- `src/modules/weapons/registry.js` — `WEAPON_REGISTRY` for available weapons
+- `CONTENT.modules` — available modules (self-registered from `data/modules/*.js`)
+- `CONTENT.weapons` — available weapons (self-registered from `data/modules/weapons.js`)
 - `data/ships/<faction>/` — ship config definitions (self-register into `CONTENT.ships`)
 - `data/characters/*.js` — named NPC characters with backstories/bounties
 - Existing derelicts in `data/ships/named/` for derelict pattern
@@ -64,7 +64,7 @@ registerContent('ships', '<slug>', {
 });
 ```
 
-Module IDs use `MODULE_REGISTRY` keys from `src/modules/registry.js`. Use `'null'` string for empty slots. For rocket pods with guidance: `'rocket-pod-s:ht'` or `'rocket-pod-l:ht'`.
+Module IDs use kebab-case keys matching `CONTENT.modules` (e.g. `'autocannon'`, `'hydrogen-fuel-cell'`). Use `'null'` string for empty slots. For rocket pods with guidance: `'rocket-s:ht'` or `'rocket-l:ht'`.
 
 Characters are defined separately in `data/characters/*.js` with a `shipId` field referencing this ship's ID. See `/character`.
 
@@ -85,10 +85,9 @@ Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Locati
 import { CONTENT, registerContent } from '@data/dataRegistry.js';
 import { createDerelict } from '@/entities/registry.js';
 
-registerContent(CONTENT.derelicts, '<slug>', {
+registerContent('derelicts', '<slug>', {
   name: '<Display Name>',
-  derelictClass: '<hauler|fighter|frigate|unknown>',
-  salvageTime: 5,
+  shipClass: '<hull-id>',
   lore: `<DISPLAY NAME> — <class> description.
 Second line of lore.
 Third line.`,
@@ -104,7 +103,7 @@ Third line.`,
 
 ## Step 5 — Register
 
-**Captained ships:** Ship config self-registers at import time via `registerContent('ships', ...)`. Character data self-registers via `registerContent('characters', ...)`. `CHARACTER_REGISTRY` is built from `CONTENT.characters` via `getCharacterRegistry()` in `src/entities/registry.js`. No manual registry editing needed.
+**Captained ships:** Ship config self-registers at import time via `registerContent('ships', ...)`. Character data self-registers via `registerContent('characters', ...)`. `getCharacterRegistry()` in `src/entities/registry.js` reads from `CONTENT.characters`. No manual registry editing needed.
 
 **For derelicts:** Content self-registers into `CONTENT.derelicts` at import time. The designer auto-discovers from `CONTENT.derelicts` — no separate designer entry needed.
 

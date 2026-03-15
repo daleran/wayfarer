@@ -69,7 +69,7 @@ For ships with separate components (nacelles, pods), use `_strokeArcCurrent(ctx,
 
 ## Step 5 — Register
 
-`SHIP_REGISTRY` in `src/entities/registry.js` is now a Proxy that reads from `CONTENT.hulls`. Hull files self-register at import time via `registerContent()` from `data/dataRegistry.js`:
+Hull files self-register into `CONTENT.hulls` at import time via `registerContent()` from `data/dataRegistry.js`. `getShipRegistry()` in `src/entities/registry.js` reads from `CONTENT.hulls`:
 
 ```js
 // In data/hulls/<slug>/hull.js

@@ -320,7 +320,6 @@ export class DesignerPanel {
       el.appendChild(this._section('SENSOR CAPS'));
       if (mod.sensor_range) el.appendChild(this._statRow('Range', `${mod.sensor_range}u`, 't-cyan'));
       const caps = [];
-      if (mod.minimap_stations) caps.push('stations');
       if (mod.minimap_ships) caps.push('ships');
       if (mod.lead_indicators) caps.push('lead');
       if (mod.health_pips) caps.push('pips');

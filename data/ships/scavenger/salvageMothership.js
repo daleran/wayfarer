@@ -5,7 +5,7 @@ const SHIP = {
   label: 'Salvage Mothership',
   shipClass: 'garrison-frigate',
   name: 'Salvage Mothership',
-  modules: ['onyx-drive-unit', 'cannon-module', 'rocket-pod-l:ht', 'null', 'null'],
+  modules: ['onyx-drive-unit', 'cannon', 'rocket-l:ht', 'null', 'null'],
   flavorText:
     'A Garrison-class Frigate repurposed as a mobile salvage base and clan flagship. ' +
     'Cannon for hard targets. Missiles for deterrence. Where you find one of ' +

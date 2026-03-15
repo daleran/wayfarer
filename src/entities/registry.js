@@ -28,22 +28,6 @@ export function getShipRegistry() {
   }));
 }
 
-/** @deprecated Use getShipRegistry() — kept for backward compat */
-export const SHIP_REGISTRY = new Proxy([], {
-  get(target, prop) {
-    const registry = getShipRegistry();
-    if (prop === 'map') return registry.map.bind(registry);
-    if (prop === 'find') return registry.find.bind(registry);
-    if (prop === 'findIndex') return registry.findIndex.bind(registry);
-    if (prop === 'filter') return registry.filter.bind(registry);
-    if (prop === 'length') return registry.length;
-    if (prop === Symbol.iterator) return registry[Symbol.iterator].bind(registry);
-    const idx = typeof prop === 'string' ? parseInt(prop) : NaN;
-    if (!isNaN(idx)) return registry[idx];
-    return Reflect.get(target, prop);
-  },
-});
-
 // ── Character registry ──────────────────────────────────────────────────────
 // Built from CONTENT.characters for designer/external consumers.
 
@@ -72,23 +56,6 @@ export function getNamedShipRegistry() {
     create: (x, y) => createShip(id, x, y),
   }));
 }
-
-// Backward-compat aliases
-export const CHARACTER_REGISTRY = new Proxy([], {
-  get(target, prop) {
-    const registry = getNamedShipRegistry();
-    if (prop === 'map') return registry.map.bind(registry);
-    if (prop === 'find') return registry.find.bind(registry);
-    if (prop === 'findIndex') return registry.findIndex.bind(registry);
-    if (prop === 'filter') return registry.filter.bind(registry);
-    if (prop === 'length') return registry.length;
-    if (prop === Symbol.iterator) return registry[Symbol.iterator].bind(registry);
-    const idx = typeof prop === 'string' ? parseInt(prop) : NaN;
-    if (!isNaN(idx)) return registry[idx];
-    return Reflect.get(target, prop);
-  },
-});
-export const NPC_REGISTRY = CHARACTER_REGISTRY;
 
 // ── Generic helpers ─────────────────────────────────────────────────────────
 
@@ -166,31 +133,19 @@ export function createNPC(characterId, x, y) {
   return ship;
 }
 
-// Backward-compat aliases
-export const createActor = createNPC;
-
 // ── Derelict factory ──────────────────────────────────────────────────────────
-// Derelicts are ships with no captain — placed in data as wrecks to salvage.
-
-const DERELICT_SHIP_CLASSES = {
-  hauler:  'g100-hauler',
-  fighter: 'maverick-courier',
-  frigate: 'garrison-frigate',
-  unknown: 'onyx-tug',
-};
+// Derelicts are ships with no captain — any ship without a captain is a derelict.
+// data.shipClass must be a valid hull ID in CONTENT.hulls.
 
 export function createDerelict(data) {
-  const shipClassId = DERELICT_SHIP_CLASSES[data.derelictClass] ?? 'g100-hauler';
   /** @type {any} */
-  const ship = createHullByClass(shipClassId, data.x, data.y);
+  const ship = createHullByClass(data.shipClass, data.x, data.y);
 
   ship.crew = 0;
   ship._machineAi = null;
   ship.name = data.name || 'Derelict';
   ship.lootTable = data.lootTable || [];
-  ship.salvageTime = data.salvageTime || 3;
   ship.loreText = data.loreText || [];
-  ship.derelictClass = data.derelictClass || 'hauler';
   ship.interactionRadius = 120;
   ship.rotation = (Math.random() - 0.5) * 1.2;
   ship.throttleLevel = 0;

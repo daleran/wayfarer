@@ -5,8 +5,7 @@ import { registerContent } from '@data/dataRegistry.js';
 
 export const HollowMarch = {
   name: 'Hollow March',
-  derelictClass: 'unknown',
-  salvageTime: 6,
+  shipClass: 'onyx-tug',
   lore: `HOLLOW MARCH — hull class unidentified. Pre-Collapse origin suspected.
 No registry. No crew manifest. Power signature: anomalous.
 Approach with caution. Contents: unknown.`,

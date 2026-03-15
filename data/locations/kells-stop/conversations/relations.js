@@ -1,6 +1,6 @@
 // kellRelations — faction standings at Kell's Stop.
 
-import { FACTIONS, FACTION_LABELS } from '@/systems/reputation.js';
+import { FACTIONS, FACTION_LABELS } from '@data/index.js';
 import { registerContent } from '@data/dataRegistry.js';
 
 export async function kellRelations(ctx) {

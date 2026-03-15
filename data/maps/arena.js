@@ -8,7 +8,7 @@ import { PlanetPale } from '@data/terrain/planet-pale/index.js';
 import { createDerelict, createShip } from '@/entities/registry.js';
 // createShip used here for unmanned Concord ships
 import { createModuleDrop } from '@/entities/lootDrop.js';
-import { SalvageBayModule, EngineeringBayModule } from '@/modules/shipModule.js';
+import { createModuleById } from '@/modules/registry.js';
 
 function spawnEnemy(x, y, shipType) {
   const ship = createShip(shipType, x, y);
@@ -35,53 +35,53 @@ export const MAP = {
     KellsStop.instantiate(3000, 5600),
 
     // Module drops near player spawn for testing Salvage Bay / Engineering Bay
-    createModuleDrop(4050, 5750, new SalvageBayModule()),
-    createModuleDrop(3950, 5750, new EngineeringBayModule()),
+    createModuleDrop(4050, 5750, createModuleById('salvage-bay')),
+    createModuleDrop(3950, 5750, createModuleById('engineering-bay')),
 
     // Six derelicts in a hex ring at r≈1800 around Pale
     createDerelict({
-      name: 'Drifting Vigil', x: 4000, y: 1200, salvageTime: 4,
-      derelictClass: 'frigate',
+      name: 'Drifting Vigil', x: 4000, y: 1200,
+      shipClass: 'garrison-frigate',
       loreText: [
         'DRIFTING VIGIL — Garrison-class frigate, registry struck.',
         'Reactor unsecured. Drive section intact.',
       ],
     }),
     createDerelict({
-      name: 'Hollow March', x: 5560, y: 2100, salvageTime: 5,
-      derelictClass: 'unknown',
+      name: 'Hollow March', x: 5560, y: 2100,
+      shipClass: 'onyx-tug',
       loreText: [
         'HOLLOW MARCH — hull class unidentified. Pre-Collapse origin suspected.',
         'No registry. No crew manifest. Power signature: anomalous.',
       ],
     }),
     createDerelict({
-      name: 'Cold Remnant', x: 5560, y: 3900, salvageTime: 4,
-      derelictClass: 'fighter',
+      name: 'Cold Remnant', x: 5560, y: 3900,
+      shipClass: 'maverick-courier',
       loreText: [
         'COLD REMNANT — Maverick-class courier, combat-modified.',
         'Grave Clan markings. Hardpoint still attached.',
       ],
     }),
     createDerelict({
-      name: 'Gutted Pioneer', x: 4000, y: 4800, salvageTime: 3,
-      derelictClass: 'hauler',
+      name: 'Gutted Pioneer', x: 4000, y: 4800,
+      shipClass: 'g100-hauler',
       loreText: [
         'GUTTED PIONEER — G100-class hauler, cargo hold stripped.',
         'Approached the ring and did not clear it.',
       ],
     }),
     createDerelict({
-      name: 'Broken Covenant', x: 2440, y: 3900, salvageTime: 5,
-      derelictClass: 'frigate',
+      name: 'Broken Covenant', x: 2440, y: 3900,
+      shipClass: 'garrison-frigate',
       loreText: [
         'BROKEN COVENANT — Garrison-class frigate, registry struck.',
         'Reactor: unsecured. Drive section intact.',
       ],
     }),
     createDerelict({
-      name: 'Pale Witness', x: 2440, y: 2100, salvageTime: 4,
-      derelictClass: 'unknown',
+      name: 'Pale Witness', x: 2440, y: 2100,
+      shipClass: 'onyx-tug',
       loreText: [
         "PALE WITNESS — drifting in Pale's shadow for decades.",
         'Whatever it was watching for, it never reported back.',
