@@ -3,7 +3,7 @@ import { Renderer } from './renderer.js';
 import { HUD } from './hud.js';
 import { input } from './input.js';
 import { MAP } from '@data/maps/tyr.js';
-import { createActor } from './entities/registry.js';
+import { createNPC } from './entities/registry.js';
 import { ParticlePool } from './systems/particlePool.js';
 import { SalvageSystem } from './systems/salvageSystem.js';
 import { RepairSystem } from './systems/repairSystem.js';
@@ -25,7 +25,7 @@ import {
 import { ReputationSystem } from './systems/reputation.js';
 import { PlayerInventory } from './systems/playerInventory.js';
 import { NavigationSystem } from './systems/navigationSystem.js';
-import { createShip } from './entities/registry.js';
+import { createShip, createActor } from './entities/registry.js';
 
 export class GameManager {
   constructor(options = {}) {
@@ -101,8 +101,8 @@ export class GameManager {
     // Spawn player — use Crash Dummy in test/editor mode, Hullbreaker in production
     const start = this.map.playerStart || { x: 400, y: 400 };
     this.player = this.isTestMode
-      ? createActor('crash-dummy', start.x, start.y)
-      : createActor('hullbreaker', start.x, start.y);
+      ? createNPC('crash-dummy', start.x, start.y)
+      : createNPC('player', start.x, start.y);
     this.inventory.bindPlayer(this.player);
     this.inventory.initFromPlayer(this.player);
 
@@ -604,7 +604,9 @@ export class GameManager {
         const dist = SPAWN.ENEMY_RADIUS.MIN + Math.random() * SPAWN.ENEMY_RADIUS.MAX;
         const rx = entry.homePosition.x + Math.sin(angle) * dist;
         const ry = entry.homePosition.y - Math.cos(angle) * dist;
-        const ship = createShip(entry.shipType, rx, ry);
+        const ship = entry.captainId
+          ? createActor(entry.captainId, rx, ry)
+          : createShip(entry.shipType, rx, ry);
         ship.homePosition = { x: entry.homePosition.x, y: entry.homePosition.y };
         ship._canRespawn = true;
         this.entities.push(ship);
@@ -623,6 +625,7 @@ export class GameManager {
             timer: 60,
             homePosition: { x: s.homePosition.x, y: s.homePosition.y },
             shipType: s.shipType,
+            captainId: s.captain?.id ?? null,
           });
         }
       }

@@ -1,6 +1,6 @@
 // Central registries. Add new ships/NPCs here only.
 // Consumers: game.js, designer.js, editor.js
-import { NPC_SHIPS, AI_TEMPLATES, CONTENT } from '@data/index.js';
+import { AI_TEMPLATES, CHARACTERS, CONTENT } from '@data/index.js';
 import { Character } from '@/entities/character.js';
 import { createModuleById } from '@/modules/registry.js';
 
@@ -19,7 +19,6 @@ const ENTITY_CLASS_MAP = {
 
 // ── Hull registry (from CONTENT.hulls) ───────────────────────────────────────
 // Self-registered by hull files at import time.
-// Provides the same interface as the old SHIP_REGISTRY array.
 
 export function getShipRegistry() {
   return Object.entries(CONTENT.hulls).map(([id, entry]) => ({
@@ -45,24 +44,53 @@ export const SHIP_REGISTRY = new Proxy([], {
   },
 });
 
-// ── Character roster ────────────────────────────────────────────────────────────
-// Auto-generated from NPC_SHIPS data for designer/external consumers.
+// ── Character registry ──────────────────────────────────────────────────────
+// Built from CONTENT.characters for designer/external consumers.
 
-export const CHARACTER_REGISTRY = Object.entries(NPC_SHIPS).map(([id, data]) => ({
-  id,
-  label: data.label,
-  faction: data.faction,
-  behavior: data.aiBehavior || data.character?.behavior || 'player',
-  unmanned: data.unmanned || false,
-  hullClass: data.shipClass,
-  file: `data/namedShips.js#${id}`,
-  create: (x, y) => createActor(id, x, y),
-}));
+export function getCharacterRegistry() {
+  return Object.entries(CONTENT.characters).map(([id, data]) => ({
+    id,
+    label: data.name || id,
+    faction: data.faction,
+    behavior: data.behavior,
+    shipId: data.shipId,
+    file: `data/characters/`,
+    create: (x, y) => createNPC(id, x, y),
+  }));
+}
 
-// Backward-compat alias
+// ── Ship registry (named ships) ─────────────────────────────────────────────
+// Built from CONTENT.ships for designer/external consumers.
+
+export function getNamedShipRegistry() {
+  return Object.entries(CONTENT.ships).map(([id, data]) => ({
+    id,
+    label: data.label || data.name || id,
+    shipClass: data.shipClass,
+    unmanned: data.unmanned || false,
+    file: `data/ships/`,
+    create: (x, y) => createShip(id, x, y),
+  }));
+}
+
+// Backward-compat aliases
+export const CHARACTER_REGISTRY = new Proxy([], {
+  get(target, prop) {
+    const registry = getNamedShipRegistry();
+    if (prop === 'map') return registry.map.bind(registry);
+    if (prop === 'find') return registry.find.bind(registry);
+    if (prop === 'findIndex') return registry.findIndex.bind(registry);
+    if (prop === 'filter') return registry.filter.bind(registry);
+    if (prop === 'length') return registry.length;
+    if (prop === Symbol.iterator) return registry[Symbol.iterator].bind(registry);
+    const idx = typeof prop === 'string' ? parseInt(prop) : NaN;
+    if (!isNaN(idx)) return registry[idx];
+    return Reflect.get(target, prop);
+  },
+});
 export const NPC_REGISTRY = CHARACTER_REGISTRY;
 
-// ── Generic data-driven factory ───────────────────────────────────────────────
+// ── Generic helpers ─────────────────────────────────────────────────────────
 
 function createHullByClass(shipClassId, x, y) {
   const entry = CONTENT.hulls[shipClassId];
@@ -77,9 +105,14 @@ function installModules(ship, moduleIds) {
   ship._applyModules();
 }
 
-export function createActor(id, x, y) {
-  const data = NPC_SHIPS[id];
-  if (!data) throw new Error(`Unknown actor id: ${id}`);
+// ── Ship factory ────────────────────────────────────────────────────────────
+// Creates a configured ship from CONTENT.ships. For unmanned ships, sets
+// machine faction/relation/AI directly. For manned ships, returns ship without
+// a captain — use createNPC() to get a captained ship.
+
+export function createShip(id, x, y) {
+  const data = CONTENT.ships[id];
+  if (!data) throw new Error(`Unknown ship id: ${id}`);
 
   // 1. Create hull — use entity subclass if specified, otherwise base hull class
   let ship;
@@ -97,31 +130,44 @@ export function createActor(id, x, y) {
   // 3. Install modules
   installModules(ship, data.modules);
 
-  // 4. Character or unmanned setup
+  // 4. Unmanned setup (Concord machines)
   if (data.unmanned) {
-    // Concord machines — set faction/relation/AI directly on ship
-    ship.faction = data.faction;
-    ship.relation = data.relation;
+    ship._machineFaction = data.faction;
+    ship._machineRelation = data.relation;
     if (data.aiBehavior && AI_TEMPLATES[data.aiBehavior]) {
-      ship.ai = { ...AI_TEMPLATES[data.aiBehavior] };
+      ship._machineAi = { ...AI_TEMPLATES[data.aiBehavior] };
     }
-  } else if (data.character) {
-    const captain = new Character({
-      id: data.character.id,
-      name: data.character.name,
-      faction: data.character.faction || data.faction,
-      relation: data.character.relation || data.relation,
-      behavior: data.character.behavior || data.aiBehavior,
-      flavorText: data.character.flavorText,
-    });
-    captain.boardShip(ship);
   }
 
   return ship;
 }
 
-// Backward-compat alias
-export const createShip = createActor;
+// ── NPC factory ─────────────────────────────────────────────────────────────
+// Creates a ship + character pair from CHARACTERS data.
+// Returns the ship (with captain boarded).
+
+export function createNPC(characterId, x, y) {
+  const charData = CHARACTERS[characterId];
+  if (!charData) throw new Error(`Unknown character id: ${characterId}`);
+
+  const shipId = charData.shipId;
+  const ship = createShip(shipId, x, y);
+
+  const captain = new Character({
+    id: characterId,
+    name: charData.name,
+    faction: charData.faction,
+    relation: charData.relation,
+    behavior: charData.behavior,
+    flavorText: charData.flavorText,
+  });
+  captain.boardShip(ship);
+
+  return ship;
+}
+
+// Backward-compat aliases
+export const createActor = createNPC;
 
 // ── Derelict factory ──────────────────────────────────────────────────────────
 // Derelicts are ships with no captain — placed in data as wrecks to salvage.
@@ -138,9 +184,8 @@ export function createDerelict(data) {
   /** @type {any} */
   const ship = createHullByClass(shipClassId, data.x, data.y);
 
-  ship.relation = 'derelict';
   ship.crew = 0;
-  ship.ai = null;
+  ship._machineAi = null;
   ship.name = data.name || 'Derelict';
   ship.lootTable = data.lootTable || [];
   ship.salvageTime = data.salvageTime || 3;

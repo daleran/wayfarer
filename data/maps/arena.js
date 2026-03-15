@@ -6,6 +6,7 @@ import { TheCoil } from '@data/locations/the-coil/station.js';
 import { KellsStop } from '@data/locations/kells-stop/station.js';
 import { PlanetPale } from '@data/terrain/planet-pale/index.js';
 import { createDerelict, createShip } from '@/entities/registry.js';
+// createShip used here for unmanned Concord ships
 import { createModuleDrop } from '@/entities/lootDrop.js';
 import { SalvageBayModule, EngineeringBayModule } from '@/modules/shipModule.js';
 

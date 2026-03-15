@@ -1,6 +1,7 @@
 // Character — a person who can inhabit a ship.
 // Ships are vehicles; characters are the people flying them.
-// When a character boards a ship, the ship's faction/relation/ai are synced from the character.
+// When a character boards a ship, the ship delegates faction/relation/ai
+// to the captain via getters — no syncing needed.
 
 import { AI_TEMPLATES } from '@data/index.js';
 
@@ -25,26 +26,20 @@ export class Character {
   }
 
   /**
-   * Board a ship — syncs faction/relation/ai onto the ship.
+   * Board a ship — ship delegates faction/relation/ai to this character.
    * @param {import('../entities/ship.js').Ship} ship
    */
   boardShip(ship) {
     this.inShip = ship;
     ship.captain = this;
-    ship.faction = this.faction;
-    ship.relation = this.relation;
-    ship.ai = this.ai;
   }
 
   /**
-   * Leave the current ship — resets ship to inert state.
+   * Leave the current ship — ship reverts to machine defaults.
    */
   leaveShip() {
     if (!this.inShip) return;
     this.inShip.captain = null;
-    this.inShip.faction = 'none';
-    this.inShip.relation = 'none';
-    this.inShip.ai = null;
     this.inShip = null;
   }
 }

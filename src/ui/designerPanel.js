@@ -114,6 +114,11 @@ export class DesignerPanel {
     hint.textContent = `T rotate [${state.autoRotate ? 'ON' : 'OFF'}]  \u2022  R reset  \u2022  scroll zoom  \u2022  C compare`;
     el.appendChild(hint);
 
+    // Hull class (for named ships)
+    if (def.isVariant && ship.shipClassName) {
+      el.appendChild(this._statRow('Hull Class', ship.shipClassName, 't-dim'));
+    }
+
     // Hull & Armor
     el.appendChild(this._section('HULL & ARMOR'));
     for (const r of hullStats(ship)) {

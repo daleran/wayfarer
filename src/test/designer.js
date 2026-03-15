@@ -5,7 +5,7 @@
 import { input } from '@/input.js';
 
 // Ships and Characters — imported from central registry
-import { SHIP_REGISTRY, CHARACTER_REGISTRY } from '@/entities/registry.js';
+import { SHIP_REGISTRY, getNamedShipRegistry, getCharacterRegistry } from '@/entities/registry.js';
 
 // Content registry — stations self-register here
 import { CONTENT } from '@data/index.js';
@@ -43,19 +43,19 @@ function _buildShipClassItems() {
 }
 
 function _buildNamedShipItems() {
-  return CHARACTER_REGISTRY.map(n => ({
+  return getNamedShipRegistry().map(n => ({
     id: n.id,
     label: n.label,
     file: n.file,
     type: 'ship',
-    parentClass: n.hullClass,
+    parentClass: n.shipClass,
     isVariant: true,
     create: () => n.create(0, 0),
   }));
 }
 
 function _buildCharacterItems() {
-  return CHARACTER_REGISTRY.filter(n => !n.unmanned).map(n => {
+  return getCharacterRegistry().map(n => {
     const ship = n.create(0, 0);
     const captain = ship.captain;
     return {
@@ -71,7 +71,7 @@ function _buildCharacterItems() {
         Faction: n.faction,
         Behavior: n.behavior,
         Ship: ship.name || n.label,
-        'Hull Class': n.hullClass,
+        'Hull Class': n.shipId,
       },
     };
   });
@@ -165,7 +165,7 @@ function _buildDerelictItems() {
 
 // ─── CATEGORY DEFINITIONS ─────────────────────────────────────────────────────
 
-function _isShipCategory(id) { return id === 'ship-classes' || id === 'named-ships'; }
+function _isShipCategory(id) { return id === 'ship-classes' || id === 'ships'; }
 
 const CATEGORIES = [
   {
@@ -174,8 +174,8 @@ const CATEGORIES = [
     items: _buildShipClassItems(),
   },
   {
-    id: 'named-ships',
-    label: 'Named Ships',
+    id: 'ships',
+    label: 'Ships',
     items: _buildNamedShipItems(),
   },
   {

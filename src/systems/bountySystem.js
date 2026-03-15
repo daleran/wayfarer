@@ -1,4 +1,4 @@
-import { createShip } from '@/entities/registry.js';
+import { createShip, createNPC } from '@/entities/registry.js';
 import { REPUTATION } from '@data/index.js';
 
 export class BountySystem {
@@ -32,8 +32,9 @@ export class BountySystem {
 
   acceptBounty(station, contract, totalTime) {
     if (this.activeBounties.find(b => b.contract.id === contract.id)) return null;
-    const target = createShip(contract.targetShipType,
-      contract.targetPosition.x, contract.targetPosition.y);
+    const target = contract.targetCharacterId
+      ? createNPC(contract.targetCharacterId, contract.targetPosition.x, contract.targetPosition.y)
+      : createShip(contract.targetShipType, contract.targetPosition.x, contract.targetPosition.y);
     target.name = contract.targetName;
     target.homePosition = { ...contract.targetPosition };
     target.isBountyTarget = true;

@@ -1,10 +1,61 @@
 import { registerData, CHARACTERS, registerContent } from '@data/dataRegistry.js';
 
 const CHARS = {
+  'scavenger-pilot': {
+    name: 'Scavenger Pilot',
+    faction: 'scavenger',
+    relation: 'hostile',
+    behavior: 'stalker',
+    shipId: 'light-fighter',
+    flavorText:
+      'One of hundreds who scrape a living raiding trade lanes in the Gravewake. ' +
+      'No rank, no name worth remembering. They come in packs and they stay moving — ' +
+      'the ones who stop moving are the ones you find drifting.',
+  },
+  'scavenger-gunner': {
+    name: 'Scavenger Gunner',
+    faction: 'scavenger',
+    relation: 'hostile',
+    behavior: 'kiter',
+    shipId: 'armed-hauler',
+    flavorText:
+      'A veteran scavenger who graduated from courier raids to a proper gun platform. ' +
+      'Patient, methodical, and hard to rattle. Prefers to keep distance and let ' +
+      'the lance do the talking. Has survived longer than most — which in the ' +
+      'Gravewake means they know when to run.',
+  },
+  'salvage-lord': {
+    name: 'Salvage Lord',
+    faction: 'scavenger',
+    relation: 'hostile',
+    behavior: 'standoff',
+    shipId: 'salvage-mothership',
+    flavorText:
+      'A clan boss who commands from the back. They earned their ship the old way — ' +
+      'took it from someone who had it first. Now they sit behind armor and missiles ' +
+      'while the fighters do the dying. Every piece of scrap in this sector ' +
+      'passes through their hands eventually.',
+  },
+  'grave-clan-hunter': {
+    name: 'Grave-Clan Hunter',
+    faction: 'scavenger',
+    relation: 'hostile',
+    behavior: 'lurker',
+    shipId: 'grave-clan-ambusher',
+    flavorText:
+      'The most patient killers in the Gravewake. Grave-Clan hunters know the ' +
+      'trade lanes the way scavengers know wreckage — intimately and by feel. ' +
+      'They commit fully when they attack. No fallback plan. The ones who ' +
+      'hesitated are already dead.',
+  },
+
+  // Bounty characters
   hollow_brekk: {
     name: '"Hollow" Brekk',
     faction: 'scavenger',
+    relation: 'hostile',
     behavior: 'kiter',
+    shipId: 'armed-hauler',
     bounty: {
       value: 100,
       reason: 'Rival Clan Hit',
@@ -14,7 +65,9 @@ const CHARS = {
   crestfall_orin: {
     name: '"Crestfall" Orin',
     faction: 'scavenger',
+    relation: 'hostile',
     behavior: 'lurker',
+    shipId: 'grave-clan-ambusher',
     bounty: {
       value: 75,
       reason: 'Purgation Contract',
@@ -24,7 +77,9 @@ const CHARS = {
   ironback_marel: {
     name: '"Ironback" Marel',
     faction: 'scavenger',
+    relation: 'hostile',
     behavior: 'lurker',
+    shipId: 'grave-clan-ambusher',
     bounty: {
       value: 90,
       reason: 'Wanted: Grave-Clan Lurker',
@@ -34,7 +89,9 @@ const CHARS = {
   gutshot_drev: {
     name: '"Gutshot" Drev',
     faction: 'scavenger',
+    relation: 'hostile',
     behavior: 'stalker',
+    shipId: 'light-fighter',
     bounty: {
       value: 60,
       reason: 'Clear the Approach',
@@ -44,7 +101,9 @@ const CHARS = {
   pale_widow: {
     name: '"Pale Widow"',
     faction: 'scavenger',
+    relation: 'hostile',
     behavior: 'standoff',
+    shipId: 'salvage-mothership',
     bounty: {
       value: 140,
       reason: 'Silence the Mothership',
@@ -54,7 +113,9 @@ const CHARS = {
   runt_cassin: {
     name: '"Runt" Cassin',
     faction: 'scavenger',
+    relation: 'hostile',
     behavior: 'kiter',
+    shipId: 'armed-hauler',
     bounty: {
       value: 80,
       reason: 'Armed Hauler Ambush',
@@ -64,7 +125,9 @@ const CHARS = {
   six_wire_pol: {
     name: '"Six-Wire" Pol',
     faction: 'scavenger',
+    relation: 'hostile',
     behavior: 'stalker',
+    shipId: 'light-fighter',
     bounty: {
       value: 55,
       reason: 'Eastern Stalker',

@@ -8,7 +8,6 @@
 
 // ── Equipment & stat tables ─────────────────────────────────────────────────
 export const SHIP_CLASSES = {};
-export const NPC_SHIPS = {};
 export const ENGINES = {};
 export const REACTORS = {};
 export const SENSORS = {};
@@ -26,12 +25,12 @@ export function registerData(table, entries) {
 // ── Content tables (self-registration target) ───────────────────────────────
 export const CONTENT = {
   hulls: {},          // id → { label, create(x,y) }
-  actors: {},         // id → { shipClass, faction, modules, character, ... }
+  ships: {},          // id → { shipClass, modules, name, flavorText, unmanned?, faction?, ... }
   stations: {},       // id → { entity, label, flavorText }
   conversations: {},  // id → async function(ctx)
   derelicts: {},      // id → { ...data, instantiate(x,y) }
   terrain: {},        // id → { ...data, instantiate(x,y) }
-  characters: {},     // id → { name, bounty, flavorText, ... }
+  characters: {},     // id → { name, faction, relation, behavior, shipId, bounty?, flavorText? }
 };
 
 /** Register a content entry into the appropriate CONTENT sub-table. */

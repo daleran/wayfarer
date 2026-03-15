@@ -14,7 +14,8 @@ Scan the codebase for stat and color convention violations. The JS data files in
 
 **Content tables** (populated via `registerData()` in `data/dataRegistry.js`):
 - `data/shipClasses.js` — `SHIP_CLASSES[id]` → `{ hullMult, weightMult, cargoMult, armorFront, armorSide, armorAft, fuelMaxMult }`
-- `data/actors/<faction>/*.js` — actor entries in `CONTENT.actors` → `{ shipClass, faction, relation, aiBehavior, modules }`
+- `data/ships/<faction>/*.js` — ship config entries in `CONTENT.ships` → `{ shipClass, modules, flavorText }`
+- `data/characters/*.js` — character entries in `CONTENT.characters` → `{ name, faction, relation, behavior, shipId }`
 - `data/weapons.js` — `WEAPONS[id]` → `{ damageMult, hullDamageMult, rangeMult, speedMult, cooldownMult, magSize, reloadTime, blastRadius, acceptedAmmoTypes, isBeam, isFixed, isSecondary, canIntercept, isInterceptable, guidanceStrength, burstSpread, ... }`
 - `data/engines.js` — `ENGINES[id]` → `{ thrust, fuelEffMult, fuelDrainRate, powerDraw, weight }`
 - `data/reactors.js` — `REACTORS[id]` → `{ powerOutput, fuelDrainRate, overhaulInterval, overhaulCost, degradedOutput, weight }`
@@ -31,9 +32,13 @@ For each ship class in `data/shipClasses.js`:
 - Find the corresponding hull file in `data/hulls/*/hull.js` and verify it imports and uses the class multipliers from `SHIP_CLASSES`
 - Flag any JS file that hardcodes a multiplier value instead of reading it from the data
 
-For each actor in `data/actors/<faction>/*.js` (registered in `CONTENT.actors`):
-- Verify the entry references the correct `shipClass` and `aiBehavior`
+For each ship config in `data/ships/<faction>/*.js` (registered in `CONTENT.ships`):
+- Verify the entry references the correct `shipClass`
 - Verify module loadout matches between data and JS
+
+For each character in `data/characters/*.js` (registered in `CONTENT.characters`):
+- Verify `shipId` references a valid `CONTENT.ships` entry
+- Verify `behavior` is a valid AI behavior
 
 For each weapon in `data/weapons.js`:
 - Verify the JS weapon file in `src/modules/weapons/` uses the data stats (damageMult, rangeMult, etc.) rather than hardcoding them
@@ -53,7 +58,8 @@ For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
 
 **Files to scan:**
 - `data/hulls/*/hull.js`
-- `data/actors/**/*.js`
+- `data/ships/**/*.js`
+- `data/characters/*.js`
 - `src/modules/weapons/**/*.js`
 - `src/modules/shipModule.js`
 
@@ -106,7 +112,7 @@ For each module in `data/engines.js`, `data/reactors.js`, `data/sensors.js`:
 
 [Hardcoded Stats]
   data/hulls/some-ship/hull.js:42 — this.speedMax = 180
-  data/actors/scavenger/lightFighter.js:55 — this.damage = 25
+  data/ships/scavenger/lightFighter.js:55 — this.damage = 25
 
 [Inline Colors]
   src/world/someRenderer.js:88 — ctx.strokeStyle = '#ff4422'

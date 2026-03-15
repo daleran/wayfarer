@@ -20,9 +20,9 @@ export class Ship extends Entity {
 
     // Identity
     this.isShip = true;
-    this.faction = 'neutral';
-    this.relation = 'none';   // 'none' | 'player' | 'friendly' | 'neutral' | 'hostile' | 'enemy'
-    this.ai = null;            // set to { ...AI_TEMPLATES.x } in subclass constructors
+    this._machineFaction = 'neutral';   // used when no captain (unmanned/derelict)
+    this._machineRelation = 'none';     // used when no captain
+    this._machineAi = null;             // used when no captain
     this.captain = null;       // Character instance piloting this ship (null = unmanned)
     this.shipType = null;
 
@@ -131,6 +131,19 @@ export class Ship extends Entity {
     this._trails     = [];
     this._trailTimer = 0;
   }
+
+  // ── Delegation getters: faction/relation/ai route through captain when present ──
+  get faction()  { return this.captain?.faction ?? this._machineFaction; }
+  set faction(v) { this._machineFaction = v; }
+
+  get relation() {
+    if (this.crew === 0) return 'derelict';
+    return this.captain?.relation ?? this._machineRelation;
+  }
+  set relation(v) { this._machineRelation = v; }
+
+  get ai()       { return this.captain?.ai ?? this._machineAi; }
+  set ai(v)      { this._machineAi = v; }
 
   // Color getters — derived entirely from this.relation.
   // Change this.relation and all hull/engine colors update automatically.
@@ -520,10 +533,10 @@ export class Ship extends Entity {
 
   _becomeDerelict() {
     this.crew = 0;
-    this.relation = 'derelict';
+    if (this.captain) this.captain.leaveShip();
+    this._machineAi = null;
     this.throttleLevel = 0;
     this.speed = 0;
-    this.ai = null;
     this.salvageTime = 3;
     this.interactionRadius = 150;
     this._justCrippled = true;

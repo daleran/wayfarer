@@ -15,19 +15,19 @@ import { ArkshipSpines }     from '@data/terrain/arkship-spines/index.js';
 import { WallOfWrecks }      from '@data/terrain/debris-clouds/index.js';
 
 import { ZONE_BG_STROKE }       from '@/rendering/colors.js';
-import { createShip }           from '@/entities/registry.js';
+import { createShip, createNPC } from '@/entities/registry.js';
 import { SPAWN }               from '@data/index.js';
 
 // ── Spawn helpers ───────────────────────────────────────────────────────────
 
-function npcGroup(x, y, count, shipType) {
+// characterId for manned ships, shipId for unmanned (Concord)
+function npcGroup(x, y, count, id, { unmanned = false } = {}) {
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
     const dist = SPAWN.ENEMY_RADIUS.MIN + Math.random() * SPAWN.ENEMY_RADIUS.MAX;
-    const ship = createShip(shipType,
-      x + Math.sin(angle) * dist,
-      y - Math.cos(angle) * dist,
-    );
+    const ship = unmanned
+      ? createShip(id, x + Math.sin(angle) * dist, y - Math.cos(angle) * dist)
+      : createNPC(id, x + Math.sin(angle) * dist, y - Math.cos(angle) * dist);
     ship.homePosition = { x, y };
     return ship;
   });
@@ -39,7 +39,7 @@ function lurkerGroup(x, y, count) {
     const dist = SPAWN.LURKER_RADIUS.MIN + Math.random() * SPAWN.LURKER_RADIUS.MAX;
     const rx = x + Math.sin(angle) * dist;
     const ry = y - Math.cos(angle) * dist;
-    const ship = createShip('grave-clan-ambusher', rx, ry);
+    const ship = createNPC('grave-clan-hunter', rx, ry);
     ship.ai._coverPoint = { x: rx, y: ry };
     ship.homePosition   = { x, y };
     return ship;
@@ -51,7 +51,7 @@ function convoy(routeA, routeB, shipCount) {
     const t = shipCount > 1 ? i / shipCount : 0;
     const sx = routeA.x + (routeB.x - routeA.x) * t;
     const sy = routeA.y + (routeB.y - routeA.y) * t;
-    const ship = createShip('trader-convoy', sx, sy);
+    const ship = createNPC('convoy-hauler', sx, sy);
     ship.ai._tradeRouteA = { ...routeA };
     ship.ai._tradeRouteB = { ...routeB };
     return ship;
@@ -63,7 +63,7 @@ function militia(orbitCenter, orbitRadius, orbitSpeed, count) {
     const angle = (i / count) * Math.PI * 2;
     const sx = orbitCenter.x + Math.sin(angle) * orbitRadius;
     const sy = orbitCenter.y - Math.cos(angle) * orbitRadius;
-    const ship = createShip('militia-patrol', sx, sy);
+    const ship = createNPC('militia-officer', sx, sy);
     ship.ai._orbitCenter = { ...orbitCenter };
     ship.ai._orbitRadius = orbitRadius;
     ship.ai._orbitSpeed  = orbitSpeed;
@@ -158,10 +158,10 @@ export const GRAVEWAKE = {
     ...WallOfWrecks.instantiate(),
 
     // Enemies
-    ...npcGroup(3200, 2200, 3, 'light-fighter'),
-    ...npcGroup(2800, 7500, 3, 'light-fighter'),
-    ...npcGroup(14000, 8000, 1, 'drone-control-frigate'),
-    ...npcGroup(10500, 7000, 1, 'drone-control-frigate'),
+    ...npcGroup(3200, 2200, 3, 'scavenger-pilot'),
+    ...npcGroup(2800, 7500, 3, 'scavenger-pilot'),
+    ...npcGroup(14000, 8000, 1, 'drone-control-frigate', { unmanned: true }),
+    ...npcGroup(10500, 7000, 1, 'drone-control-frigate', { unmanned: true }),
 
     // Lurkers
     ...lurkerGroup(4200, 4000, 2),

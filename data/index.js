@@ -21,20 +21,22 @@ import './hulls/garrison-frigate/hull.js';
 import './hulls/drone-control-hull/hull.js';
 import './hulls/snatcher-drone-hull/hull.js';
 
-// Actors — self-register into NPC_SHIPS and CONTENT.actors
-import './actors/player/hullbreaker.js';
-import './actors/player/crashDummy.js';
-import './actors/scavenger/lightFighter.js';
-import './actors/scavenger/armedHauler.js';
-import './actors/scavenger/salvageMothership.js';
-import './actors/scavenger/graveClanAmbusher.js';
-import './actors/neutral/traderConvoy.js';
-import './actors/neutral/militiaPatrol.js';
-import './actors/concord/droneControlFrigate.js';
-import './actors/concord/snatcHerDrone.js';
+// Ships — self-register into CONTENT.ships
+import './ships/player/hullbreaker.js';
+import './ships/player/crashDummy.js';
+import './ships/scavenger/lightFighter.js';
+import './ships/scavenger/armedHauler.js';
+import './ships/scavenger/salvageMothership.js';
+import './ships/scavenger/graveClanAmbusher.js';
+import './ships/neutral/traderConvoy.js';
+import './ships/neutral/militiaPatrol.js';
+import './ships/concord/droneControlFrigate.js';
+import './ships/concord/snatcHerDrone.js';
 
-// Characters — bounty NPCs
-import './actors/scavenger/characters.js';
+// Characters — self-register into CHARACTERS + CONTENT.characters
+import './characters/player.js';
+import './characters/scavenger.js';
+import './characters/neutral.js';
 
 // Stations — self-register into CONTENT.stations
 import './locations/the-coil/station.js';
@@ -69,7 +71,6 @@ import './ships/named/paleWitness.js';
 export * from './tuning.js';
 export {
   SHIP_CLASSES,
-  NPC_SHIPS,
   ENGINES,
   REACTORS,
   SENSORS,

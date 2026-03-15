@@ -23,42 +23,47 @@ Create a new character or edit an existing one. Characters are **people** (or ro
 ## Step 2 — Read reference files
 
 - `src/entities/character.js` — `Character` class, `boardShip()`/`leaveShip()`
-- The NPC file where the character is currently defined (e.g. `data/actors/scavenger/lightFighter.js`)
-- `src/entities/registry.js` — `CHARACTER_REGISTRY` entries (auto-generated from `CONTENT.actors`)
+- The character file where the character is currently defined (e.g. `data/characters/scavengers.js`)
+- `src/entities/registry.js` — `getCharacterRegistry()` (built from `CONTENT.characters`)
 - `LORE.md` — faction descriptions and world tone
 
 ## Step 3 — Create or edit the character
 
-Characters are defined inline in their actor file under `data/actors/<faction>/`. The `createActor()` factory reads the character data and creates a `Character` instance automatically. Content self-registers at import time via `registerContent()` from `data/dataRegistry.js`.
+Characters are defined in `data/characters/*.js` as standalone entries, separate from ship configs. Each character has a `shipId` field referencing a ship config in `CONTENT.ships`. Characters self-register at import time via `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
 
 ```js
-// In data/actors/<faction>/<actorName>.js — character data is embedded in the actor entry
-import { CONTENT, registerContent } from '@data/dataRegistry.js';
+// In data/characters/<filename>.js
+import { CHARACTERS, registerContent, registerData } from '@data/dataRegistry.js';
 
-registerContent(CONTENT.actors, '<slug>', {
-  label: '<Ship Name>',
-  shipClass: '<hull-class>',
-  // ... ship fields ...
-  character: {
-    id: '<character-id>',
+registerData(CHARACTERS, {
+  '<character-id>': {
     name: '<Display Name>',
     faction: '<faction>',
     relation: '<hostile|neutral|player>',
     behavior: '<stalker|kiter|standoff|lurker|flee|trader|militia>',
+    shipId: '<ship-config-id>',
     flavorText: '<Backstory. Who they are, their reputation, what drives them.>',
   },
 });
+
+registerContent('characters', '<character-id>', CHARACTERS['<character-id>']);
 ```
 
-For named NPCs with bounties and backstories, add an entry to `data/actors/scavenger/characters.js`:
+For named NPCs with bounties:
 ```js
-registerContent(CONTENT.actors, '<character_id>', {
-  name: '<Display Name>',
-  faction: '<faction>',
-  behavior: '<behavior>',
-  bounty: { value: 100, reason: '<Bounty Title>' },
-  flavorText: '<Backstory.>',
+registerData(CHARACTERS, {
+  '<character-id>': {
+    name: '<Display Name>',
+    faction: '<faction>',
+    relation: '<hostile>',
+    behavior: '<behavior>',
+    shipId: '<ship-config-id>',
+    flavorText: '<Backstory.>',
+    bounty: { value: 100, reason: '<Bounty Title>' },
+  },
 });
+
+registerContent('characters', '<character-id>', CHARACTERS['<character-id>']);
 ```
 
 **Key fields:**
@@ -70,7 +75,7 @@ registerContent(CONTENT.actors, '<character_id>', {
 
 ## Step 4 — Verify registry
 
-`CHARACTER_REGISTRY` in `src/entities/registry.js` is auto-generated from `CONTENT.actors`. No manual registry editing needed — content self-registers at import time. Just verify the actor file exists under `data/actors/<faction>/`.
+`CHARACTER_REGISTRY` is built from `CONTENT.characters` via `getCharacterRegistry()` in `src/entities/registry.js`. No manual registry editing needed — content self-registers at import time. Just verify the character entry exists in `data/characters/*.js`.
 
 ## Step 5 — Validate & verify
 

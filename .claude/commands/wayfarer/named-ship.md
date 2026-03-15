@@ -18,7 +18,7 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 - **Faction** — `'scavenger'`, `'concord'`, `'settlements'`, `'monastic'`, `'communes'`, `'zealots'`, or `'player'`
 - **Relation** — `'hostile'`, `'neutral'`, or `'player'`
 - **Combat behavior** — `stalker`, `kiter`, `standoff`, `lurker`, `flee` (hostile); `trader`, `militia` (neutral passive)
-- **Character** — create new (see `/character`) or reference existing from `data/actors/<faction>/` or `data/actors/scavenger/characters.js`
+- **Character** — create new (see `/character`) or reference existing from `data/characters/*.js`
 
 **If derelict (no captain)**, also ask:
 - **Derelict class** — `'hauler'`, `'fighter'`, `'frigate'`, `'unknown'` (affects salvage color/condition distributions)
@@ -33,51 +33,44 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 
 ## Step 2 — Read reference files
 
-- `src/entities/registry.js` — `CHARACTER_REGISTRY` format, `createActor()` helper
+- `src/entities/registry.js` — `getCharacterRegistry()`, `createNPC()` / `createShip()` helpers
 - `src/entities/character.js` — Character class, `boardShip()` pattern
 - `src/modules/shipModule.js` — `MODULE_REGISTRY` for available modules
 - `src/modules/weapons/registry.js` — `WEAPON_REGISTRY` for available weapons
-- `data/actors/<faction>/` — actor definitions (self-register into `CONTENT.actors`)
-- `data/actors/scavenger/characters.js` — named NPC characters with backstories/bounties
-- Existing derelicts in `data/actors/` (derelict entries) for derelict pattern
+- `data/ships/<faction>/` — ship config definitions (self-register into `CONTENT.ships`)
+- `data/characters/*.js` — named NPC characters with backstories/bounties
+- Existing derelicts in `data/ships/named/` for derelict pattern
 
 ## Step 3 — Data entry (if applicable)
 
-If the named ship needs a data entry, add/update in `data/actors/<faction>/<actorName>.js` using `registerContent(CONTENT.actors, '<slug>', { ... })` from `data/dataRegistry.js`. Content self-registers at import time.
+If the named ship needs a data entry, add/update in `data/ships/<faction>/<shipName>.js` using `registerContent('ships', '<slug>', { ... })` from `data/dataRegistry.js`. Content self-registers at import time.
 
 ## Step 4 — Create or edit the ship entry
 
 ### Captained ship (active NPC or player)
 
-Location: `data/actors/<faction>/<actorName>.js` — register into `CONTENT.actors`:
+Location: `data/ships/<faction>/<shipName>.js` — register into `CONTENT.ships`:
 
 ```js
-import { CONTENT, registerContent } from '@data/dataRegistry.js';
+import { registerContent } from '@data/dataRegistry.js';
 
-registerContent(CONTENT.actors, '<slug>', {
+registerContent('ships', '<slug>', {
+  id: '<slug>',
   label: '<Display Name>',
   shipClass: '<base-class-slug>',
-  faction: '<faction>',
-  relation: '<hostile|neutral|player>',
-  aiBehavior: '<stalker|kiter|standoff|lurker|flee|trader|militia>',
+  name: '<Vessel Name>',
   modules: ['<module-id>', '<module-id>', 'null'],
   flavorText: '<One paragraph ship description.>',
-  character: {
-    id: '<slug>',
-    name: '<Character Name>',
-    faction: '<faction>',
-    relation: '<hostile|neutral|player>',
-    behavior: '<behavior>',
-    flavorText: '<Character backstory.>',
-  },
 });
 ```
 
 Module IDs use `MODULE_REGISTRY` keys from `src/modules/registry.js`. Use `'null'` string for empty slots. For rocket pods with guidance: `'rocket-pod-s:ht'` or `'rocket-pod-l:ht'`.
 
-**Unmanned ships (Concord machines):** Add `unmanned: true` and `entityClass: '<entity-class-id>'` instead of `character`. Entity subclasses live in `src/entities/concord/`.
+Characters are defined separately in `data/characters/*.js` with a `shipId` field referencing this ship's ID. See `/character`.
 
-**Named characters with bounties:** Add an entry to `data/actors/scavenger/characters.js` using `registerContent(CONTENT.actors, '<id>', { ... })`.
+**Unmanned ships (Concord machines):** Add `unmanned: true`, `faction`, `relation`, `aiBehavior`, and `entityClass: '<entity-class-id>'` to the ship data. Entity subclasses live in `src/entities/concord/`.
+
+**Named characters with bounties:** Add an entry to `data/characters/*.js` using `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
 
 **Behavior setup notes:**
 - `lurker`: spawn code must set `ship.ai._coverPoint = { x, y }` post-creation
@@ -86,7 +79,7 @@ Module IDs use `MODULE_REGISTRY` keys from `src/modules/registry.js`. Use `'null
 
 ### Derelict (no captain)
 
-Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Location: `data/actors/<faction>/<camelCaseName>.js` (or a dedicated derelict file).
+Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Location: `data/ships/named/<camelCaseName>.js`.
 
 ```js
 import { CONTENT, registerContent } from '@data/dataRegistry.js';
@@ -111,7 +104,7 @@ Third line.`,
 
 ## Step 5 — Register
 
-**Captained ships:** Content self-registers at import time via `registerContent()`. `CHARACTER_REGISTRY` in `src/entities/registry.js` is auto-generated from `CONTENT.actors`. No manual registry editing needed.
+**Captained ships:** Ship config self-registers at import time via `registerContent('ships', ...)`. Character data self-registers via `registerContent('characters', ...)`. `CHARACTER_REGISTRY` is built from `CONTENT.characters` via `getCharacterRegistry()` in `src/entities/registry.js`. No manual registry editing needed.
 
 **For derelicts:** Content self-registers into `CONTENT.derelicts` at import time. The designer auto-discovers from `CONTENT.derelicts` — no separate designer entry needed.
 
@@ -119,7 +112,7 @@ Third line.`,
 
 Add spawn entries to `data/maps/arena.js` (testing) and the relevant zone manifest / `data/maps/tyr.js` (production).
 
-- Captained ships: `createActor('<slug>', x, y)` from registry
+- Captained ships: `createNPC('<slug>', x, y)` from registry
 - Derelicts: `<PascalName>.instantiate(x, y)`
 
 ## Step 7 — Validate & verify

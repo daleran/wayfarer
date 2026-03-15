@@ -100,7 +100,11 @@ export class CollisionSystem {
           if (proj.owner === player && target.relation === 'neutral' && !proj._neutralPenaltyApplied) {
             proj._neutralPenaltyApplied = true;
             reputation.change('settlements', REPUTATION.ATTACK_NEUTRAL_PENALTY);
-            target.relation = 'hostile';
+            if (target.captain) {
+              target.captain.relation = 'hostile';
+            } else {
+              target._machineRelation = 'hostile';
+            }
             target.ai._aggro = true;
           }
           if (proj.isRocket || proj.detonatesOnContact) {

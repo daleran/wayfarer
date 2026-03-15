@@ -1,5 +1,5 @@
 import { DroneControlHull } from '@data/hulls/drone-control-hull/hull.js';
-import { createActor } from '@/entities/registry.js';
+import { createShip } from '@/entities/registry.js';
 
 const DRONE_MAX          = 3;
 const DRONE_COOLDOWN     = 12;  // seconds
@@ -34,7 +34,7 @@ export class DroneControlFrigateShip extends DroneControlHull {
       const spawnX = this.x + (-Math.cos(this.rotation) * side * DRONE_SPAWN_OFFSET);
       const spawnY = this.y + ( Math.sin(this.rotation) * side * DRONE_SPAWN_OFFSET);
 
-      const drone = createActor('snatcher-drone', spawnX, spawnY);
+      const drone = createShip('snatcher-drone', spawnX, spawnY);
       drone.rotation = this.rotation;
 
       this._activeDrones.push(drone);

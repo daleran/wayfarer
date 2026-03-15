@@ -4,7 +4,7 @@
 // for temporary entity placement (position scouting — coords logged to console).
 
 import { input } from '@/input.js';
-import { SHIP_REGISTRY, CHARACTER_REGISTRY, createShip, createDerelict } from '@/entities/registry.js';
+import { createNPC, createDerelict, getNamedShipRegistry, getCharacterRegistry } from '@/entities/registry.js';
 import { CONTENT } from '@data/index.js';
 import { createModuleById } from '@/modules/registry.js';
 import { WEAPON_REGISTRY } from '@/modules/weapons/registry.js';
@@ -15,7 +15,7 @@ import {
 import { EditorHUDBar, EditorSidebar, EditorItemMenu, EditorPanBanner } from '@/ui/editorPanels.js';
 
 // Map editor category label → designer category id
-const DESIGNER_CAT = { SHIPS: 'ships', NPCS: 'ships', STATIONS: 'stations', DERELICTS: 'derelicts' };
+const DESIGNER_CAT = { SHIPS: 'ships', NPCS: 'characters', STATIONS: 'stations', DERELICTS: 'derelicts' };
 
 // Module categories for the item menu
 const MODULE_CATEGORIES = {
@@ -143,34 +143,37 @@ export class EditorOverlay {
   // ── Registry ──────────────────────────────────────────────────────────────
 
   _buildBarItems() {
-    const npcItems = CHARACTER_REGISTRY.map(n => ({
+    // Characters (manned NPCs)
+    const charItems = getCharacterRegistry().map(n => ({
       id: n.id,
       label: n.label,
       faction: n.faction,
       create: n.create,
       stats: `${n.faction} · ${n.behavior}`,
     }));
-    // Enemies (scavenger faction) first, then rest
-    npcItems.sort((a, b) => {
+    charItems.sort((a, b) => {
       const aE = a.faction === 'scavenger' ? 0 : 1;
       const bE = b.faction === 'scavenger' ? 0 : 1;
       return aE - bE;
     });
 
+    // Named ships (configured ship instances)
+    const shipItems = getNamedShipRegistry().map(n => ({
+      id: n.id,
+      label: n.label,
+      faction: null,
+      create: n.create,
+      stats: `class: ${n.shipClass}${n.unmanned ? ' (unmanned)' : ''}`,
+    }));
+
     return [
       {
         label: 'NPCS',
-        items: npcItems,
+        items: charItems,
       },
       {
         label: 'SHIPS',
-        items: SHIP_REGISTRY.map(s => ({
-          id: s.id,
-          label: s.label,
-          faction: null,
-          create: s.create,
-          stats: s.label,
-        })),
+        items: shipItems,
       },
       {
         label: 'STATIONS',
@@ -214,9 +217,9 @@ export class EditorOverlay {
     if (input.wasJustPressed('=')) this._debugMode = (this._debugMode + 1) % 3;
 
     // Quick spawn at mouse cursor
-    if (input.wasJustPressed('z')) this._quickSpawn('light-fighter');
-    if (input.wasJustPressed('x')) this._quickSpawn('armed-hauler');
-    if (input.wasJustPressed('c')) this._quickSpawn('salvage-mothership');
+    if (input.wasJustPressed('z')) this._quickSpawn('scavenger-pilot');
+    if (input.wasJustPressed('x')) this._quickSpawn('scavenger-gunner');
+    if (input.wasJustPressed('c')) this._quickSpawn('salvage-lord');
 
     // Toggle object sidebar (- key)
     if (input.wasJustPressed('-')) {
@@ -314,15 +317,16 @@ export class EditorOverlay {
     console.log(`[editor] placed ${item.label} at (${Math.round(world.x)}, ${Math.round(world.y)})`);
   }
 
-  _quickSpawn(shipType) {
+  _quickSpawn(characterId) {
     const game  = this._game;
     const world = game.camera.screenToWorld(input.mouseScreen.x, input.mouseScreen.y);
-    const ship  = createShip(shipType, world.x, world.y);
+    const ship  = createNPC(characterId, world.x, world.y);
     ship.homePosition = { x: world.x, y: world.y };
     ship.ai._aggro = true;
     game.entities.push(ship);
     game.ships.push(ship);
-    console.log(`[editor] spawned ${shipType} at (${Math.round(world.x)}, ${Math.round(world.y)})`);
+    if (ship.captain) game.characters.push(ship.captain);
+    console.log(`[editor] spawned ${characterId} at (${Math.round(world.x)}, ${Math.round(world.y)})`);
   }
 
   _openInDesigner() {
