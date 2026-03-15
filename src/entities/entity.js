@@ -1,3 +1,5 @@
+import { ENTITY } from '@data/enums.js';
+
 export class Entity {
   constructor(x, y) {
     this.x = x;
@@ -6,6 +8,8 @@ export class Entity {
     this.vy = 0;
     this.rotation = 0; // radians; 0 = pointing up (north)
     this.active = true;
+    /** @type {string} */
+    this.entityType = ENTITY.ENTITY;
   }
 
   update(_dt) {

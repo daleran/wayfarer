@@ -1,4 +1,5 @@
 import { Entity } from './entity.js';
+import { ENTITY } from '@data/enums.js';
 import { AMBER, CYAN, GREEN, MAGENTA } from '@/rendering/colors.js';
 import { COMMODITIES } from '@data/commodities.js';
 import { AMMO } from '@data/index.js';
@@ -11,6 +12,7 @@ const DRAG = 0.97;
 export class LootDrop extends Entity {
   constructor(x, y, lootType, amount) {
     super(x, y);
+    this.entityType = ENTITY.LOOT;
     this.lootType = lootType; // 'scrap', 'fuel', 'module', 'weapon', 'ammo', or commodity id
     this.amount = amount;
     this.moduleData = null;   // set for lootType === 'module'

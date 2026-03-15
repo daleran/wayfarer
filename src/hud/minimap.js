@@ -1,5 +1,4 @@
-import { Station } from '@/entities/station.js';
-import { LootDrop } from '@/entities/lootDrop.js';
+import { ENTITY } from '@data/enums.js';
 import {
   FACTION,
   MINIMAP_BG, MINIMAP_BORDER, MINIMAP_PLANET, MINIMAP_STATION,
@@ -63,7 +62,7 @@ export function renderMinimap(ctx, game) {
     }
 
     for (const e of entities) {
-      if (!(e instanceof Station) || !e.active) continue;
+      if (e.entityType !== ENTITY.STATION || !e.active) continue;
       const mx    = ox + e.x * SCALE;
       const my    = oy + e.y * SCALE;
       const color = FACTION[e.faction] ?? MINIMAP_STATION;
@@ -91,7 +90,7 @@ export function renderMinimap(ctx, game) {
     }
 
     for (const e of entities) {
-      if (!(e instanceof LootDrop) || !e.active) continue;
+      if (e.entityType !== ENTITY.LOOT || !e.active) continue;
       const mx = ox + e.x * SCALE;
       const my = oy + e.y * SCALE;
       ctx.fillStyle = MINIMAP_LOOT;

@@ -1,4 +1,5 @@
 import { Entity } from './entity.js';
+import { ENTITY } from '@data/enums.js';
 import { AMBER, WHITE } from '@/rendering/colors.js';
 
 const DURATION = 0.55; // seconds
@@ -6,6 +7,7 @@ const DURATION = 0.55; // seconds
 export class RocketExplosion extends Entity {
   constructor(x, y, blastRadius) {
     super(x, y);
+    this.entityType = ENTITY.EXPLOSION;
     this.blastRadius = blastRadius; // world units
     this._age = 0;
   }

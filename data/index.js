@@ -76,6 +76,7 @@ import './ships/named/paleWitness.js';
 // Re-export everything consumers need
 export * from './tuning.js';
 export { FACTIONS, FACTION_LABELS, FACTION_MAP, RIVALS } from './factions.js';
+export { ENTITY, RELATION, CONDITION, LOOT_TYPE, ARC, MOUNT_SIZE, MOUNT_SLOT } from './enums.js';
 export {
   SHIP_CLASSES,
   ENGINES,

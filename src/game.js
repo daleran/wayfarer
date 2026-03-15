@@ -1,3 +1,4 @@
+import { ENTITY } from '@data/enums.js';
 import { Camera } from './camera.js';
 import { Renderer } from './renderer.js';
 import { HUD } from './hud.js';
@@ -11,7 +12,6 @@ import { BountySystem } from './systems/bountySystem.js';
 import { WeaponSystem } from './systems/weaponSystem.js';
 import { InteractionSystem } from './systems/interactionSystem.js';
 import { updateShipAI } from './ai/shipAI.js';
-import { Station } from './entities/station.js';
 import { NarrativePanel } from './ui/narrativePanel.js';
 import { ShipScreen } from './ui/shipScreen.js';
 import {
@@ -118,7 +118,7 @@ export class GameManager {
     // World entities — pre-instantiated by zone manifests / map files
     for (const entity of this.map.entities ?? []) {
       this.entities.push(entity);
-      if (entity.isShip) {
+      if (entity.entityType === ENTITY.SHIP) {
         this.ships.push(entity);
         if (entity.captain) this.characters.push(entity.captain);
       }
@@ -230,7 +230,7 @@ export class GameManager {
       if (!entity.active) continue;
       if ((this.salvage.isSalvaging || this.repair.isRepairing) && entity === this.player) continue;
       entity.update(dt, this.entities);
-      if (entity instanceof Station && this.player) {
+      if (entity.entityType === ENTITY.STATION && this.player) {
         entity.updateZoneFade(dt, this.player.x, this.player.y);
       }
     }
@@ -503,7 +503,7 @@ export class GameManager {
 
     for (const e of this.entities) {
       if (!e.active) continue;
-      if (!(e instanceof Station) && !e.isDerelict) continue;
+      if (e.entityType !== ENTITY.STATION && !e.isDerelict) continue;
       const dx = e.x - wx;
       const dy = e.y - wy;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -610,7 +610,7 @@ export class GameManager {
 
   _updateDamageEffects(dt) {
     for (const entity of this.entities) {
-      if (!entity.active || !entity.isShip) continue;
+      if (!entity.active || entity.entityType !== ENTITY.SHIP) continue;
 
       // Derelict sparks — periodic ping effect
       if (entity.isDerelict && !entity.salvaged) {

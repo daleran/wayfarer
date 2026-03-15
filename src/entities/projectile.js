@@ -1,4 +1,5 @@
 import { Entity } from './entity.js';
+import { ENTITY } from '@data/enums.js';
 import {
   GREEN, RED, AMBER, WHITE, PLASMA_GREEN,
   PROJ_GLOW_GREEN, PROJ_GLOW_RED, PLASMA_CORE,
@@ -11,6 +12,7 @@ const BOLT_TRAIL_MAX   = 18;
 export class Projectile extends Entity {
   constructor(x, y, vx, vy, damage, owner) {
     super(x, y);
+    this.entityType = ENTITY.PROJECTILE;
     this.vx = vx;
     this.vy = vy;
     this.damage = damage;

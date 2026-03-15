@@ -1,4 +1,4 @@
-import { Station } from '@/entities/station.js';
+import { ENTITY } from '@data/enums.js';
 import {
   MAP_BG, MAP_ZONE_BORDER, NAV_WAYPOINT, NAV_COURSE_LINE, NAV_FUEL_RANGE,
   FACTION, MINIMAP_PLANET, MINIMAP_STATION, MINIMAP_ENEMY, MINIMAP_PLAYER,
@@ -69,7 +69,7 @@ export function renderMapView(ctx, game) {
 
     // ── Stations ──────────────────────────────────────────────────────────
     for (const e of entities) {
-      if (!(e instanceof Station) || !e.active) continue;
+      if (e.entityType !== ENTITY.STATION || !e.active) continue;
       const p = worldToMap(e.x, e.y);
       const color = FACTION[e.faction] ?? MINIMAP_STATION;
 

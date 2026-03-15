@@ -1,6 +1,7 @@
 import { GREEN, RED, RANGE_CIRCLE, AMBER, VERY_DIM, CYAN, WHITE, BLACK, STARFIELD_TINT_WHITE, BG_CLEAR, BEAM_GLOW_OUTER, BEAM_GLOW_MID, conditionColor } from './rendering/colors.js';
 import { PROMPT } from './rendering/draw.js';
 import { input } from './input.js';
+import { ENTITY } from '@data/enums.js';
 
 // Starfield layer config: [count, parallaxFactor, starSize]
 const STAR_LAYERS = [
@@ -265,14 +266,19 @@ export class Renderer {
     const mx = input.mouseScreen.x;
     const my = input.mouseScreen.y;
 
-    // Standard mode: simple hollow circle cursor
+    // Standard mode: small triangle cursor
     if (!game.combatMode) {
       ctx.save();
       ctx.strokeStyle = CYAN;
       ctx.lineWidth = 1.5;
       ctx.globalAlpha = 0.75;
+      // Arrow-pointer: tip at cursor, left edge vertical, hypotenuse ~35° off vertical
+      const h = 16;
       ctx.beginPath();
-      ctx.arc(mx, my, 6, 0, Math.PI * 2);
+      ctx.moveTo(mx, my);              // tip
+      ctx.lineTo(mx, my + h);          // straight down (left edge)
+      ctx.lineTo(mx + h * Math.tan(35 * Math.PI / 180), my + h * 0.65); // bottom-right
+      ctx.closePath();
       ctx.stroke();
       ctx.restore();
       return;
@@ -294,20 +300,28 @@ export class Renderer {
     }
 
     const color = inRange ? GREEN : RED;
-    const arm = 8;
+    const arm = 4;
     const gap = 4;
 
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.675;
 
-    // Four arms
+    // Circle
+    const radius = 9;
     ctx.beginPath();
-    ctx.moveTo(mx - gap, my); ctx.lineTo(mx - gap - arm, my);
-    ctx.moveTo(mx + gap, my); ctx.lineTo(mx + gap + arm, my);
-    ctx.moveTo(mx, my - gap); ctx.lineTo(mx, my - gap - arm);
-    ctx.moveTo(mx, my + gap); ctx.lineTo(mx, my + gap + arm);
+    ctx.arc(mx, my, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Four arms (intersecting the circle)
+    const innerEnd = radius - 5;
+    const outerStart = radius + 2;
+    ctx.beginPath();
+    ctx.moveTo(mx - innerEnd, my); ctx.lineTo(mx - outerStart - arm, my);
+    ctx.moveTo(mx + innerEnd, my); ctx.lineTo(mx + outerStart + arm, my);
+    ctx.moveTo(mx, my - innerEnd); ctx.lineTo(mx, my - outerStart - arm);
+    ctx.moveTo(mx, my + innerEnd); ctx.lineTo(mx, my + outerStart + arm);
     ctx.stroke();
 
     // Center dot
@@ -517,7 +531,7 @@ export class Renderer {
   _renderBeams(game, camera) {
     const { ctx } = this;
     for (const entity of game.entities) {
-      if (!entity.isShip) continue;
+      if (entity.entityType !== ENTITY.SHIP) continue;
       for (const w of entity.weapons || []) {
         if (!w.isBeam || w._rampUp <= 0) continue;
         const t = Math.min(w._rampUp / w.rampTime, 1);
@@ -599,14 +613,14 @@ export class Renderer {
   _renderEntities(entities, camera) {
     // Two-pass: scenery first, ships always on top
     for (const entity of entities) {
-      if (!entity.active || entity.isShip) continue;
+      if (!entity.active || entity.entityType === ENTITY.SHIP) continue;
       const bounds = entity.getBounds();
       if (!camera.isVisible(bounds.x, bounds.y, bounds.radius + 64)) continue;
       entity.render(this.ctx, camera);
       if (entity.renderZoneLabels) entity.renderZoneLabels(this.ctx, camera);
     }
     for (const entity of entities) {
-      if (!entity.active || !entity.isShip) continue;
+      if (!entity.active || entity.entityType !== ENTITY.SHIP) continue;
       const bounds = entity.getBounds();
       if (!camera.isVisible(bounds.x, bounds.y, bounds.radius + 64)) continue;
       entity.render(this.ctx, camera);

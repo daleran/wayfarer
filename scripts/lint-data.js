@@ -104,8 +104,43 @@ async function main() {
       }
     }
 
+    // ── instanceof ban (static) ────────────────────────────────────────────
+    // Entity type checks must use entityType tags, not instanceof.
+    // instanceof creates circular dependency risks when entity classes are
+    // imported into systems/HUD/renderer files.
+    {
+      const { readdirSync, readFileSync } = await import('node:fs');
+      const { join } = await import('node:path');
+
+      const ENTITY_CLASSES = ['Ship', 'Station', 'Projectile', 'LootDrop', 'Planet', 'Entity', 'RocketExplosion'];
+      const instanceofPattern = new RegExp(`instanceof\\s+(${ENTITY_CLASSES.join('|')})\\b`);
+      // Flag raw string entityType comparisons — must use ENTITY enum from data/enums.js
+      const rawEntityTypePattern = /entityType\s*[!=]==?\s*['"]/;
+
+      function walkJs(dir) {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const full = join(dir, entry.name);
+          if (entry.isDirectory()) { walkJs(full); continue; }
+          if (!entry.name.endsWith('.js')) continue;
+          // Allow instanceof in entity files themselves (class hierarchies)
+          const inEntities = full.includes('/entities/');
+          const lines = readFileSync(full, 'utf8').split('\n');
+          lines.forEach((line, i) => {
+            if (!inEntities) {
+              const m = line.match(instanceofPattern);
+              if (m) err('instanceof', `${full}:${i + 1} — use entityType tag instead of instanceof ${m[1]}`);
+            }
+            if (rawEntityTypePattern.test(line)) {
+              err('raw-entityType', `${full}:${i + 1} — use ENTITY enum from data/enums.js instead of raw string`);
+            }
+          });
+        }
+      }
+      walkJs('src');
+    }
+
     // ── Report ──────────────────────────────────────────────────────────────
-    const checks = 9;
+    const checks = 10;
     if (errors.length > 0) {
       console.error('\nDATA LINT ERRORS:\n');
       errors.forEach(e => console.error(e));

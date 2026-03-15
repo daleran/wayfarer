@@ -1,6 +1,5 @@
-import { Projectile } from '@/entities/projectile.js';
-import { Ship } from '@/entities/ship.js';
 import { RocketExplosion } from '@/entities/rocketExplosion.js';
+import { ENTITY } from '@data/enums.js';
 import { REPUTATION } from '@data/index.js';
 
 export class CollisionSystem {
@@ -13,7 +12,7 @@ export class CollisionSystem {
     const interceptors = [];
     const interceptables = [];
     for (const e of entities) {
-      if (!(e instanceof Projectile) || !e.active) continue;
+      if (e.entityType !== ENTITY.PROJECTILE || !e.active) continue;
       if (e.canIntercept) interceptors.push(e);
       if (e.isInterceptable) interceptables.push(e);
     }
@@ -37,7 +36,7 @@ export class CollisionSystem {
 
     // --- Beam interception pass: canInterceptBeam lances vs isInterceptable projectiles ---
     for (const ship of entities) {
-      if (!(ship instanceof Ship) || !ship.active) continue;
+      if (ship.entityType !== ENTITY.SHIP || !ship.active) continue;
       for (const w of ship.weapons) {
         if (!w.canInterceptBeam || !w._isFiring) continue;
         const ox = w._beamOriginX, oy = w._beamOriginY;
@@ -45,7 +44,7 @@ export class CollisionSystem {
         const blen2 = (ex - ox) ** 2 + (ey - oy) ** 2;
         if (blen2 === 0) continue;
         for (const e of entities) {
-          if (!(e instanceof Projectile) || !e.active || !e.isInterceptable) continue;
+          if (e.entityType !== ENTITY.PROJECTILE || !e.active || !e.isInterceptable) continue;
           if (e.owner?.faction === ship.faction) continue;
           const t = Math.max(0, Math.min(1, ((e.x - ox) * (ex - ox) + (e.y - oy) * (ey - oy)) / blen2));
           const dx = e.x - (ox + t * (ex - ox));
@@ -68,7 +67,7 @@ export class CollisionSystem {
     };
 
     for (const entity of entities) {
-      if (!(entity instanceof Projectile)) continue;
+      if (entity.entityType !== ENTITY.PROJECTILE) continue;
 
       // AoE expiry detonation
       if ((entity.isRocket || entity.detonatesOnExpiry) && entity.shouldDetonate && !entity.active) {
@@ -87,7 +86,7 @@ export class CollisionSystem {
       const pb = proj.getBounds();
 
       for (const target of entities) {
-        if (!target.active || !(target instanceof Ship)) continue;
+        if (!target.active || target.entityType !== ENTITY.SHIP) continue;
         if (target.isDerelict) continue;
         if (proj.owner === target) continue;
         if (proj.owner?.faction && target.faction && proj.owner.faction === target.faction) continue;
@@ -153,7 +152,7 @@ export class CollisionSystem {
 
   _aoeExplode(x, y, damage, hullDamage, blastRadius, entities, player, { particlePool: _particlePool, hud, repair, reputation: _reputation, onEnemyKilled, onEnemyCrippled }) {
     for (const entity of entities) {
-      if (!entity.active || !(entity instanceof Ship)) continue;
+      if (!entity.active || entity.entityType !== ENTITY.SHIP) continue;
       if (entity.isDerelict) continue;
       const sb = entity.getBounds();
       const dx = sb.x - x;

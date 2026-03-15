@@ -1,4 +1,4 @@
-import { Projectile } from '@/entities/projectile.js';
+import { ENTITY } from '@data/enums.js';
 import { AMMO } from '@data/index.js';
 
 export class WeaponSystem {
@@ -53,7 +53,7 @@ export class WeaponSystem {
   updateGuidance(entities, ships, mouseWorld) {
     const enemies = ships.filter(s => s.active && s.relation === 'hostile');
     for (const entity of entities) {
-      if (!(entity instanceof Projectile) || !entity.active || !entity.isGuided) continue;
+      if (entity.entityType !== ENTITY.PROJECTILE || !entity.active || !entity.isGuided) continue;
       if (entity.guidedType === 'wire') {
         if (mouseWorld) {
           entity.guidanceTargetX = mouseWorld.x;

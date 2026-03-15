@@ -1,3 +1,4 @@
+import { ENTITY } from '@data/enums.js';
 import { BASE_DAMAGE, BASE_WEAPON_RANGE } from '@data/index.js';
 
 const OVERHEAT_LIMIT = 5.0;  // seconds at full power before forced shutdown
@@ -132,7 +133,7 @@ export class Lance {
     // Hitscan — find closest ship along beam
     let closestT = beamLength;
     for (const entity of entities) {
-      if (!entity.active || !entity.isShip) continue;
+      if (!entity.active || entity.entityType !== ENTITY.SHIP) continue;
       if (entity === ship) continue;
       if (entity.faction && ship.faction && entity.faction === ship.faction) continue;
       const ecx = entity.x - ship.x;

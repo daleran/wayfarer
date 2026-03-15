@@ -1,4 +1,5 @@
 import { Entity } from '@/entities/entity.js';
+import { ENTITY } from '@data/enums.js';
 import { CYAN, AMBER, RED, GREEN, WHITE, DIM_TEXT } from '@/rendering/colors.js';
 import { text, SUBTITLE, FLAVOR } from '@/rendering/draw.js';
 import { FACTION_MAP } from '@data/index.js';
@@ -6,6 +7,7 @@ import { FACTION_MAP } from '@data/index.js';
 export class Station extends Entity {
   constructor(x, y, data) {
     super(x, y);
+    this.entityType = ENTITY.STATION;
     this.id = data.id ?? null;
     this.name = data.name;
     this.faction = data.faction ?? 'neutral';

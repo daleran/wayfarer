@@ -1,7 +1,8 @@
 import { Entity } from './entity.js';
+import { ENTITY } from '@data/enums.js';
 import { RELATION_COLORS, RED, WHITE, AMBER, BLACK, DIM_TEXT, armorArcColor, conditionColor } from '@/rendering/colors.js';
 import { trail as drawTrail, FLAVOR, PROMPT } from '@/rendering/draw.js';
-import { drawEmptyMount, drawMountHighlight } from '@/rendering/moduleVisuals.js';
+import { drawEmptyMount } from '@/rendering/moduleVisuals.js';
 import { BASE_SPEED, BASE_ACCELERATION, BASE_TURN_RATE, SPEED_FACTOR,
          BASE_HULL, BASE_CARGO,
          BASE_ARMOR, BASE_FUEL_MAX,
@@ -17,9 +18,9 @@ const TRAIL_MAX_POINTS = 120;
 export class Ship extends Entity {
   constructor(x, y) {
     super(x, y);
+    this.entityType = ENTITY.SHIP;
 
     // Identity
-    this.isShip = true;
     this._machineFaction = 'neutral';   // used when no captain (unmanned/derelict)
     this._machineRelation = 'none';     // used when no captain
     this._machineAi = null;             // used when no captain
@@ -808,11 +809,24 @@ export class Ship extends Entity {
           ctx.rotate(Math.atan2(mx, -my));
         }
 
+        // Opaque backing to mask hull edge lines beneath the module icon
+        ctx.fillStyle = this.hullFill;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+
         mod.drawAtMount(ctx, color, alpha);
         ctx.restore();
-
-        if (invMode) drawMountHighlight(ctx, mounts[i]);
       } else {
+        // Opaque backing for empty mount brackets
+        ctx.save();
+        ctx.fillStyle = this.hullFill;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(mounts[i].x, mounts[i].y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
         drawEmptyMount(ctx, mounts[i], invMode);
       }
     }

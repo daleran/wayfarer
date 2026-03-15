@@ -1,5 +1,4 @@
-import { Station } from '@/entities/station.js';
-import { LootDrop } from '@/entities/lootDrop.js';
+import { ENTITY } from '@data/enums.js';
 import { SCRAP_MASS, AMMO } from '@data/index.js';
 import { COMMODITIES } from '@data/commodities.js';
 
@@ -44,7 +43,7 @@ export class InteractionSystem {
   checkDocking(entities, player, input, { reputation, hud, stationScreen, bounty, game }) {
     this.nearbyStation = null;
     for (const entity of entities) {
-      if (!(entity instanceof Station)) continue;
+      if (entity.entityType !== ENTITY.STATION) continue;
       if (entity.isInDockingZone(player.x, player.y)) {
         this.nearbyStation = entity;
         break;
@@ -68,7 +67,7 @@ export class InteractionSystem {
     const px = player.x;
     const py = player.y;
     for (const entity of entities) {
-      if (!(entity instanceof LootDrop) || !entity.active) continue;
+      if (entity.entityType !== ENTITY.LOOT || !entity.active) continue;
       const dx = entity.x - px;
       const dy = entity.y - py;
       if (Math.sqrt(dx * dx + dy * dy) < entity.pickupRadius) {
