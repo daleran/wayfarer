@@ -103,17 +103,10 @@ export class RepairSystem {
     const ratio = ship.hullCurrent / ship.hullMax;
     if (ratio >= MODULE_BREACH_HULL_THRESHOLD) return null;
 
-    let chance;
-    if (ratio < 0.10) chance = MODULE_BREACH_CHANCE_HIGH;
-    else if (ratio < 0.30) chance = MODULE_BREACH_CHANCE_MID;
-    else chance = MODULE_BREACH_CHANCE_LOW;
-
-    if (Math.random() >= chance) return null;
-
     const slots = ship.moduleSlots ?? [];
     const mounts = ship._mountPoints;
 
-    // Prefer modules in the hit arc; fall back to all non-destroyed modules
+    // Select candidate module FIRST, then apply its breach multiplier
     let candidates;
     if (hitArc && mounts) {
       candidates = slots.filter((m, i) =>
@@ -126,6 +119,17 @@ export class RepairSystem {
     if (candidates.length === 0) return null;
 
     const mod = candidates[Math.floor(Math.random() * candidates.length)];
+
+    // Base chance from hull ratio, then multiply by module's breach vulnerability
+    let chance;
+    if (ratio < 0.10) chance = MODULE_BREACH_CHANCE_HIGH;
+    else if (ratio < 0.30) chance = MODULE_BREACH_CHANCE_MID;
+    else chance = MODULE_BREACH_CHANCE_LOW;
+
+    chance *= (mod.breachMultiplier ?? 1.0);
+
+    if (Math.random() >= chance) return null;
+
     const degraded = this._degradeCondition(mod, ship);
     if (degraded) {
       return {

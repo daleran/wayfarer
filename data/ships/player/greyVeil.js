@@ -5,7 +5,7 @@ const SHIP = {
   label: 'Grey Veil',
   shipClass: 'cutter-scout',
   name: 'Grey Veil',
-  modules: ['chem-rocket-s', 'autocannon', 'null', 'fission-reactor-s', 'null'],
+  modules: ['milspec-rocket-s', 'autocannon', 'null', 'fission-reactor-s', 'null'],
   flavorText:
     'A House Casimir patrol scout with its fleet transponder ripped out and the hull ' +
     'repainted in salvage grey. One weapon mount stripped and sold for fuel money during ' +

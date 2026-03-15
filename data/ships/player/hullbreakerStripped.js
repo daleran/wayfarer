@@ -5,7 +5,7 @@ const SHIP = {
   label: 'Hullbreaker (Stripped)',
   shipClass: 'onyx-tug',
   name: 'Hullbreaker',
-  modules: ['onyx-drive-unit', 'null', 'hydrogen-fuel-cell', 'salvage-scanner', 'null'],
+  modules: ['standard-rocket-s', 'null', 'hydrogen-fuel-cell', 'salvage-scanner', 'null'],
   flavorText:
     'An Onyx Class Tug held together by habit and welding flux. Every panel has been ' +
     'opened, every system jury-rigged at least once. No weapons — the hardpoint mount ' +

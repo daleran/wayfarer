@@ -5,7 +5,7 @@ const SHIP = {
   label: 'Grave-Clan Ambusher',
   shipClass: 'maverick-courier',
   name: 'Grave-Clan Ambusher',
-  modules: ['onyx-drive-unit', 'autocannon', 'rocket-s:ht'],
+  modules: ['makeshift-thermal-s', 'autocannon', 'rocket-s:ht'],
   flavorText:
     'A Maverick Courier fielded by Grave-Clan cells. They pick a spar or debris ' +
     'shadow and wait. When a convoy moves through they commit hard: autocannon ' +

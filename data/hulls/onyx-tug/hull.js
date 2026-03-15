@@ -77,8 +77,6 @@ const MOUNT_POINTS = [
   { x: -8,  y: 2,   arc: 'port',      size: 'small' },  // utility — port nacelle
 ];
 
-export { MOUNT_POINTS as MOUNT_POINTS_ONYX };
-
 export class OnyxClassTug extends Ship {
   constructor(x, y) {
     super(x, y);

@@ -36,6 +36,7 @@ export class ShipModule {
     this.condition     = 'good'; // good | worn | faulty | damaged | destroyed
     this.isPowered     = true;   // set by power balance; false when insufficient reactor output
     this.powerPriority = 0;      // depower order: lower = depowered first (sensors 1, weapons 2, engines 3)
+    this.breachMultiplier = 1.0; // per-module breach vulnerability (>1 = fragile, <1 = reliable)
     // Sensor capabilities (set by sensor subclasses via _initSensor)
     this.minimap_ships    = false;
     this.sensor_range     = 0;
@@ -165,13 +166,29 @@ export class RocketPodModule extends ShipModule {
 // Movement stats (speedMax, acceleration, turnRate) are derived from the T/W
 // ratio in Ship.recalcTW(). Fuel efficiency is applied there as well.
 
-class EngineModule extends ShipModule {
-  constructor() {
+export class EngineModule extends ShipModule {
+  /** @param {string} id — engine ID key in ENGINES table */
+  constructor(id) {
     super();
     this.isEngine    = true;
     this.thrust      = 0;    // raw thrust force
     this.fuelEffMult = 1.0;  // fuel burn multiplier
     this._ship       = null;
+
+    if (id) {
+      const E = ENGINES[id];
+      this.name            = id;
+      this.displayName     = E.displayName;
+      this.description     = E.description;
+      this.weight          = E.weight;
+      this.thrust          = E.thrust;
+      this.fuelEffMult     = E.fuelEffMult;
+      this.fuelDrainRate   = E.fuelDrainRate;
+      this.powerDraw       = E.powerDraw;
+      this.powerPriority   = 3; // engines: last to lose power
+      this.size            = E.size === 'L' ? 'large' : 'small';
+      this.breachMultiplier = E.breachMultiplier ?? 1.0;
+    }
   }
   drawAtMount(ctx, color, alpha) {
     ENGINE_SHAPE.fill(ctx, color, alpha * 0.3);
@@ -183,73 +200,6 @@ class EngineModule extends ShipModule {
   onRemove(ship) {
     this._ship = null;
     ship.recalcTW?.();
-  }
-}
-
-/** @param {string} id */
-function _initEngine(mod, id) {
-  const E = ENGINES[id];
-  mod.name          = id;
-  mod.displayName   = E.displayName;
-  mod.weight        = E.weight;
-  mod.thrust        = E.thrust;
-  mod.fuelEffMult   = E.fuelEffMult;
-  mod.fuelDrainRate = E.fuelDrainRate;
-  mod.powerDraw     = E.powerDraw;
-  mod.powerPriority = 3; // engines: last to lose power
-  mod.size          = E.size === 'L' ? 'large' : 'small';
-}
-
-export class OnyxDriveUnit extends EngineModule {
-  constructor() {
-    super();
-    _initEngine(this, 'onyx-drive-unit');
-    this.description = 'Stock single-nacelle drive. Balanced output, minimal fuel overhead.';
-  }
-}
-
-// Chemical Rocket (S) — high thrust, high fuel burn, near-zero power draw
-export class ChemRocketSmall extends EngineModule {
-  constructor() {
-    super();
-    _initEngine(this, 'chem-rocket-s');
-    this.description = 'Bipropellant chemical rocket. High thrust. Burns fuel fast. Near-zero power draw.';
-  }
-}
-
-// Chemical Rocket (L) — heavy thruster, extreme performance, extreme consumption
-export class ChemRocketLarge extends EngineModule {
-  constructor() {
-    super();
-    _initEngine(this, 'chem-rocket-l');
-    this.description = 'Heavy bipropellant rocket. Extreme thrust. Fuel reserves drain rapidly under throttle.';
-  }
-}
-
-// Magnetoplasma Torch (S) — moderate improvement, moderate fuel + power
-export class MagplasmaTorchSmall extends EngineModule {
-  constructor() {
-    super();
-    _initEngine(this, 'magplasma-torch-s');
-    this.description = 'Electromagnetic plasma thruster. Moderate thrust gain. Draws fuel continuously for plasma generation.';
-  }
-}
-
-// Magnetoplasma Torch (L) — stronger version of the torch
-export class MagplasmaTorchLarge extends EngineModule {
-  constructor() {
-    super();
-    _initEngine(this, 'magplasma-torch-l');
-    this.description = 'Heavy-duty plasma thruster. Solid thrust. Requires significant fuel and power.';
-  }
-}
-
-// Ion Thruster — low thrust, terrible acceleration, near-zero fuel, high power draw
-export class IonThruster extends EngineModule {
-  constructor() {
-    super();
-    _initEngine(this, 'ion-thruster');
-    this.description = 'Electric ion drive. Extremely low thrust. Consumes almost no fuel — but demands heavy electrical draw.';
   }
 }
 

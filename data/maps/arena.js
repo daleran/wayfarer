@@ -6,9 +6,6 @@ import { TheCoil } from '@data/locations/the-coil/station.js';
 import { KellsStop } from '@data/locations/kells-stop/station.js';
 import { PlanetPale } from '@data/terrain/planet-pale/index.js';
 import { createDerelict, createShip } from '@/entities/registry.js';
-// createShip used here for unmanned Concord ships
-import { createModuleDrop } from '@/entities/lootDrop.js';
-import { createModuleById } from '@/modules/registry.js';
 
 function spawnEnemy(x, y, shipType) {
   const ship = createShip(shipType, x, y);
@@ -33,10 +30,6 @@ export const MAP = {
     // The Coil — for BH station overlay testing
     TheCoil.instantiate(4000, 5200),
     KellsStop.instantiate(3000, 5600),
-
-    // Module drops near player spawn for testing Salvage Bay / Engineering Bay
-    createModuleDrop(4050, 5750, createModuleById('salvage-bay')),
-    createModuleDrop(3950, 5750, createModuleById('engineering-bay')),
 
     // Six derelicts in a hex ring at r≈1800 around Pale
     createDerelict({

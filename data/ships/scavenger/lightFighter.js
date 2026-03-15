@@ -5,7 +5,7 @@ const SHIP = {
   label: 'Light Fighter',
   shipClass: 'maverick-courier',
   name: 'Light Fighter',
-  modules: ['onyx-drive-unit', 'autocannon', 'null'],
+  modules: ['standard-rocket-s', 'autocannon', 'null'],
   flavorText:
     'A Maverick Courier stripped for aggression — autocannon bolted to the nose, ' +
     'everything non-essential jettisoned. Cheap to field, cheap to replace.',

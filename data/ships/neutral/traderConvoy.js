@@ -5,7 +5,7 @@ const SHIP = {
   label: 'Trader Convoy',
   shipClass: 'g100-hauler',
   name: 'Trader Convoy',
-  modules: ['onyx-drive-unit'],
+  modules: ['cruising-ion-s'],
   flavorText:
     'A G100 hauler on a regular trade run — lightly crewed, unarmed or barely ' +
     'armed, carrying whatever the stations need. The backbone of inter-settlement ' +
