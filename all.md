@@ -1926,5 +1926,342 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 - **Rationale:** Generic service panels made every station feel identical. Narrative conversations give each station a unique authored voice, support story progression, and create the Disco Elysium-style interaction depth the game targets.
 
 
-# === DATA (CSV) ===
+# === GAME DATA ===
+
+## Tuning Constants
+
+| Constant | Value |
+| --- | --- |
+| SPEED_FACTOR | 1.4 |
+| BASE_SPEED | 70 |
+| BASE_ACCELERATION | 9 |
+| BASE_TURN_RATE | 0.55 |
+| BASE_HULL | 200 |
+| BASE_ARMOR | 100 |
+| BASE_CARGO | 50 |
+| BASE_FUEL_MAX | 100 |
+| BASE_FUEL_EFFICIENCY | 1 |
+| BASE_HULL_WEIGHT | 1000 |
+| FUEL_WEIGHT_PER_UNIT | 0.5 |
+| TW_ACCEL_SENSITIVITY | 1.4 |
+| TW_SPEED_SENSITIVITY | 0.6 |
+| TW_TURN_SENSITIVITY | 0.3 |
+| TW_MULT_MIN | 0.15 |
+| TW_MULT_MAX | 2 |
+| THROTTLE_LEVELS | 6 |
+| THROTTLE_RATIOS | 0, 0.15, 0.35, 0.55, 0.8, 1.5 |
+| SLOT_CARGO_SMALL | 40 |
+| SLOT_CARGO_LARGE | 120 |
+| CARGO_EXPANSION_MULT | 2 |
+| REFERENCE_TW | 1 |
+| SPAWN | {"ENEMY_RADIUS":{"MIN":150,"MAX":200},"LURKER_RADIUS":{"MIN":60,"MAX":80}} |
+| PROJECTILE_SPEED_FACTOR | 1.4 |
+| BASE_PROJECTILE_SPEED | 200 |
+| BASE_WEAPON_RANGE | 1400 |
+| BASE_DAMAGE | 19 |
+| BASE_HULL_DAMAGE | 12 |
+| BASE_COOLDOWN | 0.9 |
+| AUTOCANNON_MAG_SIZE | 60 |
+| AUTOCANNON_RELOAD_TIME | 10 |
+| CANNON_MAG_SIZE | 4 |
+| CANNON_RELOAD_TIME | 14 |
+| GATLING_MAG_SIZE | 200 |
+| GATLING_RELOAD_TIME | 8 |
+| ROCKET_MAG_SIZE | 2 |
+| ROCKET_RELOAD_TIME | 13 |
+| HE_AUTOCANNON_BLAST | 60 |
+| HE_CANNON_BLAST | 150 |
+| MODULE_BREACH_HULL_THRESHOLD | 0.6 |
+| MODULE_BREACH_CHANCE_LOW | 0.12 |
+| MODULE_BREACH_CHANCE_MID | 0.25 |
+| MODULE_BREACH_CHANCE_HIGH | 0.4 |
+| DEFAULT_SCRAP | 20 |
+| FUEL_RATES | 0, 0, 0.1, 0.2, 0.5, 1 |
+| REPAIR_RATE | 1.5 |
+| REPAIR_COST_PER_PT | 1 |
+| MODULE_REPAIR_RATE | 0.25 |
+| MODULE_REPAIR_COST | 15 |
+| SALVAGE_TIME_PER_ARMOR | 0.1 |
+| SALVAGE_EFFICIENCY | 0.25 |
+| SCRAP_MASS | 0.1 |
+| HULL_REPAIR_RATE | 0.5 |
+| HULL_REPAIR_COST | 3 |
+| BOUNTY | {"EXPIRY_WARNING_SECS":60} |
+| REPUTATION | {"KILL_PENALTY":-10,"RIVAL_BONUS":5,"BOUNTY_BONUS":20,"ATTACK_NEUTRAL_PENALTY":-25,"HOSTILE_THRESHOLD":-50,"ALLIED_THRESHOLD":50,"DISCOUNT_RATE":0.15} |
+
+## Factions
+
+| Key | Label | Rival |
+| --- | --- | --- |
+| settlements | Settlements |  |
+| scavengers | Scavenger Clans | settlements |
+| concord | Concord Remnants | settlements |
+| monastic | Monastic Orders |  |
+| communes | Communes |  |
+| zealots | Zealots |  |
+| casimir | House Casimir |  |
+
+## Ship Classes
+
+| ID | Label | Speed | Accel | Turn | Hull | Weight | Cargo | ArmorF | ArmorS | ArmorA | FuelMax | FuelEff |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| onyx-tug | Onyx Class Tug | 0.55 | 0.65 | 0.65 | 1.8 | 1.2 | 2.5 | 2 | 1.5 | 1.2 | 0.8 | 0.5 |
+| g100-hauler | G100 Class Hauler | 0.85 | 0.85 | 0.9 | 1.1 | 1.4 | 3.5 | 1.3 | 1.2 | 1 | 1.3 | 0.9 |
+| garrison-frigate | Garrison Class Frigate | 0.85 | 0.7 | 0.8 | 2.5 | 2 | 1.5 | 2.5 | 2 | 1.5 | 2.5 | 1.1 |
+| maverick-courier | Maverick Class Courier | 1.3 | 1.2 | 1.15 | 0.85 | 0.5 | 0.3 | 1 | 1 | 0.85 | 0.8 | 0.9 |
+
+## Engines
+
+| ID | Name | Size | Thrust | FuelEff | FuelDrain | Power | Weight |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| onyx-drive-unit | ONYX DRIVE UNIT (S) | S | 1500 | 1 | 0.005 | 1 | 50 |
+| chem-rocket-s | CHEM ROCKET (S) | S | 2200 | 3.5 | 0 | 2 | 80 |
+| chem-rocket-l | CHEM ROCKET (L) | L | 3500 | 5.5 | 0 | 3 | 150 |
+| magplasma-torch-s | MAG-PLASMA TORCH (S) | S | 1700 | 1.3 | 0.01 | 40 | 60 |
+| magplasma-torch-l | MAG-PLASMA TORCH (L) | L | 2000 | 1.6 | 0.02 | 80 | 100 |
+| ion-thruster | ION THRUSTER (S) | S | 300 | 0.05 | 0.002 | 120 | 40 |
+
+## Reactors
+
+| ID | Name | Size | Output | FuelDrain | Weight |
+| --- | --- | --- | --- | --- | --- |
+| hydrogen-fuel-cell | H2 FUEL CELL (S) | S | 80 | 0.025 | 20 |
+| fission-reactor-s | FISSION REACTOR (S) | S | 160 | 0 | 40 |
+| fission-reactor-l | FISSION REACTOR (L) | L | 300 | 0 | 80 |
+| fusion-reactor-l | FUSION REACTOR (L) | L | 500 | 0.005 | 100 |
+
+## Sensors
+
+| ID | Name | Power | Weight | Range | Minimap | Lead | Health | Salvage | Traj | Telemetry | Inspect |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| standard-sensor-suite | STANDARD SENSORS (S) | 8 | 15 | 3000 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
+| combat-computer | COMBAT COMPUTER (S) | 15 | 20 | 2000 | 1 | 1 | 1 | 0 | 0 | 0 | 0 |
+| salvage-scanner | SALVAGE SCANNER (S) | 12 | 15 | 2500 | 1 | 0 | 0 | 1 | 0 | 0 | 0 |
+| long-range-scanner | LONG-RANGE SENSORS (S) | 20 | 25 | 8000 | 1 | 0 | 0 | 1 | 0 | 0 | 1 |
+| battle-direction-center | BATTLE DIRECTION CENTER (L) | 30 | 45 | 4500 | 1 | 1 | 1 | 0 | 1 | 1 | 1 |
+| enforcement-scanner | ENFORCEMENT SCANNER (S) | 14 | 18 | 3000 | 1 | 0 | 1 | 0 | 0 | 0 | 1 |
+
+## Weapons
+
+| ID | Name | Size | DmgMult | HullDmg | Range | Speed | Cooldown | Mag | Reload | Ammo | Flags |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| autocannon | AUTOCANNON | S | 1 |  | 1 | 1 | 1.04 | 60 | 10 | 25mm |  |
+| cannon | CANNON | S | 3.24 | 4.5 | 0.933 | 0.65 | 3 | 4 | 14 | 90mm |  |
+| lance-sf | LANCE-SF | S |  |  | 0.4 |  |  |  |  |  | beam, fixed |
+| lance-st | LANCE-ST | S |  |  | 0.34 |  |  |  |  |  | beam |
+| lance-lf | LANCE-LF | L |  |  | 0.7 |  |  |  |  |  | beam, fixed |
+| lance-lt | LANCE-LT | L |  |  | 0.4 |  |  |  |  |  | beam |
+| railgun-sf | RAILGUN-SF | S | 10.6 | 12 | 2 | 4.5 |  | 1 | 5.4 | 30mm-kp | fixed |
+| railgun-lt | RAILGUN-LT | S | 10.6 | 12 | 2 | 4.5 |  | 1 | 5.4 | 60mm-kp |  |
+| railgun-lf | RAILGUN-LF | L | 21.2 | 24 | 2 | 4.5 |  | 2 | 8.5 | 60mm-kp | fixed |
+| gatling | GATLING | S | 0.24 | 0.2 | 0.333 | 2 | 0.06 | 200 | 8 | 8mm | intercept |
+| plasma-s | PLASMA-S | S | 1.47 | 8 | 0.27 | 1.6 | 1 |  |  |  |  |
+| plasma-l | PLASMA-L | L | 2.94 | 12 | 0.4 | 1.6 | 1.6 |  |  |  |  |
+| rocket-s | RPOD-S | S | 5.3 | 6.5 |  | 1.4 | 1 | 2 | 13 | RKT, WG, HT | secondary, interceptable |
+| rocket-l | RPOD-L | L | 5.3 | 6.5 |  | 1.4 | 1.5 | 8 | 13 | RKT, WG, HT | secondary, interceptable |
+| torpedo | TORPEDO | L | 17.65 | 22 | 1.467 | 0.45 | 15 | 3 |  |  | fixed, secondary, interceptable |
+
+## Utilities
+
+| ID | Name | Size | Weight | Cargo | Fuel | Armor |
+| --- | --- | --- | --- | --- | --- | --- |
+| expanded-hold-s | EXPANDED HOLD (S) | S | 30 | 30 | 0 | -15 |
+| expanded-hold-l | EXPANDED HOLD (L) | L | 60 | 60 | 0 | -25 |
+| aux-tank-s | AUX TANK (S) | S | 25 | 0 | 20 | -10 |
+| aux-tank-l | AUX TANK (L) | L | 50 | 0 | 40 | -20 |
+| stripped-weight-s | STRIPPED WEIGHT (S) | S | -40 | 0 | 0 | -20 |
+| stripped-weight-l | STRIPPED WEIGHT (L) | L | -80 | 0 | 0 | -40 |
+| extra-armor-s | EXTRA ARMOR (S) | S | 40 | 0 | 0 | 30 |
+| extra-armor-l | EXTRA ARMOR (L) | L | 80 | 0 | 0 | 60 |
+| salvage-bay | SALVAGE BAY (L) | L | 40 | 0 | 0 | 0 |
+| engineering-bay | ENGINEERING BAY (L) | L | 35 | 0 | 0 | 0 |
+
+## Ammo
+
+| ID | Name | Tag | Weight | Value | Guided |
+| --- | --- | --- | --- | --- | --- |
+| 8mm | 8mm Ball |  | 0.005 | 0.05 |  |
+| 25mm-ap | 25mm Armor Piercing | AP | 0.01 | 0.2 |  |
+| 25mm-he | 25mm High Explosive | HE | 0.01 | 0.3 |  |
+| 90mm-ap | 90mm Armor Piercing | AP | 0.5 | 1 |  |
+| 90mm-he | 90mm High Explosive | HE | 0.5 | 1.5 |  |
+| rkt | Dumbfire Rocket | RKT | 1 | 2 |  |
+| wg | Wire-Guided Missile | WG | 1.5 | 3 | wire |
+| ht | Heat-Seeking Missile | HT | 1.5 | 3 | heat |
+| 30mm-kp | 30mm Kinetic Penetrator |  | 0.5 | 1.5 |  |
+| 60mm-kp | 60mm Kinetic Penetrator |  | 1 | 3 |  |
+
+## AI Templates
+
+| ID | Combat | Passive | Aggro | Deaggro | Fire | Orbit/Kite | Flee |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| stalker | stalker |  | 1400 | 2000 | 800 | 550 | 0.3 |
+| kiter | kiter |  | 1400 | 2000 | 800 | 750 | 0.3 |
+| standoff | standoff |  | 1400 | 2000 | 1400 | 1200 | 0.3 |
+| latch | latch |  | 1800 | 2400 |  |  | 0 |
+| lurker | lurker |  | 1400 | 2000 | 1400 |  | 0.3 |
+| trader | flee | trader | 0 |  |  |  | 0.3 |
+| militia | stalker | militia | 0 | 2000 | 800 | 550 | 0.3 |
+
+## Commodities
+
+| ID | Name | BasePrice | Mass |
+| --- | --- | --- | --- |
+| ration_packs | Ration Packs | 12 | 0.5 |
+| recycled_polymer | Recycled Polymer | 25 | 1 |
+| bio_cultures | Bio-Cultures | 38 | 0.5 |
+| alloys | Alloys | 50 | 2 |
+| machine_parts | Machine Parts | 65 | 1.5 |
+| hull_plating | Hull Plating | 70 | 3 |
+| electronics | Electronics | 85 | 0.5 |
+| raw_ore | Raw Ore | 90 | 4 |
+| medical_supplies | Medical Supplies | 100 | 1 |
+| reactor_fuel | Reactor Fuel | 125 | 2 |
+| weapons_cache | Weapons Cache | 155 | 3 |
+| nav_charts | Navigation Charts | 175 | 0.2 |
+| data_cores | Data Cores | 200 | 0.5 |
+| contraband | Contraband | 260 | 1 |
+| void_crystals | Void Crystals | 320 | 0.5 |
+
+## Characters
+
+| ID | Name | Faction | Relation | Behavior | Ship | Bounty |
+| --- | --- | --- | --- | --- | --- | --- |
+| player | Pilot | player | player | player | hullbreaker |  |
+| crash-dummy | Test Pilot | player | player | player | crash-dummy |  |
+| player-runaway | Pilot | player | player | player | swift-exit |  |
+| player-deserter | Pilot | player | player | player | grey-veil |  |
+| player-scavenger | Pilot | player | player | player | hullbreaker-stripped |  |
+| scavenger-pilot | Scavenger Pilot | scavenger | hostile | stalker | light-fighter |  |
+| scavenger-gunner | Scavenger Gunner | scavenger | hostile | kiter | armed-hauler |  |
+| salvage-lord | Salvage Lord | scavenger | hostile | standoff | salvage-mothership |  |
+| grave-clan-hunter | Grave-Clan Hunter | scavenger | hostile | lurker | grave-clan-ambusher |  |
+| hollow_brekk | "Hollow" Brekk | scavenger | hostile | kiter | armed-hauler | {"value":100,"reason":"Rival Clan Hit"} |
+| crestfall_orin | "Crestfall" Orin | scavenger | hostile | lurker | grave-clan-ambusher | {"value":75,"reason":"Purgation Contract"} |
+| ironback_marel | "Ironback" Marel | scavenger | hostile | lurker | grave-clan-ambusher | {"value":90,"reason":"Wanted: Grave-Clan Lurker"} |
+| gutshot_drev | "Gutshot" Drev | scavenger | hostile | stalker | light-fighter | {"value":60,"reason":"Clear the Approach"} |
+| pale_widow | "Pale Widow" | scavenger | hostile | standoff | salvage-mothership | {"value":140,"reason":"Silence the Mothership"} |
+| runt_cassin | "Runt" Cassin | scavenger | hostile | kiter | armed-hauler | {"value":80,"reason":"Armed Hauler Ambush"} |
+| six_wire_pol | "Six-Wire" Pol | scavenger | hostile | stalker | light-fighter | {"value":55,"reason":"Eastern Stalker"} |
+| convoy-hauler | Convoy Hauler | neutral | neutral | trader | trader-convoy |  |
+| militia-officer | Militia Officer | neutral | neutral | militia | militia-patrol |  |
+
+## Ships
+
+| ID | Label | Hull | Name | Modules | Unmanned |
+| --- | --- | --- | --- | --- | --- |
+| hullbreaker | Hullbreaker | onyx-tug | Hullbreaker | onyx-drive-unit, autocannon, hydrogen-fuel-cell, null, null |  |
+| crash-dummy | Crash Dummy | onyx-tug | Crash Dummy | onyx-drive-unit, autocannon, hydrogen-fuel-cell, null, null |  |
+| swift-exit | Swift Exit | maverick-courier | Swift Exit | magplasma-torch-s, null, null |  |
+| grey-veil | Grey Veil | cutter-scout | Grey Veil | chem-rocket-s, autocannon, null, fission-reactor-s, null |  |
+| hullbreaker-stripped | Hullbreaker (Stripped) | onyx-tug | Hullbreaker | onyx-drive-unit, null, hydrogen-fuel-cell, salvage-scanner, null |  |
+| light-fighter | Light Fighter | maverick-courier | Light Fighter | onyx-drive-unit, autocannon, null |  |
+| armed-hauler | Armed Hauler | g100-hauler | Armed Hauler | onyx-drive-unit, autocannon, lance-st, null |  |
+| salvage-mothership | Salvage Mothership | garrison-frigate | Salvage Mothership | onyx-drive-unit, cannon, rocket-l:ht, null, null |  |
+| grave-clan-ambusher | Grave-Clan Ambusher | maverick-courier | Grave-Clan Ambusher | onyx-drive-unit, autocannon, rocket-s:ht |  |
+| trader-convoy | Trader Convoy | g100-hauler | Trader Convoy | onyx-drive-unit |  |
+| militia-patrol | Militia Patrol | garrison-frigate | Militia Patrol | onyx-drive-unit |  |
+| drone-control-frigate | Drone Control Frigate | garrison-frigate | Drone Control Frigate | onyx-drive-unit, lance-st, null | yes |
+| snatcher-drone | Snatcher Drone | maverick-courier | Snatcher Drone |  | yes |
+
+## Stations
+
+| ID | Name | Faction | Services | DockRadius |
+| --- | --- | --- | --- | --- |
+| the-coil | The Coil | salvage_lords | repair, trade |  |
+| kells-stop | Kell's Stop | neutral | fuel, repair |  |
+| ashveil-anchorage | Ashveil Anchorage | neutral | repair, trade |  |
+
+## Derelicts
+
+| ID | Name | Hull |
+| --- | --- | --- |
+| broken-covenant | Broken Covenant | garrison-frigate |
+| cold-remnant | Cold Remnant | maverick-courier |
+| fractured-wake | Fractured Wake | garrison-frigate |
+| gutted-pioneer | Gutted Pioneer | g100-hauler |
+| hollow-march | Hollow March | onyx-tug |
+| pale-witness | Pale Witness | g100-hauler |
+
+# === SYSTEM ANALYSIS ===
+
+## GameManager (`src/game.js`)
+
+`GameManager` is the central orchestrator of the entire game. It owns the canonical entity list (`entities[]`), the player ship, all active `Character` instances, the subsystem instances, and top-level state flags (`isDocked`, `isPaused`, `combatMode`). Its `init()` method wires up the canvas, camera, HUD, renderer, and particle pool, then loads all pre-instantiated world entities from the map. Every tick it calls `input.tick()`, runs the origin-selection or death-screen short-circuits, then sequences the full simulation: module updates, fuel burn, power balancing, entity updates, AI, weapon reloads, guidance, particles, collision, loot pickups, repair, salvage, bounty expiry, and camera follow. It forwards all player inventory state through to `PlayerInventory` via accessor proxies, and delegates all subsystem concerns to the appropriate system class. Production mode defers player creation until origin selection completes via `NarrativePanel`.
+
+## Game Loop (`src/loop.js`)
+
+`startLoop` implements a fixed-timestep accumulator loop running at 60 ticks/second (~16.67 ms/tick). Each `requestAnimationFrame` callback adds elapsed wall time to an accumulator, then drains it in fixed `dt` steps capped at five ticks to prevent a spiral-of-death after tab focus resumes. After all ticks are consumed it calls `game.render()` once. The fixed `dt` (seconds) is forwarded directly to `GameManager.update(dt)` so all physics, AI, and system updates are timestep-independent.
+
+## Camera (`src/camera.js`)
+
+`Camera` manages the world↔screen coordinate transform and smooth zoom. It tracks a world-space center position and exponential-lerp follows a target entity each tick (`follow()`). A separate `panTo()` / `updatePan()` path lets the camera drift toward a fixed world point (used during docking). `applyWheel()` and `updateZoom()` implement scroll-wheel zoom with a separate target/actual split for smooth easing. `pushZoom()` / `popZoom()` provide a save/restore stack for cinematic zoom levels. `worldToScreen` / `screenToWorld` and `isVisible()` are the primary interface consumed by the renderer, HUD, and game input.
+
+## Input (`src/input.js`)
+
+`InputHandler` is a singleton that bridges DOM events to the game's tick-based input model. It accumulates key-down events in `_pendingPress` and mouse state continuously. On `input.tick()` (called once per game tick by `GameManager`) it promotes pending state into the current-tick sets: `_justPressed` (one-frame edge), `keysDown` (held), `wheelDelta`, and `_justClicked`. Consumers call `isDown()` for held keys and `wasJustPressed()` for single-frame edges. `mouseWorld(camera)` converts the current screen cursor position to world coordinates via the camera transform.
+
+## Renderer (`src/renderer.js`)
+
+`Renderer` owns the full canvas draw pipeline. Each frame it: clears the canvas, draws the multi-layer parallax starfield (from cached offscreen canvases per layer), calls background element renderers, does a two-pass entity draw (non-ships first, ships on top with visibility culling via `Camera.isVisible`), draws tactical overlays (health pips, lead indicators, enemy telemetry, module inspection, weapon range circle, active beams), renders particles via `ParticlePool`, delegates HUD rendering to `HUD`, and applies CRT post-processing (cached scanline and vignette canvases, pulsing edge-glow warnings for flank speed and critical hull, phosphor flicker, crosshair). All offscreen caches are regenerated lazily on canvas resize.
+
+## HUD (`src/hud.js`)
+
+`HUD` is a thin orchestrator that delegates canvas rendering to four sub-modules (`minimap`, `mapView`, `navIndicator`, `shipAnchored`/`prompts`) while maintaining a DOM-based bottom strip for high-frequency telemetry (armor arcs, throttle pips, hull/fuel/cargo segment bars, power balance, scrap count, weapon info). The bottom strip is built once in `_buildBottomStrip()` and updated every tick via `_updateBottomStrip()` with direct DOM property writes for performance. Pickup text and kill log entries are injected as animating DOM elements. A DOM tooltip system (`showTooltip` / `hideTooltip`) is used by the ship screen for module details.
+
+## BountySystem (`src/systems/bountySystem.js`)
+
+`BountySystem` manages optional named-target contracts. `acceptBounty()` instantiates the target ship or NPC at the contract's world position, marks it `isBountyTarget`, removes it from the issuing station's list, and pushes an entry into `activeBounties[]`. `onEnemyKilled()` / `onEnemyCrippled()` scan active bounties and mark matching targets `'completed'`. `collectCompleted()` is called on docking at the issuing station — it tallies reward scrap, grants a reputation bonus per completed contract, and clears resolved entries. `updateExpiry()` ticks every frame and deactivates the target entity if its time runs out. Connects to `ReputationSystem`, `HUD`, and the entity factories in `registry.js`.
+
+## CollisionSystem (`src/systems/collisionSystem.js`)
+
+`CollisionSystem.update()` runs three passes per tick. First, a point-defense interception pass matches `canIntercept` projectiles against `isInterceptable` ones by circle overlap, deactivating both. Second, a beam-interception pass tests active beam weapons against incoming interceptable projectiles using point-to-segment distance. Third, the main pass iterates all `Projectile` entities against all active `Ship` entities: AoE detonation (rockets and `detonatesOnExpiry`) is resolved via `_aoeExplode()` with radial falloff; contact detonation and plasma falloff are handled separately; standard impacts call `target.takeDamage()`. After hull damage the system calls `RepairSystem.maybeBreachModule()` to stochastically degrade a module in the hit arc. Kills and cripples are forwarded to the `BountySystem` callback and `ReputationSystem` via `onEnemyKilled` / `onEnemyCrippled` lambdas injected by `GameManager`.
+
+## InteractionSystem (`src/systems/interactionSystem.js`)
+
+`InteractionSystem` handles proximity-based world interactions. `updateDerelicts()` scans active unsalvaged derelicts each tick, updates the closest one within `interactionRadius` as `nearbyDerelict`, fades in lore text for ships within 400 units, and triggers `SalvageSystem.start()` on E key when stopped. `checkDocking()` scans `Station` entities for the player being in their docking zone and, on E key while stopped, gates access via `ReputationSystem.isHostile()`, collects completed bounty rewards, then opens the `NarrativePanel`. `checkLootPickups()` auto-collects `LootDrop` entities within pickup radius, routing each loot type (scrap, fuel, module, weapon, ammo, commodity) to the appropriate `PlayerInventory` field and enforcing cargo capacity.
+
+## NavigationSystem (`src/systems/navigationSystem.js`)
+
+`NavigationSystem` holds all navigation and map-view state. It owns the single active `waypoint` (`{ x, y, name, entity }`) with `setWaypoint()` / `clearWaypoint()`. Helper methods `distanceTo()`, `bearingTo()`, and `etaSeconds()` compute navigation metrics from the player's current position and speed. Map-view state (`mapOpen`, `_mapZoom`, `_mapPanX/Y`, drag fields) is owned here and mutated by `GameManager._handleMapInput()` each tick. `openMap()` auto-fits the zoom to the map size. `fuelRangeRadius()` computes maximum travel distance from current fuel and burn rate. `currentZone()` returns the innermost zone the player occupies from the map's zone list.
+
+## ParticlePool (`src/systems/particlePool.js`)
+
+`ParticlePool` manages a fixed 200-slot object pool of reusable `Particle` instances to avoid GC pressure from frequent allocations. `emit()` fills free slots with velocity, lifetime, radius, and color from an options object. Preset methods — `explosion()`, `rocketTrail()`, `rocketImpact()`, `ping()` — wrap `emit()` with canonical visual configs. A separate `_rings` array holds expanding-ring effects (used for explosion shockwaves). `update(dt)` advances all active particles and rings, expiring them by lifetime. `render()` uses `DrawBatch` to group and flush all rings and particles in a single batched draw call, minimizing canvas state changes.
+
+## PlayerInventory (`src/systems/playerInventory.js`)
+
+`PlayerInventory` is the authoritative store for all player-owned resources: `scrap`, `fuel`/`fuelMax`, `cargo` (commodity map), `modules[]` (uninstalled), `weapons[]` (unequipped), and `ammo` (reserve pool by ammo ID). Live telemetry fields `fuelBurnRate`, `reactorOutput`, and `reactorDraw` are written each tick by `GameManager` and read by the HUD. The computed getter `totalCargoUsed` sums mass from all cargo types, ammo (installed and reserve), modules, and weapons using data from `COMMODITIES`, `AMMO`, and module weight fields. `GameManager` exposes forwarding accessors (`game.scrap`, `game.fuel`, etc.) so external consumers don't need a direct reference to the inventory instance.
+
+## RepairSystem (`src/systems/repairSystem.js`)
+
+`RepairSystem` manages in-field armor and module repair, activated by the player stopping and pressing R. `update(dt, player, scrap)` runs three parallel repair streams: armor (restores 1 point per accumulator tick from the most-damaged arc at `REPAIR_RATE`, costing `REPAIR_COST_PER_PT` scrap each), module condition improvement (steps the worst module up one condition step at `MODULE_REPAIR_RATE`), and hull repair (only if an Engineering Bay module is installed, at `HULL_REPAIR_RATE`). It auto-cancels when all repairs are done or scrap runs out. `maybeBreachModule()` is called by `CollisionSystem` after hull damage — it uses hull-ratio thresholds to stochastically degrade a module's condition one step, preferring modules in the arc that was hit.
+
+## ReputationSystem (`src/systems/reputation.js`)
+
+`ReputationSystem` tracks standing with all seven factions on a −100 to +100 scale. `change(faction, delta)` applies a clamped delta. `onKill(faction)` applies `REPUTATION.KILL_PENALTY` to the killed faction and a `REPUTATION.RIVAL_BONUS` to its rival via the `RIVALS` table in `data/factions.js`. `getLevel()` maps numeric standing to a discrete label (Hostile/Wary/Neutral/Trusted/Allied). `isHostile()` gates station docking in `InteractionSystem`. `BountySystem` calls `change()` directly for bounty completion bonuses. `CollisionSystem` calls `change()` to penalize attacking neutral ships.
+
+## SalvageSystem (`src/systems/salvageSystem.js`)
+
+`SalvageSystem` manages the derelict salvage operation. `start(derelict, player)` calculates total salvage time from remaining armor sum × `SALVAGE_TIME_PER_ARMOR` and freezes the player at throttle 0. `update(dt)` advances progress and returns `null` until complete. `_complete()` converts the derelict to loot: scrap from remaining armor, fuel and ammo scaled by an armor-ratio degradation factor, and (if the player has a Salvage Bay module) all non-destroyed installed modules and weapons as individual `LootDrop` entities. Loot entities are returned to `GameManager` for insertion into the entity list. The derelict is marked `salvaged = true` after completion.
+
+## WeaponSystem (`src/systems/weaponSystem.js`)
+
+`WeaponSystem` handles per-tick weapon state that doesn't belong in the ship itself. `updateReloads(dt, player, ammo)` ticks `_reloadTimer` on all player weapons and refills magazines from the reserve ammo pool on timer expiry. `manualReload()` starts reload timers for any weapon below capacity with available ammo. `cycleAmmo()` dumps the current magazine back to the reserve pool, switches to the next accepted ammo type, and starts a reload. `updateGuidance()` updates targeting state on active guided projectiles each tick: wire-guided missiles track the mouse world position; heat-seeking missiles home toward the nearest hostile ship.
+
+## ShipAI (`src/ai/shipAI.js`)
+
+`updateShipAI(ship, player, entities, dt)` is the single entry point for all non-player AI. It dispatches on `ship.relation`: hostile ships run `_doHostile()`, which first checks for the `lurker` and `flee` special-case behaviors, then handles aggro/deaggro range transitions and hull-threshold fleeing before dispatching to a combat behavior (`stalker`, `kiter`, `standoff`, `latch`). Neutral ships run `_doPassive()`, dispatching on `ai.passiveBehavior` to `_doTrader()` (shuttles between two waypoints with wait phases) or `_doMilitia()` (orbits a center point). `_patrol()` handles pre-aggro circular patrol around `ship.homePosition`. All AI runtime state lives on `ship.ai.*` fields (e.g. `_aggro`, `_patrolAngle`, `_lurkerState`), keeping the AI stateless from a call-site perspective.
+
+## Entity (`src/entities/entity.js`)
+
+`Entity` is the minimal base class for every object in the world. It stores world position (`x`, `y`), velocity (`vx`, `vy`), `rotation` (radians, 0 = north), and an `active` boolean. It declares the polymorphic interface — `update(dt)`, `render(ctx, camera)`, `getBounds()`, `onDestroy()` — with no-op defaults. `GameManager` updates and renders all entities polymorphically through this interface and purges inactive ones each tick. All entity types (`Ship`, `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`) extend `Entity`.
+
+## Ship (`src/entities/ship.js`)
+
+`Ship` extends `Entity` with the full ship simulation model. It stores quad-arc armor (`armorArcs` / `armorArcsMax`), hull integrity, throttle level, module slots, weapons list, and capability flags. Faction, relation, and AI template delegate through `captain` via getters when a `Character` is aboard, falling back to `_machineFaction`/`_machineRelation`/`_machineAi` for unmanned ships. `_initStats()` sets hull-class-specific stats (mass, hull, cargo, armor); movement stats are derived entirely by `recalcTW()`, which computes `speedMax`, `acceleration`, `turnRate`, and `fuelEfficiency` from installed engine modules against a `REFERENCE_TW`. `takeDamage(armorDmg, hullDmg, impactX, impactY)` routes damage to the facing arc and records `_lastHitArc` for module breach routing. Hull classes override `_drawShape(ctx)` and `getBounds()`; `render()` calls `_drawShape`, `_drawModules`, draws the engine trail, and optionally shows the lore text overlay for nearby derelicts.
+
+## Character (`src/entities/character.js`)
+
+`Character` represents a person who can pilot a ship. It holds `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, and a copied AI template object (`this.ai`) so each character has independent runtime AI state. `boardShip(ship)` sets `ship.captain = this` and `this.inShip = ship`; the ship's `faction`/`relation`/`ai` getters then delegate to the character automatically with no syncing required. `leaveShip()` clears both references, reverting the ship to its machine defaults. Concord machines are never given a `Character` — their identity is set directly on `_machine*` fields. `game.characters[]` tracks all active instances; `game.playerCharacter` is the player's.
 

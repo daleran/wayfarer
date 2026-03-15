@@ -1,21 +1,16 @@
-import { CYAN, GREEN, AMBER, RED, WHITE, DIM_TEXT, VERY_DIM, conditionColor } from '@/rendering/colors.js';
-import { text as drawText, disc } from '@/rendering/draw.js';
+import { conditionColor } from '@/rendering/colors.js';
 import { THROTTLE_RATIOS, AMMO } from '@data/index.js';
 import { createLootDrop, createModuleDrop, createWeaponDrop, createAmmoDrop } from '@/entities/lootDrop.js';
 import { input } from '@/input.js';
 import { hullStats, massStats, movementStats, moduleTooltipRows, weaponTooltipRows } from '@/ui/shipStats.js';
+import { BOX_W, BOX_H, BOX_GAP, renderModuleHeader, renderModuleSlotBox, renderExpandedStats } from '@/rendering/moduleSlotBoxes.js';
 
 // ── Ship Screen — left 30% HTML panel + canvas module mount UI ────────────
 // DOM panel shows: header, stats, mass/thrust, cargo (including modules).
 // Canvas renders installed module stat boxes connected to hull mount points.
 
-// Layout constants for canvas module boxes
-const BOX_W = 180;
-const BOX_H = 28;
-const BOX_GAP = 5;
 const BOX_MARGIN_LEFT = 12;
 const BOX_START_Y = 60;
-const EXPANDED_H = 120;
 
 export class ShipScreen {
   constructor() {
@@ -269,133 +264,37 @@ export class ShipScreen {
     let curY = BOX_START_Y;
     this._boxRects = [];
 
-    // Power budget header
-    let totalOut = 0, totalDraw = 0;
-    for (const mod of slots) {
-      if (!mod) continue;
-      totalOut += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
-      totalDraw += mod.powerDraw || 0;
-    }
-    const net = totalOut - totalDraw;
-
-    drawText(ctx, 'MODULES', boxX, curY - 6, DIM_TEXT,
-      { size: 10, weight: 'bold', align: 'left', baseline: 'bottom', alpha: 0.8 });
-    const netLabel = `${net >= 0 ? '+' : ''}${net}W`;
-    drawText(ctx, netLabel, boxX + BOX_W, curY - 6, net >= 0 ? GREEN : RED,
-      { size: 10, align: 'right', baseline: 'bottom', alpha: 0.8 });
+    renderModuleHeader(ctx, boxX, curY - 6, slots);
 
     const hasSelectedCargo = this._selectedCargoModIdx !== null;
+    const expandedCb = (ctxE, mod, x, y, w) => {
+      renderExpandedStats(ctxE, this._moduleTooltipRows(mod), x, y, w);
+    };
 
     for (let i = 0; i < slots.length; i++) {
       const mod = slots[i];
       const isHovered = this._hoveredSlot === i;
       const isInstalling = this._installTargetSlot === i && this._installing;
-      const mount = mounts[i];
-      const mountPos = this._mountScreenPos[i];
-      const boxH = isHovered && mod ? EXPANDED_H : BOX_H;
-
-      this._boxRects.push({ x: boxX, y: curY, w: BOX_W, h: boxH });
-
-      // Connection line to mount point
-      const lineAlpha = isHovered ? 0.9 : 0.3;
-      const lineWidth = isHovered ? 1.5 : 0.8;
-      ctx.save();
-      ctx.globalAlpha = lineAlpha;
-      ctx.strokeStyle = CYAN;
-      ctx.lineWidth = lineWidth;
-      if (!isHovered) ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(boxX + BOX_W, curY + BOX_H / 2);
-      ctx.lineTo(mountPos.x, mountPos.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-
-      // Box background
       const isEmptyCanInstall = !mod && !isInstalling && hasSelectedCargo && this._isSlotCompatible(i, game);
-      const borderColor = isInstalling ? GREEN
-        : isEmptyCanInstall ? GREEN
-        : isHovered ? CYAN : VERY_DIM;
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = 'rgba(0,4,12,0.88)';
-      ctx.fillRect(boxX, curY, BOX_W, boxH);
-      ctx.globalAlpha = 1;
 
-      if (isInstalling) {
-        // Green progress fill
-        const pct = Math.min(this._installProgress / 1.5, 1);
-        ctx.fillStyle = 'rgba(0,255,102,0.12)';
-        ctx.fillRect(boxX, curY, BOX_W * pct, boxH);
-      } else if (isEmptyCanInstall) {
-        ctx.fillStyle = 'rgba(0,255,102,0.03)';
-        ctx.fillRect(boxX, curY, BOX_W, boxH);
-      }
+      const advance = renderModuleSlotBox(ctx, {
+        boxX, curY, mod,
+        mount: mounts[i],
+        mountPos: this._mountScreenPos[i],
+        slotIdx: i,
+        isHovered,
+        install: {
+          isInstalling,
+          progress: this._installProgress,
+          canInstall: isEmptyCanInstall,
+        },
+        onExpanded: expandedCb,
+      });
 
-      // Border
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 1;
-      if (!mod && !isInstalling && !isEmptyCanInstall) ctx.setLineDash([3, 3]);
-      ctx.strokeRect(boxX + 0.5, curY + 0.5, BOX_W - 1, boxH - 1);
-      ctx.setLineDash([]);
-      ctx.restore();
-
-      // Content
-      const sizeTag = mount?.size === 'large' ? 'L' : 'S';
-      const slotLabel = mount?.slot === 'engine' ? `E·${sizeTag}` : `${i + 1}·${sizeTag}`;
-      const textY = curY + BOX_H / 2;
-
-      if (isInstalling) {
-        drawText(ctx, `[${slotLabel}] INSTALLING...`, boxX + 6, textY, GREEN,
-          { size: 10, align: 'left' });
-      } else if (mod) {
-        // Slot label + abbreviated name
-        const name = _truncate(mod.displayName, 14);
-        drawText(ctx, `[${slotLabel}]`, boxX + 6, textY, DIM_TEXT,
-          { size: 10, align: 'left' });
-        drawText(ctx, name, boxX + 28, textY, CYAN,
-          { size: 10, align: 'left' });
-
-        // Power
-        const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
-        const pwrStr = effOut > 0 ? `+${effOut}W` : mod.powerDraw > 0 ? `-${mod.powerDraw}W` : '';
-        if (pwrStr) {
-          drawText(ctx, pwrStr, boxX + BOX_W - 20, textY, effOut > 0 ? GREEN : AMBER,
-            { size: 10, align: 'right' });
-        }
-
-        // Condition dot
-        if (mod.condition) {
-          disc(ctx, boxX + BOX_W - 8, textY, 3, conditionColor(mod.condition), 0.9);
-        }
-
-        // Expanded tooltip rows on hover
-        if (isHovered) {
-          this._drawExpandedStats(ctx, mod, boxX + 6, curY + BOX_H + 4, BOX_W - 12);
-        }
-      } else {
-        // Empty slot
-        const emptyText = isEmptyCanInstall
-          ? `[${slotLabel}] CLICK TO INSTALL`
-          : `[${slotLabel}] ── EMPTY ──`;
-        const emptyColor = isEmptyCanInstall ? GREEN : VERY_DIM;
-        drawText(ctx, emptyText, boxX + 6, textY, emptyColor,
-          { size: 10, align: 'left' });
-      }
-
-      // Highlight mount point when this slot is hovered
-      if (isHovered) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(mountPos.x, mountPos.y, 10, 0, Math.PI * 2);
-        ctx.strokeStyle = CYAN;
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = 0.7;
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      curY += boxH + BOX_GAP;
+      // Compute boxH to match what renderModuleSlotBox used
+      const boxH = isHovered && mod ? advance - BOX_GAP : BOX_H;
+      this._boxRects.push({ x: boxX, y: curY, w: BOX_W, h: boxH });
+      curY += advance;
     }
   }
 
@@ -412,23 +311,6 @@ export class ShipScreen {
     // Size constraint: large modules require large mounts
     if (selectedMod.size === 'large' && mount?.size !== 'large') return false;
     return true;
-  }
-
-  // ── Expanded stat rows on hover ───────────────────────────────────────────
-
-  _drawExpandedStats(ctx, mod, x, y, maxW) {
-    const rows = this._moduleTooltipRows(mod);
-    let ry = y;
-    for (const { label, value, cls } of rows) {
-      const color = cls === 'green' ? GREEN : cls === 'red' ? RED : cls === 'amber' ? AMBER : cls === 'cyan' ? CYAN : cls === 'dim' ? DIM_TEXT : WHITE;
-      if (label) {
-        drawText(ctx, label, x, ry, DIM_TEXT, { size: 9, align: 'left', baseline: 'top' });
-        drawText(ctx, value, x + maxW, ry, color, { size: 9, align: 'right', baseline: 'top' });
-      } else {
-        drawText(ctx, value, x, ry, color, { size: 9, align: 'left', baseline: 'top' });
-      }
-      ry += 13;
-    }
   }
 
   // ── DOM Rendering ──────────────────────────────────────────────────────────
@@ -777,9 +659,4 @@ export class ShipScreen {
   _moduleTooltipRows(mod) { return moduleTooltipRows(mod); }
 
   _weaponTooltipRows(wep) { return weaponTooltipRows(wep); }
-}
-
-function _truncate(str, max) {
-  if (!str) return '';
-  return str.length > max ? str.slice(0, max - 1) + '…' : str;
 }

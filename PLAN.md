@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CT**
+**Next available code: CV**
 
 ---
 
@@ -33,7 +33,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
-| CK | Engine Module Expansion | Modules / Equipment |
 
 ---
 
@@ -351,54 +350,6 @@ Diablo 2-style randomized modifier system for modules. Each module found in the 
 Affixes are constrained by module type — not every affix applies to every module. Common affixes slightly improve one stat, Rare affixes trade off two stats, Exotic affixes are unique and potentially game-changing. Station-purchased modules are clean (no affixes); salvage is where the interesting rolls happen.
 
 ---
-
-### CK: Engine Module Expansion
-
-Five new engine types that fill out the propulsion landscape — from junkyard desperation to military precision. The current lineup (Onyx Drive, Chem Rocket, Mag-Plasma Torch, Ion Thruster) covers the mid-range well; these engines add clear low-end, high-end, and specialist options with distinct trade-off profiles.
-
-**Design intent:** Every engine should feel like a meaningful choice, not just a stat upgrade. The player should weigh thrust vs. fuel economy vs. reliability vs. cost and think about *how they fly* — short combat sprints or long endurance hauls.
-
-**1. Makeshift Thermal Rocket (S)**
-- **Lore:** A jury-rigged rocket engine cobbled from scavenged parts — mismatched injectors, salvaged combustion chambers, hand-welded fuel lines. It works, barely. The kind of engine a desperate pilot bolts on when the alternative is drifting. Common in the outer Gravewake fringe where proper parts don't reach.
-- **Stats profile:** Abysmal thrust (lowest of any rocket type), poor fuel efficiency, very low reliability (high breach chance, degrades quickly under use). Lightest rocket engine — mostly because half the housing is missing.
-- **Niche:** Rock-bottom acquisition cost. Starter engine for derelict recoveries or emergency replacement when stranded. The engine you *replace*, not the engine you want.
-- **Stat targets:** Thrust ~800 (below Onyx Drive's 1500), fuelEffMult ~2.0 (worse than Chem Rocket's 3.5 but not as bad as Milspec), weight ~35. Condition starts at 'worn' or 'faulty' when found as salvage.
-
-**2. Vintage Magplasma Thruster (S)**
-- **Lore:** A pre-Exile magnetic-plasma engine from the Arrival period — one of the original propulsion designs that carried the arkship tenders and scout craft during the first decades in-system. The engineering is elegant and far ahead of anything currently manufactured, but these units are centuries old. Replacement parts don't exist; mechanics nurse them along with hand-machined approximations and prayer. Finding one in working condition is a genuine stroke of luck.
-- **Stats profile:** Excellent thrust-to-efficiency ratio — significantly better than the current Mag-Plasma Torch line. Thrust sits between the Ion Thruster (300) and the Standard Pattern Rocket (~1800). Fuel efficiency is outstanding (low fuelEffMult). But reliability is poor — old components mean elevated breach chance and faster condition degradation. High power draw (plasma containment fields).
-- **Niche:** The connoisseur's engine. Superb performance *when it works*, but demands constant maintenance and repair investment. Rewards players who keep a stockpile of scrap for field repairs. A treasure find in high-tier derelicts.
-- **Stat targets:** Thrust ~1200, fuelEffMult ~0.4 (exceptional efficiency), fuelDrain ~0.012, powerDraw ~50, weight ~55. Elevated breach multiplier (1.5× base chance).
-
-**3. Standard Pattern Rocket Engine (S/L)**
-- **Lore:** The reliable workhorse. A mass-manufactured design whose blueprints predate the Exile, now produced by small engine forges scattered across Tyr's settlements. Every forge puts its own stamp on the housing and injector geometry, but the core design is standardized and time-tested. Parts are interchangeable and readily available. Nothing flashy — it just runs.
-- **Stats profile:** Average thrust, average fuel efficiency, very reliable when built well. The median engine — better than Makeshift in every way, cheaper and more available than Milspec. Comes in both Small and Large variants.
-- **Niche:** The backbone of civilian and light-military fleets. The engine most players will run through the mid-game. Predictable, affordable, repairable. Good middle of the road between the Makeshift's desperation and the Milspec's excess.
-- **Stat targets (S):** Thrust ~1800, fuelEffMult ~2.0, weight ~70, powerDraw ~2. Low breach multiplier (0.7× base).
-- **Stat targets (L):** Thrust ~3000, fuelEffMult ~3.0, weight ~130, powerDraw ~3. Same reliability profile.
-
-**4. Milspec Rocket Engine (S/L)**
-- **Lore:** High-performance military-grade propulsion designed for fleet operations. Manufactured exclusively by the **Prime Machinists Guild** — a powerful, politically neutral body of master engineers who control the precision ceramic kilns and exotic alloy forges required for high-output propulsion. The Guild sells to all factions without allegiance, but their prices reflect the monopoly. These engines are built for short, intense combat sorties near carrier groups with onboard fuel facilities — sustained independent cruising was never the design goal.
-- **Stats profile:** Very high thrust (highest in class), average reliability, but extremely poor fuel efficiency. Burns through fuel reserves fast. Military ships don't care — they refuel from fleet tenders. An independent salvager running one of these will feel the drain on every long transit.
-- **Niche:** Raw power for combat-focused builds. The player trades range and economy for acceleration and escape velocity. Best paired with large fuel tanks or operations near friendly stations. The engine you bolt on when you expect a fight, not a journey.
-- **Stat targets (S):** Thrust ~2800 (above Chem Rocket S's 2200), fuelEffMult ~6.0 (very thirsty), weight ~90, powerDraw ~3.
-- **Stat targets (L):** Thrust ~4500 (above Chem Rocket L's 3500), fuelEffMult ~9.0, weight ~170, powerDraw ~5.
-
-**5. Cruising Ion Thruster (S)**
-- **Lore:** Purpose-built for long-range cargo haulers and endurance transit. A refined variant of the standard Ion Thruster optimized for sustained output rather than raw thrust. The magnetic acceleration chamber is longer and more efficient, trading any pretense of combat agility for the ability to cross the entire Tyr system on a single fuel load at cruise speed. Popular with trade convoys and long-haul prospectors who value arrival over urgency.
-- **Stats profile:** Low thrust (comparable to the existing Ion Thruster), but exceptionally fuel-efficient — the most economical engine in the game by a wide margin. Very reliable; solid-state ion acceleration has almost no moving parts to fail. High power draw (ion containment).
-- **Niche:** The endurance specialist. For players who want maximum range per unit of fuel — exploration, long trade runs, operating far from fuel depots. Terrible in combat (can't accelerate out of trouble), but unmatched for getting from A to B cheaply.
-- **Stat targets:** Thrust ~350 (slightly above Ion Thruster's 300), fuelEffMult ~0.02 (best in game), fuelDrain ~0.001, powerDraw ~100, weight ~45.
-
-**New lore introduced:** The **Prime Machinists Guild** — a politically neutral engineering body that controls the high-precision manufacturing infrastructure (ceramic kilns, exotic alloy forges) required for military-grade propulsion. They sell to all factions and maintain independence through mutual dependence. Their monopoly on Milspec engine production makes them one of the quiet power brokers of the Tyr system.
-
-**Implementation notes:**
-- Add entries to `data/engines.js` for all 7 engines (5 types, Standard and Milspec each have S/L)
-- Create module classes in `js/modules/engines/` following existing patterns
-- Makeshift should have an elevated `breachMultiplier` field; Vintage Magplasma similar
-- Standard Pattern and Cruising Ion should have reduced breach chance
-- Add to loot tables: Makeshift common in low-tier derelicts, Vintage rare in high-tier, Standard available at most stations, Milspec at military-aligned stations only, Cruising Ion at trade hubs
-- Update `LORE.md` with Prime Machinists Guild entry when implemented
 
 ---
 

@@ -3,6 +3,8 @@
 
 #ship-panel {
   left: 12px;
+  width: 21%;
+  min-width: 240px;
   z-index: 15;
   overflow-y: auto;
   overflow-x: hidden;

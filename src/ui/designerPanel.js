@@ -29,11 +29,11 @@ export class DesignerPanel {
    * @param {number} itemCount
    * @param {*} def
    * @param {*} entity
-   * @param {{ autoRotate: boolean, zoom: number, panX?: number, panY?: number }} state
+   * @param {{ autoRotate: boolean, zoom: number, panX?: number, panY?: number, fitting?: boolean }} state
    */
   update(catIdx, catCount, catLabel, itemIdx, itemCount, def, entity, state) {
     // Dirty check: skip rebuild if same item
-    const key = `${catIdx}:${itemIdx}:${state.autoRotate}:${state.zoom.toFixed(3)}`;
+    const key = `${catIdx}:${itemIdx}:${state.autoRotate}:${state.zoom.toFixed(3)}:${state.fitting ?? false}`;
     if (key === this._lastKey) return;
     this._lastKey = key;
 
@@ -84,7 +84,7 @@ export class DesignerPanel {
 
     const catRow = this._create('div', 'dsg-section');
     catRow.style.color = 'var(--p-amber)';
-    catRow.textContent = `[ ${catLabel.toUpperCase()} ]  ${catIdx + 1}/${catCount}`;
+    catRow.textContent = `[ ${catLabel.toUpperCase()} ]  ${itemIdx + 1}/${itemCount}`;
     el.appendChild(catRow);
 
     const name = this._create('div', 'dsg-name');
@@ -92,10 +92,6 @@ export class DesignerPanel {
     name.textContent = displayLabel;
     name.style.color = def.isVariant ? 'var(--p-amber)' : 'var(--p-white)';
     el.appendChild(name);
-
-    const idx = this._create('div', 'dsg-index');
-    idx.textContent = `item ${itemIdx + 1} / ${itemCount}`;
-    el.appendChild(idx);
 
     el.appendChild(this._divider());
   }
@@ -105,13 +101,17 @@ export class DesignerPanel {
   /**
    * @param {*} ship
    * @param {*} def
-   * @param {{ autoRotate: boolean, zoom: number }} state
+   * @param {{ autoRotate: boolean, zoom: number, fitting?: boolean }} state
    */
   _buildShipStats(ship, def, state) {
     const el = this._el;
 
     const hint = this._create('div', 'dsg-hint');
-    hint.textContent = `T rotate [${state.autoRotate ? 'ON' : 'OFF'}]  \u2022  R reset  \u2022  scroll zoom  \u2022  C compare`;
+    if (state.fitting) {
+      hint.textContent = `T rotate  \u2022  R reset  \u2022  scroll zoom  \u2022  X clear mods  \u2022  click slots to fit`;
+    } else {
+      hint.textContent = `T rotate [${state.autoRotate ? 'ON' : 'OFF'}]  \u2022  R reset  \u2022  scroll zoom  \u2022  C compare`;
+    }
     el.appendChild(hint);
 
     // Hull class (for named ships)

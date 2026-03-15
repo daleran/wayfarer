@@ -5,7 +5,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  width: 280px;
+  width: 320px;
   height: 100vh;
   background: rgba(0,6,14,0.95);
   border-right: 1px solid var(--p-border);
@@ -25,19 +25,19 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: var(--p-small);
+  font-size: var(--p-text);
   line-height: 1.5;
 }
 
 .dsg-row-label {
   color: var(--p-dim);
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  font-size: var(--p-text);
+  letter-spacing: 0.05em;
 }
 
 .dsg-row-value {
   color: var(--p-white);
-  font-size: 10px;
+  font-size: var(--p-text);
   text-align: right;
 }
 
@@ -45,11 +45,12 @@
 
 .dsg-section {
   color: var(--p-cyan);
-  font-size: 10px;
+  font-size: var(--p-text);
   font-weight: bold;
-  letter-spacing: 0.06em;
-  margin-top: 6px;
-  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 8px;
+  margin-bottom: 6px;
 }
 
 /* ── Divider line ──────────────────────────────────────────────────────────── */
@@ -63,8 +64,8 @@
 /* ── Wrapped text (lore / flavor) ──────────────────────────────────────────── */
 
 .dsg-flavor {
-  font-size: 10px;
-  line-height: 1.4;
+  font-size: var(--p-text);
+  line-height: 1.7;
   color: var(--p-dim);
   margin-top: 2px;
   word-wrap: break-word;
@@ -74,19 +75,20 @@
 
 .dsg-title {
   color: var(--p-cyan);
-  font-size: 11px;
+  font-size: var(--p-title);
   font-weight: bold;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .dsg-hint {
   color: var(--p-very-dim);
-  font-size: 10px;
+  font-size: var(--p-text);
   margin-bottom: 4px;
 }
 
 .dsg-name {
-  font-size: 13px;
+  font-size: var(--p-title);
   font-weight: bold;
   word-wrap: break-word;
   line-height: 1.3;
@@ -95,19 +97,86 @@
 
 .dsg-index {
   color: var(--p-dim);
-  font-size: 10px;
+  font-size: var(--p-small);
   margin-bottom: 2px;
 }
 
 .dsg-file {
   color: var(--p-dim);
-  font-size: 10px;
+  font-size: var(--p-small);
 }
 
 /* ── Flag pills ────────────────────────────────────────────────────────────── */
 
 .dsg-flag {
   color: var(--p-magenta);
-  font-size: 10px;
+  font-size: var(--p-text);
   line-height: 1.5;
+}
+
+/* ── Fitting Picker ─────────────────────────────────────────────────────────── */
+
+#fitting-picker {
+  display: none;
+  position: fixed;
+  background: rgba(0,4,12,0.96);
+  border: 1px solid var(--p-cyan);
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 100;
+  pointer-events: auto;
+  min-width: 240px;
+  font-family: 'Fira Mono', monospace;
+  box-sizing: border-box;
+}
+
+#fitting-picker.open {
+  display: block;
+}
+
+.fitting-picker-header {
+  color: var(--p-cyan);
+  font-size: var(--p-small);
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 10px 4px;
+  border-bottom: 1px solid var(--p-border);
+}
+
+.fitting-picker-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 10px;
+  font-size: var(--p-text);
+  color: var(--p-dim);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.fitting-picker-item:hover {
+  background: rgba(0,255,255,0.06);
+  color: var(--p-cyan);
+}
+
+.fitting-picker-item.fp-current {
+  color: var(--p-cyan);
+  background: rgba(0,255,255,0.04);
+}
+
+.fitting-picker-item.fp-remove {
+  color: var(--p-red);
+}
+
+.fitting-picker-item.fp-remove:hover {
+  background: rgba(255,60,60,0.08);
+  color: #ff6666;
+}
+
+.fitting-picker-stat {
+  color: var(--p-amber);
+  font-size: var(--p-small);
+  margin-left: 12px;
+  white-space: nowrap;
 }

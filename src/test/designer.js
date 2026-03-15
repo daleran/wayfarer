@@ -17,12 +17,14 @@ import { createDebrisCloud } from '@data/terrain/debris-clouds/index.js';
 
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
-  DIM_TEXT, DIM_OUTLINE, VERY_DIM, conditionColor,
+  DIM_TEXT, DIM_OUTLINE, conditionColor,
   DESIGNER_BG, DESIGNER_CROSSHAIR, DESIGNER_SCALE_RING, DESIGNER_GRID, DESIGNER_GRID_LABEL, DESIGNER_ORIGIN,
 } from '@/rendering/colors.js';
 import { moduleTooltipRows } from '@/ui/shipStats.js';
 import { drawEmptyMount } from '@/rendering/moduleVisuals.js';
+import { BOX_W, BOX_H, renderModuleHeader, renderModuleSlotBox } from '@/rendering/moduleSlotBoxes.js';
 import { DesignerPanel } from '@/ui/designerPanel.js';
+import { createModuleById } from '@/modules/registry.js';
 
 // ─── SHIP GROUPING ────────────────────────────────────────────────────────────
 // Reorders the flat registry so each variant follows its parent class.
@@ -163,6 +165,21 @@ function _buildDerelictItems() {
 
 function _isShipCategory(id) { return id === 'ship-classes' || id === 'ships'; }
 
+/** Short stat label for a module in the fitting picker. */
+function _moduleStat(mod, category) {
+  if (mod.isEngine) return `T:${mod.thrust} W:${mod.weight}`;
+  if (category === 'WEAPON' && mod.weapon) {
+    const d = mod.weapon.damage ?? mod.weapon.armorDamage;
+    return d != null ? `${d} dmg` : '';
+  }
+  if (category === 'POWER') {
+    const o = mod.effectivePowerOutput ?? mod.powerOutput;
+    return o > 0 ? `+${o}W` : '';
+  }
+  if (category === 'SENSOR') return mod.sensor_range ? `${mod.sensor_range}u` : '';
+  return mod.powerDraw > 0 ? `-${mod.powerDraw}W` : '';
+}
+
 const CATEGORIES = [
   {
     id: 'ship-classes',
@@ -233,7 +250,7 @@ const CATEGORIES = [
 
 // ─── DESIGNER CLASS ───────────────────────────────────────────────────────────
 
-const PANEL_W = 280;
+const PANEL_W = 320;
 
 export class Designer {
   constructor() {
@@ -278,6 +295,13 @@ export class Designer {
     // DOM panel
     /** @type {DesignerPanel|null} */
     this._panel = null;
+
+    // Fitting mode (ship-classes only)
+    /** @type {(string|null)[]|null} */
+    this._fittingConfig = null;
+    this._fittingPickerSlot = -1;
+    /** @type {HTMLElement|null} */
+    this._fittingPickerEl = null;
   }
 
   // ── Init ────────────────────────────────────────────────────────────────────
@@ -301,9 +325,18 @@ export class Designer {
       this._syncZoomToUrl();
     }, { passive: false });
 
-    // Drag to pan
+    // Drag to pan (suppressed when clicking slot boxes in fitting mode)
     this.canvas.addEventListener('mousedown', (e) => {
       if (e.button === 0) {
+        // Fitting mode: clicking a slot box opens picker instead of dragging
+        if (this._fittingConfig && this._hoveredSlotIdx >= 0) {
+          this._openFittingPicker(this._hoveredSlotIdx);
+          return;
+        }
+        // Close picker if clicking elsewhere on canvas
+        if (this._fittingPickerSlot >= 0) {
+          this._closeFittingPicker();
+        }
         this._dragging = true;
         this._dragLastX = e.clientX;
         this._dragLastY = e.clientY;
@@ -353,6 +386,10 @@ export class Designer {
 
     this._panel = new DesignerPanel();
 
+    this._fittingPickerEl = /** @type {HTMLElement} */ (document.getElementById('fitting-picker'));
+    this._fittingPickerEl.addEventListener('mousedown', (e) => e.stopPropagation());
+    this._fittingPickerEl.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+
     this._load(false);
     this._initComparePanel();
   }
@@ -377,6 +414,10 @@ export class Designer {
       } else {
         this._hideTooltip();
       }
+    }
+    // Pointer cursor when hovering clickable slots in fitting mode
+    if (this._fittingConfig) {
+      this.canvas.style.cursor = found >= 0 ? 'pointer' : '';
     }
     if (found >= 0) this._positionTooltip();
   }
@@ -434,11 +475,22 @@ export class Designer {
     this._slotBoxRects = [];
     this._hoveredSlotIdx = -1;
     this._hideTooltip();
+    this._closeFittingPicker();
     if (this._panel) this._panel.invalidate();
 
     // Designer preview: no relation context → white silhouette
     if (def.type === 'ship') {
       this._entity.relation = 'none';
+    }
+
+    // Fitting mode: ship-classes get empty module slots for interactive fitting
+    if (this._cat().id === 'ship-classes') {
+      const mountLen = (this._entity._mountPoints || []).length;
+      this._fittingConfig = new Array(mountLen).fill(null);
+      this._entity.moduleSlots = new Array(mountLen).fill(null);
+      this._entity.recalcTW();
+    } else {
+      this._fittingConfig = null;
     }
 
     if (updateUrl) this._updateUrl();
@@ -504,6 +556,18 @@ export class Designer {
       this._autoRotate = !this._autoRotate;
     }
 
+    // Escape — close fitting picker
+    if (input.wasJustPressed('escape') && this._fittingPickerSlot >= 0) {
+      this._closeFittingPicker();
+    }
+
+    // X — clear all fitted modules
+    if (input.wasJustPressed('x') && this._fittingConfig) {
+      this._fittingConfig.fill(null);
+      this._closeFittingPicker();
+      this._rebuildShipFromConfig();
+    }
+
     // R — reset view
     if (input.wasJustPressed('r')) {
       this._zoom = 1.0;
@@ -558,7 +622,7 @@ export class Designer {
       this._catIdx, CATEGORIES.length, cat.label,
       this._itemIdx, cat.items.length,
       def, this._entity,
-      { autoRotate: this._autoRotate, zoom: this._zoom, panX: this._panX, panY: this._panY },
+      { autoRotate: this._autoRotate, zoom: this._zoom, panX: this._panX, panY: this._panY, fitting: !!this._fittingConfig },
     );
   }
 
@@ -791,36 +855,11 @@ export class Designer {
       return;
     }
 
-    const BOX_W = 180;
-    const BOX_H = 28;
-    const BOX_GAP = 5;
     const BOX_MARGIN_LEFT = 12;
-
-    // Position boxes on the left side, just past the stats panel
-    const panelRight = PANEL_W + BOX_MARGIN_LEFT;
-    const boxX = panelRight;
+    const boxX = PANEL_W + BOX_MARGIN_LEFT;
     let curY = 60;
 
-    // Power budget header
-    let totalOut = 0, totalDraw = 0;
-    for (const mod of slots) {
-      if (!mod) continue;
-      totalOut += (mod.effectivePowerOutput ?? mod.powerOutput) || 0;
-      totalDraw += mod.powerDraw || 0;
-    }
-    const net = totalOut - totalDraw;
-
-    ctx.save();
-    ctx.textBaseline = 'middle';
-    ctx.font = "bold 10px 'Fira Mono', monospace";
-    ctx.textAlign = 'left';
-    ctx.fillStyle = DIM_TEXT;
-    ctx.globalAlpha = 0.8;
-    ctx.fillText('MODULES', boxX, curY - 6);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = net >= 0 ? GREEN : RED;
-    ctx.fillText(`${net >= 0 ? '+' : ''}${net}W`, boxX + BOX_W, curY - 6);
-    ctx.restore();
+    renderModuleHeader(ctx, boxX, curY - 6, slots);
 
     // Compute mount screen positions
     const sin = Math.sin(this._angle);
@@ -833,102 +872,159 @@ export class Designer {
       const mount = mounts[i];
       if (!mount) continue;
 
-      const isHovered = this._hoveredSlotIdx === i;
-
-      // Mount point in screen space
       const mx = (mount.x * cos - mount.y * sin) * this._zoom + pcx + this._panX;
       const my = (mount.x * sin + mount.y * cos) * this._zoom + pcy + this._panY;
 
-      // Connection line
-      const lineAlpha = isHovered ? 0.9 : mod ? 0.3 : 0.15;
-      const lineWidth = isHovered ? 1.5 : 0.8;
-      ctx.save();
-      ctx.globalAlpha = lineAlpha;
-      ctx.strokeStyle = CYAN;
-      ctx.lineWidth = lineWidth;
-      if (!isHovered && !mod) ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(boxX + BOX_W, curY + BOX_H / 2);
-      ctx.lineTo(mx, my);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-
-      // Box background
-      const borderColor = isHovered ? CYAN : VERY_DIM;
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = 'rgba(0,4,12,0.88)';
-      ctx.fillRect(boxX, curY, BOX_W, BOX_H);
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 1;
-      if (!mod) ctx.setLineDash([3, 3]);
-      ctx.strokeRect(boxX + 0.5, curY + 0.5, BOX_W - 1, BOX_H - 1);
-      ctx.setLineDash([]);
-      ctx.restore();
-
-      // Content
-      const slotLabel = mount.slot === 'engine' ? 'E' : String(i + 1);
-      const textY = curY + BOX_H / 2;
-
-      ctx.save();
-      ctx.textBaseline = 'middle';
-      ctx.font = "10px 'Fira Mono', monospace";
-
-      if (mod) {
-        // Slot label
-        ctx.textAlign = 'left';
-        ctx.fillStyle = DIM_TEXT;
-        ctx.fillText(`[${slotLabel}]`, boxX + 6, textY);
-
-        // Module name
-        const name = (mod.displayName || '').length > 14
-          ? (mod.displayName || '').slice(0, 13) + '…' : (mod.displayName || '');
-        ctx.fillStyle = CYAN;
-        ctx.fillText(name, boxX + 28, textY);
-
-        // Power info
-        const effOut = mod.effectivePowerOutput ?? mod.powerOutput;
-        const pwrStr = effOut > 0 ? `+${effOut}W` : mod.powerDraw > 0 ? `-${mod.powerDraw}W` : '';
-        if (pwrStr) {
-          ctx.textAlign = 'right';
-          ctx.fillStyle = effOut > 0 ? GREEN : AMBER;
-          ctx.fillText(pwrStr, boxX + BOX_W - 20, textY);
-        }
-
-        // Condition dot
-        if (mod.condition) {
-          ctx.beginPath();
-          ctx.arc(boxX + BOX_W - 8, textY, 3, 0, Math.PI * 2);
-          ctx.fillStyle = conditionColor(mod.condition);
-          ctx.globalAlpha = 0.9;
-          ctx.fill();
-        }
-      } else {
-        // Empty slot
-        ctx.textAlign = 'left';
-        ctx.fillStyle = VERY_DIM;
-        ctx.fillText(`[${slotLabel}] ── EMPTY ──`, boxX + 6, textY);
-      }
-
-      ctx.restore();
-
-      // Highlight mount point when hovered
-      if (isHovered) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(mx, my, 10, 0, Math.PI * 2);
-        ctx.strokeStyle = CYAN;
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = 0.7;
-        ctx.stroke();
-        ctx.restore();
-      }
+      const advance = renderModuleSlotBox(ctx, {
+        boxX, curY, mod, mount, mountPos: { x: mx, y: my },
+        slotIdx: i,
+        isHovered: this._hoveredSlotIdx === i,
+      });
 
       this._slotBoxRects.push({ x: boxX, y: curY, w: BOX_W, h: BOX_H, mod });
-      curY += BOX_H + BOX_GAP;
+      curY += advance;
     }
+  }
+
+  // ── Fitting Mode ────────────────────────────────────────────────────────────
+
+  _rebuildShipFromConfig() {
+    const def = this._item();
+    const savedAngle = this._angle;
+    const savedZoom = this._zoom;
+    const savedPanX = this._panX;
+    const savedPanY = this._panY;
+    const savedRotate = this._autoRotate;
+
+    this._entity = def.create();
+    this._entity.relation = 'none';
+
+    const mountLen = (this._entity._mountPoints || []).length;
+    this._entity.moduleSlots = new Array(mountLen).fill(null);
+
+    for (let i = 0; i < this._fittingConfig.length; i++) {
+      const modId = this._fittingConfig[i];
+      if (modId) {
+        this._entity.moduleSlots[i] = createModuleById(modId);
+      }
+    }
+
+    this._entity._applyModules();
+
+    this._angle = savedAngle;
+    this._zoom = savedZoom;
+    this._panX = savedPanX;
+    this._panY = savedPanY;
+    this._autoRotate = savedRotate;
+
+    if (this._panel) this._panel.invalidate();
+  }
+
+  _openFittingPicker(slotIdx) {
+    const el = this._fittingPickerEl;
+    if (!el) return;
+
+    this._fittingPickerSlot = slotIdx;
+    const ship = this._entity;
+    const mount = ship._mountPoints[slotIdx];
+    const currentMod = ship.moduleSlots[slotIdx];
+
+    // Filter compatible modules
+    const isEngineMount = mount.slot === 'engine';
+    const mountSize = mount.size || 'small';
+    const items = [];
+
+    for (const [id, entry] of Object.entries(CONTENT.modules)) {
+      // General mounts exclude engines; engine mounts accept everything
+      if (!isEngineMount && entry.category === 'ENGINE') continue;
+
+      // Size constraint: small mount can't take large modules
+      const sample = entry.create();
+      if (mountSize === 'small' && sample.size === 'large') continue;
+
+      // Build stat summary
+      const stat = _moduleStat(sample, entry.category);
+
+      items.push({
+        id,
+        label: sample.displayName || id,
+        category: entry.category,
+        stat,
+        isCurrent: this._fittingConfig[slotIdx] === id,
+      });
+    }
+
+    // Build DOM
+    el.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'fitting-picker-header';
+    const sizeTag = mountSize === 'large' ? 'LARGE' : 'SMALL';
+    const slotType = isEngineMount ? 'ENGINE' : 'GENERAL';
+    header.textContent = `SLOT ${slotIdx + 1} · ${slotType} · ${sizeTag}`;
+    el.appendChild(header);
+
+    // Remove button if slot is occupied
+    if (currentMod) {
+      const removeRow = document.createElement('div');
+      removeRow.className = 'fitting-picker-item fp-remove';
+      removeRow.textContent = '✕ REMOVE MODULE';
+      removeRow.addEventListener('click', () => {
+        this._fittingConfig[slotIdx] = null;
+        this._closeFittingPicker();
+        this._rebuildShipFromConfig();
+      });
+      el.appendChild(removeRow);
+    }
+
+    for (const item of items) {
+      const row = document.createElement('div');
+      row.className = 'fitting-picker-item' + (item.isCurrent ? ' fp-current' : '');
+
+      const name = document.createElement('span');
+      name.textContent = `[${item.category.slice(0, 3)}] ${item.label}`;
+      row.appendChild(name);
+
+      if (item.stat) {
+        const stat = document.createElement('span');
+        stat.className = 'fitting-picker-stat';
+        stat.textContent = item.stat;
+        row.appendChild(stat);
+      }
+
+      row.addEventListener('click', () => {
+        this._fittingConfig[slotIdx] = item.id;
+        this._closeFittingPicker();
+        this._rebuildShipFromConfig();
+      });
+      el.appendChild(row);
+    }
+
+    // Position near the slot box, clamped to viewport
+    const rect = this._slotBoxRects[slotIdx];
+    if (rect) {
+      el.style.left = `${rect.x + rect.w + 8}px`;
+      el.style.top = '0px';
+      el.style.bottom = 'auto';
+    }
+
+    el.classList.add('open');
+
+    // After rendering, clamp so the picker stays fully on-screen
+    requestAnimationFrame(() => {
+      const pickerH = el.offsetHeight;
+      const targetY = rect ? rect.y : 0;
+      const maxTop = window.innerHeight - pickerH - 8;
+      el.style.top = `${Math.max(8, Math.min(targetY, maxTop))}px`;
+    });
+  }
+
+  _closeFittingPicker() {
+    if (this._fittingPickerEl) {
+      this._fittingPickerEl.classList.remove('open');
+      this._fittingPickerEl.innerHTML = '';
+    }
+    this._fittingPickerSlot = -1;
   }
 
   // ── Module Preview ───────────────────────────────────────────────────────────

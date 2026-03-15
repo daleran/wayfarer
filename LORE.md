@@ -202,9 +202,16 @@ Despite primitive computing, humanity retains sophisticated knowledge of space s
 
 **Propulsion Systems:**
 
-- **Chemical Rockets:** Used for surface launches and landings, often repurposed or hybridized with nuclear heat systems.
+- **Makeshift Thermal Rockets:** Jury-rigged engines cobbled from scavenged parts — mismatched injectors, salvaged combustion chambers, hand-welded fuel lines. Common in the outer Gravewake fringe where proper parts don't reach. Fragile, weak, and the first thing a pilot replaces.
+- **Standard Pattern Rockets:** The reliable workhorse. Mass-manufactured from blueprints predating the Exile, produced by small engine forges across Tyr's settlements. Parts are interchangeable and readily available. The backbone of civilian and light-military fleets.
+- **Milspec Rockets:** High-performance military-grade propulsion manufactured exclusively by the **Prime Machinists Guild**. Designed for short, intense combat sorties near carrier groups — sustained independent cruising was never the design goal. Extreme thrust, terrible fuel economy.
+- **Vintage Magplasma Thrusters:** Pre-Exile magnetic-plasma engines from the Arrival period. Elegant engineering centuries ahead of current manufacture, but irreplaceable — mechanics nurse them along with hand-machined approximations and prayer. Superb efficiency, fragile reliability.
+- **Cruising Ion Drives:** Purpose-built for long-range cargo haulers and endurance transit. Refined ion acceleration chambers trade any pretense of combat agility for the ability to cross the entire Tyr system on a single fuel load. Popular with trade convoys and long-haul prospectors.
 - **Cold Gas Thrusters:** Provide fine maneuvering capabilities, especially for EVA, docking, or debris fields.
-- **Electric Thrusters (Ion or Hall-effect):** Slow, high-efficiency engines used for long-duration interplanetary burns.
+
+**The Prime Machinists Guild:**
+
+A politically neutral engineering body that controls the high-precision manufacturing infrastructure — ceramic kilns, exotic alloy forges, and vacuum-sealed fabrication bays — required for military-grade propulsion. They sell to all factions without allegiance, maintaining independence through mutual dependence. Their monopoly on Milspec engine production makes them one of the quiet power brokers of the Tyr system. Guild facilities are scattered across the inner system, heavily fortified and diplomatically immune by long-standing convention. No faction can afford to attack the people who build their best engines.
 
 ### Weapons
 
