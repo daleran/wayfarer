@@ -324,6 +324,7 @@ CN. 2026-MAR-14-0000: JS Data Migration — CSV data pipeline replaced with plai
 CO. 2026-MAR-14-1800: Source Restructure — js/ renamed to src/; data files reorganized (actors/, locations/, conversations/, terrain/, hulls/, modules/, ships/); NPC factories replaced with data-driven createActor(); conversation files moved to data/conversations/ and data/locations/; Vite aliases and configs updated.
 CP. 2026-MAR-14-2000: NarrativeLog Enhancements — NPC context (setNpcContext/clearNpcContext/dln), seq() shorthand (prefix::text batch lines), contd() continuation pause, tooltip()/narrateHTML() for inline hover definitions; all 14 conversation scripts converted to use new API.
 CQ. 2026-MAR-14-2200: Ship/Character Data Separation — Ship getter delegation (faction/relation/ai delegate to captain via getters, fall back to _machine* fields for unmanned); data/actors/ split into data/ships/ (ship configs → CONTENT.ships) and data/characters/ (character data → CHARACTERS + CONTENT.characters); createNPC()/createShip() replace createActor(); bounty contracts carry targetCharacterId; NPC_SHIPS and CONTENT.actors removed.
+CR. 2026-MAR-14-2359: Character Origin Selection — New game flow with narrative origin selection (Runaway/Deserter/Scavenger); Cutter Class Scout hull; House Casimir faction; 3 origin ship configs; flashback conversations with sub-choices; deferred player creation in production mode.
 
 
 # === PLAN.md ===
@@ -960,6 +961,14 @@ _"The Earth is a story. And no one tells it the same way."_
 
 The Great Houses were formed during the early Arrival period from the command structures of the original arkships. While most still hold power in the inner system behind fortified walls, some have fallen. **House Drazel** was a hardline militarist faction known for its emphasis on martial tradition, boarding tactics, and brutal fleet doctrine. They specialized in close-quarters ship-to-ship warfare and orbital domination. Their ships were built to be unyielding, ugly, and effective—meant to ram, breach, and overwhelm. After several other Great Houses banded together to destroy them, House Drazel collapsed. Many of their formidable ships were seized, scuttled, or went missing, occasionally resurfacing in the hands of black-market operators or scavenger warlords.
 
+### 8.2 Faction: House Casimir
+
+**House Casimir** is the dominant Great House of the inner system. When the other Great Houses banded together to destroy the militarist House Drazel, Casimir led the charge and claimed Drazel's assets: their fleet infrastructure, territorial claims, and docking concessions at Keelbreak. They now control trade through Thalassa and tax every hull that passes through the inner system's shipping lanes. Disciplined, bureaucratic, and quietly ruthless — they project order while crushing dissent.
+
+Casimir fields paired **Cutter Class Scouts** along shipping lanes — compact, angular military patrol craft designed for long-range scouting with enough firepower to handle light contacts. The clans dread the silhouette. Their fleet doctrine emphasizes presence and control: you don't need to fight if every captain knows you're watching.
+
+Reputation faction key: `casimir`.
+
 ### 8.3 Faction: Concord Remnants
 
 The remnants of the value-shard AIs that once guided humanity. They are not a unified force, but a collection of fragmented, sometimes conflicting, machine intelligences. Each remnant—or "Shard"—is driven by its original core value, now twisted by centuries of isolation and the trauma of the Veiled Collapse.
@@ -1079,6 +1088,12 @@ This fusion of high survival knowledge with intentionally degraded tech defines 
 # MECHANICS.md — Wayfarer Game Mechanics
 
 > **This document describes how systems behave — not what specific items, ships, or values exist.** Stats, item definitions, and tuning constants live in CSV source files (`data/*.csv`) and JS data files. For world/faction context see `LORE.md`. For visual conventions see `UX.md`.
+
+---
+
+## Origin Selection (New Game)
+
+Production mode opens with a narrative origin selection sequence before gameplay begins. The player chooses one of three backgrounds, each providing a different starting ship, loadout, and conditions. Each origin includes a flashback with one minor sub-choice that tweaks a starting detail (extra scrap, fuel, ammo, or reputation). The world renders behind the narrative panel during selection. Editor/test mode skips origin selection entirely.
 
 ---
 

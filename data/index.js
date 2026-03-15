@@ -18,12 +18,16 @@ import './hulls/onyx-tug/hull.js';
 import './hulls/maverick-courier/hull.js';
 import './hulls/g100-hauler/hull.js';
 import './hulls/garrison-frigate/hull.js';
+import './hulls/cutter-scout/hull.js';
 import './hulls/drone-control-hull/hull.js';
 import './hulls/snatcher-drone-hull/hull.js';
 
 // Ships — self-register into CONTENT.ships
 import './ships/player/hullbreaker.js';
 import './ships/player/crashDummy.js';
+import './ships/player/swiftExit.js';
+import './ships/player/greyVeil.js';
+import './ships/player/hullbreakerStripped.js';
 import './ships/scavenger/lightFighter.js';
 import './ships/scavenger/armedHauler.js';
 import './ships/scavenger/salvageMothership.js';
@@ -46,6 +50,7 @@ import './locations/ashveil-anchorage/station.js';
 // Conversations — self-register into CONTENT.conversations
 import './conversations/genericHub.js';
 import './conversations/genericDock.js';
+import './conversations/originSelection.js';
 import './locations/kells-stop/conversations/hub.js';
 import './locations/kells-stop/conversations/dock.js';
 import './locations/kells-stop/conversations/intel.js';

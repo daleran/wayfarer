@@ -92,6 +92,7 @@ export class HUD {
   _updatePickupPosition(game) {
     if (!this._pickupEl) return;
     const { camera, player } = game;
+    if (!player) return;
     const shipScreen = camera.worldToScreen(player.x, player.y);
     this._pickupEl.style.transform = `translate(${shipScreen.x}px, ${shipScreen.y - PICKUP_ABOVE}px)`;
   }

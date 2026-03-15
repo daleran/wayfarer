@@ -48,6 +48,7 @@ export class NarrativePanel {
   open(station, game) {
     this._station = station;
     this._game = game;
+    this._isOriginSelection = false;
     this.visible = true;
     this._el.classList.remove('hidden');
 
@@ -63,6 +64,20 @@ export class NarrativePanel {
     this._runHub();
   }
 
+  /** Open a standalone conversation (no station context). Used for origin selection. */
+  openConversation(id, game) {
+    this._station = null;
+    this._game = game;
+    this._isOriginSelection = true;
+    this.visible = true;
+    this._el.classList.remove('hidden');
+
+    this._updateHeader();
+    this._log.clear();
+
+    this._runConversation(id);
+  }
+
   close() {
     // Cancel running conversation
     if (this._abortController) {
@@ -72,7 +87,7 @@ export class NarrativePanel {
     this._log.cancelChoices();
     this._log.clearNpcContext();
 
-    if (this._game?.camera) {
+    if (!this._isOriginSelection && this._game?.camera) {
       this._game.camera.popZoom();
       this._game.camera.clearPan();
     }
@@ -80,6 +95,7 @@ export class NarrativePanel {
     this._el.classList.add('hidden');
     this._log.clear();
     this._station = null;
+    this._isOriginSelection = false;
     this._game = null;
   }
 
@@ -90,6 +106,7 @@ export class NarrativePanel {
 
   handleInput(input, _game) {
     if (!this.visible) return;
+    if (this._isOriginSelection) return; // Cannot close during origin selection
     if (input.wasJustPressed('escape')) {
       this.close();
     }
@@ -99,13 +116,25 @@ export class NarrativePanel {
 
   /** @private */
   _updateHeader() {
-    const station = this._station;
-    if (!station) return;
-
     const titleEl = /** @type {HTMLElement} */ (this._el.querySelector('.np-title'));
     const factionEl = /** @type {HTMLElement} */ (this._el.querySelector('.np-faction'));
     const standingEl = /** @type {HTMLElement} */ (this._el.querySelector('.np-standing'));
     const scrapEl = /** @type {HTMLElement} */ (this._el.querySelector('.np-scrap'));
+    const escHint = /** @type {HTMLElement} */ (this._el.querySelector('.np-esc-hint'));
+
+    if (this._isOriginSelection) {
+      titleEl.textContent = 'GRAVEWAKE';
+      factionEl.textContent = '';
+      standingEl.textContent = '';
+      scrapEl.textContent = '';
+      if (escHint) escHint.style.display = 'none';
+      return;
+    }
+
+    if (escHint) escHint.style.display = '';
+
+    const station = this._station;
+    if (!station) return;
 
     titleEl.textContent = station.name;
 
@@ -130,6 +159,34 @@ export class NarrativePanel {
   }
 
   // ── Conversation runner ────────────────────────────────────────────────────
+
+  /** @private Run a standalone conversation by id (no station). */
+  async _runConversation(id) {
+    const fn = CONVERSATIONS[id];
+    if (!fn) {
+      this._log.narrate(`[No conversation found: ${id}]`, 'system');
+      return;
+    }
+
+    this._abortController = new AbortController();
+    const signal = this._abortController.signal;
+
+    const ctx = {
+      game: this._game,
+      station: null,
+      log: this._log,
+      signal,
+      runZone: () => {},
+    };
+
+    try {
+      await fn(ctx);
+    } catch (e) {
+      if (e.name !== 'AbortError') throw e;
+    }
+
+    if (this.visible) this.close();
+  }
 
   /** @private */
   async _runHub() {

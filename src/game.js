@@ -98,21 +98,23 @@ export class GameManager {
     this.renderer = new Renderer(this.ctx, this.map.mapSize, this.map.background);
     this.particlePool = new ParticlePool();
 
-    // Spawn player — use Crash Dummy in test/editor mode, Hullbreaker in production
     const start = this.map.playerStart || { x: 400, y: 400 };
-    this.player = this.isTestMode
-      ? createNPC('crash-dummy', start.x, start.y)
-      : createNPC('player', start.x, start.y);
-    this.inventory.bindPlayer(this.player);
-    this.inventory.initFromPlayer(this.player);
 
-    // Track player character
-    if (this.player.captain) {
-      this.playerCharacter = this.player.captain;
-      this.characters.push(this.playerCharacter);
+    if (this.isTestMode) {
+      // Test/editor mode — spawn immediately
+      this.player = createNPC('crash-dummy', start.x, start.y);
+      this.inventory.bindPlayer(this.player);
+      this.inventory.initFromPlayer(this.player);
+      if (this.player.captain) {
+        this.playerCharacter = this.player.captain;
+        this.characters.push(this.playerCharacter);
+      }
+      this.entities.push(this.player);
+    } else {
+      // Production mode — defer player creation until origin is chosen
+      this._originPending = true;
+      this.stationScreen.openConversation('originSelection', this);
     }
-
-    this.entities.push(this.player);
 
     // World entities — pre-instantiated by zone manifests / map files
     for (const entity of this.map.entities ?? []) {
@@ -125,8 +127,13 @@ export class GameManager {
 
     this.mapZones = this.map.zones || [];
 
-    this.camera.x = this.player.x;
-    this.camera.y = this.player.y;
+    if (this.player) {
+      this.camera.x = this.player.x;
+      this.camera.y = this.player.y;
+    } else {
+      this.camera.x = start.x;
+      this.camera.y = start.y;
+    }
   }
 
   _resizeCanvas() {
@@ -137,6 +144,15 @@ export class GameManager {
   update(dt) {
     input.tick();
     this.totalTime += dt;
+
+    // Origin selection — only run narrative panel
+    if (this._originPending) {
+      this.stationScreen.update(dt, this);
+      this.stationScreen.handleInput(input, this);
+      this.camera.updateZoom(dt);
+      if (!this.stationScreen.visible) this._originPending = false;
+      return;
+    }
 
     // Player death — freeze game in production mode
     if (this._playerDead) return;
@@ -299,6 +315,64 @@ export class GameManager {
       this.camera.follow(this.player, dt);
     }
 
+  }
+
+  applyOrigin(characterId, subChoice) {
+    const start = this.map.playerStart || { x: 400, y: 400 };
+    this.player = createNPC(characterId, start.x, start.y);
+    this.entities.push(this.player);
+
+    if (this.player.captain) {
+      this.playerCharacter = this.player.captain;
+      this.characters.push(this.playerCharacter);
+    }
+
+    // Origin-specific starting scrap
+    const scrapMap = {
+      'player-runaway': 150,
+      'player-deserter': 300,
+      'player-scavenger': 800,
+    };
+    this.inventory = new PlayerInventory({
+      startScrap: scrapMap[characterId] ?? DEFAULT_SCRAP,
+    });
+    this.inventory.bindPlayer(this.player);
+    this.inventory.initFromPlayer(this.player);
+
+    // Origin-specific conditions
+    if (characterId === 'player-deserter') {
+      this.reputation.change('casimir', -60);
+    }
+    if (characterId === 'player-scavenger') {
+      for (const mod of this.player.moduleSlots || []) {
+        if (mod) mod.condition = Math.random() < 0.5 ? 'damaged' : 'faulty';
+      }
+      this.inventory.fuel = 0;
+    }
+
+    // Sub-choice tweaks
+    if (characterId === 'player-runaway') {
+      if (subChoice === 'scrap') this.inventory.scrap += 50;
+      else if (subChoice === 'fuel') this.inventory.fuel = Math.min(this.inventory.fuelMax, this.inventory.fuel + 30);
+    }
+    if (characterId === 'player-deserter') {
+      if (subChoice === 'ammo') {
+        this.inventory.ammo['25mm-ap'] = (this.inventory.ammo['25mm-ap'] || 0) + 60;
+      } else if (subChoice === 'rep') {
+        this.reputation.change('scavengers', 10);
+      }
+    }
+    if (characterId === 'player-scavenger') {
+      if (subChoice === 'scrap') this.inventory.scrap += 200;
+      // 'module' sub-choice: no extra module to add — extra scrap to represent trade value
+      else if (subChoice === 'module') this.inventory.scrap += 100;
+    }
+
+    this.player.recalcTW(this.inventory.fuel, this.inventory.totalCargoUsed);
+    this.storyFlags.origin = characterId;
+
+    this.camera.x = this.player.x;
+    this.camera.y = this.player.y;
   }
 
   _updateModules(dt) {

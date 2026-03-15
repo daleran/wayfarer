@@ -14,7 +14,7 @@ const MM_PANEL  = 225;
 
 export function renderMinimap(ctx, game) {
   const { player, entities, hostiles } = game;
-  if (!player.active) return;
+  if (!player || !player.active) return;
 
   const canSeeStations = player.capabilities.minimap_stations;
   const canSeeShips    = player.capabilities.minimap_ships;

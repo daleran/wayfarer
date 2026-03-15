@@ -4,6 +4,12 @@
 
 ---
 
+## Origin Selection (New Game)
+
+Production mode opens with a narrative origin selection sequence before gameplay begins. The player chooses one of three backgrounds, each providing a different starting ship, loadout, and conditions. Each origin includes a flashback with one minor sub-choice that tweaks a starting detail (extra scrap, fuel, ammo, or reputation). The world renders behind the narrative panel during selection. Editor/test mode skips origin selection entirely.
+
+---
+
 ## Movement & Throttle
 
 Discrete throttle levels from Stop through Flank. W/S step up or down; the level persists until changed. Ships have momentum — acceleration and deceleration are gradual.

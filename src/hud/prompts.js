@@ -20,6 +20,7 @@ export function renderPauseIcon(ctx, camera) {
 export function renderDockPrompt(ctx, game) {
   if (!game.nearbyStation || game.salvage.isSalvaging || game.isDocked) return;
   const { player, camera } = game;
+  if (!player) return;
   const alpha   = 0.6 + Math.sin(Date.now() * 0.004) * 0.4;
   const promptY = camera.height * 0.62;
   const stopped = player.throttleLevel === 0 && player.speed < 1;
@@ -96,6 +97,7 @@ export function renderSalvageBar(ctx, game) {
 export function renderRepairBar(ctx, game) {
   if (!game.repair.isRepairing) return;
   const { player, camera } = game;
+  if (!player) return;
   const barW     = 220;
   const barH     = 16;
   const segCount = 10;

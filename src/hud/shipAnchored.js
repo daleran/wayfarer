@@ -11,6 +11,7 @@ const THROTTLE_LABELS = ['STOP', '1/4', '1/2', '3/4', 'FULL', 'FLANK'];
 
 export function renderThrottle(ctx, game) {
   const { player, camera } = game;
+  if (!player) return;
   const screen = camera.worldToScreen(player.x, player.y);
   const label = THROTTLE_LABELS[player.throttleLevel ?? 0];
   const speed = Math.floor(player.speed);
@@ -136,6 +137,7 @@ const CURSOR_BAR_H = 24;
 export function renderCursorWeapons(ctx, game) {
   if (!game.combatMode) return;
   const { player } = game;
+  if (!player) return;
   const mx = input.mouseScreen.x;
   const my = input.mouseScreen.y;
 

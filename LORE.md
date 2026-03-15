@@ -155,6 +155,14 @@ _"The Earth is a story. And no one tells it the same way."_
 
 The Great Houses were formed during the early Arrival period from the command structures of the original arkships. While most still hold power in the inner system behind fortified walls, some have fallen. **House Drazel** was a hardline militarist faction known for its emphasis on martial tradition, boarding tactics, and brutal fleet doctrine. They specialized in close-quarters ship-to-ship warfare and orbital domination. Their ships were built to be unyielding, ugly, and effective—meant to ram, breach, and overwhelm. After several other Great Houses banded together to destroy them, House Drazel collapsed. Many of their formidable ships were seized, scuttled, or went missing, occasionally resurfacing in the hands of black-market operators or scavenger warlords.
 
+### 8.2 Faction: House Casimir
+
+**House Casimir** is the dominant Great House of the inner system. When the other Great Houses banded together to destroy the militarist House Drazel, Casimir led the charge and claimed Drazel's assets: their fleet infrastructure, territorial claims, and docking concessions at Keelbreak. They now control trade through Thalassa and tax every hull that passes through the inner system's shipping lanes. Disciplined, bureaucratic, and quietly ruthless — they project order while crushing dissent.
+
+Casimir fields paired **Cutter Class Scouts** along shipping lanes — compact, angular military patrol craft designed for long-range scouting with enough firepower to handle light contacts. The clans dread the silhouette. Their fleet doctrine emphasizes presence and control: you don't need to fight if every captain knows you're watching.
+
+Reputation faction key: `casimir`.
+
 ### 8.3 Faction: Concord Remnants
 
 The remnants of the value-shard AIs that once guided humanity. They are not a unified force, but a collection of fragmented, sometimes conflicting, machine intelligences. Each remnant—or "Shard"—is driven by its original core value, now twisted by centuries of isolation and the trauma of the Veiled Collapse.

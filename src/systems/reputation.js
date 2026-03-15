@@ -1,6 +1,6 @@
 import { REPUTATION } from '@data/index.js';
 
-export const FACTIONS = ['settlements', 'scavengers', 'concord', 'monastic', 'communes', 'zealots'];
+export const FACTIONS = ['settlements', 'scavengers', 'concord', 'monastic', 'communes', 'zealots', 'casimir'];
 
 export const FACTION_LABELS = {
   settlements: 'Settlements',
@@ -9,6 +9,7 @@ export const FACTION_LABELS = {
   monastic:    'Monastic Orders',
   communes:    'Communes',
   zealots:     'Zealots',
+  casimir:     'House Casimir',
 };
 
 // Maps station/ship .faction string → reputation faction key
@@ -21,6 +22,7 @@ export const FACTION_MAP = {
   monastic:     'monastic',
   communes:     'communes',
   zealots:      'zealots',
+  casimir:      'casimir',
 };
 
 // Rival bonuses: kill faction X → rival faction gains bonus

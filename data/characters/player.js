@@ -15,6 +15,27 @@ const CHARS = {
     behavior: 'player',
     shipId: 'crash-dummy',
   },
+  'player-runaway': {
+    name: 'Pilot',
+    faction: 'player',
+    relation: 'player',
+    behavior: 'player',
+    shipId: 'swift-exit',
+  },
+  'player-deserter': {
+    name: 'Pilot',
+    faction: 'player',
+    relation: 'player',
+    behavior: 'player',
+    shipId: 'grey-veil',
+  },
+  'player-scavenger': {
+    name: 'Pilot',
+    faction: 'player',
+    relation: 'player',
+    behavior: 'player',
+    shipId: 'hullbreaker-stripped',
+  },
 };
 
 registerData(CHARACTERS, CHARS);
