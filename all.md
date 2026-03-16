@@ -96,7 +96,7 @@ Only `_renderDebugOverlay()` remains on canvas (world-space entity tracking).
 - **Source:** `engine/test/designer.js`, entry: `engine/designer-main.js`
 - **Navigation:** `↑/↓` change category, `←/→` cycle item, `T` toggle rotation (ships), `R` reset view, scroll/drag to zoom/pan
 - **Deep-link:** `designer.html?category=<cat>&id=<slug>`
-- **In scope:** `data/hulls/**`, `engine/entities/**`, `engine/modules/**`, `engine/rendering/colors.js`, `data/ships/**`, `data/characters/**`, `data/locations/**`
+- **In scope:** `data/hulls/**`, `engine/entities/**`, `engine/modules/**`, `engine/rendering/colors.js`, `data/ships/**`, `data/zones/**`
 - Item slugs are defined in `engine/test/designer.js` — check there for current IDs.
 
 ### `designer.html` — DOM Panel
@@ -144,16 +144,16 @@ Ship hull classes live in `data/hulls/*/hull.js` — each self-registers into `C
 - **Neutral AI** — `engine/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia'). Trade route fields: `ship.ai._tradeRouteA/B`. Orbit fields: `ship.ai._orbitCenter/Radius/Speed/Angle`.
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
 - **Particle pool** — `engine/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
-- **Zone entities** — content is co-located: stations in `data/locations/<id>/` (station data + renderer + conversations), terrain in `data/terrain/<id>/` (renderer + placement data merged), derelicts in `data/ships/named/`, ship configs in `data/ships/<faction>/`, characters in `data/characters/`. All self-register into `CONTENT` tables at import time. Every data entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity.
-- **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
+- **Zone entities** — content is zone-centric under `data/zones/<zone>/`: locations (station data + renderer + conversations), terrain, ships, characters, derelicts, planets. Global content (hulls, modules, player ships/character) stays in `data/`. All self-register into `CONTENT` tables at import time via `registerContent()`. `data/index.js` uses `import.meta.glob` to auto-discover zone content — no manual import lines needed for new files.
+- **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `data/zones/gravewake/manifest.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `data/maps/tyr.js` is the full production map; `data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
-- **Centralized stats** — JS data files in `data/` are the single source of truth for all base stats and content definitions. Single registry file `data/dataRegistry.js` holds both equipment tables (ENGINES, WEAPONS, etc.) and content tables (`CONTENT.hulls`, `.ships`, `.stations`, `.conversations`, `.derelicts`, `.terrain`, `.characters`). Two helpers: `registerData(table, entries)` for bulk-assigning equipment entries, `registerContent(type, id, entry)` for single content entries. Content files self-register at import time. `data/index.js` boots all content files and re-exports everything. Content locations: `data/hulls/` (hull classes), `data/ships/<faction>/` (ship configs), `data/characters/` (character data), `data/locations/` (station data + renderers + conversations), `data/terrain/` (terrain renderers + data), `data/ships/named/` (derelict descriptors), `data/modules/` (equipment), `data/maps/` (map definitions), `data/factions.js` (faction keys, labels, mappings, rival bonuses). `data/tuning.js` holds global scalar constants. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors. To add new content, create a file in the appropriate `data/` subdirectory using `registerContent()` and/or `registerData()`, then import it in `data/index.js`.
+- **Centralized stats** — JS data files in `data/` are the single source of truth for all base stats and content definitions. Single registry file `data/dataRegistry.js` holds both equipment tables (ENGINES, WEAPONS, etc.) and content tables (`CONTENT.hulls`, `.ships`, `.stations`, `.conversations`, `.derelicts`, `.terrain`, `.characters`, `.planets`). Two helpers: `registerData(table, entries)` for bulk-assigning equipment entries, `registerContent(type, id, entry)` for single content entries. Content files self-register at import time. `data/index.js` uses `import.meta.glob` to auto-discover content under `data/zones/`, `data/hulls/`, `data/ships/player/`, `data/characters/player.js`, and `data/conversations/`. Global content: `data/hulls/` (hull classes), `data/ships/player/` (player ships), `data/characters/player.js` (player character), `data/modules/` (equipment), `data/maps/` (map definitions), `data/factions.js` (faction keys). Zone content: `data/zones/<zone>/` — locations, ships, characters, derelicts, terrain, planets, conversations. `data/tuning.js` holds global scalar constants. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors. To add new zone content, create a file under `data/zones/<zone>/` that calls `registerContent()` — it's auto-discovered, no `data/index.js` edit needed.
 - **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate`, and `fuelEfficiency` purely from engine modules. Hull classes define only mass, durability, cargo, fuel tank, and armor — no inherent speed or agility. T/W ratio is computed against a global `REFERENCE_TW` constant using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). Engine modules provide `thrust`, `weight`, and `fuelEffMult`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
 - **Mount points** — each ship class defines `MOUNT_POINTS[]` and overrides `get _mountPoints()`. Index `i` maps to `moduleSlots[i]`. Each mount has `{ x, y, arc, size, slot? }` where `arc` is `'front'|'port'|'starboard'|'aft'`, `size` is `'small'|'large'`, and `slot` is `'engine'` for engine-only mounts (omitted for general-purpose). Used for: (1) drawing module icons on the hull via `_drawModules(ctx)` in `Ship.render()`, (2) positional module breach routing — hits to an arc preferentially damage modules in that arc, (3) install constraints in the Ship Screen — engine slots only accept engines and vice versa. Empty mounts render as dotted white squares; engine mounts show `[E]`. Module visuals: `engine/rendering/moduleVisuals.js`.
 - **Module registry** — `engine/modules/registry.js` exports `createModuleById(id)`, which reads from `CONTENT.modules`. Used by ship configs and loot tables to instantiate modules by string ID.
 - **Content registry** — `data/dataRegistry.js` exports `CONTENT` (type-keyed sub-objects) and `registerContent(type, id, entry)`. Content files call `registerContent()` at import time. Designer and editor read from `CONTENT.stations`, `CONTENT.derelicts`, `CONTENT.modules`, `CONTENT.weapons`, etc. instead of hand-maintained registry arrays.
 - **UI overlays** — narrative panel (`#narrative-panel`, right 30% DOM panel, `engine/ui/narrativePanel.js`) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
-- **Narrative system** — station interactions use scrolling conversation logs (Disco Elysium-style). `NarrativePanel` reads from `CONTENT.conversations`. Conversation scripts are async functions in `data/locations/<station>/conversations/` (station-specific) or `data/conversations/` (generic) that `await log.choices(...)` for player input. Each self-registers via `registerContent('conversations', id, fn)`. Station data includes `conversations: { hub, zones: {} }` pointing to script IDs. `game.storyFlags = {}` tracks first-visit flags and NPC memory (session-only)
+- **Narrative system** — station interactions use scrolling conversation logs (Disco Elysium-style). `NarrativePanel` reads from `CONTENT.conversations`. Conversation scripts are async functions in `data/zones/<zone>/locations/<station>/conversations/` (station-specific) or `data/conversations/` (generic) that `await log.choices(...)` for player input. Each self-registers via `registerContent('conversations', id, fn)`. Station data includes `conversations: { hub, zones: {} }` pointing to script IDs. `game.storyFlags = {}` tracks first-visit flags and NPC memory (session-only)
 - **Color palette** — `engine/rendering/colors.js` exports all color constants; never use inline hex strings
 - **CSS utility system** — `css/panel.css` defines CSS custom properties (`--p-text: 13px`, `--p-title: 16px`, `--p-small: 11px`), text color utilities (`.t-cyan`, `.t-amber`, etc.), and typography patterns (`.p-heading`, `.p-subheading`, `.p-text`, `.p-label`, `.p-hint`, `.p-small`). All DOM panel CSS files inherit from these. Never hardcode `px` font sizes in panel CSS — use `var()` references.
 - **Draw API** — `engine/rendering/draw.js` exports reusable canvas primitives. Two layers:
@@ -230,9 +230,9 @@ After any major refactor (file moves, system extractions, renderer rewrites, UI 
 | Skill | Scope | Key registries |
 |---|---|---|
 | `/ship-class` | Hull templates: shape, stats, mount points | `CONTENT.hulls` via self-registration; hull files in `data/hulls/*/hull.js` |
-| `/named-ship` | Configured ship instances (captained = NPC, no captain = derelict) | `CONTENT.ships` in `data/ships/<faction>/*.js`; `CONTENT.characters` in `data/characters/*.js`; `CONTENT.derelicts` in `data/ships/named/` |
-| `/character` | Named people who board ships | `CHARACTERS` + `CONTENT.characters` in `data/characters/*.js`; Character class in `engine/entities/character.js` |
-| `/station` | Dockable locations with services and renderers | `CONTENT.stations` in `data/locations/*/station.js`; renderers in `data/locations/*/renderer.js`; conversations in `data/locations/*/conversations/` |
+| `/named-ship` | Configured ship instances (captained = NPC, no captain = derelict) | `CONTENT.ships` in `data/zones/*/ships/*.js` or `data/ships/player/*.js`; `CONTENT.characters` in `data/zones/*/characters/*.js`; `CONTENT.derelicts` in `data/zones/*/derelicts/` |
+| `/character` | Named people who board ships | `CHARACTERS` + `CONTENT.characters` in `data/zones/*/characters/*.js` or `data/characters/player.js`; Character class in `engine/entities/character.js` |
+| `/station` | Dockable locations with services and renderers | `CONTENT.stations` in `data/zones/*/locations/*/station.js`; renderers in same dir; conversations in `conversations/` subdir |
 | `/module` | Ship modules AND weapons (combined) | `CONTENT.modules` (self-registered from `data/modules/*.js`); `CONTENT.weapons` (self-registered from `data/modules/weapons.js`); `createModuleById()` in `engine/modules/registry.js` |
 
 **Audit skills:** `/code-review`, `/stat-audit`, `/dead-code`
@@ -250,7 +250,7 @@ After any major refactor (file moves, system extractions, renderer rewrites, UI 
 - Data field additions/removals in `data/**/*.js`
 - Designer category changes in `engine/test/designer.js` (`CATEGORIES` array)
 - New or changed `Character` fields in `engine/entities/character.js`
-- New or changed NPC data in `data/ships/**/*.js` or `data/characters/*.js`
+- New or changed NPC data in `data/zones/*/ships/*.js`, `data/zones/*/characters/*.js`, `data/ships/player/*.js`
 - New boot imports needed in `data/index.js` for self-registering content
 
 
@@ -336,6 +336,8 @@ CU. 2026-MAR-15-0000: Designer Fitting Mode — Interactive module fitting in sh
 CV. 2026-MAR-15-1600: Custom Engine Icons — 10 unique drawAtMount icons for all 9 engine types (Makeshift Thermal crude/asymmetric, Vintage Magplasma coil housing + intake bell, Standard Rocket clean housing + bell, Milspec Rocket armored/gusseted, Cruising Ion cylindrical body + grid channel); hull engine graphics removed from ship _drawShape(); UX rule added.
 CW. 2026-MAR-15-1800: Engine Rename & Module Extraction — src/ renamed to engine/; Vite alias @ → engine/; concrete module subclasses (9 engines, reactors, sensors, utilities) extracted from engine/modules/shipModule.js into data/modules/*.js alongside their data registration; F1 controls help panel (DOM-based right panel with key reference sections).
 
+CX. 2026-MAR-16-0000: Zone-Centric Data Architecture — import.meta.glob auto-discovery replaces manual boot imports; Gravewake content moved to data/zones/gravewake/ (locations, ships, characters, derelicts, terrain, planets); CONTENT.planets table added; designer planets category data-driven; new zone content auto-registers with zero index.js edits.
+
 
 # === PLAN.md ===
 
@@ -343,7 +345,7 @@ CW. 2026-MAR-15-1800: Engine Rename & Module Extraction — src/ renamed to engi
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CX**
+**Next available code: CY**
 
 ---
 
@@ -374,6 +376,7 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
+| CX | Tyr System Geography & Great Houses | World / Map |
 
 ---
 
@@ -484,6 +487,110 @@ The inner system sits on the exact opposite side of the system from Gravewake, c
 - Population lives inside massive domed cities built to filter deadly UV radiation
 - Thanks to ideal day-night cycle and proximity to the star, this moon is the **agricultural heart of the entire system** — the vast majority of crops, fruits, and vegetables grown and exported from here
 - Peaceful zone; no active combat expected; economic and narrative significance
+
+---
+
+### CX: Tyr System Geography & Great Houses
+
+Full star system survey of Tyr — the human core. This region is the primary seat of human civilization following the exile from Earth. Organized from outer fringe inward toward the central star.
+
+*Note: supersedes BT (Inner System Locations) with a comprehensive system-wide geography. BT's Venus-like planet and Farming Moon concepts are absorbed and refined here.*
+
+**1. The Outer Fringe: The Icy Reach**
+
+The boundary between the inner system and the Kuiper-style asteroid belts. Primary theater of conflict — battles for ancient resources and defensive citadels.
+
+**1.1 Pale & Gravewake**
+- First landing point of all humans exiled from Earth; a massive, frozen archaeological site
+- Landscape is a graveyard of ancient ships and orbital debris
+- Primary territory of the Salvage Lords — independent factions scrapping "Old World" wrecks for pre-Exile electronics and hull plating
+- Geopolitics: an "Outer Wild West" existing just beyond the formal authority of the Great Houses
+- See AS for The Coil and zone features
+
+**2. The Ice Giant: Cocytus & The Warlord Moons**
+
+A massive ice giant serving as the gateway to the outer system. Solar energy is non-existent — inhabitants rely on geothermal heat or chemical refining.
+
+**2.1 The Four Independent Moons** — self-sustained micro-states administered by petty warlords in a constant cycle of local dominance:
+
+| Moon | Specialization | Description |
+|---|---|---|
+| **Acheron** | Fuel & Chemicals | Taps frozen volatiles for liquid hydrogen/oxygen. The lifeblood of all deep-space transit |
+| **Phlegethon** | Heavy Industry | Taps geothermal geysers for power. Volatile manufacturing hub reliant on raw ore imports |
+| **Styx** | Rare Earth Mining | High-metallic core moon providing raw iron and rare earth elements for the Forge |
+| **Lethe** | Farming | Barren, airless rock used for massive "Light-Capture" farms; the only fresh nutrients in this orbit |
+
+**3. The Gas Giant: Boreas & The Cascare Domain**
+
+A massive gas giant with a prominent ring system. Recently the site of a major political shift.
+
+**3.1 The Fall of House Drazel:**
+- For generations, Boreas was the seat of House Drazel — a cruel power that held a stranglehold on the system's raw minerals
+- House Cascare, originally a minor vassal house, led a successful uprising covertly backed by House Valerius and House Aridani
+- House Cascare now manages the planet; culturally perceived as "New Blood," still in debt to the inner houses
+
+**3.2 The Order of the Static (Monastic Tech Order):**
+- Independent monastic order located on the moon **Vesper**
+- Fanatically anti-Concord — believe Concord's technology led to humanity's downfall and exile
+- Hoard and tweak pre-Exile technology; the only entity capable of producing "modern" electronics, though stalled at roughly 1980s-level technology (analog circuits, early digital systems)
+
+**4. The Super-Earth: Aethelgard & The Valerius Heartland**
+
+The administrative and economic capital of Tyr, ruled by the prestigious House Valerius.
+
+**4.1 The Primary (The Veiled World):**
+- 4–6× Earth's mass with a crushing, thick atmosphere
+- Surface conditions are an impenetrable mystery
+
+**4.2 The Twin Industrial Moons — The Cosmopolis:**
+- **Oros** and **Thalassa** (0.7 and 0.8 Earth masses)
+- **The Shipwright Guild (Independent):** Based in massive orbital drydocks of Oros. Monopolizes the skills and tech needed to integrate components (Cascare steel, Ignis reactors, Static electronics) into functional starships. No Great House can build a ship without their blessing
+
+**5. The Rust-Basket: Khem & The Aridani Breadbasket**
+
+A rocky planet positioned between Aethelgard and the inner sun — a planetary desert and the primary agricultural world.
+
+**5.1 House Aridani:**
+- Focused on large-scale terraforming and agricultural logistics
+- Khem provides the bulk calories that feed the billions in Tyr
+
+**5.2 The Water Road:**
+- Khem is entirely reliant on constant ice shipments from Cocytus and Boreas to maintain its vast farming complexes
+
+**6. The Twilight Ring: Ferrum & The Ignis Bastion**
+
+The innermost planet — a dense iron world tidally locked to the sun.
+
+**6.1 House Ignis:**
+- The smallest and most heavily armed Great House
+- **The Uranium Monopoly:** controls the only viable uranium ore deposits in the system
+- **The Great Ring Road:** a massive underground highway connecting crater-citadels in the twilight band
+- Military specialty: advanced nuclear reactors and high-velocity railguns
+
+**7. System Geopolitics: The Great Houses**
+
+| Entity | Base | Role |
+|---|---|---|
+| **House Valerius** | Aethelgard | The Diplomatic Masterminds |
+| **House Cascare** | Boreas | The Mineral Backbone |
+| **House Aridani** | Khem | The Caloric Breadbasket |
+| **House Ignis** | Ferrum | The Nuclear Powerhouse |
+
+**Non-Aligned Entities:**
+- **The Order of the Static** — controls all electronic logic and computer systems
+- **The Shipwright Guild** — controls all high-end manufacturing and naval construction
+- **The Salvage Lords** — control the flow of ancient "high-tech" scrap from Gravewake
+
+**8. Game Integration: The Introductory Zone**
+
+- **Starting Location:** Cocytus (The Warlord Moons)
+- **Theme:** "The Scrappy Frontier" — a fractured, balkanized system where four petty warlords constantly squabble over dominance of the Ice Giant's moons. Perfect excuse for an unknown freelancer to make a name without drawing the ire of system-spanning Great Houses
+- **Mechanics Intro** — the four moons act as a microcosm of the entire game's core loop:
+  - Learn basic mining and resource extraction at Styx
+  - Trade for essential survival supplies and food at Lethe
+  - Purchase fuel and chemical propellants at Acheron
+  - Upgrade and repair the starter ship at Phlegethon
+- **The Escalation:** low-stakes warlord politics teach cross-planetary trade and localized combat; the ultimate goal is earning enough resources and hull upgrades to survive the dangerous journey inward toward formal Great House territory
 
 ---
 
@@ -2112,6 +2219,8 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 | player-runaway | Pilot | player | player | player | swift-exit |  |
 | player-deserter | Pilot | player | player | player | grey-veil |  |
 | player-scavenger | Pilot | player | player | player | hullbreaker-stripped |  |
+| convoy-hauler | Convoy Hauler | neutral | neutral | trader | trader-convoy |  |
+| militia-officer | Militia Officer | neutral | neutral | militia | militia-patrol |  |
 | scavenger-pilot | Scavenger Pilot | scavenger | hostile | stalker | light-fighter |  |
 | scavenger-gunner | Scavenger Gunner | scavenger | hostile | kiter | armed-hauler |  |
 | salvage-lord | Salvage Lord | scavenger | hostile | standoff | salvage-mothership |  |
@@ -2123,34 +2232,32 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 | pale_widow | "Pale Widow" | scavenger | hostile | standoff | salvage-mothership |  |
 | runt_cassin | "Runt" Cassin | scavenger | hostile | kiter | armed-hauler |  |
 | six_wire_pol | "Six-Wire" Pol | scavenger | hostile | stalker | light-fighter |  |
-| convoy-hauler | Convoy Hauler | neutral | neutral | trader | trader-convoy |  |
-| militia-officer | Militia Officer | neutral | neutral | militia | militia-patrol |  |
 
 ## Ships
 
 | ID | Label | Hull | Name | Modules | Unmanned |
 | --- | --- | --- | --- | --- | --- |
-| hullbreaker | Hullbreaker | onyx-tug | Hullbreaker | standard-rocket-s, autocannon, hydrogen-fuel-cell, null, null |  |
 | crash-dummy | Crash Dummy | onyx-tug | Crash Dummy | standard-rocket-s, autocannon, hydrogen-fuel-cell, null, null |  |
-| swift-exit | Swift Exit | maverick-courier | Swift Exit | vintage-magplasma-s, null, null |  |
 | grey-veil | Grey Veil | cutter-scout | Grey Veil | milspec-rocket-s, autocannon, null, fission-reactor-s, null |  |
+| hullbreaker | Hullbreaker | onyx-tug | Hullbreaker | standard-rocket-s, autocannon, hydrogen-fuel-cell, null, null |  |
 | hullbreaker-stripped | Hullbreaker (Stripped) | onyx-tug | Hullbreaker | standard-rocket-s, null, hydrogen-fuel-cell, salvage-scanner, null |  |
-| light-fighter | Light Fighter | maverick-courier | Light Fighter | standard-rocket-s, autocannon, null |  |
+| swift-exit | Swift Exit | maverick-courier | Swift Exit | vintage-magplasma-s, null, null |  |
 | armed-hauler | Armed Hauler | g100-hauler | Armed Hauler | standard-rocket-s, autocannon, lance-st, null |  |
-| salvage-mothership | Salvage Mothership | garrison-frigate | Salvage Mothership | standard-rocket-l, cannon, rocket-l:ht, null, null |  |
-| grave-clan-ambusher | Grave-Clan Ambusher | maverick-courier | Grave-Clan Ambusher | makeshift-thermal-s, autocannon, rocket-s:ht |  |
-| trader-convoy | Trader Convoy | g100-hauler | Trader Convoy | cruising-ion-s |  |
-| militia-patrol | Militia Patrol | garrison-frigate | Militia Patrol | standard-rocket-s |  |
 | drone-control-frigate | Drone Control Frigate | garrison-frigate | Drone Control Frigate | standard-rocket-l, lance-st, null | yes |
+| grave-clan-ambusher | Grave-Clan Ambusher | maverick-courier | Grave-Clan Ambusher | makeshift-thermal-s, autocannon, rocket-s:ht |  |
+| light-fighter | Light Fighter | maverick-courier | Light Fighter | standard-rocket-s, autocannon, null |  |
+| militia-patrol | Militia Patrol | garrison-frigate | Militia Patrol | standard-rocket-s |  |
+| salvage-mothership | Salvage Mothership | garrison-frigate | Salvage Mothership | standard-rocket-l, cannon, rocket-l:ht, null, null |  |
 | snatcher-drone | Snatcher Drone | maverick-courier | Snatcher Drone |  | yes |
+| trader-convoy | Trader Convoy | g100-hauler | Trader Convoy | cruising-ion-s |  |
 
 ## Stations
 
 | ID | Name | Faction | Services | DockRadius |
 | --- | --- | --- | --- | --- |
-| the-coil | The Coil | salvage_lords | repair, trade |  |
-| kells-stop | Kell's Stop | neutral | fuel, repair |  |
 | ashveil-anchorage | Ashveil Anchorage | neutral | repair, trade |  |
+| kells-stop | Kell's Stop | neutral | fuel, repair |  |
+| the-coil | The Coil | salvage_lords | repair, trade |  |
 
 ## Derelicts
 
@@ -2167,87 +2274,81 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 
 ## GameManager (`engine/game.js`)
 
-The central orchestrator that owns all game state. It holds the flat `entities[]` and `ships[]` lists, instantiates every subsystem (`salvage`, `repair`, `collision`, `bounty`, `weaponSys`, `interaction`, `navigation`, `reputation`), and drives the per-tick `update(dt)` / `render()` cycle. On each tick it sequences: input processing → module/fuel/power updates → entity updates → AI → weapon reloads → collision → loot pickups → camera follow → inactive purge. It also routes origin-selection at game start, handles the player death screen, forwards `PlayerInventory` state as top-level accessors (`game.scrap`, `game.fuel`, etc.), and processes Concord drone spawn queues from entity `_spawnQueue` fields.
+The central orchestrator for the entire game. It owns the canonical `entities[]`, `ships[]`, and `characters[]` arrays, holds all subsystem instances, and drives the main `update(dt)` / `render()` cycle. Each tick it processes input, ticks fuel consumption and power balance, runs AI, advances all subsystems (salvage, repair, collision, weapons, interaction, navigation), fires damage-effect particles, and purges inactive entities. It also manages the origin-selection flow (production mode) and the player death screen. Forwarding accessors (`game.scrap`, `game.fuel`, etc.) delegate to `PlayerInventory` so external code has a single consistent surface.
 
-## Game Loop (`engine/loop.js`)
+## Loop (`engine/loop.js`)
 
-A fixed-timestep loop running at 60 ticks/sec. It accumulates wall-clock time in an accumulator and drains it in `TICK_DURATION`-sized steps, capped at 5 catchup ticks to prevent spiral-of-death after tab focus restore. After all simulation ticks it calls `game.render()` once, then schedules the next frame via `requestAnimationFrame`.
+A fixed-timestep game loop built on `requestAnimationFrame`. It accumulates elapsed wall-clock time and drains it in 60-tick-per-second increments (dt = 1/60 s), capping at five catch-up ticks to prevent the spiral-of-death after a tab loses focus. After ticking, it calls `game.render()` once per animation frame regardless of how many update ticks ran.
 
 ## Camera (`engine/camera.js`)
 
-Handles world↔screen coordinate transforms and smooth following. It exponential-lerps toward the player each tick (`follow()`), supports a separate `panTo()` lerp for docked cinematic pans, and manages a `_targetZoom` that smoothly interpolates to actual `zoom` each frame. Also exposes `pushZoom()`/`popZoom()` for temporary zoom overrides and a visibility culling check (`isVisible()`). The Renderer and HUD sub-renderers call `worldToScreen()` / `screenToWorld()` to place all canvas elements.
+Manages the world-to-screen transform: a world-space position `(x, y)` and a `zoom` level. `follow(target, dt)` smoothly lerps toward the player using exponential easing. `panTo` / `updatePan` support station-docking cinematic pans. `applyWheel` + `updateZoom` do the same smoothed lerp for zoom changes. `worldToScreen` / `screenToWorld` are the canonical coordinate converters used by the renderer, HUD, and input system. `isVisible` performs frustum culling.
 
-## Input (`engine/input.js`)
+## InputHandler (`engine/input.js`)
 
-A singleton `InputHandler` that decouples browser events from game ticks. It buffers `keydown` events into `_pendingPress` and moves them to `_justPressed` on each `tick()` call, so `wasJustPressed()` is guaranteed true for exactly one tick. It also tracks continuous key holds (`isDown()`), mouse position and buttons, and scroll wheel delta — all reset each tick. `GameManager.update()` calls `input.tick()` as its first action each frame.
+A singleton that captures raw browser events (keydown/up, mousemove, mousedown/up, wheel) and exposes a clean per-tick API. `tick()` — called once at the top of each `GameManager.update` — flushes pending key-presses into `_justPressed`, so `wasJustPressed(key)` returns true exactly once per press. `isDown(key)` tests held state. `mouseWorld(camera)` converts the current screen-space cursor position to world coordinates via the Camera.
 
 ## Renderer (`engine/renderer.js`)
 
-Clears the canvas each frame and composites: parallax starfield (3 pre-rendered offscreen layers with parallax scrolling), background terrain elements, a two-pass entity draw (scenery then ships, visibility-culled), tactical UI overlays (health pips, lead indicators, enemy telemetry, weapon range circle, beam rendering), and CRT post-processing (scanlines + vignette from cached offscreen canvases, phosphor flicker, edge-glow warnings at flank speed or critical hull). Finally renders the HUD and crosshair on top.
+Clears the canvas and performs the full render pass each frame. It applies the camera transform, draws a procedural starfield (parallax-scrolled), then iterates `game.entities` to call each entity's `render(ctx, camera)` method. After world-space rendering it delegates to the HUD for all overlay drawing. The renderer also handles the map background layers defined per-map and feeds the particle pool's draw pass.
 
 ## HUD (`engine/hud.js`)
 
-A thin orchestrator that delegates canvas rendering to four sub-renderers (`minimap`, `mapView`, `navIndicator`, `shipAnchored`, `prompts`) and manages a DOM-based bottom strip. The bottom strip is built once into `#hud-bottom` and updated every frame via `_updateBottomStrip()` — it shows weapon info, armor arc pips, throttle pips, hull/fuel/cargo seg-bars, power balance, and scrap. Also manages floating pickup text (DOM animated entries) and kill log entries, plus a tooltip system.
-
----
+A thin orchestrator (~75 lines) for all player-facing UI. The bottom strip (`#hud-bottom`) is a DOM element updated via `_updateBottomStrip()` each frame with scrap, fuel, and cargo values. Canvas sub-renderers in `engine/hud/` handle: minimap + zone/nav info, full-screen map overlay, edge-of-screen waypoint arrow, weapon panels + throttle + integrity strip, and dock/repair/salvage prompts. Floating pickup texts and kill notifications are queued through `addPickupText` / `addKill` and rendered in world space.
 
 ## BountySystem (`engine/systems/bountySystem.js`)
 
-Manages active bounty contracts. `acceptBounty()` spawns the target entity into the world and adds it to `activeBounties[]`. `onEnemyKilled()` / `onEnemyCrippled()` marks matching bounties completed and shows pickup text. `collectCompleted()` is called on station dock to pay out scrap rewards and grant reputation. `updateExpiry()` checks each active bounty against `totalTime` and deactivates the target entity when a contract expires.
+Tracks active bounty contracts in `activeBounties[]`. `acceptBounty()` spawns the target ship/NPC into the world and removes the contract from the station's list. `onEnemyKilled` / `onEnemyCrippled` check whether the killed/crippled entity matches any active bounty and mark it completed, showing a HUD pickup text. `collectCompleted()` — called on station dock — sums rewards, pays out scrap, and grants a reputation bonus. `updateExpiry()` ticks contract timers and deactivates expired target entities.
 
 ## CollisionSystem (`engine/systems/collisionSystem.js`)
 
-Runs three passes each tick: (1) projectile-vs-projectile interception for `canIntercept` vs `isInterceptable` pairs; (2) beam-vs-projectile interception for `canInterceptBeam` weapons; (3) main projectile-vs-ship pass handling direct hits, contact-detonating rockets, AoE explosions, and plasma falloff. On any hit it calls `takeDamage()`, triggers module breach via `RepairSystem.maybeBreachModule()`, applies reputation penalties for neutral ship attacks, and fires `onEnemyKilled` / `onEnemyCrippled` callbacks into `BountySystem`.
+Handles all damage interactions each tick. It sweeps projectiles against ships (circle overlap), handles beam weapons via ray-cast interception, runs main ship-vs-ship collisions, and resolves AoE explosions. On a hit it applies armor/hull damage via the ship's arc-based damage routing, fires particles via the pool, and invokes the `onEnemyKilled` / `onEnemyCrippled` callbacks (which flow through to `BountySystem` and `ReputationSystem`). Returns `{ newEntities: [] }` for any secondary spawns (e.g. explosion entities).
 
 ## InteractionSystem (`engine/systems/interactionSystem.js`)
 
-Tracks `nearbyStation` and `nearbyDerelict` each tick. `updateDerelicts()` fades in lore text as the player approaches, sets `canSalvage` when stopped, and triggers `salvage.start()` on E press. `checkDocking()` detects a station's docking zone, checks reputation access, collects any completed bounties, and opens the `NarrativePanel`. `checkLootPickups()` auto-collects nearby `LootDrop` entities into the player's inventory, enforcing cargo capacity limits.
+Owns `nearbyStation` and `nearbyDerelict` proximity state. `updateDerelicts` scans entity distances each tick and updates the nearest derelict reference plus HUD prompt visibility. `checkDocking` detects the player pressing E near a station, triggers the `NarrativePanel` conversation flow, and returns `{ isDocked: true }` when docking begins. `checkLootPickups` sweeps inactive loot-drop entities near the player, consuming them into `PlayerInventory` and emitting pickup texts.
 
 ## NavigationSystem (`engine/systems/navigationSystem.js`)
 
-Owns the active waypoint (`{ x, y, name, entity }`) and full-screen map state (open/closed, zoom, pan, drag). Provides `distanceTo()`, `bearingTo()`, `etaSeconds()` helpers read by HUD sub-renderers. `fuelRangeRadius()` estimates max travel distance from current fuel/burn/speed. `currentZone()` scans the map's zone list to find the innermost zone containing the player, used by the minimap for zone-name display.
+Owns waypoint state (`{ x, y, name, entity }`), map open/close toggle, and map zoom/pan state. `setWaypoint` / `clearWaypoint` manage the active destination. `distanceTo` / `bearingTo` / `etaSeconds` expose computed nav values consumed by the HUD's nav indicator and minimap. `toggleMap` / `closeMap` control the full-screen map overlay. `currentZone()` returns the zone record containing the player's current position by checking `game.mapZones` bounding rectangles.
 
 ## ParticlePool (`engine/systems/particlePool.js`)
 
-A fixed-size pool of 200 particle slots to avoid per-explosion allocation. `emit()` fills slots with position, velocity, color, life, and radius. Named presets — `explosion()`, `rocketTrail()`, `rocketImpact()`, `ping()` — wrap `emit()` with appropriate palettes. A separate `_rings[]` array holds expanding ring effects (also used by explosions and pings). `update(dt)` advances positions and ages; `render()` uses `DrawBatch` to flush all particles and rings in minimal canvas state changes.
+A fixed-slot object pool of `Particle` instances that avoids allocation during gameplay. Preset emitters — `explosion(x, y, count)`, `engineTrail(...)`, `ping(x, y)`, and the generic `emit(x, y, count, opts)` — activate dormant slots with randomized velocity, color, lifetime, and radius. Each tick `update(dt)` advances all active particles and deactivates expired ones; the renderer calls the pool's draw method to paint them all in a single canvas pass.
 
 ## PlayerInventory (`engine/systems/playerInventory.js`)
 
-Owns all mutable player resource state: `scrap`, `fuel`/`fuelMax`, `cargo` (commodity map), `modules[]` (uninstalled), `weapons[]` (unequipped), `ammo` (reserve pool keyed by ammo ID), and live telemetry (`fuelBurnRate`, `reactorOutput`, `reactorDraw`). The computed `totalCargoUsed` getter sums mass from scrap, commodities, installed weapon ammo, reserve ammo, and cargo modules/weapons. `GameManager` exposes forwarding accessors so external code can read `game.scrap` etc. without knowing about the inventory object.
+The single source of truth for all player resource state: `scrap`, `fuel`/`fuelMax`, `cargo[]`, `modules[]`, `weapons[]`, `ammo{}`, `fuelBurnRate`, `reactorOutput`, `reactorDraw`. `bindPlayer(ship)` links it to the player ship. `initFromPlayer(ship)` seeds initial values from the ship's starting loadout. `GameManager` exposes forwarding getters/setters so the rest of the codebase can read `game.scrap` without knowing about the inventory class.
 
 ## RepairSystem (`engine/systems/repairSystem.js`)
 
-Manages field repair state. `start()` / `cancel()` toggle the `isRepairing` flag. `update(dt)` runs three parallel repair tracks — armor arc restoration (spending scrap per point), module condition improvement (stepping through `good → worn → faulty → damaged → destroyed`), and hull repair (requires Engineering Bay module). `maybeBreachModule()` is called by CollisionSystem on hull hits below a threshold: it selects a candidate module in the hit arc and probabilistically degrades its condition, applying the module's own `breachMultiplier`.
+Owns repair state (`isRepairing`, accumulators). `start()` begins a repair session (requires throttle 0 and stationary). `update(dt, player, scrap, opts)` ticks armor restoration at 0.5 HP/s (1 scrap/pt) and, with an engineering bay equipped, hull and module repair; returns `{ scrapSpent }` so `GameManager` can deduct it from `PlayerInventory`. `cancel()` ends the session. `hasModulesToRepair(player)` checks for damaged/faulty module conditions. `maybeBreachModule(ship)` is called by `CollisionSystem` on heavy hits to probabilistically damage a module in the struck arc.
 
 ## ReputationSystem (`engine/systems/reputation.js`)
 
-Tracks seven faction standings on a −100 to +100 scale. `change(faction, delta)` clamps values. `onKill(faction)` applies a kill penalty to the target faction and a rival bonus to their rival via `RIVALS` data. `getLevel()` converts a numeric standing to a display tier (Hostile/Wary/Neutral/Trusted/Allied). `isHostile()` gates station docking; `isAllied()` is available for future use. Used by CollisionSystem (neutral attack penalty), BountySystem (bounty completion bonus), and InteractionSystem (docking check).
+Maintains a `standings` map keyed by faction ID, each in the range [-100, 100]. `change(faction, delta)` clamps and applies a delta. `onKill(faction)` applies a kill penalty to the target's faction and a rival bonus to any configured rival faction. `getLevel(faction)` buckets a standing into a human-readable tier (Hostile / Wary / Neutral / Trusted / Allied). `isHostile` / `isAllied` are boolean threshold checks used by the AI and docking systems to decide how NPCs react to the player.
 
 ## SalvageSystem (`engine/systems/salvageSystem.js`)
 
-Controls timed salvage of derelict ships. `start()` sets `isSalvaging`, locks player throttle to 0, and computes `salvageTotal` from the derelict's remaining armor. `update(dt)` advances `salvageProgress`; on completion `_complete()` generates loot drops: scrap from armor, fuel proportional to armor ratio, ammo from each weapon's magazine, and — if a Salvage Bay module is installed — extracted module/weapon drops from the derelict's slots. Returns `{ lootEntities, particlePos }` to `GameManager` which pushes the drops into `entities[]`.
+Owns the salvage progress state (`isSalvaging`, `salvageProgress`, `salvageTotal`, `salvageTarget`). `start(derelict)` begins a timed salvage operation. `update(dt, opts)` advances `salvageProgress`; when complete it generates loot entities from the derelict's loot table, marks the derelict `salvaged`, and returns `{ lootEntities, particlePos }` for `GameManager` to push into the entity list. `cancel()` ends early. The `has_salvage_bay` capability flag (read from the player ship) improves yield or speed.
 
 ## WeaponSystem (`engine/systems/weaponSystem.js`)
 
-Handles player weapon state that doesn't fit on the weapon objects themselves. `updateReloads(dt)` ticks `_reloadTimer` on each player weapon and refills magazines from the reserve ammo pool when the timer expires. `manualReload()` starts a reload on weapons that are empty and have reserve ammo. `cycleAmmo()` dumps the current magazine back to reserves, switches `currentAmmoId` to the next accepted type, and starts a reload. `updateGuidance()` steers guided projectiles: wire-guided toward the mouse world position, heat-seeking toward the nearest active hostile.
-
----
+Manages per-weapon reload timers, ammo cycling, and guided projectile targeting. `updateReloads(dt, player, ammo)` ticks each weapon's cooldown. `manualReload(player, ammo)` forces an immediate reload if ammo is available. `cycleAmmo(weapon, ammo, hud, player)` rotates through a weapon's `acceptedAmmoTypes` list. `updateGuidance(entities, ships, mouseWorld)` updates homing projectiles — steering them toward locked targets or the cursor position — and is called once per tick by `GameManager` after projectiles have been spawned.
 
 ## Ship AI (`engine/ai/shipAI.js`)
 
-Single `updateShipAI(ship, player, entities, dt)` entry point dispatching on `ship.relation`. Hostile ships first check aggro range, then flee at low hull, otherwise execute a combat behavior read from `ship.ai.combatBehavior`: `stalker` (chase aft arc), `kiter` (maintain distance, orbit), `standoff` (hold range, fire primaries + secondaries), `lurker` (hide at a cover point, pounce on neutral traders, escalate to player if spotted), `flee` (run). Non-hostile ships run `passiveBehavior`: `trader` (A↔B route with dwell waits) or `militia` (fixed-radius orbit). All state lives on `ship.ai.*` fields (`_aggro`, `_patrolAngle`, `_lurkerState`, etc.) so templates remain stateless.
-
----
-
-## Entity (`engine/entities/entity.js`)
-
-Minimal base class for all world objects. Holds `x`, `y`, `vx`, `vy`, `rotation`, `active`, and `entityType`. Provides no-op `update()`, `render()`, `getBounds()`, and `onDestroy()` stubs for subclasses to override. The `entityType` string (from the `ENTITY` enum) is the canonical type discriminator — `instanceof` checks are banned to avoid import cycles.
+A single unified AI tick function `updateShipAI(ship, player, entities, dt)` that dispatches on `ship.relation` and `ship.ai.combatBehavior` / `ship.ai.passiveBehavior`. For hostile ships: **stalker** closes aggressively, **kiter** maintains optimal range while strafing, **standoff** fires from maximum range, **lurker** uses cover and ambushes, **flee** runs. For neutral ships: **trader** follows a two-point trade route between `_tradeRouteA` and `_tradeRouteB`; **militia** orbits a center point. All AI runtime state lives on `ship.ai.*` fields (e.g. `_aggro`, `_patrolAngle`, `_lurkerState`). Aggro/deaggro ranges, home-position patrol, and target selection are handled uniformly.
 
 ## Ship (`engine/entities/ship.js`)
 
-Extends Entity with all ship-specific state: quad-arc armor (`armorArcs` / `armorArcsMax`), hull integrity, throttle/speed/acceleration/turn, weapons list, module slots, engine trails, and damage effect timers. Faction/relation/ai are delegated to `this.captain` when set, falling back to `_machine*` fields. `recalcTW()` derives all movement stats purely from installed engine modules' thrust-to-weight ratio. `takeDamage()` routes damage through the hit arc (armor absorption → hull bleed, with aft arc multiplier), triggers module breaches, and converts ships to derelicts at ≤10% hull rather than destroying them outright. `_drawShape()` and `_drawModules()` handle hull silhouette and per-mount module icon rendering, with arc-colored health overlays for the player ship.
+The core game entity for all flying vessels. Extends `Entity` and adds armor/hull/weapons/fuel, physics (thrust-to-weight derived from engine modules via `recalcTW()`), mount points, and the `captain` getter/setter delegation pattern. Hull subclasses in `data/hulls/` override `_drawShape(ctx)` and define `MOUNT_POINTS[]`. `addWeapon()` registers weapons into primary/secondary arrays. `fireWeapons()` / `fireSecondary()` / `fireAutoWeapons()` produce `Projectile` entities. `takeDamage(amount, arc)` routes hits to the correct armor facing before hull bleedthrough. `isDerelict` is a boolean getter checking `crew === 0`. Getter/setter pairs for `faction`, `relation`, and `ai` delegate to `this.captain` when present, falling back to `_machineFaction` / `_machineRelation` / `_machineAi` for unmanned Concord ships.
+
+## Entity (`engine/entities/entity.js`)
+
+The minimal base class for every object in `game.entities[]`. Carries world position `(x, y)`, velocity `(vx, vy)`, `rotation`, `active` flag, and `entityType` string (set from `data/enums.js` — never use `instanceof`). Declares the polymorphic interface: `update(dt)`, `render(ctx, camera)`, `getBounds()`, and `onDestroy()`. All concrete entity types (Ship, Station, Projectile, LootDrop, Particle, Planet) extend this class and override these methods.
 
 ## Character (`engine/entities/character.js`)
 
-Represents a named person who pilots a ship. Constructed with id, name, faction, relation, behavior, and flavorText; the `behavior` string is resolved against `AI_TEMPLATES` and copied fresh into `this.ai` so each character has independent AI state. `boardShip(ship)` sets `ship.captain = this`, causing the ship's faction/relation/ai getters to delegate to the character. `leaveShip()` clears `ship.captain`, reverting the ship to its `_machine*` defaults. Concord machines are unmanned — no Character instance, fields set directly on the ship.
+Represents a person who can pilot a ship. Holds `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, and a deep-copied `ai` template from `AI_TEMPLATES` so each character has independent AI state. `boardShip(ship)` sets `ship.captain = this`, enabling the ship's faction/relation/ai getters to delegate here. `leaveShip()` clears `ship.captain`, reverting the ship to its machine defaults. Tracked in `game.characters[]`; `game.playerCharacter` is the player's instance. Concord machines have no Character — their faction/relation/ai are set directly via `_machine*` fields.
 
