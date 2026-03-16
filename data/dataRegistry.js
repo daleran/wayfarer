@@ -34,6 +34,7 @@ export const CONTENT = {
   modules: {},        // id → { category, create() }
   weapons: {},        // id → { create(), slug, label, flavorText, projColor, ... }
   planets: {},        // id → { backgroundData(), name, ... }
+  history: {},        // id → { date, text, related?, tags? }
 };
 
 /** Register a content entry into the appropriate CONTENT sub-table. */

@@ -25,6 +25,7 @@ import {
 import { ReputationSystem } from './systems/reputation.js';
 import { PlayerInventory } from './systems/playerInventory.js';
 import { NavigationSystem } from './systems/navigationSystem.js';
+import { HistorySystem } from './systems/historySystem.js';
 import { createShip, createNPC } from './entities/registry.js';
 
 export class GameManager {
@@ -64,6 +65,7 @@ export class GameManager {
     this.weaponSys = new WeaponSystem();
     this.interaction = new InteractionSystem();
     this.navigation = new NavigationSystem();
+    this.history = new HistorySystem();
 
     // Pan mode (editor sets this via EditorOverlay)
     this.isPanMode = false;

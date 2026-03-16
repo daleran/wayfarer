@@ -22,6 +22,7 @@ import.meta.glob([
   './ships/player/*.js',
   './characters/player.js',
   './conversations/*.js',
+  './history/*.js',
   './zones/**/!(manifest).js',
 ], { eager: true });
 

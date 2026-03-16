@@ -12,6 +12,11 @@ export const ENTITY = Object.freeze({
   LOOT:       'loot',
   EXPLOSION:  'explosion',
   ENTITY:     'entity',
+  CHARACTER:  'character',
+  FACTION:    'faction',
+  ZONE:       'zone',
+  PLANET:     'planet',
+  LOCATION:   'location',
 });
 
 /** Ship/station relation to the player. */
