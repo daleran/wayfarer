@@ -102,7 +102,7 @@ function _buildWeaponItems() {
     return {
       id: entry.slug,
       label: entry.label,
-      file: `js/modules/weapons/`,
+      file: 'data/modules/weapons.js',
       type: 'weapon',
       flavorText: entry.flavorText ?? null,
       create: entry.create,
@@ -117,6 +117,14 @@ function _buildWeaponItems() {
 
 // ─── MODULE ITEMS (from registry) ─────────────────────────────────────────────
 
+const MODULE_CAT_FILES = {
+  ENGINE: 'data/modules/engines.js',
+  WEAPON: 'data/modules/weapons.js',
+  UTILITY: 'data/modules/utilities.js',
+  SENSOR: 'data/modules/sensors.js',
+  POWER: 'data/modules/reactors.js',
+};
+
 function _buildModuleItems() {
   return Object.entries(CONTENT.modules).map(([id, entry]) => {
     const sample = entry.create();
@@ -124,7 +132,7 @@ function _buildModuleItems() {
     return {
       id,
       label: sample.displayName || id,
-      file: 'js/modules/shipModule.js',
+      file: MODULE_CAT_FILES[entry.category] || 'data/modules/',
       type: 'module',
       category: entry.category,
       mountSize: isLarge ? 'large' : 'small',

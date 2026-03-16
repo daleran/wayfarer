@@ -1,5 +1,5 @@
 import { Ship } from '@/entities/ship.js';
-import { polygonFill, polygonStroke, lines, pulse } from '@/rendering/draw.js';
+import { polygonFill, polygonStroke, lines } from '@/rendering/draw.js';
 import { registerContent } from '@data/dataRegistry.js';
 
 const HULL_MULT   = 1.2;   // 240 hp — military scout frame
@@ -64,24 +64,6 @@ const COCKPIT = [
   { x: -3, y: -3 },
 ];
 
-// Engine housing — recessed block at stern
-const ENGINE_HOUSING = [
-  { x: -3.5, y: 14 },
-  { x: -4.5, y: 15 },
-  { x: -4.5, y: 20 },
-  { x: 4.5, y: 20 },
-  { x: 4.5, y: 15 },
-  { x: 3.5, y: 14 },
-];
-
-// Engine bell nozzle
-const NOZZLE_BELL = [
-  { x: -2.5, y: 20.5 },
-  { x: 2.5, y: 20.5 },
-  { x: 3.5, y: 25 },
-  { x: -3.5, y: 25 },
-];
-
 // Detail lines
 const NOSE_SPINE = [{ x: 0, y: -22 }, { x: 0, y: -8 }];
 const HULL_SEAM = [{ x: -5, y: -10 }, { x: 5, y: -10 }];
@@ -89,8 +71,8 @@ const AFT_SEAM = [{ x: -5, y: 12 }, { x: 5, y: 12 }];
 const WING_SEAM_STBD = [{ x: 7, y: -2 }, { x: 14, y: 0 }];
 const WING_SEAM_PORT = [{ x: -7, y: -2 }, { x: -14, y: 0 }];
 
-// Single center engine trail origin — at bell exit
-const ENGINE_POS = [{ x: 0, y: 25 }];
+// Single center engine trail origin — at stern face
+const ENGINE_POS = [{ x: 0, y: 18 }];
 
 // Mount point positions — index i maps to moduleSlots[i].
 // Slots: [engine, bow weapon, stbd weapon, port reactor, bow sensor]
@@ -171,24 +153,7 @@ export class CutterClassScout extends Ship {
     lines(ctx, [HULL_SEAM, AFT_SEAM], this.hullStroke, 1, 0.25);
     lines(ctx, [WING_SEAM_STBD, WING_SEAM_PORT], this.hullStroke, 1, 0.2);
 
-    // 5. Engine assembly
-    polygonFill(ctx, ENGINE_HOUSING, this.hullStroke, 0.4);
-    polygonStroke(ctx, ENGINE_HOUSING, this.hullStroke, 0.8, 0.5);
-
-    polygonFill(ctx, NOZZLE_BELL, this.hullStroke, 0.5);
-    polygonStroke(ctx, NOZZLE_BELL, this.hullStroke, 0.8, 0.6);
-
-    // 6. Exhaust plume (throttle-scaled)
-    if (this.throttleLevel > 0) {
-      const pLen = 4 + this.throttleLevel * 5;
-      const pAlpha = (0.3 + this.throttleLevel * 0.3) * pulse(0.012, 0.7, 1.0);
-      const plume = [
-        { x: -3, y: 25 },
-        { x: 3, y: 25 },
-        { x: 0, y: 25 + pLen },
-      ];
-      polygonFill(ctx, plume, this.engineColor, pAlpha);
-    }
+    // 5. (engine visuals handled by module drawAtMount)
   }
 
   getBounds() {

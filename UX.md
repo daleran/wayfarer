@@ -95,6 +95,8 @@ Below minimap: zone name (dim text), waypoint destination + distance + ETA (ambe
 ### Module Visuals on Hull
 Modules render at defined mount points on the ship hull, drawn after `_drawShape` in ship-local coordinates. Each icon is 4–8px, stroked in `conditionColor(mod.condition)` with a dim fill. Destroyed modules show as dim outlines only (alpha 0.2). Empty slots render as a faint `DIM_OUTLINE` ring.
 
+**Rule: No engine graphics in hull `_drawShape()`.** Ship hulls must NOT draw engine housings, bell nozzles, or exhaust plumes as part of their hull shape. Engine visuals are the responsibility of the engine module's `drawAtMount()` method, rendered at the mount point. This keeps engine appearance tied to the installed module and avoids doubling up visuals.
+
 | Category | Shape | Notes |
 |---|---|---|
 | Engine | Trapezoid (wide top, narrow bottom) | Nozzle silhouette |

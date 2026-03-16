@@ -1,5 +1,5 @@
 import { Ship } from '@/entities/ship.js';
-import { polygonFill, polygonStroke, lines, pulse } from '@/rendering/draw.js';
+import { polygonFill, polygonStroke, lines } from '@/rendering/draw.js';
 import { registerContent } from '@data/dataRegistry.js';
 
 const HULL_MULT   = 0.85;  // 170 hp — solid everyday frame
@@ -68,28 +68,6 @@ const COCKPIT = [
   { x: -3, y: 4 },
 ];
 
-// Engine assembly — Saturn V F1-style: chamfered housing box + bell nozzle
-// Housing anchored at stern face (y=14), bell hangs below with a gap
-
-// Thrust structure housing — chamfered rectangle flush with stern
-// Absolute coords (not offset by ENGINE_Y)
-const ENGINE_HOUSING = [
-  { x: -2.2, y: 12 },   // port top corner (chamfer)
-  { x: -3, y: 13 },   // port upper
-  { x: -3, y: 17 },   // port lower
-  { x: 3, y: 17 },   // starboard lower
-  { x: 3, y: 13 },   // starboard upper
-  { x: 2.2, y: 12 },   // starboard top corner (chamfer)
-];
-
-// Bell nozzle — 0.5px gap below housing, narrow throat flaring to wide exit
-const NOZZLE_BELL = [
-  { x: -2, y: 17.5 },  // throat port
-  { x: 2, y: 17.5 },  // throat starboard
-  { x: 3.3, y: 23.5 },  // bell exit starboard
-  { x: -3.3, y: 23.5 },  // bell exit port
-];
-
 // Detail lines
 const NOSE_SPINE = [{ x: 0, y: -16 }, { x: 0, y: 0 }];
 const HULL_SEAM = [{ x: -4, y: 0 }, { x: 4, y: 0 }];
@@ -97,8 +75,8 @@ const COCKPIT_SLIT = [{ x: -2.5, y: 2 }, { x: 2.5, y: 2 }];
 const WING_SEAM_STBD = [{ x: 6, y: 1 }, { x: 11, y: 2 }];
 const WING_SEAM_PORT = [{ x: -6, y: 1 }, { x: -11, y: 2 }];
 
-// Single center engine trail origin — at bell exit
-const ENGINE_POS = [{ x: 0, y: 23.5 }];
+// Single center engine trail origin — at stern face
+const ENGINE_POS = [{ x: 0, y: 14 }];
 
 // Mount point positions — index i maps to moduleSlots[i].
 // LightFighter/GraveClanAmbusher slots: [engine, autocannon, rocket/null]
@@ -178,24 +156,7 @@ export class MaverickCourier extends Ship {
     lines(ctx, [COCKPIT_SLIT], this.hullStroke, 1, 0.4);
     lines(ctx, [WING_SEAM_STBD, WING_SEAM_PORT], this.hullStroke, 1, 0.2);
 
-    // 5. Engine assembly — on top of hull (F1-style housing + bell)
-    polygonFill(ctx, ENGINE_HOUSING, this.hullStroke, 0.4);
-    polygonStroke(ctx, ENGINE_HOUSING, this.hullStroke, 0.8, 0.5);
-
-    polygonFill(ctx, NOZZLE_BELL, this.hullStroke, 0.5);
-    polygonStroke(ctx, NOZZLE_BELL, this.hullStroke, 0.8, 0.6);
-
-    // 6. Exhaust plume (throttle-scaled)
-    if (this.throttleLevel > 0) {
-      const pLen = 5 + this.throttleLevel * 6;
-      const pAlpha = (0.3 + this.throttleLevel * 0.3) * pulse(0.012, 0.7, 1.0);
-      const plume = [
-        { x: -2.8, y: 23.5 },
-        { x: 2.8, y: 23.5 },
-        { x: 0, y: 23.5 + pLen },
-      ];
-      polygonFill(ctx, plume, this.engineColor, pAlpha);
-    }
+    // 5. (engine visuals handled by module drawAtMount)
   }
 
   getBounds() {

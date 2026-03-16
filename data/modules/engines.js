@@ -1,5 +1,5 @@
 import { registerData, registerContent, ENGINES } from '../dataRegistry.js';
-import { EngineModule } from '@/modules/shipModule.js';
+import { EngineModule, MakeshiftThermalModule, VintageMagplasmaSmall, VintageMagplasmaLarge, StandardRocketSmall, StandardRocketLarge, CruisingIonSmall, CruisingIonLarge, MilspecRocketSmall, MilspecRocketLarge } from '@/modules/shipModule.js';
 
 registerData(ENGINES, {
   'makeshift-thermal-s': {
@@ -103,7 +103,21 @@ registerData(ENGINES, {
   },
 });
 
+// Custom module classes for engines with unique visuals
+const ENGINE_CLASSES = {
+  'makeshift-thermal-s': MakeshiftThermalModule,
+  'vintage-magplasma-s': VintageMagplasmaSmall,
+  'vintage-magplasma-l': VintageMagplasmaLarge,
+  'standard-rocket-s': StandardRocketSmall,
+  'standard-rocket-l': StandardRocketLarge,
+  'cruising-ion-s': CruisingIonSmall,
+  'cruising-ion-l': CruisingIonLarge,
+  'milspec-rocket-s': MilspecRocketSmall,
+  'milspec-rocket-l': MilspecRocketLarge,
+};
+
 // Self-register into CONTENT.modules
 for (const id of Object.keys(ENGINES)) {
-  registerContent('modules', id, { category: 'ENGINE', create: () => new EngineModule(id) });
+  const Cls = ENGINE_CLASSES[id];
+  registerContent('modules', id, { category: 'ENGINE', create: Cls ? () => new Cls() : () => new EngineModule(id) });
 }
