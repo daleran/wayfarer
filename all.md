@@ -62,7 +62,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 ### `editor.html` — Editor / Playtest
 
-- **Entry:** `src/editor-main.js`
+- **Entry:** `engine/editor-main.js`
 - **Maps:** `data/maps/` — each file exports `MAP`; pass `?map=<name>` to select
 - **Default map:** `arena` — Pale at center, six derelicts in a hex ring, clean combat sandbox
 
@@ -83,7 +83,7 @@ Two harnesses. Both run on the same `startLoop` — each implements `update(dt)`
 
 ### `editor.html` — DOM Panels
 
-Editor UI chrome is DOM-based (not canvas). Classes in `src/ui/editorPanels.js`, styled by `css/editor.css`:
+Editor UI chrome is DOM-based (not canvas). Classes in `engine/ui/editorPanels.js`, styled by `css/editor.css`:
 - **`EditorHUDBar`** — fixed top status bar with hotkey segments
 - **`EditorSidebar`** — right panel for object browsing/placement (toggle: `-` key)
 - **`EditorItemMenu`** — left panel for adding items to cargo (toggle: `[` key)
@@ -93,46 +93,46 @@ Only `_renderDebugOverlay()` remains on canvas (world-space entity tracking).
 
 ### `designer.html` — Unified Designer
 
-- **Source:** `src/test/designer.js`, entry: `src/designer-main.js`
+- **Source:** `engine/test/designer.js`, entry: `engine/designer-main.js`
 - **Navigation:** `↑/↓` change category, `←/→` cycle item, `T` toggle rotation (ships), `R` reset view, scroll/drag to zoom/pan
 - **Deep-link:** `designer.html?category=<cat>&id=<slug>`
-- **In scope:** `data/hulls/**`, `src/entities/**`, `src/modules/**`, `src/rendering/colors.js`, `data/ships/**`, `data/characters/**`, `data/locations/**`
-- Item slugs are defined in `src/test/designer.js` — check there for current IDs.
+- **In scope:** `data/hulls/**`, `engine/entities/**`, `engine/modules/**`, `engine/rendering/colors.js`, `data/ships/**`, `data/characters/**`, `data/locations/**`
+- Item slugs are defined in `engine/test/designer.js` — check there for current IDs.
 
 ### `designer.html` — DOM Panel
 
-Stats panel is DOM-based. `DesignerPanel` class in `src/ui/designerPanel.js`, styled by `css/designer.css`. Preview renderers (ship silhouettes, grids, module icons, weapon animations, module slot boxes + connection lines) remain on canvas.
+Stats panel is DOM-based. `DesignerPanel` class in `engine/ui/designerPanel.js`, styled by `css/designer.css`. Preview renderers (ship silhouettes, grids, module icons, weapon animations, module slot boxes + connection lines) remain on canvas.
 
 ## Architecture
 
 ### Entry Point
 
-`index.html` → `src/main.js` → creates `GameManager` → starts game loop.
+`index.html` → `engine/main.js` → creates `GameManager` → starts game loop.
 
 ### Core Systems
 
-- **`src/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, subsystems; delegates player inventory state to `PlayerInventory`; drives `update(dt)` and `render()`
-- **`src/systems/playerInventory.js` / `PlayerInventory`** — owns all player inventory state: scrap, fuel, fuelMax, cargo, modules, weapons, ammo, fuelBurnRate, reactorOutput, reactorDraw. GameManager exposes forwarding accessors (`game.scrap`, `game.fuel`, etc.) for external consumers
-- **`src/systems/salvageSystem.js` / `SalvageSystem`** — owns salvage state (`isSalvaging`, `salvageProgress`, `salvageTotal`, `salvageTarget`); `start()`, `update(dt)` → returns loot entities, `cancel()`
-- **`src/systems/repairSystem.js` / `RepairSystem`** — owns repair state (`isRepairing`, `_repairAccum`, `_moduleRepairAccum`); `start()`, `update(dt, player, scrap)` → returns `{ scrapSpent }`, `cancel()`, `hasModulesToRepair(player)`, `maybeBreachModule(ship)` → returns `{ text, colorHint } | null`
-- **`src/systems/collisionSystem.js` / `CollisionSystem`** — projectile interception, beam interception, main collision loop, AoE explosions; `update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled })` → returns `{ newEntities: [] }`
-- **`src/systems/bountySystem.js` / `BountySystem`** — owns `activeBounties[]`; `onEnemyKilled()`, `acceptBounty()`, `collectCompleted()`, `updateExpiry()`
-- **`src/systems/weaponSystem.js` / `WeaponSystem`** — weapon reload ticks, manual reload, ammo cycling, guided projectile targeting; `updateReloads()`, `manualReload()`, `cycleAmmo()`, `updateGuidance()`
-- **`src/systems/interactionSystem.js` / `InteractionSystem`** — owns `nearbyStation`, `nearbyDerelict`; `updateDerelicts()`, `checkDocking()`, `checkLootPickups()`
-- **`src/systems/navigationSystem.js` / `NavigationSystem`** — owns `waypoint { x, y, name, entity }`, `mapOpen`, map zoom/pan state; `setWaypoint()`, `clearWaypoint()`, `distanceTo()`, `bearingTo()`, `etaSeconds()`, `toggleMap()`, `fuelRangeRadius()`, `currentZone()`
-- **`src/loop.js`** — fixed-timestep loop (60 ticks/sec), spiral-of-death protection
-- **`src/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
-- **`src/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
-- **`src/renderer.js` / `Renderer`** — clears canvas, draws starfield, renders entities, then HUD/UI overlays
-- **`src/hud.js` / `HUD`** — thin orchestrator; bottom strip is DOM-based (`#hud-bottom`, `css/hudBottom.css`), updated via `_updateBottomStrip()` each frame; canvas sub-renderers in `src/hud/`: `minimap.js` (top-right minimap + zone/nav info), `mapView.js` (full-screen map overlay), `navIndicator.js` (edge-of-screen waypoint arrow), `shipAnchored.js` (weapon panels, throttle, integrity), `prompts.js` (dock/repair/salvage prompts, dev controls). Tooltip system via `showTooltip()`/`hideTooltip()`
+- **`engine/game.js` / `GameManager`** — central orchestrator; owns entities, camera, renderer, HUD, particle pool, subsystems; delegates player inventory state to `PlayerInventory`; drives `update(dt)` and `render()`
+- **`engine/systems/playerInventory.js` / `PlayerInventory`** — owns all player inventory state: scrap, fuel, fuelMax, cargo, modules, weapons, ammo, fuelBurnRate, reactorOutput, reactorDraw. GameManager exposes forwarding accessors (`game.scrap`, `game.fuel`, etc.) for external consumers
+- **`engine/systems/salvageSystem.js` / `SalvageSystem`** — owns salvage state (`isSalvaging`, `salvageProgress`, `salvageTotal`, `salvageTarget`); `start()`, `update(dt)` → returns loot entities, `cancel()`
+- **`engine/systems/repairSystem.js` / `RepairSystem`** — owns repair state (`isRepairing`, `_repairAccum`, `_moduleRepairAccum`); `start()`, `update(dt, player, scrap)` → returns `{ scrapSpent }`, `cancel()`, `hasModulesToRepair(player)`, `maybeBreachModule(ship)` → returns `{ text, colorHint } | null`
+- **`engine/systems/collisionSystem.js` / `CollisionSystem`** — projectile interception, beam interception, main collision loop, AoE explosions; `update(entities, player, { particlePool, hud, repair, reputation, onEnemyKilled })` → returns `{ newEntities: [] }`
+- **`engine/systems/bountySystem.js` / `BountySystem`** — owns `activeBounties[]`; `onEnemyKilled()`, `acceptBounty()`, `collectCompleted()`, `updateExpiry()`
+- **`engine/systems/weaponSystem.js` / `WeaponSystem`** — weapon reload ticks, manual reload, ammo cycling, guided projectile targeting; `updateReloads()`, `manualReload()`, `cycleAmmo()`, `updateGuidance()`
+- **`engine/systems/interactionSystem.js` / `InteractionSystem`** — owns `nearbyStation`, `nearbyDerelict`; `updateDerelicts()`, `checkDocking()`, `checkLootPickups()`
+- **`engine/systems/navigationSystem.js` / `NavigationSystem`** — owns `waypoint { x, y, name, entity }`, `mapOpen`, map zoom/pan state; `setWaypoint()`, `clearWaypoint()`, `distanceTo()`, `bearingTo()`, `etaSeconds()`, `toggleMap()`, `fuelRangeRadius()`, `currentZone()`
+- **`engine/loop.js`** — fixed-timestep loop (60 ticks/sec), spiral-of-death protection
+- **`engine/camera.js` / `Camera`** — world↔screen transform, exponential-lerp follow, visibility culling
+- **`engine/input.js` / `InputHandler`** (singleton) — keyboard hold/just-pressed, mouse position/buttons, flushed each tick
+- **`engine/renderer.js` / `Renderer`** — clears canvas, draws starfield, renders entities, then HUD/UI overlays
+- **`engine/hud.js` / `HUD`** — thin orchestrator; bottom strip is DOM-based (`#hud-bottom`, `css/hudBottom.css`), updated via `_updateBottomStrip()` each frame; canvas sub-renderers in `engine/hud/`: `minimap.js` (top-right minimap + zone/nav info), `mapView.js` (full-screen map overlay), `navIndicator.js` (edge-of-screen waypoint arrow), `shipAnchored.js` (weapon panels, throttle, integrity), `prompts.js` (dock/repair/salvage prompts, dev controls). Tooltip system via `showTooltip()`/`hideTooltip()`
 
 ### Entity Types
 
-`Entity` is the base class (`src/entities/entity.js`). `Ship` extends it with armor/hull/weapons/fuel. Ship subclasses override `_drawShape(ctx)` and `getBounds()`. Other entity types: `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`. Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter) — no separate Derelict class. Created via `createDerelict(data)` from `src/entities/registry.js`. Ship has getter/setter pairs for `faction`, `relation`, `ai` that delegate to `this.captain` when a Character is aboard, falling back to `_machineFaction`/`_machineRelation`/`_machineAi` for unmanned ships (Concord machines).
+`Entity` is the base class (`engine/entities/entity.js`). Every entity has an `entityType` string tag set in the constructor: `'ship'`, `'station'`, `'projectile'`, `'loot'`, `'explosion'`, `'entity'` (default). **Never use `instanceof` for entity type checks** — use `entity.entityType === 'ship'` instead. This avoids circular dependency issues (entity classes imported into systems/HUD creates import cycles through game.js). The data lint script enforces this ban. `Ship` extends Entity with armor/hull/weapons/fuel. Ship subclasses override `_drawShape(ctx)` and `getBounds()`. Other entity types: `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`. Derelicts are Ships with `crew = 0` (`ship.isDerelict` getter) — no separate Derelict class. Created via `createDerelict(data)` from `engine/entities/registry.js`. Ship has getter/setter pairs for `faction`, `relation`, `ai` that delegate to `this.captain` when a Character is aboard, falling back to `_machineFaction`/`_machineRelation`/`_machineAi` for unmanned ships (Concord machines).
 
-**Character** (`src/entities/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` sets `ship.captain` (ship then delegates faction/relation/ai to the character via getters); `leaveShip()` clears `ship.captain`, reverting the ship to its machine defaults. Concord machines (drones, frigates) are unmanned — no Character, faction/relation/ai set via `_machine*` fields directly on the ship.
+**Character** (`engine/entities/character.js`) — a person who can inhabit a ship. Has `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, `ai`, `inShip`. `boardShip(ship)` sets `ship.captain` (ship then delegates faction/relation/ai to the character via getters); `leaveShip()` clears `ship.captain`, reverting the ship to its machine defaults. Concord machines (drones, frigates) are unmanned — no Character, faction/relation/ai set via `_machine*` fields directly on the ship.
 
-Ship hull classes live in `data/hulls/*/hull.js` — each self-registers into `CONTENT.hulls` at import time. Concord entity subclasses (with custom behavior like drone spawning, latching) live in `src/entities/concord/`. The registry (`src/entities/registry.js`) provides `createNPC()`/`createDerelict()`/`createShip()` factories that read from `CONTENT.hulls`, `CONTENT.ships`, and `CHARACTERS`. `game.characters[]` tracks all active Characters; `game.playerCharacter` is the player's Character.
+Ship hull classes live in `data/hulls/*/hull.js` — each self-registers into `CONTENT.hulls` at import time. Concord entity subclasses (with custom behavior like drone spawning, latching) live in `engine/entities/concord/`. The registry (`engine/entities/registry.js`) provides `createNPC()`/`createDerelict()`/`createShip()` factories that read from `CONTENT.hulls`, `CONTENT.ships`, and `CHARACTERS`. `game.characters[]` tracks all active Characters; `game.playerCharacter` is the player's Character.
 
 **Data-driven NPC creation** — Ship definitions live in `data/ships/<faction>/*.js` (loadouts, flavorText) — each self-registers into `CONTENT.ships`. Character definitions live in `data/characters/*.js` — each self-registers into `CHARACTERS` + `CONTENT.characters`. `createNPC(characterId, x, y)` looks up the character, creates a ship from `charData.shipId`, creates a Character, and boards it. `createShip(shipId, x, y)` creates a configured ship from `CONTENT.ships` (used for unmanned Concord ships). No per-NPC factory files.
 
@@ -140,30 +140,29 @@ Ship hull classes live in `data/hulls/*/hull.js` — each self-registers into `C
 
 - **Entity list** — all entities in `GameManager.entities[]`, updated/rendered polymorphically; inactive purged each tick
 - **Collision detection** — projectile-vs-ship circle checks in `CollisionSystem.update()`
-- **Enemy AI** — `src/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `@data/index.js`: stalker, kiter, standoff, lurker, flee. All AI runtime state lives on `ship.ai.*` (e.g. `ship.ai._aggro`, `ship.ai._patrolAngle`, `ship.ai._lurkerState`). The ship's AI status string is `ship.aiStatus` (not `aiState`).
-- **Neutral AI** — `src/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia'). Trade route fields: `ship.ai._tradeRouteA/B`. Orbit fields: `ship.ai._orbitCenter/Radius/Speed/Angle`.
+- **Enemy AI** — `engine/ai/shipAI.js`; home position + patrol; aggro/deaggro range; behaviors set via `this.ai = { ...AI_TEMPLATES.X }` from `@data/index.js`: stalker, kiter, standoff, lurker, flee. All AI runtime state lives on `ship.ai.*` (e.g. `ship.ai._aggro`, `ship.ai._patrolAngle`, `ship.ai._lurkerState`). The ship's AI status string is `ship.aiStatus` (not `aiState`).
+- **Neutral AI** — `engine/ai/shipAI.js`; dispatches on `ship.ai.passiveBehavior` ('trader' or 'militia'). Trade route fields: `ship.ai._tradeRouteA/B`. Orbit fields: `ship.ai._orbitCenter/Radius/Speed/Angle`.
 - **Weapons** — component objects added via `addWeapon()`; player fires indexed weapon, AI fires all
-- **Particle pool** — `src/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
+- **Particle pool** — `engine/systems/particlePool.js`, fixed slot count, presets: `explosion()`, `engineTrail()`
 - **Zone entities** — content is co-located: stations in `data/locations/<id>/` (station data + renderer + conversations), terrain in `data/terrain/<id>/` (renderer + placement data merged), derelicts in `data/ships/named/`, ship configs in `data/ships/<faction>/`, characters in `data/characters/`. All self-register into `CONTENT` tables at import time. Every data entity exports an object with `instantiate(x, y)` that returns a ready-to-use game entity.
 - **MAP format** — maps use a single flat `entities[]` array of pre-instantiated objects. `game.js` has one loop: `for (const entity of map.entities) { push to entities; if Ship, push to ships }`. Zone manifests (e.g. `gravewake.js`) export `{ entities[], zones[], background[] }` which maps spread.
 - **Map data** — `data/maps/tyr.js` is the full production map; `data/maps/` holds all named maps (tyr, arena, blank); each exports `MAP`
 - **Centralized stats** — JS data files in `data/` are the single source of truth for all base stats and content definitions. Single registry file `data/dataRegistry.js` holds both equipment tables (ENGINES, WEAPONS, etc.) and content tables (`CONTENT.hulls`, `.ships`, `.stations`, `.conversations`, `.derelicts`, `.terrain`, `.characters`). Two helpers: `registerData(table, entries)` for bulk-assigning equipment entries, `registerContent(type, id, entry)` for single content entries. Content files self-register at import time. `data/index.js` boots all content files and re-exports everything. Content locations: `data/hulls/` (hull classes), `data/ships/<faction>/` (ship configs), `data/characters/` (character data), `data/locations/` (station data + renderers + conversations), `data/terrain/` (terrain renderers + data), `data/ships/named/` (derelict descriptors), `data/modules/` (equipment), `data/maps/` (map definitions), `data/factions.js` (faction keys, labels, mappings, rival bonuses). `data/tuning.js` holds global scalar constants. Each ship/weapon defines multiplier constants and computes final values as `BASE_* × multiplier`. Never hardcode raw numbers in constructors. To add new content, create a file in the appropriate `data/` subdirectory using `registerContent()` and/or `registerData()`, then import it in `data/index.js`.
 - **Thrust-to-weight** — `Ship.recalcTW(fuel?, cargoUsed?)` derives `speedMax`, `acceleration`, `turnRate`, and `fuelEfficiency` purely from engine modules. Hull classes define only mass, durability, cargo, fuel tank, and armor — no inherent speed or agility. T/W ratio is computed against a global `REFERENCE_TW` constant using power curves. Called event-based (module swap, cargo change, dock/undock, condition change). Engine modules provide `thrust`, `weight`, and `fuelEffMult`; all modules have `weight`. All NPC ships include engine modules in `moduleSlots`.
-- **Mount points** — each ship class defines `MOUNT_POINTS[]` and overrides `get _mountPoints()`. Index `i` maps to `moduleSlots[i]`. Each mount has `{ x, y, arc, size, slot? }` where `arc` is `'front'|'port'|'starboard'|'aft'`, `size` is `'small'|'large'`, and `slot` is `'engine'` for engine-only mounts (omitted for general-purpose). Used for: (1) drawing module icons on the hull via `_drawModules(ctx)` in `Ship.render()`, (2) positional module breach routing — hits to an arc preferentially damage modules in that arc, (3) install constraints in the Ship Screen — engine slots only accept engines and vice versa. Empty mounts render as dotted white squares; engine mounts show `[E]`. Module visuals: `src/rendering/moduleVisuals.js`.
-- **Weapon registry** — `src/modules/weapons/registry.js` exports `createWeaponById(id)`, which reads from `CONTENT.weapons`. Used by SalvageSystem and loot tables to instantiate weapons by string ID.
-- **Module registry** — `src/modules/registry.js` exports `createModuleById(id)`, which reads from `CONTENT.modules`. Used by ship configs and loot tables to instantiate modules by string ID.
+- **Mount points** — each ship class defines `MOUNT_POINTS[]` and overrides `get _mountPoints()`. Index `i` maps to `moduleSlots[i]`. Each mount has `{ x, y, arc, size, slot? }` where `arc` is `'front'|'port'|'starboard'|'aft'`, `size` is `'small'|'large'`, and `slot` is `'engine'` for engine-only mounts (omitted for general-purpose). Used for: (1) drawing module icons on the hull via `_drawModules(ctx)` in `Ship.render()`, (2) positional module breach routing — hits to an arc preferentially damage modules in that arc, (3) install constraints in the Ship Screen — engine slots only accept engines and vice versa. Empty mounts render as dotted white squares; engine mounts show `[E]`. Module visuals: `engine/rendering/moduleVisuals.js`.
+- **Module registry** — `engine/modules/registry.js` exports `createModuleById(id)`, which reads from `CONTENT.modules`. Used by ship configs and loot tables to instantiate modules by string ID.
 - **Content registry** — `data/dataRegistry.js` exports `CONTENT` (type-keyed sub-objects) and `registerContent(type, id, entry)`. Content files call `registerContent()` at import time. Designer and editor read from `CONTENT.stations`, `CONTENT.derelicts`, `CONTENT.modules`, `CONTENT.weapons`, etc. instead of hand-maintained registry arrays.
-- **UI overlays** — narrative panel (`#narrative-panel`, right 30% DOM panel, `src/ui/narrativePanel.js`) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
+- **UI overlays** — narrative panel (`#narrative-panel`, right 30% DOM panel, `engine/ui/narrativePanel.js`) and ship panel (`#ship-panel`, left 30% DOM panel) are HTML/CSS; bottom HUD (`#hud-bottom`, 48px fixed bar) is DOM. Docking sets `isDocked = true`, skipping the simulation loop. Ship screen (I key) pauses sim but keeps world rendering. Both panels use `pointer-events: auto` and `stopPropagation` to prevent canvas input bleed
 - **Narrative system** — station interactions use scrolling conversation logs (Disco Elysium-style). `NarrativePanel` reads from `CONTENT.conversations`. Conversation scripts are async functions in `data/locations/<station>/conversations/` (station-specific) or `data/conversations/` (generic) that `await log.choices(...)` for player input. Each self-registers via `registerContent('conversations', id, fn)`. Station data includes `conversations: { hub, zones: {} }` pointing to script IDs. `game.storyFlags = {}` tracks first-visit flags and NPC memory (session-only)
-- **Color palette** — `src/rendering/colors.js` exports all color constants; never use inline hex strings
+- **Color palette** — `engine/rendering/colors.js` exports all color constants; never use inline hex strings
 - **CSS utility system** — `css/panel.css` defines CSS custom properties (`--p-text: 13px`, `--p-title: 16px`, `--p-small: 11px`), text color utilities (`.t-cyan`, `.t-amber`, etc.), and typography patterns (`.p-heading`, `.p-subheading`, `.p-text`, `.p-label`, `.p-hint`, `.p-small`). All DOM panel CSS files inherit from these. Never hardcode `px` font sizes in panel CSS — use `var()` references.
-- **Draw API** — `src/rendering/draw.js` exports reusable canvas primitives. Two layers:
+- **Draw API** — `engine/rendering/draw.js` exports reusable canvas primitives. Two layers:
   - **Immediate utilities** (take `ctx` as first arg): `polygon`, `polygonFill`, `polygonStroke`, `line`, `lines`, `disc`, `ring`, `trail`, `text`, `pulse`, `engineGlow`
   - **`Shape` class** — composable geometry templates with transform chaining (`.at()`, `.scaled()`, `.rotated()`, `.flipX()`, `.flipY()`) and draw methods (`.fill()`, `.stroke()`, `.draw()`). Factory methods: `Shape.rect()`, `Shape.chamferedRect()`, `Shape.cigar()`, `Shape.trapezoid()`, `Shape.wedge()`, `Shape.stadium()`, `Shape.cross()`, `Shape.ngon()`
   - **`DrawBatch` class** — deferred rendering that groups by style to minimize canvas state changes. Methods: `fillPoly`, `strokePoly`, `poly`, `line`, `disc`, `ring`, `rect`, `text`, then `flush()` to render all
   - **`text(ctx, str, x, y, color, opts)`** — world-space text. Options: `size` (12), `weight` ('normal'), `align` ('center'), `baseline` ('middle'), `alpha` (1), `font` ('monospace'). Batch equivalent: `batch.text(str, x, y, color, opts)`
-  - Always use Draw API primitives for new rendering code instead of raw `ctx` calls. Import from `src/rendering/draw.js`.
-  - **Prefer Shape factories and Draw helpers over raw point arrays.** When drawing geometry, always use `Shape.rect()`, `Shape.chamferedRect()`, `Shape.trapezoid()`, `Shape.wedge()`, etc. with `.at()`, `.scaled()`, `.rotated()` transforms so that a human can easily tweak position, width, height, scale, and rotation without editing point coordinates. If you need a shape that doesn't exist yet, add a new `Shape` factory method or standalone draw function to `src/rendering/draw.js` rather than hand-placing points. **Exception:** complex ship hull shapes that require directional armor arc rendering (`_drawShape`/`_drawHullArcs`) may use hand-placed point arrays when the hull silhouette cannot be composed from primitives.
+  - Always use Draw API primitives for new rendering code instead of raw `ctx` calls. Import from `engine/rendering/draw.js`.
+  - **Prefer Shape factories and Draw helpers over raw point arrays.** When drawing geometry, always use `Shape.rect()`, `Shape.chamferedRect()`, `Shape.trapezoid()`, `Shape.wedge()`, etc. with `.at()`, `.scaled()`, `.rotated()` transforms so that a human can easily tweak position, width, height, scale, and rotation without editing point coordinates. If you need a shape that doesn't exist yet, add a new `Shape` factory method or standalone draw function to `engine/rendering/draw.js` rather than hand-placing points. **Exception:** complex ship hull shapes that require directional armor arc rendering (`_drawShape`/`_drawHullArcs`) may use hand-placed point arrays when the hull silhouette cannot be composed from primitives.
 
 ### Coordinate System
 
@@ -194,6 +193,7 @@ When the user says:
 - **M**: Toggle full-screen system map (click to set waypoint, right-click to clear, scroll/drag to zoom/pan)
 - **Scroll wheel**: Zoom in/out (0.2–1.5×, smooth lerp)
 - **Esc**: Cancel salvage / close station screen / close ship screen / close map
+- **F1**: Toggle controls help panel
 
 ## Rules & Conventions
 
@@ -202,8 +202,11 @@ Never hardcode raw stat numbers in ship/weapon constructors. All base values liv
 
 Ship classes use `this._initStats({ hull, weight, cargo, fuelMax, armorFront, armorSide, armorAft })` from `Ship` base to set hull stats. Movement stats (speed, acceleration, turn rate) and fuel efficiency are **purely engine-derived** via `recalcTW()` — hull classes never define them.
 
-### Colors: Always Use `src/rendering/colors.js`
-Never use inline hex strings anywhere in the codebase. Import named constants from `src/rendering/colors.js`. If a new color is needed, add it there first.
+### Enums: Always Use `data/enums.js`
+Never use raw strings for entity types, relations, conditions, loot types, arcs, or mount sizes. Import frozen enum objects (`ENTITY`, `RELATION`, `CONDITION`, `LOOT_TYPE`, `ARC`, `MOUNT_SIZE`, `MOUNT_SLOT`) from `data/enums.js`. The data lint script enforces this for `entityType` comparisons. If a new enum value is needed, add it to `data/enums.js` first.
+
+### Colors: Always Use `engine/rendering/colors.js`
+Never use inline hex strings anywhere in the codebase. Import named constants from `engine/rendering/colors.js`. If a new color is needed, add it there first.
 
 ### Docs: Always Update After Changes
 - Mechanic added/changed → `MECHANICS.md`
@@ -228,16 +231,16 @@ After any major refactor (file moves, system extractions, renderer rewrites, UI 
 |---|---|---|
 | `/ship-class` | Hull templates: shape, stats, mount points | `CONTENT.hulls` via self-registration; hull files in `data/hulls/*/hull.js` |
 | `/named-ship` | Configured ship instances (captained = NPC, no captain = derelict) | `CONTENT.ships` in `data/ships/<faction>/*.js`; `CONTENT.characters` in `data/characters/*.js`; `CONTENT.derelicts` in `data/ships/named/` |
-| `/character` | Named people who board ships | `CHARACTERS` + `CONTENT.characters` in `data/characters/*.js`; Character class in `src/entities/character.js` |
+| `/character` | Named people who board ships | `CHARACTERS` + `CONTENT.characters` in `data/characters/*.js`; Character class in `engine/entities/character.js` |
 | `/station` | Dockable locations with services and renderers | `CONTENT.stations` in `data/locations/*/station.js`; renderers in `data/locations/*/renderer.js`; conversations in `data/locations/*/conversations/` |
-| `/module` | Ship modules AND weapons (combined) | `CONTENT.modules` (self-registered from `data/modules/*.js`); `CONTENT.weapons` (self-registered from `data/modules/weapons.js`); `createModuleById()` in `src/modules/registry.js`; `createWeaponById()` in `src/modules/weapons/registry.js` |
+| `/module` | Ship modules AND weapons (combined) | `CONTENT.modules` (self-registered from `data/modules/*.js`); `CONTENT.weapons` (self-registered from `data/modules/weapons.js`); `createModuleById()` in `engine/modules/registry.js` |
 
 **Audit skills:** `/code-review`, `/stat-audit`, `/dead-code`
 
 **MANDATORY: After any substantive change to a system, registry, or content type:**
 1. Read all skill files in `.claude/commands/wayfarer/` that reference the changed system
 2. Update file paths, class names, registry formats, CSV columns, behavior types, and designer category IDs
-3. Update `src/test/designer.js` if the change affects how items are built, categorized, or displayed
+3. Update `engine/test/designer.js` if the change affects how items are built, categorized, or displayed
 4. Verify designer deep-links still work (`designer.html?category=<cat>&id=<slug>`)
 
 **Watch for these specific changes:**
@@ -245,8 +248,8 @@ After any major refactor (file moves, system extractions, renderer rewrites, UI 
 - Renamed classes, modules, or behavior types
 - New or removed entries in any registry (`CONTENT.hulls`, `CONTENT.ships`, `CONTENT.characters`, `CONTENT.stations`, `CONTENT.derelicts`, `CONTENT.conversations`, `CONTENT.modules`, `CONTENT.weapons`, `CHARACTERS`)
 - Data field additions/removals in `data/**/*.js`
-- Designer category changes in `src/test/designer.js` (`CATEGORIES` array)
-- New or changed `Character` fields in `src/entities/character.js`
+- Designer category changes in `engine/test/designer.js` (`CATEGORIES` array)
+- New or changed `Character` fields in `engine/entities/character.js`
 - New or changed NPC data in `data/ships/**/*.js` or `data/characters/*.js`
 - New boot imports needed in `data/index.js` for self-registering content
 
@@ -327,6 +330,11 @@ CP. 2026-MAR-14-2000: NarrativeLog Enhancements — NPC context (setNpcContext/c
 CQ. 2026-MAR-14-2200: Ship/Character Data Separation — Ship getter delegation (faction/relation/ai delegate to captain via getters, fall back to _machine* fields for unmanned); data/actors/ split into data/ships/ (ship configs → CONTENT.ships) and data/characters/ (character data → CHARACTERS + CONTENT.characters); createNPC()/createShip() replace createActor(); bounty contracts carry targetCharacterId; NPC_SHIPS and CONTENT.actors removed.
 CR. 2026-MAR-14-2359: Character Origin Selection — New game flow with narrative origin selection (Runaway/Deserter/Scavenger); Cutter Class Scout hull; House Casimir faction; 3 origin ship configs; flashback conversations with sub-choices; deferred player creation in production mode.
 CS. 2026-MAR-15-0000: Content Registry Unification — Modules and weapons self-register into CONTENT.modules/CONTENT.weapons; MODULE_REGISTRY/WEAPON_REGISTRY replaced; derelicts use real hull IDs (shipClass) instead of derelictClass; backward-compat aliases removed; factions data extracted to data/factions.js; data lint script; sensor rebalance (minimap_stations always-on); proportional salvage time and yield (armor-based scaling).
+CK. 2026-MAR-15-0000: Engine Module Expansion — 6 old engines replaced with 9 new data-driven engines (Makeshift Thermal, Vintage Magplasma S/L, Standard Rocket S/L, Milspec Rocket S/L, Cruising Ion S/L); per-module breachMultiplier for fragile/reliable engines; EngineModule refactored to single data-driven class (no per-engine subclasses); all 12 ship loadouts remapped; Prime Machinists Guild lore added.
+CT. 2026-MAR-15-0000: Entity Type System — Frozen enums (data/enums.js) for entity types, relations, conditions, arcs, mount sizes; entityType string tags on all entity constructors replacing instanceof checks; lint rule banning instanceof entity classes and raw entityType strings outside enums; all systems/HUD/renderer migrated.
+CU. 2026-MAR-15-0000: Designer Fitting Mode — Interactive module fitting in ship-classes category; click slot boxes to open fitting picker popup; module compatibility filtering (size, engine mount constraints); shared moduleSlotBoxes.js renderer extracted from ShipScreen and Designer; module slot boxes enlarged (264×44px, two-line layout); designer panel widened (320px); cursor redesign (triangle pointer in nav mode, circle+crosshair in combat); corner bracket empty mount indicators; weapon panel cleanup.
+CV. 2026-MAR-15-1600: Custom Engine Icons — 10 unique drawAtMount icons for all 9 engine types (Makeshift Thermal crude/asymmetric, Vintage Magplasma coil housing + intake bell, Standard Rocket clean housing + bell, Milspec Rocket armored/gusseted, Cruising Ion cylindrical body + grid channel); hull engine graphics removed from ship _drawShape(); UX rule added.
+CW. 2026-MAR-15-1800: Engine Rename & Module Extraction — src/ renamed to engine/; Vite alias @ → engine/; concrete module subclasses (9 engines, reactors, sensors, utilities) extracted from engine/modules/shipModule.js into data/modules/*.js alongside their data registration; F1 controls help panel (DOM-based right panel with key reference sections).
 
 
 # === PLAN.md ===
@@ -335,7 +343,7 @@ CS. 2026-MAR-15-0000: Content Registry Unification — Modules and weapons self-
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CT**
+**Next available code: CX**
 
 ---
 
@@ -366,7 +374,6 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
-| CK | Engine Module Expansion | Modules / Equipment |
 
 ---
 
@@ -685,54 +692,6 @@ Affixes are constrained by module type — not every affix applies to every modu
 
 ---
 
-### CK: Engine Module Expansion
-
-Five new engine types that fill out the propulsion landscape — from junkyard desperation to military precision. The current lineup (Onyx Drive, Chem Rocket, Mag-Plasma Torch, Ion Thruster) covers the mid-range well; these engines add clear low-end, high-end, and specialist options with distinct trade-off profiles.
-
-**Design intent:** Every engine should feel like a meaningful choice, not just a stat upgrade. The player should weigh thrust vs. fuel economy vs. reliability vs. cost and think about *how they fly* — short combat sprints or long endurance hauls.
-
-**1. Makeshift Thermal Rocket (S)**
-- **Lore:** A jury-rigged rocket engine cobbled from scavenged parts — mismatched injectors, salvaged combustion chambers, hand-welded fuel lines. It works, barely. The kind of engine a desperate pilot bolts on when the alternative is drifting. Common in the outer Gravewake fringe where proper parts don't reach.
-- **Stats profile:** Abysmal thrust (lowest of any rocket type), poor fuel efficiency, very low reliability (high breach chance, degrades quickly under use). Lightest rocket engine — mostly because half the housing is missing.
-- **Niche:** Rock-bottom acquisition cost. Starter engine for derelict recoveries or emergency replacement when stranded. The engine you *replace*, not the engine you want.
-- **Stat targets:** Thrust ~800 (below Onyx Drive's 1500), fuelEffMult ~2.0 (worse than Chem Rocket's 3.5 but not as bad as Milspec), weight ~35. Condition starts at 'worn' or 'faulty' when found as salvage.
-
-**2. Vintage Magplasma Thruster (S)**
-- **Lore:** A pre-Exile magnetic-plasma engine from the Arrival period — one of the original propulsion designs that carried the arkship tenders and scout craft during the first decades in-system. The engineering is elegant and far ahead of anything currently manufactured, but these units are centuries old. Replacement parts don't exist; mechanics nurse them along with hand-machined approximations and prayer. Finding one in working condition is a genuine stroke of luck.
-- **Stats profile:** Excellent thrust-to-efficiency ratio — significantly better than the current Mag-Plasma Torch line. Thrust sits between the Ion Thruster (300) and the Standard Pattern Rocket (~1800). Fuel efficiency is outstanding (low fuelEffMult). But reliability is poor — old components mean elevated breach chance and faster condition degradation. High power draw (plasma containment fields).
-- **Niche:** The connoisseur's engine. Superb performance *when it works*, but demands constant maintenance and repair investment. Rewards players who keep a stockpile of scrap for field repairs. A treasure find in high-tier derelicts.
-- **Stat targets:** Thrust ~1200, fuelEffMult ~0.4 (exceptional efficiency), fuelDrain ~0.012, powerDraw ~50, weight ~55. Elevated breach multiplier (1.5× base chance).
-
-**3. Standard Pattern Rocket Engine (S/L)**
-- **Lore:** The reliable workhorse. A mass-manufactured design whose blueprints predate the Exile, now produced by small engine forges scattered across Tyr's settlements. Every forge puts its own stamp on the housing and injector geometry, but the core design is standardized and time-tested. Parts are interchangeable and readily available. Nothing flashy — it just runs.
-- **Stats profile:** Average thrust, average fuel efficiency, very reliable when built well. The median engine — better than Makeshift in every way, cheaper and more available than Milspec. Comes in both Small and Large variants.
-- **Niche:** The backbone of civilian and light-military fleets. The engine most players will run through the mid-game. Predictable, affordable, repairable. Good middle of the road between the Makeshift's desperation and the Milspec's excess.
-- **Stat targets (S):** Thrust ~1800, fuelEffMult ~2.0, weight ~70, powerDraw ~2. Low breach multiplier (0.7× base).
-- **Stat targets (L):** Thrust ~3000, fuelEffMult ~3.0, weight ~130, powerDraw ~3. Same reliability profile.
-
-**4. Milspec Rocket Engine (S/L)**
-- **Lore:** High-performance military-grade propulsion designed for fleet operations. Manufactured exclusively by the **Prime Machinists Guild** — a powerful, politically neutral body of master engineers who control the precision ceramic kilns and exotic alloy forges required for high-output propulsion. The Guild sells to all factions without allegiance, but their prices reflect the monopoly. These engines are built for short, intense combat sorties near carrier groups with onboard fuel facilities — sustained independent cruising was never the design goal.
-- **Stats profile:** Very high thrust (highest in class), average reliability, but extremely poor fuel efficiency. Burns through fuel reserves fast. Military ships don't care — they refuel from fleet tenders. An independent salvager running one of these will feel the drain on every long transit.
-- **Niche:** Raw power for combat-focused builds. The player trades range and economy for acceleration and escape velocity. Best paired with large fuel tanks or operations near friendly stations. The engine you bolt on when you expect a fight, not a journey.
-- **Stat targets (S):** Thrust ~2800 (above Chem Rocket S's 2200), fuelEffMult ~6.0 (very thirsty), weight ~90, powerDraw ~3.
-- **Stat targets (L):** Thrust ~4500 (above Chem Rocket L's 3500), fuelEffMult ~9.0, weight ~170, powerDraw ~5.
-
-**5. Cruising Ion Thruster (S)**
-- **Lore:** Purpose-built for long-range cargo haulers and endurance transit. A refined variant of the standard Ion Thruster optimized for sustained output rather than raw thrust. The magnetic acceleration chamber is longer and more efficient, trading any pretense of combat agility for the ability to cross the entire Tyr system on a single fuel load at cruise speed. Popular with trade convoys and long-haul prospectors who value arrival over urgency.
-- **Stats profile:** Low thrust (comparable to the existing Ion Thruster), but exceptionally fuel-efficient — the most economical engine in the game by a wide margin. Very reliable; solid-state ion acceleration has almost no moving parts to fail. High power draw (ion containment).
-- **Niche:** The endurance specialist. For players who want maximum range per unit of fuel — exploration, long trade runs, operating far from fuel depots. Terrible in combat (can't accelerate out of trouble), but unmatched for getting from A to B cheaply.
-- **Stat targets:** Thrust ~350 (slightly above Ion Thruster's 300), fuelEffMult ~0.02 (best in game), fuelDrain ~0.001, powerDraw ~100, weight ~45.
-
-**New lore introduced:** The **Prime Machinists Guild** — a politically neutral engineering body that controls the high-precision manufacturing infrastructure (ceramic kilns, exotic alloy forges) required for military-grade propulsion. They sell to all factions and maintain independence through mutual dependence. Their monopoly on Milspec engine production makes them one of the quiet power brokers of the Tyr system.
-
-**Implementation notes:**
-- Add entries to `data/engines.js` for all 7 engines (5 types, Standard and Milspec each have S/L)
-- Create module classes in `js/modules/engines/` following existing patterns
-- Makeshift should have an elevated `breachMultiplier` field; Vintage Magplasma similar
-- Standard Pattern and Cruising Ion should have reduced breach chance
-- Add to loot tables: Makeshift common in low-tier derelicts, Vintage rare in high-tier, Standard available at most stations, Milspec at military-aligned stations only, Cruising Ion at trade hubs
-- Update `LORE.md` with Prime Machinists Guild entry when implemented
-
 ---
 
 ### BR: Electronic Warfare
@@ -1010,9 +969,16 @@ Despite primitive computing, humanity retains sophisticated knowledge of space s
 
 **Propulsion Systems:**
 
-- **Chemical Rockets:** Used for surface launches and landings, often repurposed or hybridized with nuclear heat systems.
+- **Makeshift Thermal Rockets:** Jury-rigged engines cobbled from scavenged parts — mismatched injectors, salvaged combustion chambers, hand-welded fuel lines. Common in the outer Gravewake fringe where proper parts don't reach. Fragile, weak, and the first thing a pilot replaces.
+- **Standard Pattern Rockets:** The reliable workhorse. Mass-manufactured from blueprints predating the Exile, produced by small engine forges across Tyr's settlements. Parts are interchangeable and readily available. The backbone of civilian and light-military fleets.
+- **Milspec Rockets:** High-performance military-grade propulsion manufactured exclusively by the **Prime Machinists Guild**. Designed for short, intense combat sorties near carrier groups — sustained independent cruising was never the design goal. Extreme thrust, terrible fuel economy.
+- **Vintage Magplasma Thrusters:** Pre-Exile magnetic-plasma engines from the Arrival period. Elegant engineering centuries ahead of current manufacture, but irreplaceable — mechanics nurse them along with hand-machined approximations and prayer. Superb efficiency, fragile reliability.
+- **Cruising Ion Drives:** Purpose-built for long-range cargo haulers and endurance transit. Refined ion acceleration chambers trade any pretense of combat agility for the ability to cross the entire Tyr system on a single fuel load. Popular with trade convoys and long-haul prospectors.
 - **Cold Gas Thrusters:** Provide fine maneuvering capabilities, especially for EVA, docking, or debris fields.
-- **Electric Thrusters (Ion or Hall-effect):** Slow, high-efficiency engines used for long-duration interplanetary burns.
+
+**The Prime Machinists Guild:**
+
+A politically neutral engineering body that controls the high-precision manufacturing infrastructure — ceramic kilns, exotic alloy forges, and vacuum-sealed fabrication bays — required for military-grade propulsion. They sell to all factions without allegiance, maintaining independence through mutual dependence. Their monopoly on Milspec engine production makes them one of the quiet power brokers of the Tyr system. Guild facilities are scattered across the inner system, heavily fortified and diplomatically immune by long-standing convention. No faction can afford to attack the people who build their best engines.
 
 ### Weapons
 
@@ -1521,6 +1487,8 @@ Below minimap: zone name (dim text), waypoint destination + distance + ETA (ambe
 ### Module Visuals on Hull
 Modules render at defined mount points on the ship hull, drawn after `_drawShape` in ship-local coordinates. Each icon is 4–8px, stroked in `conditionColor(mod.condition)` with a dim fill. Destroyed modules show as dim outlines only (alpha 0.2). Empty slots render as a faint `DIM_OUTLINE` ring.
 
+**Rule: No engine graphics in hull `_drawShape()`.** Ship hulls must NOT draw engine housings, bell nozzles, or exhaust plumes as part of their hull shape. Engine visuals are the responsibility of the engine module's `drawAtMount()` method, rendered at the mount point. This keeps engine appearance tied to the installed module and avoids doubling up visuals.
+
 | Category | Shape | Notes |
 |---|---|---|
 | Engine | Trapezoid (wide top, narrow bottom) | Nozzle silhouette |
@@ -1724,6 +1692,13 @@ Panel-specific CSS files (`css/ship.css`, `css/narrative.css`, `css/designer.css
 - **Conversation scripts**: Async functions in `js/ui/narrative/conversations/`. Each `await log.choices(...)` to pause for player input. Hub conversations loop zone choices + `[Undock]`.
 - **Esc** closes the panel (and undocks).
 - **Story flags**: `game.storyFlags` (session-only key→value map). First-visit narration, NPC memory, gated dialogue branches.
+
+### Controls Panel (`engine/ui/controlsPanel.js`, `css/controls.css`)
+- **DOM-based right panel** (`#controls-panel`), `panel-base` frame, 280px wide. Toggled by **F1**.
+- **Header:** "CONTROLS" title + `[F1] close` hint.
+- **Sections:** MOVEMENT, COMBAT, SYSTEMS, MAP CONTROLS, GENERAL — each with key/description rows.
+- **Key labels** in amber, descriptions in dim. Section titles in cyan small-caps.
+- Available at any time (docked, in-flight, map open). Non-blocking — does not pause the game.
 
 ### HUD (In-Flight)
 
@@ -1972,9 +1947,9 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 | HE_AUTOCANNON_BLAST | 60 |
 | HE_CANNON_BLAST | 150 |
 | MODULE_BREACH_HULL_THRESHOLD | 0.6 |
-| MODULE_BREACH_CHANCE_LOW | 0.12 |
-| MODULE_BREACH_CHANCE_MID | 0.25 |
-| MODULE_BREACH_CHANCE_HIGH | 0.4 |
+| MODULE_BREACH_CHANCE_LOW | 0.15 |
+| MODULE_BREACH_CHANCE_MID | 0.31 |
+| MODULE_BREACH_CHANCE_HIGH | 0.5 |
 | DEFAULT_SCRAP | 20 |
 | FUEL_RATES | 0, 0, 0.1, 0.2, 0.5, 1 |
 | REPAIR_RATE | 1.5 |
@@ -2014,12 +1989,15 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 
 | ID | Name | Size | Thrust | FuelEff | FuelDrain | Power | Weight |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| onyx-drive-unit | ONYX DRIVE UNIT (S) | S | 1500 | 1 | 0.005 | 1 | 50 |
-| chem-rocket-s | CHEM ROCKET (S) | S | 2200 | 3.5 | 0 | 2 | 80 |
-| chem-rocket-l | CHEM ROCKET (L) | L | 3500 | 5.5 | 0 | 3 | 150 |
-| magplasma-torch-s | MAG-PLASMA TORCH (S) | S | 1700 | 1.3 | 0.01 | 40 | 60 |
-| magplasma-torch-l | MAG-PLASMA TORCH (L) | L | 2000 | 1.6 | 0.02 | 80 | 100 |
-| ion-thruster | ION THRUSTER (S) | S | 300 | 0.05 | 0.002 | 120 | 40 |
+| makeshift-thermal-s | MAKESHIFT THERMAL (S) | S | 800 | 2 | 0 | 1 | 35 |
+| vintage-magplasma-s | VINTAGE MAGPLASMA (S) | S | 1200 | 0.4 | 0.012 | 50 | 55 |
+| vintage-magplasma-l | VINTAGE MAGPLASMA (L) | L | 2000 | 0.65 | 0.024 | 90 | 100 |
+| standard-rocket-s | STANDARD ROCKET (S) | S | 1800 | 2 | 0 | 2 | 70 |
+| standard-rocket-l | STANDARD ROCKET (L) | L | 3000 | 3 | 0 | 3 | 130 |
+| milspec-rocket-s | MILSPEC ROCKET (S) | S | 2800 | 6 | 0 | 3 | 90 |
+| milspec-rocket-l | MILSPEC ROCKET (L) | L | 4500 | 9 | 0 | 5 | 170 |
+| cruising-ion-s | CRUISING ION (S) | S | 350 | 0.02 | 0.001 | 100 | 45 |
+| cruising-ion-l | CRUISING ION (L) | L | 600 | 0.035 | 0.002 | 180 | 85 |
 
 ## Reactors
 
@@ -2028,6 +2006,8 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 | hydrogen-fuel-cell | H2 FUEL CELL (S) | S | 80 | 0.025 | 20 |
 | fission-reactor-s | FISSION REACTOR (S) | S | 160 | 0 | 40 |
 | fission-reactor-l | FISSION REACTOR (L) | L | 300 | 0 | 80 |
+| hydrogen-i6 | H2 I6 ENGINE (S) | S | 120 | 0.045 | 30 |
+| hydrogen-v12 | H2 V12 ENGINE (L) | L | 240 | 0.08 | 65 |
 | fusion-reactor-l | FUSION REACTOR (L) | L | 500 | 0.005 | 100 |
 
 ## Sensors
@@ -2037,7 +2017,7 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 | standard-sensor-suite | STANDARD SENSORS (S) | 8 | 15 | 3000 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
 | combat-computer | COMBAT COMPUTER (S) | 15 | 20 | 2000 | 1 | 1 | 1 | 0 | 0 | 0 | 0 |
 | salvage-scanner | SALVAGE SCANNER (S) | 12 | 15 | 2500 | 1 | 0 | 0 | 1 | 0 | 0 | 0 |
-| long-range-scanner | LONG-RANGE SENSORS (S) | 20 | 25 | 8000 | 1 | 0 | 0 | 1 | 0 | 0 | 1 |
+| long-range-scanner | LONG-RANGE SENSORS (L) | 20 | 25 | 8000 | 1 | 0 | 0 | 1 | 0 | 0 | 1 |
 | battle-direction-center | BATTLE DIRECTION CENTER (L) | 30 | 45 | 4500 | 1 | 1 | 1 | 0 | 1 | 1 | 1 |
 | enforcement-scanner | ENFORCEMENT SCANNER (S) | 14 | 18 | 3000 | 1 | 0 | 1 | 0 | 0 | 0 | 1 |
 
@@ -2136,13 +2116,13 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 | scavenger-gunner | Scavenger Gunner | scavenger | hostile | kiter | armed-hauler |  |
 | salvage-lord | Salvage Lord | scavenger | hostile | standoff | salvage-mothership |  |
 | grave-clan-hunter | Grave-Clan Hunter | scavenger | hostile | lurker | grave-clan-ambusher |  |
-| hollow_brekk | "Hollow" Brekk | scavenger | hostile | kiter | armed-hauler | {"value":100,"reason":"Rival Clan Hit"} |
-| crestfall_orin | "Crestfall" Orin | scavenger | hostile | lurker | grave-clan-ambusher | {"value":75,"reason":"Purgation Contract"} |
-| ironback_marel | "Ironback" Marel | scavenger | hostile | lurker | grave-clan-ambusher | {"value":90,"reason":"Wanted: Grave-Clan Lurker"} |
-| gutshot_drev | "Gutshot" Drev | scavenger | hostile | stalker | light-fighter | {"value":60,"reason":"Clear the Approach"} |
-| pale_widow | "Pale Widow" | scavenger | hostile | standoff | salvage-mothership | {"value":140,"reason":"Silence the Mothership"} |
-| runt_cassin | "Runt" Cassin | scavenger | hostile | kiter | armed-hauler | {"value":80,"reason":"Armed Hauler Ambush"} |
-| six_wire_pol | "Six-Wire" Pol | scavenger | hostile | stalker | light-fighter | {"value":55,"reason":"Eastern Stalker"} |
+| hollow_brekk | "Hollow" Brekk | scavenger | hostile | kiter | armed-hauler |  |
+| crestfall_orin | "Crestfall" Orin | scavenger | hostile | lurker | grave-clan-ambusher |  |
+| ironback_marel | "Ironback" Marel | scavenger | hostile | lurker | grave-clan-ambusher |  |
+| gutshot_drev | "Gutshot" Drev | scavenger | hostile | stalker | light-fighter |  |
+| pale_widow | "Pale Widow" | scavenger | hostile | standoff | salvage-mothership |  |
+| runt_cassin | "Runt" Cassin | scavenger | hostile | kiter | armed-hauler |  |
+| six_wire_pol | "Six-Wire" Pol | scavenger | hostile | stalker | light-fighter |  |
 | convoy-hauler | Convoy Hauler | neutral | neutral | trader | trader-convoy |  |
 | militia-officer | Militia Officer | neutral | neutral | militia | militia-patrol |  |
 
@@ -2150,18 +2130,18 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 
 | ID | Label | Hull | Name | Modules | Unmanned |
 | --- | --- | --- | --- | --- | --- |
-| hullbreaker | Hullbreaker | onyx-tug | Hullbreaker | onyx-drive-unit, autocannon, hydrogen-fuel-cell, null, null |  |
-| crash-dummy | Crash Dummy | onyx-tug | Crash Dummy | onyx-drive-unit, autocannon, hydrogen-fuel-cell, null, null |  |
-| swift-exit | Swift Exit | maverick-courier | Swift Exit | magplasma-torch-s, null, null |  |
-| grey-veil | Grey Veil | cutter-scout | Grey Veil | chem-rocket-s, autocannon, null, fission-reactor-s, null |  |
-| hullbreaker-stripped | Hullbreaker (Stripped) | onyx-tug | Hullbreaker | onyx-drive-unit, null, hydrogen-fuel-cell, salvage-scanner, null |  |
-| light-fighter | Light Fighter | maverick-courier | Light Fighter | onyx-drive-unit, autocannon, null |  |
-| armed-hauler | Armed Hauler | g100-hauler | Armed Hauler | onyx-drive-unit, autocannon, lance-st, null |  |
-| salvage-mothership | Salvage Mothership | garrison-frigate | Salvage Mothership | onyx-drive-unit, cannon, rocket-l:ht, null, null |  |
-| grave-clan-ambusher | Grave-Clan Ambusher | maverick-courier | Grave-Clan Ambusher | onyx-drive-unit, autocannon, rocket-s:ht |  |
-| trader-convoy | Trader Convoy | g100-hauler | Trader Convoy | onyx-drive-unit |  |
-| militia-patrol | Militia Patrol | garrison-frigate | Militia Patrol | onyx-drive-unit |  |
-| drone-control-frigate | Drone Control Frigate | garrison-frigate | Drone Control Frigate | onyx-drive-unit, lance-st, null | yes |
+| hullbreaker | Hullbreaker | onyx-tug | Hullbreaker | standard-rocket-s, autocannon, hydrogen-fuel-cell, null, null |  |
+| crash-dummy | Crash Dummy | onyx-tug | Crash Dummy | standard-rocket-s, autocannon, hydrogen-fuel-cell, null, null |  |
+| swift-exit | Swift Exit | maverick-courier | Swift Exit | vintage-magplasma-s, null, null |  |
+| grey-veil | Grey Veil | cutter-scout | Grey Veil | milspec-rocket-s, autocannon, null, fission-reactor-s, null |  |
+| hullbreaker-stripped | Hullbreaker (Stripped) | onyx-tug | Hullbreaker | standard-rocket-s, null, hydrogen-fuel-cell, salvage-scanner, null |  |
+| light-fighter | Light Fighter | maverick-courier | Light Fighter | standard-rocket-s, autocannon, null |  |
+| armed-hauler | Armed Hauler | g100-hauler | Armed Hauler | standard-rocket-s, autocannon, lance-st, null |  |
+| salvage-mothership | Salvage Mothership | garrison-frigate | Salvage Mothership | standard-rocket-l, cannon, rocket-l:ht, null, null |  |
+| grave-clan-ambusher | Grave-Clan Ambusher | maverick-courier | Grave-Clan Ambusher | makeshift-thermal-s, autocannon, rocket-s:ht |  |
+| trader-convoy | Trader Convoy | g100-hauler | Trader Convoy | cruising-ion-s |  |
+| militia-patrol | Militia Patrol | garrison-frigate | Militia Patrol | standard-rocket-s |  |
+| drone-control-frigate | Drone Control Frigate | garrison-frigate | Drone Control Frigate | standard-rocket-l, lance-st, null | yes |
 | snatcher-drone | Snatcher Drone | maverick-courier | Snatcher Drone |  | yes |
 
 ## Stations
@@ -2185,83 +2165,89 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 
 # === SYSTEM ANALYSIS ===
 
-## GameManager (`src/game.js`)
+## GameManager (`engine/game.js`)
 
-`GameManager` is the central orchestrator of the entire game. It owns the canonical entity list (`entities[]`), the player ship, all active `Character` instances, the subsystem instances, and top-level state flags (`isDocked`, `isPaused`, `combatMode`). Its `init()` method wires up the canvas, camera, HUD, renderer, and particle pool, then loads all pre-instantiated world entities from the map. Every tick it calls `input.tick()`, runs the origin-selection or death-screen short-circuits, then sequences the full simulation: module updates, fuel burn, power balancing, entity updates, AI, weapon reloads, guidance, particles, collision, loot pickups, repair, salvage, bounty expiry, and camera follow. It forwards all player inventory state through to `PlayerInventory` via accessor proxies, and delegates all subsystem concerns to the appropriate system class. Production mode defers player creation until origin selection completes via `NarrativePanel`.
+The central orchestrator that owns all game state. It holds the flat `entities[]` and `ships[]` lists, instantiates every subsystem (`salvage`, `repair`, `collision`, `bounty`, `weaponSys`, `interaction`, `navigation`, `reputation`), and drives the per-tick `update(dt)` / `render()` cycle. On each tick it sequences: input processing → module/fuel/power updates → entity updates → AI → weapon reloads → collision → loot pickups → camera follow → inactive purge. It also routes origin-selection at game start, handles the player death screen, forwards `PlayerInventory` state as top-level accessors (`game.scrap`, `game.fuel`, etc.), and processes Concord drone spawn queues from entity `_spawnQueue` fields.
 
-## Game Loop (`src/loop.js`)
+## Game Loop (`engine/loop.js`)
 
-`startLoop` implements a fixed-timestep accumulator loop running at 60 ticks/second (~16.67 ms/tick). Each `requestAnimationFrame` callback adds elapsed wall time to an accumulator, then drains it in fixed `dt` steps capped at five ticks to prevent a spiral-of-death after tab focus resumes. After all ticks are consumed it calls `game.render()` once. The fixed `dt` (seconds) is forwarded directly to `GameManager.update(dt)` so all physics, AI, and system updates are timestep-independent.
+A fixed-timestep loop running at 60 ticks/sec. It accumulates wall-clock time in an accumulator and drains it in `TICK_DURATION`-sized steps, capped at 5 catchup ticks to prevent spiral-of-death after tab focus restore. After all simulation ticks it calls `game.render()` once, then schedules the next frame via `requestAnimationFrame`.
 
-## Camera (`src/camera.js`)
+## Camera (`engine/camera.js`)
 
-`Camera` manages the world↔screen coordinate transform and smooth zoom. It tracks a world-space center position and exponential-lerp follows a target entity each tick (`follow()`). A separate `panTo()` / `updatePan()` path lets the camera drift toward a fixed world point (used during docking). `applyWheel()` and `updateZoom()` implement scroll-wheel zoom with a separate target/actual split for smooth easing. `pushZoom()` / `popZoom()` provide a save/restore stack for cinematic zoom levels. `worldToScreen` / `screenToWorld` and `isVisible()` are the primary interface consumed by the renderer, HUD, and game input.
+Handles world↔screen coordinate transforms and smooth following. It exponential-lerps toward the player each tick (`follow()`), supports a separate `panTo()` lerp for docked cinematic pans, and manages a `_targetZoom` that smoothly interpolates to actual `zoom` each frame. Also exposes `pushZoom()`/`popZoom()` for temporary zoom overrides and a visibility culling check (`isVisible()`). The Renderer and HUD sub-renderers call `worldToScreen()` / `screenToWorld()` to place all canvas elements.
 
-## Input (`src/input.js`)
+## Input (`engine/input.js`)
 
-`InputHandler` is a singleton that bridges DOM events to the game's tick-based input model. It accumulates key-down events in `_pendingPress` and mouse state continuously. On `input.tick()` (called once per game tick by `GameManager`) it promotes pending state into the current-tick sets: `_justPressed` (one-frame edge), `keysDown` (held), `wheelDelta`, and `_justClicked`. Consumers call `isDown()` for held keys and `wasJustPressed()` for single-frame edges. `mouseWorld(camera)` converts the current screen cursor position to world coordinates via the camera transform.
+A singleton `InputHandler` that decouples browser events from game ticks. It buffers `keydown` events into `_pendingPress` and moves them to `_justPressed` on each `tick()` call, so `wasJustPressed()` is guaranteed true for exactly one tick. It also tracks continuous key holds (`isDown()`), mouse position and buttons, and scroll wheel delta — all reset each tick. `GameManager.update()` calls `input.tick()` as its first action each frame.
 
-## Renderer (`src/renderer.js`)
+## Renderer (`engine/renderer.js`)
 
-`Renderer` owns the full canvas draw pipeline. Each frame it: clears the canvas, draws the multi-layer parallax starfield (from cached offscreen canvases per layer), calls background element renderers, does a two-pass entity draw (non-ships first, ships on top with visibility culling via `Camera.isVisible`), draws tactical overlays (health pips, lead indicators, enemy telemetry, module inspection, weapon range circle, active beams), renders particles via `ParticlePool`, delegates HUD rendering to `HUD`, and applies CRT post-processing (cached scanline and vignette canvases, pulsing edge-glow warnings for flank speed and critical hull, phosphor flicker, crosshair). All offscreen caches are regenerated lazily on canvas resize.
+Clears the canvas each frame and composites: parallax starfield (3 pre-rendered offscreen layers with parallax scrolling), background terrain elements, a two-pass entity draw (scenery then ships, visibility-culled), tactical UI overlays (health pips, lead indicators, enemy telemetry, weapon range circle, beam rendering), and CRT post-processing (scanlines + vignette from cached offscreen canvases, phosphor flicker, edge-glow warnings at flank speed or critical hull). Finally renders the HUD and crosshair on top.
 
-## HUD (`src/hud.js`)
+## HUD (`engine/hud.js`)
 
-`HUD` is a thin orchestrator that delegates canvas rendering to four sub-modules (`minimap`, `mapView`, `navIndicator`, `shipAnchored`/`prompts`) while maintaining a DOM-based bottom strip for high-frequency telemetry (armor arcs, throttle pips, hull/fuel/cargo segment bars, power balance, scrap count, weapon info). The bottom strip is built once in `_buildBottomStrip()` and updated every tick via `_updateBottomStrip()` with direct DOM property writes for performance. Pickup text and kill log entries are injected as animating DOM elements. A DOM tooltip system (`showTooltip` / `hideTooltip`) is used by the ship screen for module details.
+A thin orchestrator that delegates canvas rendering to four sub-renderers (`minimap`, `mapView`, `navIndicator`, `shipAnchored`, `prompts`) and manages a DOM-based bottom strip. The bottom strip is built once into `#hud-bottom` and updated every frame via `_updateBottomStrip()` — it shows weapon info, armor arc pips, throttle pips, hull/fuel/cargo seg-bars, power balance, and scrap. Also manages floating pickup text (DOM animated entries) and kill log entries, plus a tooltip system.
 
-## BountySystem (`src/systems/bountySystem.js`)
+---
 
-`BountySystem` manages optional named-target contracts. `acceptBounty()` instantiates the target ship or NPC at the contract's world position, marks it `isBountyTarget`, removes it from the issuing station's list, and pushes an entry into `activeBounties[]`. `onEnemyKilled()` / `onEnemyCrippled()` scan active bounties and mark matching targets `'completed'`. `collectCompleted()` is called on docking at the issuing station — it tallies reward scrap, grants a reputation bonus per completed contract, and clears resolved entries. `updateExpiry()` ticks every frame and deactivates the target entity if its time runs out. Connects to `ReputationSystem`, `HUD`, and the entity factories in `registry.js`.
+## BountySystem (`engine/systems/bountySystem.js`)
 
-## CollisionSystem (`src/systems/collisionSystem.js`)
+Manages active bounty contracts. `acceptBounty()` spawns the target entity into the world and adds it to `activeBounties[]`. `onEnemyKilled()` / `onEnemyCrippled()` marks matching bounties completed and shows pickup text. `collectCompleted()` is called on station dock to pay out scrap rewards and grant reputation. `updateExpiry()` checks each active bounty against `totalTime` and deactivates the target entity when a contract expires.
 
-`CollisionSystem.update()` runs three passes per tick. First, a point-defense interception pass matches `canIntercept` projectiles against `isInterceptable` ones by circle overlap, deactivating both. Second, a beam-interception pass tests active beam weapons against incoming interceptable projectiles using point-to-segment distance. Third, the main pass iterates all `Projectile` entities against all active `Ship` entities: AoE detonation (rockets and `detonatesOnExpiry`) is resolved via `_aoeExplode()` with radial falloff; contact detonation and plasma falloff are handled separately; standard impacts call `target.takeDamage()`. After hull damage the system calls `RepairSystem.maybeBreachModule()` to stochastically degrade a module in the hit arc. Kills and cripples are forwarded to the `BountySystem` callback and `ReputationSystem` via `onEnemyKilled` / `onEnemyCrippled` lambdas injected by `GameManager`.
+## CollisionSystem (`engine/systems/collisionSystem.js`)
 
-## InteractionSystem (`src/systems/interactionSystem.js`)
+Runs three passes each tick: (1) projectile-vs-projectile interception for `canIntercept` vs `isInterceptable` pairs; (2) beam-vs-projectile interception for `canInterceptBeam` weapons; (3) main projectile-vs-ship pass handling direct hits, contact-detonating rockets, AoE explosions, and plasma falloff. On any hit it calls `takeDamage()`, triggers module breach via `RepairSystem.maybeBreachModule()`, applies reputation penalties for neutral ship attacks, and fires `onEnemyKilled` / `onEnemyCrippled` callbacks into `BountySystem`.
 
-`InteractionSystem` handles proximity-based world interactions. `updateDerelicts()` scans active unsalvaged derelicts each tick, updates the closest one within `interactionRadius` as `nearbyDerelict`, fades in lore text for ships within 400 units, and triggers `SalvageSystem.start()` on E key when stopped. `checkDocking()` scans `Station` entities for the player being in their docking zone and, on E key while stopped, gates access via `ReputationSystem.isHostile()`, collects completed bounty rewards, then opens the `NarrativePanel`. `checkLootPickups()` auto-collects `LootDrop` entities within pickup radius, routing each loot type (scrap, fuel, module, weapon, ammo, commodity) to the appropriate `PlayerInventory` field and enforcing cargo capacity.
+## InteractionSystem (`engine/systems/interactionSystem.js`)
 
-## NavigationSystem (`src/systems/navigationSystem.js`)
+Tracks `nearbyStation` and `nearbyDerelict` each tick. `updateDerelicts()` fades in lore text as the player approaches, sets `canSalvage` when stopped, and triggers `salvage.start()` on E press. `checkDocking()` detects a station's docking zone, checks reputation access, collects any completed bounties, and opens the `NarrativePanel`. `checkLootPickups()` auto-collects nearby `LootDrop` entities into the player's inventory, enforcing cargo capacity limits.
 
-`NavigationSystem` holds all navigation and map-view state. It owns the single active `waypoint` (`{ x, y, name, entity }`) with `setWaypoint()` / `clearWaypoint()`. Helper methods `distanceTo()`, `bearingTo()`, and `etaSeconds()` compute navigation metrics from the player's current position and speed. Map-view state (`mapOpen`, `_mapZoom`, `_mapPanX/Y`, drag fields) is owned here and mutated by `GameManager._handleMapInput()` each tick. `openMap()` auto-fits the zoom to the map size. `fuelRangeRadius()` computes maximum travel distance from current fuel and burn rate. `currentZone()` returns the innermost zone the player occupies from the map's zone list.
+## NavigationSystem (`engine/systems/navigationSystem.js`)
 
-## ParticlePool (`src/systems/particlePool.js`)
+Owns the active waypoint (`{ x, y, name, entity }`) and full-screen map state (open/closed, zoom, pan, drag). Provides `distanceTo()`, `bearingTo()`, `etaSeconds()` helpers read by HUD sub-renderers. `fuelRangeRadius()` estimates max travel distance from current fuel/burn/speed. `currentZone()` scans the map's zone list to find the innermost zone containing the player, used by the minimap for zone-name display.
 
-`ParticlePool` manages a fixed 200-slot object pool of reusable `Particle` instances to avoid GC pressure from frequent allocations. `emit()` fills free slots with velocity, lifetime, radius, and color from an options object. Preset methods — `explosion()`, `rocketTrail()`, `rocketImpact()`, `ping()` — wrap `emit()` with canonical visual configs. A separate `_rings` array holds expanding-ring effects (used for explosion shockwaves). `update(dt)` advances all active particles and rings, expiring them by lifetime. `render()` uses `DrawBatch` to group and flush all rings and particles in a single batched draw call, minimizing canvas state changes.
+## ParticlePool (`engine/systems/particlePool.js`)
 
-## PlayerInventory (`src/systems/playerInventory.js`)
+A fixed-size pool of 200 particle slots to avoid per-explosion allocation. `emit()` fills slots with position, velocity, color, life, and radius. Named presets — `explosion()`, `rocketTrail()`, `rocketImpact()`, `ping()` — wrap `emit()` with appropriate palettes. A separate `_rings[]` array holds expanding ring effects (also used by explosions and pings). `update(dt)` advances positions and ages; `render()` uses `DrawBatch` to flush all particles and rings in minimal canvas state changes.
 
-`PlayerInventory` is the authoritative store for all player-owned resources: `scrap`, `fuel`/`fuelMax`, `cargo` (commodity map), `modules[]` (uninstalled), `weapons[]` (unequipped), and `ammo` (reserve pool by ammo ID). Live telemetry fields `fuelBurnRate`, `reactorOutput`, and `reactorDraw` are written each tick by `GameManager` and read by the HUD. The computed getter `totalCargoUsed` sums mass from all cargo types, ammo (installed and reserve), modules, and weapons using data from `COMMODITIES`, `AMMO`, and module weight fields. `GameManager` exposes forwarding accessors (`game.scrap`, `game.fuel`, etc.) so external consumers don't need a direct reference to the inventory instance.
+## PlayerInventory (`engine/systems/playerInventory.js`)
 
-## RepairSystem (`src/systems/repairSystem.js`)
+Owns all mutable player resource state: `scrap`, `fuel`/`fuelMax`, `cargo` (commodity map), `modules[]` (uninstalled), `weapons[]` (unequipped), `ammo` (reserve pool keyed by ammo ID), and live telemetry (`fuelBurnRate`, `reactorOutput`, `reactorDraw`). The computed `totalCargoUsed` getter sums mass from scrap, commodities, installed weapon ammo, reserve ammo, and cargo modules/weapons. `GameManager` exposes forwarding accessors so external code can read `game.scrap` etc. without knowing about the inventory object.
 
-`RepairSystem` manages in-field armor and module repair, activated by the player stopping and pressing R. `update(dt, player, scrap)` runs three parallel repair streams: armor (restores 1 point per accumulator tick from the most-damaged arc at `REPAIR_RATE`, costing `REPAIR_COST_PER_PT` scrap each), module condition improvement (steps the worst module up one condition step at `MODULE_REPAIR_RATE`), and hull repair (only if an Engineering Bay module is installed, at `HULL_REPAIR_RATE`). It auto-cancels when all repairs are done or scrap runs out. `maybeBreachModule()` is called by `CollisionSystem` after hull damage — it uses hull-ratio thresholds to stochastically degrade a module's condition one step, preferring modules in the arc that was hit.
+## RepairSystem (`engine/systems/repairSystem.js`)
 
-## ReputationSystem (`src/systems/reputation.js`)
+Manages field repair state. `start()` / `cancel()` toggle the `isRepairing` flag. `update(dt)` runs three parallel repair tracks — armor arc restoration (spending scrap per point), module condition improvement (stepping through `good → worn → faulty → damaged → destroyed`), and hull repair (requires Engineering Bay module). `maybeBreachModule()` is called by CollisionSystem on hull hits below a threshold: it selects a candidate module in the hit arc and probabilistically degrades its condition, applying the module's own `breachMultiplier`.
 
-`ReputationSystem` tracks standing with all seven factions on a −100 to +100 scale. `change(faction, delta)` applies a clamped delta. `onKill(faction)` applies `REPUTATION.KILL_PENALTY` to the killed faction and a `REPUTATION.RIVAL_BONUS` to its rival via the `RIVALS` table in `data/factions.js`. `getLevel()` maps numeric standing to a discrete label (Hostile/Wary/Neutral/Trusted/Allied). `isHostile()` gates station docking in `InteractionSystem`. `BountySystem` calls `change()` directly for bounty completion bonuses. `CollisionSystem` calls `change()` to penalize attacking neutral ships.
+## ReputationSystem (`engine/systems/reputation.js`)
 
-## SalvageSystem (`src/systems/salvageSystem.js`)
+Tracks seven faction standings on a −100 to +100 scale. `change(faction, delta)` clamps values. `onKill(faction)` applies a kill penalty to the target faction and a rival bonus to their rival via `RIVALS` data. `getLevel()` converts a numeric standing to a display tier (Hostile/Wary/Neutral/Trusted/Allied). `isHostile()` gates station docking; `isAllied()` is available for future use. Used by CollisionSystem (neutral attack penalty), BountySystem (bounty completion bonus), and InteractionSystem (docking check).
 
-`SalvageSystem` manages the derelict salvage operation. `start(derelict, player)` calculates total salvage time from remaining armor sum × `SALVAGE_TIME_PER_ARMOR` and freezes the player at throttle 0. `update(dt)` advances progress and returns `null` until complete. `_complete()` converts the derelict to loot: scrap from remaining armor, fuel and ammo scaled by an armor-ratio degradation factor, and (if the player has a Salvage Bay module) all non-destroyed installed modules and weapons as individual `LootDrop` entities. Loot entities are returned to `GameManager` for insertion into the entity list. The derelict is marked `salvaged = true` after completion.
+## SalvageSystem (`engine/systems/salvageSystem.js`)
 
-## WeaponSystem (`src/systems/weaponSystem.js`)
+Controls timed salvage of derelict ships. `start()` sets `isSalvaging`, locks player throttle to 0, and computes `salvageTotal` from the derelict's remaining armor. `update(dt)` advances `salvageProgress`; on completion `_complete()` generates loot drops: scrap from armor, fuel proportional to armor ratio, ammo from each weapon's magazine, and — if a Salvage Bay module is installed — extracted module/weapon drops from the derelict's slots. Returns `{ lootEntities, particlePos }` to `GameManager` which pushes the drops into `entities[]`.
 
-`WeaponSystem` handles per-tick weapon state that doesn't belong in the ship itself. `updateReloads(dt, player, ammo)` ticks `_reloadTimer` on all player weapons and refills magazines from the reserve ammo pool on timer expiry. `manualReload()` starts reload timers for any weapon below capacity with available ammo. `cycleAmmo()` dumps the current magazine back to the reserve pool, switches to the next accepted ammo type, and starts a reload. `updateGuidance()` updates targeting state on active guided projectiles each tick: wire-guided missiles track the mouse world position; heat-seeking missiles home toward the nearest hostile ship.
+## WeaponSystem (`engine/systems/weaponSystem.js`)
 
-## ShipAI (`src/ai/shipAI.js`)
+Handles player weapon state that doesn't fit on the weapon objects themselves. `updateReloads(dt)` ticks `_reloadTimer` on each player weapon and refills magazines from the reserve ammo pool when the timer expires. `manualReload()` starts a reload on weapons that are empty and have reserve ammo. `cycleAmmo()` dumps the current magazine back to reserves, switches `currentAmmoId` to the next accepted type, and starts a reload. `updateGuidance()` steers guided projectiles: wire-guided toward the mouse world position, heat-seeking toward the nearest active hostile.
 
-`updateShipAI(ship, player, entities, dt)` is the single entry point for all non-player AI. It dispatches on `ship.relation`: hostile ships run `_doHostile()`, which first checks for the `lurker` and `flee` special-case behaviors, then handles aggro/deaggro range transitions and hull-threshold fleeing before dispatching to a combat behavior (`stalker`, `kiter`, `standoff`, `latch`). Neutral ships run `_doPassive()`, dispatching on `ai.passiveBehavior` to `_doTrader()` (shuttles between two waypoints with wait phases) or `_doMilitia()` (orbits a center point). `_patrol()` handles pre-aggro circular patrol around `ship.homePosition`. All AI runtime state lives on `ship.ai.*` fields (e.g. `_aggro`, `_patrolAngle`, `_lurkerState`), keeping the AI stateless from a call-site perspective.
+---
 
-## Entity (`src/entities/entity.js`)
+## Ship AI (`engine/ai/shipAI.js`)
 
-`Entity` is the minimal base class for every object in the world. It stores world position (`x`, `y`), velocity (`vx`, `vy`), `rotation` (radians, 0 = north), and an `active` boolean. It declares the polymorphic interface — `update(dt)`, `render(ctx, camera)`, `getBounds()`, `onDestroy()` — with no-op defaults. `GameManager` updates and renders all entities polymorphically through this interface and purges inactive ones each tick. All entity types (`Ship`, `Projectile`, `LootDrop`, `Particle`, `Station`, `Planet`) extend `Entity`.
+Single `updateShipAI(ship, player, entities, dt)` entry point dispatching on `ship.relation`. Hostile ships first check aggro range, then flee at low hull, otherwise execute a combat behavior read from `ship.ai.combatBehavior`: `stalker` (chase aft arc), `kiter` (maintain distance, orbit), `standoff` (hold range, fire primaries + secondaries), `lurker` (hide at a cover point, pounce on neutral traders, escalate to player if spotted), `flee` (run). Non-hostile ships run `passiveBehavior`: `trader` (A↔B route with dwell waits) or `militia` (fixed-radius orbit). All state lives on `ship.ai.*` fields (`_aggro`, `_patrolAngle`, `_lurkerState`, etc.) so templates remain stateless.
 
-## Ship (`src/entities/ship.js`)
+---
 
-`Ship` extends `Entity` with the full ship simulation model. It stores quad-arc armor (`armorArcs` / `armorArcsMax`), hull integrity, throttle level, module slots, weapons list, and capability flags. Faction, relation, and AI template delegate through `captain` via getters when a `Character` is aboard, falling back to `_machineFaction`/`_machineRelation`/`_machineAi` for unmanned ships. `_initStats()` sets hull-class-specific stats (mass, hull, cargo, armor); movement stats are derived entirely by `recalcTW()`, which computes `speedMax`, `acceleration`, `turnRate`, and `fuelEfficiency` from installed engine modules against a `REFERENCE_TW`. `takeDamage(armorDmg, hullDmg, impactX, impactY)` routes damage to the facing arc and records `_lastHitArc` for module breach routing. Hull classes override `_drawShape(ctx)` and `getBounds()`; `render()` calls `_drawShape`, `_drawModules`, draws the engine trail, and optionally shows the lore text overlay for nearby derelicts.
+## Entity (`engine/entities/entity.js`)
 
-## Character (`src/entities/character.js`)
+Minimal base class for all world objects. Holds `x`, `y`, `vx`, `vy`, `rotation`, `active`, and `entityType`. Provides no-op `update()`, `render()`, `getBounds()`, and `onDestroy()` stubs for subclasses to override. The `entityType` string (from the `ENTITY` enum) is the canonical type discriminator — `instanceof` checks are banned to avoid import cycles.
 
-`Character` represents a person who can pilot a ship. It holds `id`, `name`, `faction`, `relation`, `behavior`, `flavorText`, and a copied AI template object (`this.ai`) so each character has independent runtime AI state. `boardShip(ship)` sets `ship.captain = this` and `this.inShip = ship`; the ship's `faction`/`relation`/`ai` getters then delegate to the character automatically with no syncing required. `leaveShip()` clears both references, reverting the ship to its machine defaults. Concord machines are never given a `Character` — their identity is set directly on `_machine*` fields. `game.characters[]` tracks all active instances; `game.playerCharacter` is the player's.
+## Ship (`engine/entities/ship.js`)
+
+Extends Entity with all ship-specific state: quad-arc armor (`armorArcs` / `armorArcsMax`), hull integrity, throttle/speed/acceleration/turn, weapons list, module slots, engine trails, and damage effect timers. Faction/relation/ai are delegated to `this.captain` when set, falling back to `_machine*` fields. `recalcTW()` derives all movement stats purely from installed engine modules' thrust-to-weight ratio. `takeDamage()` routes damage through the hit arc (armor absorption → hull bleed, with aft arc multiplier), triggers module breaches, and converts ships to derelicts at ≤10% hull rather than destroying them outright. `_drawShape()` and `_drawModules()` handle hull silhouette and per-mount module icon rendering, with arc-colored health overlays for the player ship.
+
+## Character (`engine/entities/character.js`)
+
+Represents a named person who pilots a ship. Constructed with id, name, faction, relation, behavior, and flavorText; the `behavior` string is resolved against `AI_TEMPLATES` and copied fresh into `this.ai` so each character has independent AI state. `boardShip(ship)` sets `ship.captain = this`, causing the ship's faction/relation/ai getters to delegate to the character. `leaveShip()` clears `ship.captain`, reverting the ship to its `_machine*` defaults. Concord machines are unmanned — no Character instance, fields set directly on the ship.
 
