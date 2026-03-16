@@ -20,9 +20,9 @@ Create a new ship hull class or edit an existing one. Ship classes are pure vess
 ## Step 2 — Read reference files
 
 Before writing any code:
-- `src/entities/ship.js` — `_initStats()`, `_drawHullArcs()`, `_playerHullFill()`, `_strokeArcCurrent()`, mount point system
-- `src/rendering/colors.js` — all color constants
-- `src/rendering/draw.js` — Shape factories and Draw API
+- `engine/entities/ship.js` — `_initStats()`, `_drawHullArcs()`, `_playerHullFill()`, `_strokeArcCurrent()`, mount point system
+- `engine/rendering/colors.js` — all color constants
+- `engine/rendering/draw.js` — Shape factories and Draw API
 - `data/shipClasses.js` — existing class stat multipliers
 - `UX.md` — visual conventions and color palette
 - Existing ship hull classes in `data/hulls/*/hull.js` for pattern reference
@@ -62,14 +62,14 @@ Key requirements:
   - NPC: `this.hullFill` fill + `this.hullStroke` outline
 - Override `getBounds()` with collision radius
 - Export `HULL_POINTS` (used by HUD minimap for player ship silhouette)
-- Use colors from `src/rendering/colors.js` — NEVER inline hex
-- Use Shape factories from `src/rendering/draw.js` where possible
+- Use colors from `engine/rendering/colors.js` — NEVER inline hex
+- Use Shape factories from `engine/rendering/draw.js` where possible
 
 For ships with separate components (nacelles, pods), use `_strokeArcCurrent(ctx, arcKey)` per sub-polygon. See `garrisonFrigate.js` and `g100Hauler.js` for examples.
 
 ## Step 5 — Register
 
-Hull files self-register into `CONTENT.hulls` at import time via `registerContent()` from `data/dataRegistry.js`. `getShipRegistry()` in `src/entities/registry.js` reads from `CONTENT.hulls`:
+Hull files self-register into `CONTENT.hulls` at import time via `registerContent()` from `data/dataRegistry.js`. `getShipRegistry()` in `engine/entities/registry.js` reads from `CONTENT.hulls`:
 
 ```js
 // In data/hulls/<slug>/hull.js

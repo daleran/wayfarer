@@ -22,9 +22,9 @@ Create a new character or edit an existing one. Characters are **people** (or ro
 
 ## Step 2 — Read reference files
 
-- `src/entities/character.js` — `Character` class, `boardShip()`/`leaveShip()`
+- `engine/entities/character.js` — `Character` class, `boardShip()`/`leaveShip()`
 - The character file where the character is currently defined (e.g. `data/characters/scavengers.js`)
-- `src/entities/registry.js` — `getCharacterRegistry()` (reads from `CONTENT.characters`), `createNPC()`
+- `engine/entities/registry.js` — `getCharacterRegistry()` (reads from `CONTENT.characters`), `createNPC()`
 - `LORE.md` — faction descriptions and world tone
 
 ## Step 3 — Create or edit the character
@@ -75,7 +75,7 @@ registerContent('characters', '<character-id>', CHARACTERS['<character-id>']);
 
 ## Step 4 — Verify registry
 
-`getCharacterRegistry()` in `src/entities/registry.js` reads from `CONTENT.characters`. No manual registry editing needed — content self-registers at import time. Just verify the character entry exists in `data/characters/*.js`.
+`getCharacterRegistry()` in `engine/entities/registry.js` reads from `CONTENT.characters`. No manual registry editing needed — content self-registers at import time. Just verify the character entry exists in `data/characters/*.js`.
 
 ## Step 5 — Validate & verify
 

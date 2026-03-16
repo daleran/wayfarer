@@ -1,7 +1,6 @@
 import { registerData, registerContent, WEAPONS } from '../dataRegistry.js';
-import {
-  AutocannonModule, LanceModuleSmall, CannonModule, RocketPodModule,
-} from '@/modules/shipModule.js';
+import { ShipModule } from '@/modules/shipModule.js';
+import { Shape, disc, line } from '@/rendering/draw.js';
 import { Autocannon } from '@/modules/weapons/autocannon.js';
 import { Cannon } from '@/modules/weapons/cannon.js';
 import { Lance } from '@/modules/weapons/lance.js';
@@ -14,6 +13,102 @@ import { Torpedo } from '@/modules/weapons/torpedo.js';
 import {
   AMBER, GREEN, CYAN, RAIL_WHITE, PLASMA_GREEN, TORPEDO_AMBER, CANNON_AMBER,
 } from '@/rendering/colors.js';
+
+// ── Shape constants ──────────────────────────────────────────────────────────
+const BARREL_SHAPE = Shape.rect(2, 8);
+const CANNON_SHAPE = Shape.rect(3, 6);
+const ROCKET_SHAPE = Shape.rect(6, 5);
+const LANCE_LINE   = 8;
+
+// ── Weapon module classes ────────────────────────────────────────────────────
+
+class AutocannonModule extends ShipModule {
+  constructor() {
+    super();
+    const W = WEAPONS.autocannon;
+    this.name        = 'autocannon';
+    this.displayName = 'AUTOCANNON (S)';
+    this.description = 'Kinetic hardpoint. Fires on trigger, mouse-aimed.';
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
+    this.powerPriority = 2;
+    this.weapon      = new Autocannon();
+  }
+  drawAtMount(ctx, color, alpha) {
+    BARREL_SHAPE.fill(ctx, color, alpha * 0.3);
+    BARREL_SHAPE.stroke(ctx, color, 0.8, alpha);
+  }
+  onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
+  onRemove(ship)  { ship.removeWeapon(this.weapon); }
+}
+
+class LanceModuleSmall extends ShipModule {
+  constructor() {
+    super();
+    const W = WEAPONS['lance-st'];
+    this.name        = 'lance-s';
+    this.displayName = 'LANCE (S)';
+    this.description = 'Hitscan beam emitter. Continuous fire, high power draw.';
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
+    this.powerPriority = 2;
+    this.weapon      = new Lance('small');
+  }
+  drawAtMount(ctx, color, alpha) {
+    line(ctx, 0, -LANCE_LINE / 2, 0, LANCE_LINE / 2, color, 1, alpha);
+    disc(ctx, 0, -LANCE_LINE / 2, 1.2, color, alpha);
+  }
+  onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
+  onRemove(ship)  { ship.removeWeapon(this.weapon); }
+}
+
+class CannonModule extends ShipModule {
+  constructor() {
+    super();
+    const W = WEAPONS.cannon;
+    this.name        = 'cannon';
+    this.displayName = 'CANNON (S)';
+    this.description = 'Heavy slug thrower. Slow fire rate, punishing impact.';
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
+    this.powerPriority = 2;
+    this.weapon      = new Cannon();
+  }
+  drawAtMount(ctx, color, alpha) {
+    CANNON_SHAPE.fill(ctx, color, alpha * 0.3);
+    CANNON_SHAPE.stroke(ctx, color, 0.8, alpha);
+  }
+  onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
+  onRemove(ship)  { ship.removeWeapon(this.weapon); }
+}
+
+class RocketPodModule extends ShipModule {
+  constructor(rocketSize = 'small', defaultMode = 'ht') {
+    super();
+    const id = rocketSize === 'large' ? 'rocket-l' : 'rocket-s';
+    const W = WEAPONS[id];
+    this.name        = rocketSize === 'large' ? 'rocket-l' : 'rocket-s';
+    this.displayName = rocketSize === 'large' ? 'RPOD-L' : 'RPOD-S';
+    this.description = 'Rocket pod. Fires RKT (dumbfire), WG (wire-guided), or HT (heat-seeking) ordnance.';
+    this.powerDraw   = W.powerDraw;
+    this.weight      = W.weight;
+    this.size        = W.size === 'L' ? 'large' : 'small';
+    this.powerPriority = 2;
+    this.weapon      = rocketSize === 'large' ? new RocketPodLarge() : new RocketPodSmall();
+    this.weapon.currentAmmoId = defaultMode;
+  }
+  drawAtMount(ctx, color, alpha) {
+    ROCKET_SHAPE.fill(ctx, color, alpha * 0.3);
+    ROCKET_SHAPE.stroke(ctx, color, 0.8, alpha);
+    disc(ctx, -1.5, 0, 1, color, alpha * 0.6);
+    disc(ctx, 1.5, 0, 1, color, alpha * 0.6);
+  }
+  onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
+  onRemove(ship)  { ship.removeWeapon(this.weapon); }
+}
 
 registerData(WEAPONS, {
   autocannon: {

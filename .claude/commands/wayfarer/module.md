@@ -34,17 +34,21 @@ Create a new module/weapon or edit an existing one. Modules are installable ship
 ## Step 2 — Read reference files
 
 ### For modules:
-- `src/modules/shipModule.js` — all module class definitions
-- `src/modules/registry.js` — exports `createModuleById(id)`, reads from `CONTENT.modules`
-- Module data files in `data/modules/` — self-register into `CONTENT.modules` via `registerContent()`
-- Relevant data files: `data/modules/engines.js`, `data/modules/reactors.js`, `data/modules/sensors.js`, `data/modules/weapons.js`
+- `engine/modules/shipModule.js` — base classes only (`ShipModule`, `EngineModule`, `UtilityModule`)
+- `engine/modules/registry.js` — exports `createModuleById(id)`, reads from `CONTENT.modules`
+- Module data files in `data/modules/` — contain concrete module classes + data + self-registration:
+  - `data/modules/engines.js` — 9 engine subclasses + engine data
+  - `data/modules/reactors.js` — 4 reactor classes + reactor data
+  - `data/modules/sensors.js` — 6 sensor classes + sensor data
+  - `data/modules/weapons.js` — 4 weapon module classes + weapon data + standalone weapon registration
+  - `data/modules/utilities.js` — 10 utility classes + utility data
 
 ### For weapons:
-- `src/modules/weapons/registry.js` — exports `createWeaponById(id)`, reads from `CONTENT.weapons`
+- `engine/modules/weapons/registry.js` — exports `createWeaponById(id)`, reads from `CONTENT.weapons`
 - Weapon data in `data/modules/weapons.js` — self-registers into `CONTENT.weapons` via `registerContent()`
-- Existing weapon files in `src/modules/weapons/` for pattern reference
-- `src/entities/projectile.js` — projectile behavior flags
-- `src/rendering/colors.js` — projectile/beam color constants
+- Existing weapon files in `engine/modules/weapons/` for pattern reference
+- `engine/entities/projectile.js` — projectile behavior flags
+- `engine/rendering/colors.js` — projectile/beam color constants
 
 ### Always:
 - `UX.md` — visual conventions
@@ -61,7 +65,7 @@ Add/update entries in the relevant data file using `registerData(TABLE, { ... })
 
 ## Step 4 — Create or edit the code
 
-### Module class (in `src/modules/shipModule.js`)
+### Module class (in the relevant `data/modules/<type>.js` file)
 
 #### Passive / utility module:
 ```js
@@ -135,9 +139,9 @@ export class <ClassName> extends ShipModule {
 }
 ```
 
-### Weapon class (new file in `src/modules/weapons/`)
+### Weapon class (new file in `engine/modules/weapons/`)
 
-Location: `src/modules/weapons/<camelCaseName>.js`
+Location: `engine/modules/weapons/<camelCaseName>.js`
 
 ```js
 import {
@@ -204,7 +208,7 @@ registerContent('modules', '<kebab-id>', {
 });
 ```
 
-No need to edit `src/modules/registry.js` — it auto-reads from `CONTENT.modules`.
+No need to edit `engine/modules/registry.js` — it auto-reads from `CONTENT.modules`.
 
 ### Weapon registration (in `data/modules/weapons.js`)
 Weapons self-register into `CONTENT.weapons` at import time via `registerContent()`:
@@ -218,7 +222,7 @@ registerContent('weapons', '<kebab-slug>', {
 });
 ```
 
-No need to edit `src/modules/weapons/registry.js` — it auto-reads from `CONTENT.weapons`.
+No need to edit `engine/modules/weapons/registry.js` — it auto-reads from `CONTENT.weapons`.
 
 ## Step 6 — Add to loot tables (if salvageable)
 
@@ -235,4 +239,4 @@ If the module/weapon should drop from derelicts, open `data/lootTables.js` and a
 ## Step 8 — Update docs
 
 - New weapon family or module category → `MECHANICS.md`
-- New projectile/beam colors → `UX.md` and `src/rendering/colors.js`
+- New projectile/beam colors → `UX.md` and `engine/rendering/colors.js`

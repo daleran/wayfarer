@@ -9,11 +9,11 @@
     "dev:editor": "vite --config vite.editor.config.js",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src/ data/",
-    "lint:fix": "eslint src/ data/ --fix",
+    "lint": "eslint engine/ data/",
+    "lint:fix": "eslint engine/ data/ --fix",
     "check": "tsc --project jsconfig.json",
     "lint:data": "node scripts/lint-data.js",
-    "validate": "eslint src/ data/ && tsc --project jsconfig.json && node scripts/lint-data.js"
+    "validate": "eslint engine/ data/ && tsc --project jsconfig.json && node scripts/lint-data.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

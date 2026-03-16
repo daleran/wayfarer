@@ -1,8 +1,89 @@
 import { registerData, registerContent, SENSORS } from '../dataRegistry.js';
-import {
-  StandardSensorSuite, CombatComputerModule, SalvageScannerModule, LongRangeScannerModule,
-  BattleDirectionCenterModule, EnforcementScannerModule,
-} from '@/modules/shipModule.js';
+import { ShipModule } from '@/modules/shipModule.js';
+import { ring, disc, line } from '@/rendering/draw.js';
+
+const SENSOR_DISH = 3;
+const SENSOR_LINE = 4;
+
+/** @param {ShipModule} mod @param {string} id */
+function _initSensor(mod, id) {
+  const S = SENSORS[id];
+  mod.name             = id;
+  mod.displayName      = S.displayName;
+  mod.powerDraw        = S.powerDraw;
+  mod.weight           = S.weight;
+  mod.size             = S.size === 'L' ? 'large' : 'small';
+  mod.powerPriority    = 1; // sensors: first to lose power
+  mod.minimap_ships    = !!S.minimapShips;
+  mod.sensor_range     = S.sensorRange;
+  mod.lead_indicators    = !!S.leadIndicators;
+  mod.health_pips        = !!S.healthPips;
+  mod.salvage_detail     = !!S.salvageDetail;
+  mod.trajectory_line    = !!S.trajectoryLine;
+  mod.enemy_telemetry    = !!S.enemyTelemetry;
+  mod.module_inspection  = !!S.moduleInspection;
+}
+
+/** Shared sensor rendering — dish + antenna + tip dot */
+function _drawSensorIcon(ctx, color, alpha) {
+  ring(ctx, 0, 1, SENSOR_DISH, color, 0.8, alpha);
+  line(ctx, 0, 1 - SENSOR_DISH, 0, 1 - SENSOR_DISH - SENSOR_LINE, color, 0.8, alpha);
+  disc(ctx, 0, 1 - SENSOR_DISH - SENSOR_LINE, 1, color, alpha * 0.6);
+}
+
+class StandardSensorSuite extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'standard-sensor-suite');
+    this.description = 'Modern array. Detects ships up to 3000 units.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
+
+class CombatComputerModule extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'combat-computer');
+    this.description = 'Targeting assist with lead indicators and integrity readout. Range: 2000.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
+
+class SalvageScannerModule extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'salvage-scanner');
+    this.description = 'Reveals salvage details in derelicts. Range: 2500.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
+
+class LongRangeScannerModule extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'long-range-scanner');
+    this.description = 'Deep-space array. Reveals salvage and module details at extreme range.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
+
+class BattleDirectionCenterModule extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'battle-direction-center');
+    this.description = 'Full-spectrum tactical suite. Lead indicators, telemetry, and module scans.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
+
+class EnforcementScannerModule extends ShipModule {
+  constructor() {
+    super();
+    _initSensor(this, 'enforcement-scanner');
+    this.description = 'Inspection-grade scanner. Module readout and integrity pips at medium range.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawSensorIcon(ctx, color, alpha); }
+}
 
 registerData(SENSORS, {
   'standard-sensor-suite': {
@@ -45,7 +126,8 @@ registerData(SENSORS, {
     moduleInspection: 0,
   },
   'long-range-scanner': {
-    displayName: 'LONG-RANGE SENSORS (S)',
+    displayName: 'LONG-RANGE SENSORS (L)',
+    size: 'L',
     powerDraw: 20,
     weight: 25,
     sensorRange: 8000,

@@ -128,7 +128,7 @@ const MODULE_CAT_FILES = {
 function _buildModuleItems() {
   return Object.entries(CONTENT.modules).map(([id, entry]) => {
     const sample = entry.create();
-    const isLarge = id.endsWith('-l') || id.endsWith('-large');
+    const isLarge = sample.size === 'large' || id.endsWith('-l') || id.endsWith('-large');
     return {
       id,
       label: sample.displayName || id,

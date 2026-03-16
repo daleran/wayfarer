@@ -24,12 +24,12 @@ Create a new station or edit an existing one. Stations are dockable entities wit
 
 ## Step 2 — Read reference files
 
-- `src/entities/station.js` — Station base class, `_renderNameLabel()`, `_navPulse`, accent colors
+- `engine/entities/station.js` — Station base class, `_renderNameLabel()`, `_navPulse`, accent colors
 - `data/locations/the-coil/station.js` — complex custom renderer example
 - `data/locations/kells-stop/station.js` — simpler custom renderer example
 - `data/locations/ashveil-anchorage/station.js` — another example
-- `src/rendering/colors.js` — all color constants
-- `src/rendering/draw.js` — Shape factories
+- `engine/rendering/colors.js` — all color constants
+- `engine/rendering/draw.js` — Shape factories
 - `UX.md` — visual conventions
 - `LORE.md` — existing stations and world context
 
@@ -117,8 +117,8 @@ export { stationData as <PascalName> };
 **Renderer conventions:**
 - `ctx.save()` / `ctx.restore()` around all draw calls
 - Draw around (0, 0) — ctx is already translated + scaled
-- Use colors from `src/rendering/colors.js` — NEVER inline hex
-- Use Shape factories from `src/rendering/draw.js`
+- Use colors from `engine/rendering/colors.js` — NEVER inline hex
+- Use Shape factories from `engine/rendering/draw.js`
 - `this._navPulse` for blinking/pulse animations
 - `this.accentColor` set by relation (CYAN settlements, RED scavengers, AMBER others)
 - Keep silhouette readable at small zoom levels

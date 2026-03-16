@@ -301,6 +301,13 @@ Panel-specific CSS files (`css/ship.css`, `css/narrative.css`, `css/designer.css
 - **Esc** closes the panel (and undocks).
 - **Story flags**: `game.storyFlags` (session-only key→value map). First-visit narration, NPC memory, gated dialogue branches.
 
+### Controls Panel (`engine/ui/controlsPanel.js`, `css/controls.css`)
+- **DOM-based right panel** (`#controls-panel`), `panel-base` frame, 280px wide. Toggled by **F1**.
+- **Header:** "CONTROLS" title + `[F1] close` hint.
+- **Sections:** MOVEMENT, COMBAT, SYSTEMS, MAP CONTROLS, GENERAL — each with key/description rows.
+- **Key labels** in amber, descriptions in dim. Section titles in cyan small-caps.
+- Available at any time (docked, in-flight, map open). Non-blocking — does not pause the game.
+
 ### HUD (In-Flight)
 
 The HUD has three zones: **ship-anchored UI** (canvas, follows ship), **bottom strip** (DOM, fixed bar), and **minimap** (canvas, top-right).

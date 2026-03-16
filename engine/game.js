@@ -14,6 +14,7 @@ import { InteractionSystem } from './systems/interactionSystem.js';
 import { updateShipAI } from './ai/shipAI.js';
 import { NarrativePanel } from './ui/narrativePanel.js';
 import { ShipScreen } from './ui/shipScreen.js';
+import { ControlsPanel } from './ui/controlsPanel.js';
 import {
   DEFAULT_SCRAP, FUEL_RATES, SPAWN,
 } from '@data/index.js';
@@ -72,6 +73,9 @@ export class GameManager {
 
     // Combat mode — F key toggle
     this.combatMode = false;
+
+    // Controls panel — F1 help overlay
+    this.controlsPanel = new ControlsPanel();
 
     // Player death screen (production mode only)
     this._playerDead = false;
@@ -159,6 +163,11 @@ export class GameManager {
       this._playerDead = true;
       this._showDeathScreen();
       return;
+    }
+
+    // Controls panel — F1 toggle (available any time)
+    if (input.wasJustPressed('f1')) {
+      this.controlsPanel.toggle();
     }
 
     // Map toggle — M key (available any time except docked / ship screen)

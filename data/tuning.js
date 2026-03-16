@@ -55,9 +55,9 @@ export const ROCKET_RELOAD_TIME = 13;
 export const HE_AUTOCANNON_BLAST = 60;
 export const HE_CANNON_BLAST = 150;
 export const MODULE_BREACH_HULL_THRESHOLD = 0.6;
-export const MODULE_BREACH_CHANCE_LOW = 0.12;
-export const MODULE_BREACH_CHANCE_MID = 0.25;
-export const MODULE_BREACH_CHANCE_HIGH = 0.4;
+export const MODULE_BREACH_CHANCE_LOW = 0.15;
+export const MODULE_BREACH_CHANCE_MID = 0.31;
+export const MODULE_BREACH_CHANCE_HIGH = 0.5;
 
 // ─── Economy Constants ───────────────────────────────────────────────────────
 export const DEFAULT_SCRAP = 20;

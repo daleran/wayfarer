@@ -9,30 +9,30 @@ Scan the codebase for dead code: unused exports, orphaned files, unreachable bra
 **The rule:** Every `export` from a JS file should be imported somewhere. Orphaned exports are dead weight.
 
 **How to check:**
-- For each `src/**/*.js` file, find all named exports (`export const`, `export class`, `export function`, `export default`, `export {`)
+- For each `engine/**/*.js` file, find all named exports (`export const`, `export class`, `export function`, `export default`, `export {`)
 - For each export name, grep the rest of the codebase for imports of that name
-- Exception: entry points (`src/main.js`, `src/editor-main.js`, `src/designer-main.js`) — these are consumed by HTML, not other JS files
+- Exception: entry points (`engine/main.js`, `engine/editor-main.js`, `engine/designer-main.js`) — these are consumed by HTML, not other JS files
 - Exception: registry objects (`CONTENT`, `CHARACTERS`) — these are lookup tables consumed dynamically
 
 **Report format:**
 ```
-FILE: src/some/module.js
+FILE: engine/some/module.js
 EXPORT: someFunction (line 42)
 IMPORTED BY: (none)
 ```
 
 ### 2. Orphaned files
 
-**The rule:** Every JS file under `src/` should be imported by at least one other file or referenced in HTML.
+**The rule:** Every JS file under `engine/` should be imported by at least one other file or referenced in HTML.
 
 **How to check:**
-- For each `src/**/*.js` file, check if any other file imports from its path
-- Exception: entry points loaded by HTML (`src/main.js`, `src/editor-main.js`, `src/designer-main.js`)
+- For each `engine/**/*.js` file, check if any other file imports from its path
+- Exception: entry points loaded by HTML (`engine/main.js`, `engine/editor-main.js`, `engine/designer-main.js`)
 - Exception: map files in `data/maps/` (loaded dynamically via URL param)
 
 **Report format:**
 ```
-ORPHAN: src/old/unusedHelper.js
+ORPHAN: engine/old/unusedHelper.js
   Not imported by any file
 ```
 
@@ -46,7 +46,7 @@ ORPHAN: src/old/unusedHelper.js
 
 **Report format:**
 ```
-FILE: src/some/module.js
+FILE: engine/some/module.js
 LINE: 3
 UNUSED IMPORT: AMBER from '../../rendering/colors.js'
 ```
@@ -126,13 +126,13 @@ Group findings by category:
 === DEAD CODE SCAN RESULTS ===
 
 [Unused Imports]
-  src/foo.js:3 — AMBER from '../../rendering/colors.js'
+  engine/foo.js:3 — AMBER from '../../rendering/colors.js'
 
 [Unused Exports]
-  src/bar.js:42 — export function helperFn()
+  engine/bar.js:42 — export function helperFn()
 
 [Orphaned Files]
-  src/old/legacy.js — not imported anywhere
+  engine/old/legacy.js — not imported anywhere
 
 [Stale Data Fields]
   data/locations/the-coil/station.js — LAYOUT.svg never read

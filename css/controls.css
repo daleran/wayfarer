@@ -1,0 +1,79 @@
+/* ── Controls Panel — F1 help overlay (right side) ─────────────────────────── */
+/* Inherits palette and base patterns from panel.css                           */
+
+#controls-panel {
+  right: 12px;
+  width: 280px;
+  min-width: 240px;
+  z-index: 10;
+}
+
+#controls-panel.hidden {
+  display: none;
+}
+
+.cp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--p-border);
+  flex-shrink: 0;
+}
+
+.cp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.cp-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cp-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cp-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 204, 0.15);
+}
+
+.cp-section {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--p-border);
+}
+
+.cp-section:last-child {
+  border-bottom: none;
+}
+
+.cp-section-title {
+  font-size: var(--p-small);
+  font-weight: bold;
+  color: var(--p-cyan);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.cp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 0;
+  line-height: 1.6;
+}
+
+.cp-key {
+  font-size: var(--p-small);
+  color: var(--p-amber);
+  min-width: 90px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.cp-desc {
+  font-size: var(--p-small);
+  color: var(--p-dim);
+}

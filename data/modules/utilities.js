@@ -1,11 +1,124 @@
 import { registerData, registerContent, UTILITIES } from '../dataRegistry.js';
-import {
-  ExpandedHoldSmall, ExpandedHoldLarge,
-  AuxTankSmall, AuxTankLarge,
-  StrippedWeightSmall, StrippedWeightLarge,
-  ExtraArmorSmall, ExtraArmorLarge,
-  SalvageBayModule, EngineeringBayModule,
-} from '@/modules/shipModule.js';
+import { UtilityModule } from '@/modules/shipModule.js';
+import { Shape, line } from '@/rendering/draw.js';
+import { AMBER, CYAN, GREEN, WHITE } from '@/rendering/colors.js';
+
+const UTILITY_SHAPE = Shape.chamferedRect(7, 7, 2);
+
+/** @param {UtilityModule} mod @param {string} id */
+function _initUtility(mod, id) {
+  const U = UTILITIES[id];
+  mod.name        = id;
+  mod.displayName = U.displayName;
+  mod.weight      = U.weight;
+  mod.size        = U.size === 'L' ? 'large' : 'small';
+  mod.isUtility   = true;
+  mod._cargoBonus = U.cargoBonus || 0;
+  mod._fuelBonus  = U.fuelBonus  || 0;
+  mod._armorBonus = U.armorBonus || 0;
+}
+
+/** Shared utility rendering — chamfered box + colored cross */
+function _drawUtilityIcon(ctx, color, alpha, glowColor) {
+  UTILITY_SHAPE.fill(ctx, color, alpha * 0.25);
+  UTILITY_SHAPE.stroke(ctx, color, 0.8, alpha);
+  line(ctx, -2.5, 0, 2.5, 0, glowColor, 1, alpha * 0.7);
+  line(ctx, 0, -2.5, 0, 2.5, glowColor, 1, alpha * 0.7);
+}
+
+class ExpandedHoldSmall extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'expanded-hold-s');
+    this.description = 'Welded-in cargo frames. More hold space — heavier hull, thinner armor.';
+    this.isCargoExpansion = true;
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, AMBER); }
+}
+
+class ExpandedHoldLarge extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'expanded-hold-l');
+    this.description = 'Full cargo bay extension. Major capacity gain — significant mass and armor penalty.';
+    this.isCargoExpansion = true;
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, AMBER); }
+}
+
+class AuxTankSmall extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'aux-tank-s');
+    this.description = 'Bolt-on fuel bladder. Extended range — adds weight, weakens hull plating.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, CYAN); }
+}
+
+class AuxTankLarge extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'aux-tank-l');
+    this.description = 'Pressurized reserve tank. Long-range capability — heavy, reduces armor protection.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, CYAN); }
+}
+
+class StrippedWeightSmall extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'stripped-weight-s');
+    this.description = 'Non-essential systems removed. Lighter hull — less armor protection.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, GREEN); }
+}
+
+class StrippedWeightLarge extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'stripped-weight-l');
+    this.description = 'Gutted interior, thinned bulkheads. Major weight reduction — armor severely compromised.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, GREEN); }
+}
+
+class ExtraArmorSmall extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'extra-armor-s');
+    this.description = 'Bolted armor plating. Better protection — heavier ship.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, WHITE); }
+}
+
+class ExtraArmorLarge extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'extra-armor-l');
+    this.description = 'Heavy composite armor panels. Substantial protection boost — significant mass penalty.';
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, WHITE); }
+}
+
+class SalvageBayModule extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'salvage-bay');
+    this.description = 'Field salvage bay. Extracts installed modules and weapons from derelicts during salvage.';
+    this.hasSalvageBay = true;
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, AMBER); }
+}
+
+class EngineeringBayModule extends UtilityModule {
+  constructor() {
+    super();
+    _initUtility(this, 'engineering-bay');
+    this.description = 'Field engineering bay. Enables hull repair using scrap while stationary.';
+    this.hasEngineeringBay = true;
+  }
+  drawAtMount(ctx, color, alpha) { _drawUtilityIcon(ctx, color, alpha, GREEN); }
+}
 
 registerData(UTILITIES, {
   'expanded-hold-s': {

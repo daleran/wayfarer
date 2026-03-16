@@ -7,7 +7,7 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 **Creating new?** Ask the user for:
 - **Display name** — e.g. "Void Cutter"
 - **Slug** — kebab-case, e.g. `void-cutter`
-- **Base ship class** — one of the hulls in `CONTENT.hulls` (check `src/entities/registry.js`, which proxies to `CONTENT.hulls`):
+- **Base ship class** — one of the hulls in `CONTENT.hulls` (check `engine/entities/registry.js`, which proxies to `CONTENT.hulls`):
   - `onyx-tug`, `maverick-courier`, `g100-hauler`, `garrison-frigate`, `drone-control-hull`, `snatcher-drone-hull`
   - Or a new class if none fits (see `/ship-class`)
 - **Has a captain?** — Yes = active NPC/player. No = derelict wreck.
@@ -33,8 +33,8 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 
 ## Step 2 — Read reference files
 
-- `src/entities/registry.js` — `getCharacterRegistry()`, `createNPC()` / `createShip()` helpers
-- `src/entities/character.js` — Character class, `boardShip()` pattern
+- `engine/entities/registry.js` — `getCharacterRegistry()`, `createNPC()` / `createShip()` helpers
+- `engine/entities/character.js` — Character class, `boardShip()` pattern
 - `CONTENT.modules` — available modules (self-registered from `data/modules/*.js`)
 - `CONTENT.weapons` — available weapons (self-registered from `data/modules/weapons.js`)
 - `data/ships/<faction>/` — ship config definitions (self-register into `CONTENT.ships`)
@@ -68,7 +68,7 @@ Module IDs use kebab-case keys matching `CONTENT.modules` (e.g. `'autocannon'`, 
 
 Characters are defined separately in `data/characters/*.js` with a `shipId` field referencing this ship's ID. See `/character`.
 
-**Unmanned ships (Concord machines):** Add `unmanned: true`, `faction`, `relation`, `aiBehavior`, and `entityClass: '<entity-class-id>'` to the ship data. Entity subclasses live in `src/entities/concord/`.
+**Unmanned ships (Concord machines):** Add `unmanned: true`, `faction`, `relation`, `aiBehavior`, and `entityClass: '<entity-class-id>'` to the ship data. Entity subclasses live in `engine/entities/concord/`.
 
 **Named characters with bounties:** Add an entry to `data/characters/*.js` using `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
 
@@ -103,7 +103,7 @@ Third line.`,
 
 ## Step 5 — Register
 
-**Captained ships:** Ship config self-registers at import time via `registerContent('ships', ...)`. Character data self-registers via `registerContent('characters', ...)`. `getCharacterRegistry()` in `src/entities/registry.js` reads from `CONTENT.characters`. No manual registry editing needed.
+**Captained ships:** Ship config self-registers at import time via `registerContent('ships', ...)`. Character data self-registers via `registerContent('characters', ...)`. `getCharacterRegistry()` in `engine/entities/registry.js` reads from `CONTENT.characters`. No manual registry editing needed.
 
 **For derelicts:** Content self-registers into `CONTENT.derelicts` at import time. The designer auto-discovers from `CONTENT.derelicts` — no separate designer entry needed.
 
