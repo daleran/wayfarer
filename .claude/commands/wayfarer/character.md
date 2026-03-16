@@ -23,16 +23,16 @@ Create a new character or edit an existing one. Characters are **people** (or ro
 ## Step 2 — Read reference files
 
 - `engine/entities/character.js` — `Character` class, `boardShip()`/`leaveShip()`
-- The character file where the character is currently defined (e.g. `data/characters/scavengers.js`)
+- The character file where the character is currently defined (e.g. `data/zones/gravewake/characters/scavenger.js`)
 - `engine/entities/registry.js` — `getCharacterRegistry()` (reads from `CONTENT.characters`), `createNPC()`
 - `LORE.md` — faction descriptions and world tone
 
 ## Step 3 — Create or edit the character
 
-Characters are defined in `data/characters/*.js` as standalone entries, separate from ship configs. Each character has a `shipId` field referencing a ship config in `CONTENT.ships`. Characters self-register at import time via `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
+Characters are defined in `data/zones/<zone>/characters/*.js` (zone-specific) or `data/characters/player.js` (player) as standalone entries, separate from ship configs. Each character has a `shipId` field referencing a ship config in `CONTENT.ships`. Characters self-register at import time via `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`. New files under `data/zones/` are auto-discovered by `import.meta.glob` — no `data/index.js` edit needed.
 
 ```js
-// In data/characters/<filename>.js
+// In data/zones/<zone>/characters/<filename>.js
 import { CHARACTERS, registerContent, registerData } from '@data/dataRegistry.js';
 
 registerData(CHARACTERS, {
@@ -75,7 +75,7 @@ registerContent('characters', '<character-id>', CHARACTERS['<character-id>']);
 
 ## Step 4 — Verify registry
 
-`getCharacterRegistry()` in `engine/entities/registry.js` reads from `CONTENT.characters`. No manual registry editing needed — content self-registers at import time. Just verify the character entry exists in `data/characters/*.js`.
+`getCharacterRegistry()` in `engine/entities/registry.js` reads from `CONTENT.characters`. No manual registry editing needed — content self-registers at import time. Just verify the character entry exists in `data/zones/<zone>/characters/*.js` or `data/characters/player.js`.
 
 ## Step 5 — Validate & verify
 

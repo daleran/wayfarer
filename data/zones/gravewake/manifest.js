@@ -1,18 +1,18 @@
 // Gravewake zone — placement manifest for the Tyr world.
 // Every entity is pre-instantiated. Maps just spread this into MAP.
 
-import { TheCoil }           from '@data/locations/the-coil/station.js';
-import { KellsStop }         from '@data/locations/kells-stop/station.js';
-import { AshveilAnchorage }  from '@data/locations/ashveil-anchorage/station.js';
-import { BrokenCovenant }    from '@data/ships/named/brokenCovenant.js';
-import { GuttedPioneer }     from '@data/ships/named/guttedPioneer.js';
-import { HollowMarch }       from '@data/ships/named/hollowMarch.js';
-import { ColdRemnant }       from '@data/ships/named/coldRemnant.js';
-import { FracturedWake }     from '@data/ships/named/fracturedWake.js';
-import { PaleWitness }       from '@data/ships/named/paleWitness.js';
-import { PlanetPale }        from '@data/terrain/planet-pale/index.js';
-import { ArkshipSpines }     from '@data/terrain/arkship-spines/index.js';
-import { WallOfWrecks }      from '@data/terrain/debris-clouds/index.js';
+import { TheCoil }           from './locations/the-coil/station.js';
+import { KellsStop }         from './locations/kells-stop/station.js';
+import { AshveilAnchorage }  from './locations/ashveil-anchorage/station.js';
+import { BrokenCovenant }    from './derelicts/brokenCovenant.js';
+import { GuttedPioneer }     from './derelicts/guttedPioneer.js';
+import { HollowMarch }       from './derelicts/hollowMarch.js';
+import { ColdRemnant }       from './derelicts/coldRemnant.js';
+import { FracturedWake }     from './derelicts/fracturedWake.js';
+import { PaleWitness }       from './derelicts/paleWitness.js';
+import { PlanetPale }        from './terrain/planet-pale/index.js';
+import { ArkshipSpines }     from './terrain/arkship-spines/index.js';
+import { WallOfWrecks }      from './terrain/debris-clouds/index.js';
 
 import { ZONE_BG_STROKE }       from '@/rendering/colors.js';
 import { createShip, createNPC } from '@/entities/registry.js';

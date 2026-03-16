@@ -3,7 +3,7 @@
 // Player enters near The Coil; all entity data lives in zone files under
 //   js/data/zones/gravewake/
 
-import { GRAVEWAKE } from '@data/zones/gravewake.js';
+import { GRAVEWAKE } from '@data/zones/gravewake/manifest.js';
 
 export const MAP = {
   mapSize: { width: 18000, height: 10000 },

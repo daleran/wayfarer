@@ -18,7 +18,7 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 - **Faction** — `'scavenger'`, `'concord'`, `'settlements'`, `'monastic'`, `'communes'`, `'zealots'`, or `'player'`
 - **Relation** — `'hostile'`, `'neutral'`, or `'player'`
 - **Combat behavior** — `stalker`, `kiter`, `standoff`, `lurker`, `flee` (hostile); `trader`, `militia` (neutral passive)
-- **Character** — create new (see `/character`) or reference existing from `data/characters/*.js`
+- **Character** — create new (see `/character`) or reference existing from `data/zones/<zone>/characters/*.js` or `data/characters/player.js`
 
 **If derelict (no captain)**, also ask:
 - **Ship class** — a hull ID from `CONTENT.hulls` (e.g. `'g100-hauler'`, `'maverick-courier'`, `'garrison-frigate'`, `'onyx-tug'`)
@@ -37,19 +37,19 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 - `engine/entities/character.js` — Character class, `boardShip()` pattern
 - `CONTENT.modules` — available modules (self-registered from `data/modules/*.js`)
 - `CONTENT.weapons` — available weapons (self-registered from `data/modules/weapons.js`)
-- `data/ships/<faction>/` — ship config definitions (self-register into `CONTENT.ships`)
-- `data/characters/*.js` — named NPC characters with backstories/bounties
-- Existing derelicts in `data/ships/named/` for derelict pattern
+- `data/zones/<zone>/ships/` — ship config definitions (self-register into `CONTENT.ships`); player ships in `data/ships/player/`
+- `data/zones/<zone>/characters/*.js` — named NPC characters with backstories/bounties; player character in `data/characters/player.js`
+- Existing derelicts in `data/zones/<zone>/derelicts/` for derelict pattern
 
 ## Step 3 — Data entry (if applicable)
 
-If the named ship needs a data entry, add/update in `data/ships/<faction>/<shipName>.js` using `registerContent('ships', '<slug>', { ... })` from `data/dataRegistry.js`. Content self-registers at import time.
+If the named ship needs a data entry, add/update in `data/zones/<zone>/ships/<shipName>.js` (zone-specific) or `data/ships/player/<shipName>.js` (player ships) using `registerContent('ships', '<slug>', { ... })` from `data/dataRegistry.js`. Content self-registers at import time — no `data/index.js` edit needed (auto-discovered by `import.meta.glob`).
 
 ## Step 4 — Create or edit the ship entry
 
 ### Captained ship (active NPC or player)
 
-Location: `data/ships/<faction>/<shipName>.js` — register into `CONTENT.ships`:
+Location: `data/zones/<zone>/ships/<shipName>.js` (zone-specific) or `data/ships/player/<shipName>.js` (player) — register into `CONTENT.ships`:
 
 ```js
 import { registerContent } from '@data/dataRegistry.js';
@@ -66,11 +66,11 @@ registerContent('ships', '<slug>', {
 
 Module IDs use kebab-case keys matching `CONTENT.modules` (e.g. `'autocannon'`, `'hydrogen-fuel-cell'`). Use `'null'` string for empty slots. For rocket pods with guidance: `'rocket-s:ht'` or `'rocket-l:ht'`.
 
-Characters are defined separately in `data/characters/*.js` with a `shipId` field referencing this ship's ID. See `/character`.
+Characters are defined separately in `data/zones/<zone>/characters/*.js` (zone-specific) or `data/characters/player.js` (player) with a `shipId` field referencing this ship's ID. See `/character`.
 
 **Unmanned ships (Concord machines):** Add `unmanned: true`, `faction`, `relation`, `aiBehavior`, and `entityClass: '<entity-class-id>'` to the ship data. Entity subclasses live in `engine/entities/concord/`.
 
-**Named characters with bounties:** Add an entry to `data/characters/*.js` using `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
+**Named characters with bounties:** Add an entry to `data/zones/<zone>/characters/*.js` using `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
 
 **Behavior setup notes:**
 - `lurker`: spawn code must set `ship.ai._coverPoint = { x, y }` post-creation
@@ -79,7 +79,7 @@ Characters are defined separately in `data/characters/*.js` with a `shipId` fiel
 
 ### Derelict (no captain)
 
-Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Location: `data/ships/named/<camelCaseName>.js`.
+Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Location: `data/zones/<zone>/derelicts/<camelCaseName>.js`.
 
 ```js
 import { CONTENT, registerContent } from '@data/dataRegistry.js';

@@ -11,9 +11,8 @@ import { getShipRegistry, getNamedShipRegistry, getCharacterRegistry } from '@/e
 import { CONTENT } from '@data/index.js';
 
 // POIs
-import { PlanetPale } from '@data/terrain/planet-pale/index.js';
-import { createArkshipSpine } from '@data/terrain/arkship-spines/index.js';
-import { createDebrisCloud } from '@data/terrain/debris-clouds/index.js';
+import { createArkshipSpine } from '@data/zones/gravewake/terrain/arkship-spines/index.js';
+import { createDebrisCloud } from '@data/zones/gravewake/terrain/debris-clouds/index.js';
 
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
@@ -169,6 +168,18 @@ function _buildDerelictItems() {
   });
 }
 
+function _buildPlanetItems() {
+  return Object.entries(CONTENT.planets).map(([slug, def]) => ({
+    id: slug,
+    label: def.label,
+    file: null,
+    type: 'poi',
+    flavorText: def.flavorText,
+    create: () => def.backgroundData({ x: 0, y: 0 }),
+    info: { Type: 'Planet' },
+  }));
+}
+
 // ─── CATEGORY DEFINITIONS ─────────────────────────────────────────────────────
 
 function _isShipCategory(id) { return id === 'ship-classes' || id === 'ships'; }
@@ -212,14 +223,7 @@ const CATEGORIES = [
   {
     id: 'planets',
     label: 'Planets',
-    items: [
-      {
-        id: 'planet-pale', label: 'Pale (ice planet)', file: 'js/data/zones/gravewake/planetPale.js', type: 'poi',
-        flavorText: "A frozen world of nitrogen plains and fractured ice. Navigation charts list it as uninhabitable — the scavenger clans who've built settlements on its cryo-flats prefer it that way.",
-        create: () => PlanetPale.backgroundData({ x: 0, y: 0 }),
-        info: { Type: 'Planet (ice)', Radius: '540u', Note: 'Topographic contours' },
-      },
-    ],
+    items: _buildPlanetItems(),
   },
   {
     id: 'derelicts',

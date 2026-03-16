@@ -25,9 +25,9 @@ Create a new station or edit an existing one. Stations are dockable entities wit
 ## Step 2 — Read reference files
 
 - `engine/entities/station.js` — Station base class, `_renderNameLabel()`, `_navPulse`, accent colors
-- `data/locations/the-coil/station.js` — complex custom renderer example
-- `data/locations/kells-stop/station.js` — simpler custom renderer example
-- `data/locations/ashveil-anchorage/station.js` — another example
+- `data/zones/gravewake/locations/the-coil/station.js` — complex custom renderer example
+- `data/zones/gravewake/locations/kells-stop/station.js` — simpler custom renderer example
+- `data/zones/gravewake/locations/ashveil-anchorage/station.js` — another example
 - `engine/rendering/colors.js` — all color constants
 - `engine/rendering/draw.js` — Shape factories
 - `UX.md` — visual conventions
@@ -35,16 +35,16 @@ Create a new station or edit an existing one. Stations are dockable entities wit
 
 ## Step 3 — Create or edit station files
 
-Station code is co-located in a single directory:
-1. **Renderer** → `data/locations/<slug>/renderer.js` — custom Station subclass with canvas rendering
-2. **Data** → `data/locations/<slug>/station.js` — pure data + layout + `instantiate()`
-3. **Conversations** → `data/locations/<slug>/conversations/` — conversation scripts for this station
+Station code is co-located in a single directory under its zone:
+1. **Renderer** → `data/zones/<zone>/locations/<slug>/renderer.js` — custom Station subclass with canvas rendering
+2. **Data** → `data/zones/<zone>/locations/<slug>/station.js` — pure data + layout + `instantiate()`
+3. **Conversations** → `data/zones/<zone>/locations/<slug>/conversations/` — conversation scripts for this station
 
-Content self-registers at import time via `registerContent()` from `data/dataRegistry.js`.
+Content self-registers at import time via `registerContent()` from `data/dataRegistry.js`. New files under `data/zones/` are auto-discovered by `import.meta.glob` — no `data/index.js` edit needed.
 
 ### Renderer file (skip for generic hex)
 
-Location: `data/locations/<slug>/renderer.js`
+Location: `data/zones/<zone>/locations/<slug>/renderer.js`
 
 ```js
 import { Station } from '@/entities/station.js';
@@ -74,7 +74,7 @@ export class <StationName>Station extends Station {
 
 ### Data file
 
-Location: `data/locations/<slug>/station.js`
+Location: `data/zones/<zone>/locations/<slug>/station.js`
 
 ```js
 import { CONTENT, registerContent } from '@data/dataRegistry.js';
@@ -129,7 +129,7 @@ export { stationData as <PascalName> };
 Station data self-registers into `CONTENT.stations` via `registerContent()` at import time (see data file template above). The designer auto-discovers from `CONTENT.stations` — no separate registry entry needed.
 
 ### Zone manifest
-Open `data/zones/<zone>.js` and add to the `entities` array:
+Open `data/zones/<zone>/manifest.js` and add to the `entities` array:
 ```js
 <PascalName>.instantiate(XXXX, YYYY),
 ```

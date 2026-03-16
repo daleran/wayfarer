@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: CX**
+**Next available code: CY**
 
 ---
 
@@ -33,6 +33,7 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
+| CX | Tyr System Geography & Great Houses | World / Map |
 
 ---
 
@@ -143,6 +144,110 @@ The inner system sits on the exact opposite side of the system from Gravewake, c
 - Population lives inside massive domed cities built to filter deadly UV radiation
 - Thanks to ideal day-night cycle and proximity to the star, this moon is the **agricultural heart of the entire system** — the vast majority of crops, fruits, and vegetables grown and exported from here
 - Peaceful zone; no active combat expected; economic and narrative significance
+
+---
+
+### CX: Tyr System Geography & Great Houses
+
+Full star system survey of Tyr — the human core. This region is the primary seat of human civilization following the exile from Earth. Organized from outer fringe inward toward the central star.
+
+*Note: supersedes BT (Inner System Locations) with a comprehensive system-wide geography. BT's Venus-like planet and Farming Moon concepts are absorbed and refined here.*
+
+**1. The Outer Fringe: The Icy Reach**
+
+The boundary between the inner system and the Kuiper-style asteroid belts. Primary theater of conflict — battles for ancient resources and defensive citadels.
+
+**1.1 Pale & Gravewake**
+- First landing point of all humans exiled from Earth; a massive, frozen archaeological site
+- Landscape is a graveyard of ancient ships and orbital debris
+- Primary territory of the Salvage Lords — independent factions scrapping "Old World" wrecks for pre-Exile electronics and hull plating
+- Geopolitics: an "Outer Wild West" existing just beyond the formal authority of the Great Houses
+- See AS for The Coil and zone features
+
+**2. The Ice Giant: Cocytus & The Warlord Moons**
+
+A massive ice giant serving as the gateway to the outer system. Solar energy is non-existent — inhabitants rely on geothermal heat or chemical refining.
+
+**2.1 The Four Independent Moons** — self-sustained micro-states administered by petty warlords in a constant cycle of local dominance:
+
+| Moon | Specialization | Description |
+|---|---|---|
+| **Acheron** | Fuel & Chemicals | Taps frozen volatiles for liquid hydrogen/oxygen. The lifeblood of all deep-space transit |
+| **Phlegethon** | Heavy Industry | Taps geothermal geysers for power. Volatile manufacturing hub reliant on raw ore imports |
+| **Styx** | Rare Earth Mining | High-metallic core moon providing raw iron and rare earth elements for the Forge |
+| **Lethe** | Farming | Barren, airless rock used for massive "Light-Capture" farms; the only fresh nutrients in this orbit |
+
+**3. The Gas Giant: Boreas & The Cascare Domain**
+
+A massive gas giant with a prominent ring system. Recently the site of a major political shift.
+
+**3.1 The Fall of House Drazel:**
+- For generations, Boreas was the seat of House Drazel — a cruel power that held a stranglehold on the system's raw minerals
+- House Cascare, originally a minor vassal house, led a successful uprising covertly backed by House Valerius and House Aridani
+- House Cascare now manages the planet; culturally perceived as "New Blood," still in debt to the inner houses
+
+**3.2 The Order of the Static (Monastic Tech Order):**
+- Independent monastic order located on the moon **Vesper**
+- Fanatically anti-Concord — believe Concord's technology led to humanity's downfall and exile
+- Hoard and tweak pre-Exile technology; the only entity capable of producing "modern" electronics, though stalled at roughly 1980s-level technology (analog circuits, early digital systems)
+
+**4. The Super-Earth: Aethelgard & The Valerius Heartland**
+
+The administrative and economic capital of Tyr, ruled by the prestigious House Valerius.
+
+**4.1 The Primary (The Veiled World):**
+- 4–6× Earth's mass with a crushing, thick atmosphere
+- Surface conditions are an impenetrable mystery
+
+**4.2 The Twin Industrial Moons — The Cosmopolis:**
+- **Oros** and **Thalassa** (0.7 and 0.8 Earth masses)
+- **The Shipwright Guild (Independent):** Based in massive orbital drydocks of Oros. Monopolizes the skills and tech needed to integrate components (Cascare steel, Ignis reactors, Static electronics) into functional starships. No Great House can build a ship without their blessing
+
+**5. The Rust-Basket: Khem & The Aridani Breadbasket**
+
+A rocky planet positioned between Aethelgard and the inner sun — a planetary desert and the primary agricultural world.
+
+**5.1 House Aridani:**
+- Focused on large-scale terraforming and agricultural logistics
+- Khem provides the bulk calories that feed the billions in Tyr
+
+**5.2 The Water Road:**
+- Khem is entirely reliant on constant ice shipments from Cocytus and Boreas to maintain its vast farming complexes
+
+**6. The Twilight Ring: Ferrum & The Ignis Bastion**
+
+The innermost planet — a dense iron world tidally locked to the sun.
+
+**6.1 House Ignis:**
+- The smallest and most heavily armed Great House
+- **The Uranium Monopoly:** controls the only viable uranium ore deposits in the system
+- **The Great Ring Road:** a massive underground highway connecting crater-citadels in the twilight band
+- Military specialty: advanced nuclear reactors and high-velocity railguns
+
+**7. System Geopolitics: The Great Houses**
+
+| Entity | Base | Role |
+|---|---|---|
+| **House Valerius** | Aethelgard | The Diplomatic Masterminds |
+| **House Cascare** | Boreas | The Mineral Backbone |
+| **House Aridani** | Khem | The Caloric Breadbasket |
+| **House Ignis** | Ferrum | The Nuclear Powerhouse |
+
+**Non-Aligned Entities:**
+- **The Order of the Static** — controls all electronic logic and computer systems
+- **The Shipwright Guild** — controls all high-end manufacturing and naval construction
+- **The Salvage Lords** — control the flow of ancient "high-tech" scrap from Gravewake
+
+**8. Game Integration: The Introductory Zone**
+
+- **Starting Location:** Cocytus (The Warlord Moons)
+- **Theme:** "The Scrappy Frontier" — a fractured, balkanized system where four petty warlords constantly squabble over dominance of the Ice Giant's moons. Perfect excuse for an unknown freelancer to make a name without drawing the ire of system-spanning Great Houses
+- **Mechanics Intro** — the four moons act as a microcosm of the entire game's core loop:
+  - Learn basic mining and resource extraction at Styx
+  - Trade for essential survival supplies and food at Lethe
+  - Purchase fuel and chemical propellants at Acheron
+  - Upgrade and repair the starter ship at Phlegethon
+- **The Escalation:** low-stakes warlord politics teach cross-planetary trade and localized combat; the ultimate goal is earning enough resources and hull upgrades to survive the dangerous journey inward toward formal Great House territory
 
 ---
 

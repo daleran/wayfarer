@@ -33,6 +33,7 @@ export const CONTENT = {
   characters: {},     // id → { name, faction, relation, behavior, shipId, bounty?, flavorText? }
   modules: {},        // id → { category, create() }
   weapons: {},        // id → { create(), slug, label, flavorText, projColor, ... }
+  planets: {},        // id → { backgroundData(), name, ... }
 };
 
 /** Register a content entry into the appropriate CONTENT sub-table. */
