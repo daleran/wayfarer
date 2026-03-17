@@ -10,24 +10,24 @@ Create a new station or edit an existing one. Stations are dockable entities wit
 - **Faction** — `'settlements'`, `'scavengers'`, `'concord'`, `'monastic'`, `'communes'`, `'zealots'`
 - **Services** — array from: `'repair'`, `'fuel'`, `'trade'`, `'bounty'`, `'overhaul'`
 - **Renderer** — `'default'` (generic hex from Station base) or custom (needs a new renderer class)
-- **Zone** — which zone, e.g. `gravewake/`
+- **Location node** — which orbital/surface zone, e.g. `tyr/pale/orbital/`
 - **Map position** — world coordinates `{ x, y }`
 - **Visual identity** — shape/color/vibe if custom renderer
-- **Layout** — station interior zones (docking bay, market, etc.)
+- **Layout** — station interior sections (docking bay, market, etc.)
 
 **Editing existing?** Read the file first. Common edits:
 - Add/remove services
 - Modify renderer geometry or colors
-- Update layout zones
+- Update layout sections
 - Change faction or lore
 - Adjust docking radius
 
 ## Step 2 — Read reference files
 
 - `engine/entities/station.js` — Station base class, `_renderNameLabel()`, `_navPulse`, accent colors
-- `data/zones/gravewake/locations/the-coil/station.js` — complex custom renderer example
-- `data/zones/gravewake/locations/kells-stop/station.js` — simpler custom renderer example
-- `data/zones/gravewake/locations/ashveil-anchorage/station.js` — another example
+- `data/locations/tyr/pale/orbital/locations/the-coil/station.js` — complex custom renderer example
+- `data/locations/tyr/pale/orbital/locations/kells-stop/station.js` — simpler custom renderer example
+- `data/locations/tyr/pale/orbital/locations/ashveil-anchorage/station.js` — another example
 - `engine/rendering/colors.js` — all color constants
 - `engine/rendering/draw.js` — Shape factories
 - `UX.md` — visual conventions
@@ -36,15 +36,15 @@ Create a new station or edit an existing one. Stations are dockable entities wit
 ## Step 3 — Create or edit station files
 
 Station code is co-located in a single directory under its zone:
-1. **Renderer** → `data/zones/<zone>/locations/<slug>/renderer.js` — custom Station subclass with canvas rendering
-2. **Data** → `data/zones/<zone>/locations/<slug>/station.js` — pure data + layout + `instantiate()`
-3. **Conversations** → `data/zones/<zone>/locations/<slug>/conversations/` — conversation scripts for this station
+1. **Renderer** → `data/locations/<system>/<body>/<node>/locations/<slug>/renderer.js` — custom Station subclass with canvas rendering
+2. **Data** → `data/locations/<system>/<body>/<node>/locations/<slug>/station.js` — pure data + layout + `instantiate()`
+3. **Conversations** → `data/locations/<system>/<body>/<node>/locations/<slug>/conversations/` — conversation scripts for this station
 
-Content self-registers at import time via `registerContent()` from `data/dataRegistry.js`. New files under `data/zones/` are auto-discovered by `import.meta.glob` — no `data/index.js` edit needed.
+Content self-registers at import time via `registerContent()` from `data/dataRegistry.js`. New files under `data/locations/` are auto-discovered by `import.meta.glob` — no `data/index.js` edit needed.
 
 ### Renderer file (skip for generic hex)
 
-Location: `data/zones/<zone>/locations/<slug>/renderer.js`
+Location: `data/locations/<system>/<body>/<node>/locations/<slug>/renderer.js`
 
 ```js
 import { Station } from '@/entities/station.js';
@@ -74,15 +74,16 @@ export class <StationName>Station extends Station {
 
 ### Data file
 
-Location: `data/zones/<zone>/locations/<slug>/station.js`
+Location: `data/locations/<system>/<body>/<node>/locations/<slug>/station.js`
 
 ```js
-import { CONTENT, registerContent } from '@data/dataRegistry.js';
+import { registerContent } from '@data/dataRegistry.js';
+import { LOCATION_TYPE } from '@data/enums.js';
 import { <StationName>Station } from './renderer.js';
 // For generic hex: import { Station } from '@/entities/station.js';
 
 const LAYOUT = {
-  zones: [
+  sections: [
     {
       id: 'dock', label: 'Docking Bay',
       description: 'Hull repairs and refueling.',
@@ -93,7 +94,7 @@ const LAYOUT = {
   ],
 };
 
-const stationData = {
+export const <PascalName> = {
   id: '<underscore_id>',
   name: '<Display Name>',
   faction: '<faction>',
@@ -110,8 +111,13 @@ const stationData = {
   },
 };
 
-registerContent(CONTENT.stations, '<slug>', stationData);
-export { stationData as <PascalName> };
+registerContent('locations', '<slug>', {
+  id: '<slug>',
+  locationType: LOCATION_TYPE.STATION,
+  name: '<Display Name>',
+  flavorText: <PascalName>.flavorText,
+  entity: <PascalName>,
+});
 ```
 
 **Renderer conventions:**
@@ -126,10 +132,10 @@ export { stationData as <PascalName> };
 ## Step 4 — Register
 
 ### Content registration
-Station data self-registers into `CONTENT.stations` via `registerContent()` at import time (see data file template above). The designer auto-discovers from `CONTENT.stations` — no separate registry entry needed.
+Station data self-registers into `CONTENT.locations` (with `LOCATION_TYPE.STATION`) via `registerContent()` at import time (see data file template above). The designer auto-discovers from `CONTENT.locations` — no separate registry entry needed.
 
-### Zone manifest
-Open `data/zones/<zone>/manifest.js` and add to the `entities` array:
+### Location manifest
+Open the location node's `manifest.js` (e.g. `data/locations/tyr/pale/orbital/manifest.js`) and add to the `entities` array:
 ```js
 <PascalName>.instantiate(XXXX, YYYY),
 ```
@@ -150,5 +156,4 @@ Add to `data/maps/arena.js`:
 ## Step 6 — Update docs
 
 - Station lore, name, faction → `LORE.md`
-- New service type or station behavior → `MECHANICS.md`
 - New renderer visual patterns → `UX.md`

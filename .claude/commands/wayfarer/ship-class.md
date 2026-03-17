@@ -93,6 +93,5 @@ The designer auto-discovers from `CONTENT.hulls` — no separate designer entry 
 
 ## Step 7 — Update docs
 
-- New hull archetype or size category → `MECHANICS.md`
 - New visual patterns → `UX.md`
 - Lore significance → `LORE.md`

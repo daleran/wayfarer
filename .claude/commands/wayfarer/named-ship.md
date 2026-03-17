@@ -15,10 +15,10 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 - **Flavor text** — one paragraph tactical/lore description
 
 **If captained**, also ask:
-- **Faction** — `'scavenger'`, `'concord'`, `'settlements'`, `'monastic'`, `'communes'`, `'zealots'`, or `'player'`
-- **Relation** — `'hostile'`, `'neutral'`, or `'player'`
+- **Faction** — `'scavengers'`, `'concord'`, `'settlements'`, `'monastic'`, `'communes'`, `'zealots'`, `'casimir'`, or a child faction
+- **Relation** — derived from faction reputation at runtime (do NOT hardcode for NPCs; only `'player'` for player characters)
 - **Combat behavior** — `stalker`, `kiter`, `standoff`, `lurker`, `flee` (hostile); `trader`, `militia` (neutral passive)
-- **Character** — create new (see `/character`) or reference existing from `data/zones/<zone>/characters/*.js` or `data/characters/player.js`
+- **Character** — create new (see `/character`) or reference existing from `data/locations/<system>/<body>/<node>/characters/*.js` or `data/characters/player.js`
 
 **If derelict (no captain)**, also ask:
 - **Ship class** — a hull ID from `CONTENT.hulls` (e.g. `'g100-hauler'`, `'maverick-courier'`, `'garrison-frigate'`, `'onyx-tug'`)
@@ -37,19 +37,19 @@ Create a new named ship or edit an existing one. Named ships are configured inst
 - `engine/entities/character.js` — Character class, `boardShip()` pattern
 - `CONTENT.modules` — available modules (self-registered from `data/modules/*.js`)
 - `CONTENT.weapons` — available weapons (self-registered from `data/modules/weapons.js`)
-- `data/zones/<zone>/ships/` — ship config definitions (self-register into `CONTENT.ships`); player ships in `data/ships/player/`
-- `data/zones/<zone>/characters/*.js` — named NPC characters with backstories/bounties; player character in `data/characters/player.js`
-- Existing derelicts in `data/zones/<zone>/derelicts/` for derelict pattern
+- `data/locations/<system>/<body>/<node>/ships/` — ship config definitions (self-register into `CONTENT.ships`); player ships in `data/ships/player/`
+- `data/locations/<system>/<body>/<node>/characters/*.js` — named NPC characters with backstories/bounties; player character in `data/characters/player.js`
+- Existing derelicts in `data/locations/<system>/<body>/<node>/derelicts/` for derelict pattern
 
 ## Step 3 — Data entry (if applicable)
 
-If the named ship needs a data entry, add/update in `data/zones/<zone>/ships/<shipName>.js` (zone-specific) or `data/ships/player/<shipName>.js` (player ships) using `registerContent('ships', '<slug>', { ... })` from `data/dataRegistry.js`. Content self-registers at import time — no `data/index.js` edit needed (auto-discovered by `import.meta.glob`).
+If the named ship needs a data entry, add/update in `data/locations/<system>/<body>/<node>/ships/<shipName>.js` (zone-specific) or `data/ships/player/<shipName>.js` (player ships) using `registerContent('ships', '<slug>', { ... })` from `data/dataRegistry.js`. Content self-registers at import time — no `data/index.js` edit needed (auto-discovered by `import.meta.glob`).
 
 ## Step 4 — Create or edit the ship entry
 
 ### Captained ship (active NPC or player)
 
-Location: `data/zones/<zone>/ships/<shipName>.js` (zone-specific) or `data/ships/player/<shipName>.js` (player) — register into `CONTENT.ships`:
+Location: `data/locations/<system>/<body>/<node>/ships/<shipName>.js` (zone-specific) or `data/ships/player/<shipName>.js` (player) — register into `CONTENT.ships`:
 
 ```js
 import { registerContent } from '@data/dataRegistry.js';
@@ -66,11 +66,11 @@ registerContent('ships', '<slug>', {
 
 Module IDs use kebab-case keys matching `CONTENT.modules` (e.g. `'autocannon'`, `'hydrogen-fuel-cell'`). Use `'null'` string for empty slots. For rocket pods with guidance: `'rocket-s:ht'` or `'rocket-l:ht'`.
 
-Characters are defined separately in `data/zones/<zone>/characters/*.js` (zone-specific) or `data/characters/player.js` (player) with a `shipId` field referencing this ship's ID. See `/character`.
+Characters are defined separately in `data/locations/<system>/<body>/<node>/characters/*.js` (zone-specific) or `data/characters/player.js` (player) with a `shipId` field referencing this ship's ID. See `/character`.
 
 **Unmanned ships (Concord machines):** Add `unmanned: true`, `faction`, `relation`, `aiBehavior`, and `entityClass: '<entity-class-id>'` to the ship data. Entity subclasses live in `engine/entities/concord/`.
 
-**Named characters with bounties:** Add an entry to `data/zones/<zone>/characters/*.js` using `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
+**Named characters with bounties:** Add an entry to `data/locations/<system>/<body>/<node>/characters/*.js` using `registerData(CHARACTERS, ...)` + `registerContent('characters', ...)`.
 
 **Behavior setup notes:**
 - `lurker`: spawn code must set `ship.ai._coverPoint = { x, y }` post-creation
@@ -79,7 +79,7 @@ Characters are defined separately in `data/zones/<zone>/characters/*.js` (zone-s
 
 ### Derelict (no captain)
 
-Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Location: `data/zones/<zone>/derelicts/<camelCaseName>.js`.
+Derelicts self-register into `CONTENT.derelicts` via `registerContent()`. Location: `data/locations/<system>/<body>/<node>/derelicts/<camelCaseName>.js`.
 
 ```js
 import { CONTENT, registerContent } from '@data/dataRegistry.js';
@@ -123,6 +123,5 @@ Add spawn entries to `data/maps/arena.js` (testing) and the relevant zone manife
 
 ## Step 8 — Update docs
 
-- New enemy type or neutral traffic → `MECHANICS.md`
 - Named vessel with lore → `LORE.md`
 - New faction member → `LORE.md` faction section

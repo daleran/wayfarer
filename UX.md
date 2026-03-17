@@ -385,9 +385,9 @@ Stations are **not** sleek, symmetric, corporate structures. This is a broken un
 
 8. **Label below the structure** in `outlineColor`, SUBTITLE style (24px, uppercase).
 
-9. **Zone flavor text proximity fade.** Each station zone's first flavor line fades in when the player flies near that area, using `FLAVOR` style (12px, accent color). Distance threshold: 400 world units from the zone's label position (`worldOffset + labelOffset`). Smooth lerp at 1.2/sec. Same principle as derelict lore text — discovery is gradual. Rendered by `Station.renderZoneFlavor()` in the entity pass. Per-zone alphas stored in `station._zoneFadeAlphas`.
+9. **Section flavor text proximity fade.** Each station section's first flavor line fades in when the player flies near that area, using `FLAVOR` style (12px, accent color). Distance threshold: 400 world units from the section's label position (`worldOffset + labelOffset`). Smooth lerp at 1.2/sec. Same principle as derelict lore text — discovery is gradual. Rendered by `Station.renderSectionLabels()` in the entity pass. Per-section alphas stored in `station._sectionFadeAlphas`.
 
-10. **Zone labels are data-driven and always visible.** Station area labels (e.g. "MARKETPLACE", "SLUMS") are rendered by `Station.renderZoneLabels()` in the entity render pass, using `SUBTITLE` style in the station's `accentColor`, left-aligned. Each layout zone has `labelOffset: { x, y }` (world-space offset from `worldOffset`) that positions the label near the corresponding structure. No separate inline labels in station renderers — zone names come from layout data only. The station title (e.g. "THE COIL") remains hardcoded in the renderer using `TITLE` style.
+10. **Section labels are data-driven and always visible.** Station area labels (e.g. "MARKETPLACE", "SLUMS") are rendered by `Station.renderSectionLabels()` in the entity render pass, using `SUBTITLE` style in the station's `accentColor`, left-aligned. Each layout section has `labelOffset: { x, y }` (world-space offset from `worldOffset`) that positions the label near the corresponding structure. No separate inline labels in station renderers — section names come from layout data only. The station title (e.g. "THE COIL") remains hardcoded in the renderer using `TITLE` style.
 
 **Anti-patterns to avoid:**
 - No hexagons
@@ -402,11 +402,11 @@ Planet and moon visuals follow the **CRT surface-scanner aesthetic** — line wo
 
 **Rendering style by planet type:**
 
-- **Ice / rocky worlds (surface visible from space):** Topographic contour polygons clipped to the disk. Draw 3–6 closed irregular polygon paths at decreasing scales — nested, offset, not centered — to suggest terrain elevation layers. Jagged straight-line segments between vertices (no bezier smoothing). The visual reference is the Nostromo descent computer in *Alien* (1979): a CRT scanner reading back surface topology as jagged closed curves. Pale (`#b8ccd8`) is the reference implementation in `js/world/zones/gravewake/planetPale.js`.
+- **Ice / rocky worlds (surface visible from space):** Topographic contour polygons clipped to the disk. Draw 3–6 closed irregular polygon paths at decreasing scales — nested, offset, not centered — to suggest terrain elevation layers. Jagged straight-line segments between vertices (no bezier smoothing). The visual reference is the Nostromo descent computer in *Alien* (1979): a CRT scanner reading back surface topology as jagged closed curves. Pale (`#b8ccd8`) is the reference implementation in `data/locations/tyr/pale/orbital/terrain/planet-pale/index.js`.
 
 - **Gas giants:** Horizontal band striations — thin lines or arcs at different y-offsets across the disk, clipped. Bands should vary in spacing and opacity. Optional: planetary rings as thin ellipses angled across the limb. No solid fills.
 
-- **Habitable worlds (brine seas, landmasses):** Continental landmass contours — filled faintly with coastline strokes. Same jagged polygon style as ice worlds, but with filled landmasses at very low alpha and distinct coastline outlines. Thalassa (`#4a9a6a`) is the reference implementation in `js/world/zones/gravewake/moonThalassa.js`.
+- **Habitable worlds (brine seas, landmasses):** Continental landmass contours — filled faintly with coastline strokes. Same jagged polygon style as ice worlds, but with filled landmasses at very low alpha and distinct coastline outlines. Thalassa (`#4a9a6a`) — reference implementation pending relocation.
 
 - **Thick-atmosphere worlds (shrouded):** Geometric cloud swirls — angular spiral or arc segments that suggest cloud bands without being smooth curves. Straight-line approximations of spiral paths, or stacked arc segments offset from center, clipped to disk.
 

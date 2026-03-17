@@ -238,5 +238,4 @@ If the module/weapon should drop from derelicts, open `data/lootTables.js` and a
 
 ## Step 8 — Update docs
 
-- New weapon family or module category → `MECHANICS.md`
 - New projectile/beam colors → `UX.md` and `engine/rendering/colors.js`

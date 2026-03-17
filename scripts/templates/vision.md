@@ -1,0 +1,3 @@
+# Vision
+
+Wayfarer is a top-down space game about surviving at the edge of a broken civilization. You pilot a single ship through a depopulated star system — salvaging wrecks, trading scrap, navigating factional politics, and uncovering the buried history of an exile that nearly ended the human species. Every NPC is a hand-authored individual, every station has its own voice, and every encounter carries weight in a world where fewer than 30,000 souls remain. The aesthetic is cassette futurism — CRT vector displays, monospace readouts, neon on black — wrapped around deep narrative systems inspired by Disco Elysium and the spatial freedom of Escape Velocity.

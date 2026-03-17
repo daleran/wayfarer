@@ -112,8 +112,7 @@ Create:
 
 Modify:
 - `src/rendering/colors.js` — add CINDER_ROCK, CINDER_DUST, FROZEN_ICE
-- `data/zones/gravewake.js` — place all terrain + derelicts
-- `data/index.js` — import derelict files
+- `data/locations/tyr/pale/orbital/manifest.js` — place all terrain + derelicts
 
 **Patterns to follow**: `data/terrain/arkship-spines/index.js` (terrain), `data/ships/named/brokenCovenant.js` (derelict)
 
@@ -125,7 +124,7 @@ Modify:
 
 **Goal**: Every faction has living ships flying through Gravewake.
 
-### NPC Groups (in `data/zones/gravewake.js`)
+### NPC Groups (in `data/locations/tyr/pale/orbital/manifest.js`)
 
 | Faction | Type | Position | Count | Behavior |
 |---|---|---|---|---|
@@ -142,7 +141,7 @@ Modify:
 - `rust_tongue_dek` — stalker harassing Commune supply lines
 - `burning_eye_caro` — rogue zealot escort attacking non-believers
 
-Modify: `data/zones/gravewake.js`, `data/characters/scavenger.js`, `data/characters/zealot.js`
+Modify: `data/locations/tyr/pale/orbital/manifest.js`, `data/locations/tyr/pale/orbital/characters/scavenger.js`, `data/locations/tyr/pale/orbital/characters/zealot.js`
 
 **Dependencies**: Project 1 (ships), Project 2 (Cinder for Monastic placement)
 
