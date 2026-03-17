@@ -3,8 +3,8 @@ import { registerData, CHARACTERS, registerContent } from '@data/dataRegistry.js
 const CHARS = {
   'scavenger-pilot': {
     name: 'Scavenger Pilot',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'stalker',
     shipId: 'light-fighter',
     flavorText:
@@ -14,8 +14,8 @@ const CHARS = {
   },
   'scavenger-gunner': {
     name: 'Scavenger Gunner',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'kiter',
     shipId: 'armed-hauler',
     flavorText:
@@ -26,8 +26,8 @@ const CHARS = {
   },
   'salvage-lord': {
     name: 'Salvage Lord',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'standoff',
     shipId: 'salvage-mothership',
     flavorText:
@@ -38,8 +38,8 @@ const CHARS = {
   },
   'grave-clan-hunter': {
     name: 'Grave-Clan Hunter',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'lurker',
     shipId: 'grave-clan-ambusher',
     flavorText:
@@ -52,56 +52,56 @@ const CHARS = {
   // Bounty characters
   hollow_brekk: {
     name: '"Hollow" Brekk',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'kiter',
     shipId: 'armed-hauler',
     flavorText: 'Runs an armed hauler out of the deep wreck lanes. Known for picking fights with Coil-aligned clans and leaving before they can return fire.',
   },
   crestfall_orin: {
     name: '"Crestfall" Orin',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'lurker',
     shipId: 'grave-clan-ambusher',
     flavorText: 'A Grave Clan ambusher who works the gaps in the Wall. The Coil issued the purgation order after Orin burned two of their contract vessels.',
   },
   ironback_marel: {
     name: '"Ironback" Marel',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'lurker',
     shipId: 'grave-clan-ambusher',
     flavorText: "Lurks the debris fields west of Kell's Stop. Marel's crew has hit six convoys in the past two cycles. Nobody has seen them in open space.",
   },
   gutshot_drev: {
     name: '"Gutshot" Drev',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'stalker',
     shipId: 'light-fighter',
     flavorText: "Light fighter pilot, holds the western approach to Kell's Stop. Drev earned the name surviving three kills where they took hull damage bad enough to end most pilots.",
   },
   pale_widow: {
     name: '"Pale Widow"',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'standoff',
     shipId: 'salvage-mothership',
     flavorText: 'Commands a Salvage Mothership running dark in the eastern zone. The Pale Widow has been operating near Ashveil for months, intercepting ships on final approach.',
   },
   runt_cassin: {
     name: '"Runt" Cassin',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'kiter',
     shipId: 'armed-hauler',
     flavorText: 'Operates an armed hauler in the cluster between Ashveil and The Coil. Small ship, overgunned. Cassin avoids direct engagements and circles until an opening appears.',
   },
   six_wire_pol: {
     name: '"Six-Wire" Pol',
-    faction: 'scavenger',
-    relation: 'hostile',
+    faction: 'scavengers',
+
     behavior: 'stalker',
     shipId: 'light-fighter',
     flavorText: 'Light fighter running the eastern edge of Gravewake. Six-Wire got the name from the six wire-guided kills confirmed against Ashveil-bound traders.',

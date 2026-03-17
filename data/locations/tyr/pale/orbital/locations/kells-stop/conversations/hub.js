@@ -1,4 +1,4 @@
-// kellHub — arrival narration + zone selection loop for Kell's Stop.
+// kellHub — arrival narration + section selection loop for Kell's Stop.
 
 import { registerContent } from '@data/dataRegistry.js';
 
@@ -38,24 +38,24 @@ export async function kellHub(ctx) {
     switch (pick) {
       case 0:
         log.divider('FUEL DEPOT & REPAIRS');
-        await ctx.runZone('dock');
+        await ctx.runSection('dock');
         log.dln("Back already?", 'dock');
         break;
       case 1:
         log.divider('BOUNTY BOARD');
-        await ctx.runZone('bounties');
+        await ctx.runSection('bounties');
         break;
       case 2:
         log.divider('INTEL');
-        await ctx.runZone('intel');
+        await ctx.runSection('intel');
         break;
       case 3:
         log.divider('TRADE POST');
-        await ctx.runZone('trade');
+        await ctx.runSection('trade');
         break;
       case 4:
         log.divider('FACTION STANDINGS');
-        await ctx.runZone('relations');
+        await ctx.runSection('relations');
         break;
       case 5:
       default:

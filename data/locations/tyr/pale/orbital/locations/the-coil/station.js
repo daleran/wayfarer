@@ -2,11 +2,12 @@
 
 import { CoilStation } from './renderer.js';
 import { registerContent } from '@data/dataRegistry.js';
+import { LOCATION_TYPE } from '@data/enums.js';
 
 // ── Layout ───────────────────────────────────────────────────────────────────
 
 const LAYOUT = {
-  zones: [
+  sections: [
     {
       id: 'zone-dock',
       label: 'Dock & Salvage',
@@ -69,7 +70,7 @@ export const TheCoil = {
   id: 'the_coil',
   name: 'The Coil',
   flavorText: "A salvage lord's court dressed in wreckage and rust. The only law here is the price of docking.",
-  faction: 'salvage_lords',
+  faction: 'the-coil',
   renderer: 'coil',
   services: ['repair', 'trade'],
   dockingRadius: 300,
@@ -135,4 +136,10 @@ export const TheCoil = {
   },
 };
 
-registerContent('stations', 'the-coil', { entity: TheCoil, label: 'The Coil', flavorText: TheCoil.flavorText });
+registerContent('locations', 'the-coil', {
+  id: 'the-coil',
+  locationType: LOCATION_TYPE.STATION,
+  name: 'The Coil',
+  flavorText: TheCoil.flavorText,
+  entity: TheCoil,
+});

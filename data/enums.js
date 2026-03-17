@@ -66,3 +66,9 @@ export const MOUNT_SIZE = Object.freeze({
 export const MOUNT_SLOT = Object.freeze({
   ENGINE: 'engine',
 });
+
+/** Location types within the unified CONTENT.locations table. */
+export const LOCATION_TYPE = Object.freeze({
+  STATION: 'station',
+  PLANET:  'planet',
+});

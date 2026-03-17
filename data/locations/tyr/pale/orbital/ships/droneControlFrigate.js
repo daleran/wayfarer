@@ -7,7 +7,6 @@ const SHIP = {
   name: 'Drone Control Frigate',
   unmanned: true,
   faction: 'concord',
-  relation: 'hostile',
   aiBehavior: 'standoff',
   entityClass: 'drone-control-frigate',
   modules: ['standard-rocket-l', 'lance-st', 'null'],

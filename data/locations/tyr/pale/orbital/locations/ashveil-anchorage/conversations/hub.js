@@ -1,4 +1,4 @@
-// ashveilHub — arrival narration + zone selection loop for Ashveil Anchorage.
+// ashveilHub — arrival narration + section selection loop for Ashveil Anchorage.
 
 import { registerContent } from '@data/dataRegistry.js';
 
@@ -40,24 +40,24 @@ export async function ashveilHub(ctx) {
     switch (pick) {
       case 0:
         log.divider('REPAIR BAY');
-        await ctx.runZone('repair-bay');
+        await ctx.runSection('repair-bay');
         log.narrate("You walk back toward the main spine.", 'flavor');
         break;
       case 1:
         log.divider('TRADE POST');
-        await ctx.runZone('trade-post');
+        await ctx.runSection('trade-post');
         break;
       case 2:
         log.divider('BOUNTY BOARD');
-        await ctx.runZone('bounties');
+        await ctx.runSection('bounties');
         break;
       case 3:
         log.divider('INTEL');
-        await ctx.runZone('intel');
+        await ctx.runSection('intel');
         break;
       case 4:
         log.divider('FACTION STANDINGS');
-        await ctx.runZone('relations');
+        await ctx.runSection('relations');
         break;
       case 5:
       default:

@@ -1,11 +1,12 @@
 // Ashveil Anchorage — neutral repair/trade station data + layout.
 import { AshveilStation } from './renderer.js';
 import { registerContent } from '@data/dataRegistry.js';
+import { LOCATION_TYPE } from '@data/enums.js';
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 
 const LAYOUT = {
-  zones: [
+  sections: [
     {
       id:          'repair-bay',
       label:       'Repair Bay',
@@ -71,7 +72,7 @@ export const AshveilAnchorage = {
   id: 'ashveil_anchorage',
   name: 'Ashveil Anchorage',
   flavorText: 'Neutral ground by tradition, respected by necessity. The nebula keeps most trouble at bay.',
-  faction: 'neutral',
+  faction: 'ashveil',
   renderer: null,
   services: ['repair', 'trade'],
   canOverhaulReactor: true,
@@ -104,7 +105,7 @@ export const AshveilAnchorage = {
   layout: LAYOUT,
   conversations: {
     hub: 'ashveilHub',
-    zones: {
+    sections: {
       'repair-bay':  'ashveilDock',
       'trade-post':  'ashveilTrade',
       bounties:      'ashveilBounties',
@@ -147,4 +148,10 @@ export const AshveilAnchorage = {
   },
 };
 
-registerContent('stations', 'ashveil-anchorage', { entity: AshveilAnchorage, label: 'Ashveil Anchorage', flavorText: AshveilAnchorage.flavorText });
+registerContent('locations', 'ashveil-anchorage', {
+  id: 'ashveil-anchorage',
+  locationType: LOCATION_TYPE.STATION,
+  name: 'Ashveil Anchorage',
+  flavorText: AshveilAnchorage.flavorText,
+  entity: AshveilAnchorage,
+});

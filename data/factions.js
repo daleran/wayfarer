@@ -1,21 +1,20 @@
 // =============================================================================
-// WAYFARER — Faction Data
-// Reputation factions, display labels, faction mappings, and rival bonuses.
+// WAYFARER — Faction Data (LEGACY)
+// These exports are deprecated. Use factionHelpers.js instead.
+// Kept temporarily for extract-data.js compatibility.
 // =============================================================================
 
-export const FACTIONS = ['settlements', 'scavengers', 'concord', 'monastic', 'communes', 'zealots', 'casimir'];
+import { getRootFactions, getFactionName } from './factionHelpers.js';
 
-export const FACTION_LABELS = {
-  settlements: 'Settlements',
-  scavengers:  'Scavenger Clans',
-  concord:     'Concord Remnants',
-  monastic:    'Monastic Orders',
-  communes:    'Communes',
-  zealots:     'Zealots',
-  casimir:     'House Casimir',
-};
+/** @deprecated Use getRootFactions() */
+export const FACTIONS = getRootFactions();
 
-// Maps station/ship .faction string → reputation faction key
+/** @deprecated Use getFactionName(id) */
+export const FACTION_LABELS = Object.fromEntries(
+  getRootFactions().map(id => [id, getFactionName(id)])
+);
+
+/** @deprecated Use getRootFaction(entityFaction) */
 export const FACTION_MAP = {
   neutral:      'settlements',
   independent:  'settlements',
@@ -28,7 +27,7 @@ export const FACTION_MAP = {
   casimir:      'casimir',
 };
 
-// Rival bonuses: kill faction X → rival faction gains bonus
+/** @deprecated Use areFactionsHostile() */
 export const RIVALS = {
   scavengers: 'settlements',
   concord:    'settlements',

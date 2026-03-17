@@ -41,8 +41,11 @@ async function main() {
     const {
       SHIP_CLASSES, ENGINES, REACTORS, SENSORS, WEAPONS, UTILITIES,
       AI_TEMPLATES, AMMO, CONTENT,
-      FACTIONS, FACTION_LABELS, RIVALS,
+      getFactionName,
     } = data;
+
+    const { ENTITY, LOCATION_TYPE } = await vite.ssrLoadModule('/data/enums.js');
+    const { getLocationsByType } = await vite.ssrLoadModule('/data/dataRegistry.js');
 
     const tuning = await vite.ssrLoadModule('/data/tuning.js');
     const { COMMODITIES } = await vite.ssrLoadModule('/data/commodities.js');
@@ -62,8 +65,12 @@ async function main() {
 
     // ── Factions ──────────────────────────────────────────────────────────────
     {
-      const rows = FACTIONS.map(f => [f, FACTION_LABELS[f] || '', RIVALS[f] || '']);
-      emitTable('Factions', sections, ['Key', 'Label', 'Rival'], rows);
+      const factionData = CONTENT.factions || {};
+      const rows = Object.entries(factionData).map(([id, f]) => {
+        const hostiles = (f.relationships || []).filter(r => r.type === 'hostile').map(r => r.target).join(', ');
+        return [id, f.name || '', f.parent || '', f.defaultReputation ?? '', hostiles];
+      });
+      emitTable('Factions', sections, ['Key', 'Name', 'Parent', 'Default Rep', 'Hostile To'], rows);
     }
 
     // ── Ship Classes ──────────────────────────────────────────────────────────
@@ -166,9 +173,9 @@ async function main() {
 
     // ── Characters ────────────────────────────────────────────────────────────
     {
-      const cols = ['ID', 'Name', 'Faction', 'Relation', 'Behavior', 'Ship', 'Bounty'];
+      const cols = ['ID', 'Name', 'Faction', 'Behavior', 'Ship', 'Bounty'];
       const rows = Object.entries(CONTENT.characters).map(([id, c]) => [
-        id, c.name, c.faction, c.relation, c.behavior, c.shipId, c.bounty,
+        id, c.name, c.faction, c.behavior, c.shipId, c.bounty,
       ].map(fmt));
       emitTable('Characters', sections, cols, rows);
     }
@@ -187,10 +194,10 @@ async function main() {
     // ── Stations ──────────────────────────────────────────────────────────────
     {
       const cols = ['ID', 'Name', 'Faction', 'Services', 'DockRadius'];
-      const rows = Object.entries(CONTENT.stations).map(([id, s]) => {
-        const e = s.entity || {};
+      const rows = Object.entries(getLocationsByType(LOCATION_TYPE.STATION)).map(([id, loc]) => {
+        const e = loc.entity || {};
         const services = e.services ? e.services.join(', ') : '';
-        return [id, s.label || e.name, e.faction, services, e.dockRadius];
+        return [id, loc.name || e.name, e.faction, services, e.dockRadius];
       }).map(r => r.map(fmt));
       emitTable('Stations', sections, cols, rows);
     }
@@ -204,7 +211,65 @@ async function main() {
       emitTable('Derelicts', sections, cols, rows);
     }
 
-    log('Done — 15 tables written.');
+    // ── History Timeline ────────────────────────────────────────────────────
+    {
+      const ERA_RANGES = [
+        [2035, 2055, 'The Machine Mandate'],
+        [2055, 2130, 'The Quiet Collapse'],
+        [2130, 2250, 'The Concord Design'],
+        [2250, 2304, 'The Dream and the Divide'],
+        [2304, 2305, 'The Veiled Collapse'],
+        [2305, 2382, 'The Exodus Reclaimed'],
+        [2382, 2420, 'The Arrival Drift'],
+        [2420, 2600, 'The Afterlight Era'],
+      ];
+
+      function eraForYear(year) {
+        for (const [start, end, name] of ERA_RANGES) {
+          if (year >= start && year < end) return name;
+        }
+        return '';
+      }
+
+      function resolveTemplate(text, related) {
+        if (!related) return text;
+        return text.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+          const ref = related[key];
+          if (!ref) return `{{${key}}}`;
+          if (ref.type === ENTITY.FACTION) return getFactionName(ref.id);
+          if (ref.type === ENTITY.STATION) {
+            const loc = CONTENT.locations[ref.id];
+            return loc ? (loc.name || loc.entity?.name || ref.id) : ref.id;
+          }
+          return ref.id;
+        });
+      }
+
+      const entries = Object.entries(CONTENT.history)
+        .map(([id, h]) => ({ id, ...h }))
+        .sort((a, b) => {
+          const ya = a.date.year, yb = b.date.year;
+          if (ya !== yb) return ya - yb;
+          const ma = a.date.month || 1, mb = b.date.month || 1;
+          if (ma !== mb) return ma - mb;
+          return (a.date.day || 1) - (b.date.day || 1);
+        });
+
+      const cols = ['Date', 'Era', 'Event', 'Tags'];
+      const rows = entries.map(h => {
+        const d = h.date;
+        const dateStr = `${d.year}-${String(d.month || 1).padStart(2, '0')}-${String(d.day || 1).padStart(2, '0')}`;
+        return [
+          dateStr,
+          eraForYear(d.year),
+          resolveTemplate(h.text, h.related),
+          (h.tags || []).join(', '),
+        ];
+      });
+      emitTable('History Timeline', sections, cols, rows);
+    }
+
+    log('Done — 16 tables written.');
     console.log(sections.join('\n\n'));
 
   } finally {

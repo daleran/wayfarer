@@ -3,13 +3,13 @@
 
 import { REPUTATION } from '@data/index.js';
 import { COMMODITIES, getBuyPrice, getSellPrice } from '@data/commodities.js';
-import { FACTIONS, FACTION_LABELS } from '@data/index.js';
+import { getRootFactions, getFactionName } from '@data/factionHelpers.js';
 import { registerContent } from '@data/dataRegistry.js';
 
 export async function genericDock(ctx) {
-  const { game, station, log, zoneId } = ctx;
-  const zone = station.layout?.zones?.find(z => z.id === zoneId);
-  const services = zone?.services ?? [];
+  const { game, station, log, sectionId } = ctx;
+  const section = station.layout?.sections?.find(s => s.id === sectionId);
+  const services = section?.services ?? [];
 
   log.setNpcContext({
     mechanic: { name: 'Mechanic', color: 'var(--p-cyan)' },
@@ -345,8 +345,8 @@ async function _bounties(game, station, log) {
 
 function _relations(game, log) {
   log.divider('FACTION STANDINGS');
-  for (const faction of FACTIONS) {
-    const label = FACTION_LABELS[faction];
+  for (const faction of getRootFactions()) {
+    const label = getFactionName(faction);
     const standing = game.reputation.getStanding(faction);
     const level = game.reputation.getLevel(faction);
     const sign = standing >= 0 ? '+' : '';

@@ -8,11 +8,13 @@ import { input } from '@/input.js';
 import { getShipRegistry, getNamedShipRegistry, getCharacterRegistry } from '@/entities/registry.js';
 
 // Content registry — all content self-registers here
-import { CONTENT } from '@data/index.js';
+import { CONTENT, LOCATION_TYPE } from '@data/index.js';
+import { getLocationsByType } from '@data/dataRegistry.js';
+import { getFactionName } from '@data/factionHelpers.js';
 
 // POIs
-import { createArkshipSpine } from '@data/zones/gravewake/terrain/arkship-spines/index.js';
-import { createDebrisCloud } from '@data/zones/gravewake/terrain/debris-clouds/index.js';
+import { createArkshipSpine } from '@data/locations/tyr/pale/orbital/terrain/arkship-spines/index.js';
+import { createDebrisCloud } from '@data/locations/tyr/pale/orbital/terrain/debris-clouds/index.js';
 
 import {
   CYAN, AMBER, GREEN, WHITE, RED, MAGENTA,
@@ -65,7 +67,7 @@ function _buildCharacterItems() {
       create: () => n.create(0, 0),
       characterInfo: {
         Name: captain?.name || n.label,
-        Faction: n.faction,
+        Faction: getFactionName(n.faction),
         Behavior: n.behavior,
         Ship: ship.name || n.label,
         'Hull Class': n.shipId,
@@ -77,18 +79,18 @@ function _buildCharacterItems() {
 // ─── STATION ITEMS (from registry) ────────────────────────────────────────────
 
 function _buildStationItems() {
-  return Object.entries(CONTENT.stations).map(([id, s]) => ({
+  return Object.entries(getLocationsByType(LOCATION_TYPE.STATION)).map(([id, loc]) => ({
     id,
-    label: s.entity.name,
+    label: loc.entity.name,
     file: null,
     type: 'poi',
-    flavorText: s.flavorText ?? null,
-    create: () => s.entity.instantiate(0, 0),
+    flavorText: loc.flavorText ?? null,
+    create: () => loc.entity.instantiate(0, 0),
     info: {
-      Type: s.entity.renderer ? s.entity.renderer : 'Station',
-      Faction: s.entity.faction,
-      'Docking R': `${s.entity.dockingRadius ?? 150}u`,
-      Services: s.entity.services.join(' · '),
+      Type: loc.entity.renderer ? loc.entity.renderer : 'Station',
+      Faction: getFactionName(loc.entity.faction),
+      'Docking R': `${loc.entity.dockingRadius ?? 150}u`,
+      Services: loc.entity.services.join(' · '),
     },
   }));
 }
@@ -169,9 +171,9 @@ function _buildDerelictItems() {
 }
 
 function _buildPlanetItems() {
-  return Object.entries(CONTENT.planets).map(([slug, def]) => ({
+  return Object.entries(getLocationsByType(LOCATION_TYPE.PLANET)).map(([slug, def]) => ({
     id: slug,
-    label: def.label,
+    label: def.name,
     file: null,
     type: 'poi',
     flavorText: def.flavorText,
@@ -735,7 +737,14 @@ export class Designer {
 
     // Character portrait placeholder — large monogram circle
     const FACTION_COLORS = {
-      scavenger: RED, neutral: AMBER, player: GREEN, concord: CYAN,
+      'Scavenger Clans': RED, 'Scavengers': RED,
+      'Settlements': AMBER, "Kell's Stop": AMBER, 'Ashveil Anchorage': AMBER,
+      player: GREEN,
+      'Concord Remnants': CYAN, 'The Coil': RED,
+      'Monastic Orders': MAGENTA, 'Grave Clan': RED,
+      'Communes': GREEN,
+      'Zealots': AMBER,
+      'House Casimir': CYAN,
     };
     const factionColor = FACTION_COLORS[info.Faction] ?? WHITE;
     const initials = (info.Name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();

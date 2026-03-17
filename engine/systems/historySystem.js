@@ -6,7 +6,7 @@
 
 import { CONTENT } from '@data/dataRegistry.js';
 import { ENTITY } from '@data/enums.js';
-import { FACTION_LABELS } from '@data/factions.js';
+import { getFactionName } from '@data/factionHelpers.js';
 
 // ── Date utilities ───────────────────────────────────────────────────────────
 
@@ -35,17 +35,17 @@ export function defaultHistoryResolver(type, id) {
         ?? CONTENT.hulls[id]?.label
         ?? id;
     case ENTITY.STATION:
-      return CONTENT.stations[id]?.label ?? id;
+      return CONTENT.locations[id]?.name ?? id;
     case ENTITY.CHARACTER:
       return CONTENT.characters[id]?.name ?? id;
     case ENTITY.FACTION:
-      return FACTION_LABELS[id] ?? id;
+      return getFactionName(id);
     case ENTITY.ZONE:
       return id;  // zones don't have a label table — use id as-is
     case ENTITY.PLANET:
-      return CONTENT.planets[id]?.name ?? id;
+      return CONTENT.locations[id]?.name ?? id;
     case ENTITY.LOCATION:
-      return CONTENT.stations[id]?.label ?? id;
+      return CONTENT.locations[id]?.name ?? id;
     default:
       return id;
   }

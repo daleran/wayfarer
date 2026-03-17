@@ -1,11 +1,12 @@
 // Kell's Stop — fuel depot station data + layout.
 import { FuelDepotStation } from './renderer.js';
 import { registerContent } from '@data/dataRegistry.js';
+import { LOCATION_TYPE } from '@data/enums.js';
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 
 const LAYOUT = {
-  zones: [
+  sections: [
     {
       id:          'dock',
       label:       'Fuel Depot & Repairs',
@@ -78,7 +79,7 @@ export const KellsStop = {
   id: 'kells_stop',
   name: "Kell's Stop",
   flavorText: "A fuel platform bolted to whatever was left of an old survey barge. Kell herself has been dead for eleven years. Nobody's updated the sign.",
-  faction: 'neutral',
+  faction: 'kells-stop',
   renderer: 'fuel_depot',
   services: ['fuel', 'repair'],
   dockingRadius: 150,
@@ -109,7 +110,7 @@ export const KellsStop = {
   layout: LAYOUT,
   conversations: {
     hub: 'kellHub',
-    zones: {
+    sections: {
       dock:      'kellDock',
       bounties:  'kellBounties',
       intel:     'kellIntel',
@@ -143,4 +144,10 @@ export const KellsStop = {
   },
 };
 
-registerContent('stations', 'kells-stop', { entity: KellsStop, label: "Kell's Stop", flavorText: KellsStop.flavorText });
+registerContent('locations', 'kells-stop', {
+  id: 'kells-stop',
+  locationType: LOCATION_TYPE.STATION,
+  name: "Kell's Stop",
+  flavorText: KellsStop.flavorText,
+  entity: KellsStop,
+});

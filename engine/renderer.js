@@ -617,7 +617,7 @@ export class Renderer {
       const bounds = entity.getBounds();
       if (!camera.isVisible(bounds.x, bounds.y, bounds.radius + 64)) continue;
       entity.render(this.ctx, camera);
-      if (entity.renderZoneLabels) entity.renderZoneLabels(this.ctx, camera);
+      if (entity.renderSectionLabels) entity.renderSectionLabels(this.ctx, camera);
     }
     for (const entity of entities) {
       if (!entity.active || entity.entityType !== ENTITY.SHIP) continue;

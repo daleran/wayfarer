@@ -15,17 +15,46 @@
 // =============================================================================
 
 import { angleDiff } from '@/utils/math.js';
-import { BASE_PROJECTILE_SPEED, PROJECTILE_SPEED_FACTOR } from '@data/index.js';
+import { BASE_PROJECTILE_SPEED, PROJECTILE_SPEED_FACTOR, ENTITY } from '@data/index.js';
+import { areFactionsHostile } from '@data/factionHelpers.js';
 
 export function updateShipAI(ship, player, entities, dt) {
   const ai = ship.ai;
   if (!ai) return;
 
   if (ship.relation === 'hostile') {
+    // Hostile to player — fight player
     _doHostile(ship, player, entities, dt, ai);
   } else {
-    _doPassive(ship, dt, ai);
+    // Check for NPC-to-NPC hostility
+    const npcTarget = _findHostileNPC(ship, entities, ai);
+    if (npcTarget) {
+      _doHostile(ship, npcTarget, entities, dt, ai);
+    } else {
+      _doPassive(ship, dt, ai);
+    }
   }
+}
+
+/** Find closest hostile-faction NPC within aggro range. */
+function _findHostileNPC(ship, entities, ai) {
+  const aggroRange = ai.aggroRange ?? 1400;
+  let best = null;
+  let bestDist = aggroRange;
+  for (const e of entities) {
+    if (e === ship || !e.active) continue;
+    if (e.entityType !== ENTITY.SHIP || e.isDerelict) continue;
+    if (e.relation === 'player') continue;  // player handled separately
+    if (!areFactionsHostile(ship.faction, e.faction)) continue;
+    const dx = e.x - ship.x;
+    const dy = e.y - ship.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = e;
+    }
+  }
+  return best;
 }
 
 // ── Hostile path ──────────────────────────────────────────────────────────────

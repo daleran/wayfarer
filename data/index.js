@@ -22,14 +22,15 @@ import.meta.glob([
   './ships/player/*.js',
   './characters/player.js',
   './conversations/*.js',
-  './history/*.js',
-  './zones/**/!(manifest).js',
+  './lore/**/*.js',
+  './locations/**/!(manifest).js',
 ], { eager: true });
 
 // Re-export everything consumers need
 export * from './tuning.js';
-export { FACTIONS, FACTION_LABELS, FACTION_MAP, RIVALS } from './factions.js';
-export { ENTITY, RELATION, CONDITION, LOOT_TYPE, ARC, MOUNT_SIZE, MOUNT_SLOT } from './enums.js';
+export { FACTIONS, FACTION_LABELS, FACTION_MAP, RIVALS } from './factions.js';  // legacy — use factionHelpers instead
+export { ENTITY, RELATION, CONDITION, LOOT_TYPE, ARC, MOUNT_SIZE, MOUNT_SLOT, LOCATION_TYPE } from './enums.js';
+export * from './factionHelpers.js';
 export {
   SHIP_CLASSES,
   ENGINES,
@@ -43,4 +44,5 @@ export {
   CONTENT,
   registerData,
   registerContent,
+  getLocationsByType,
 } from './dataRegistry.js';

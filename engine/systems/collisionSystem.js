@@ -95,7 +95,7 @@ export class CollisionSystem {
         const dx = pb.x - sb.x;
         const dy = pb.y - sb.y;
         if (Math.sqrt(dx * dx + dy * dy) < pb.radius + sb.radius) {
-          // Attacking a neutral ship
+          // Attacking a neutral ship — provoke and flag override so per-tick relation update doesn't reset
           if (proj.owner === player && target.relation === 'neutral' && !proj._neutralPenaltyApplied) {
             proj._neutralPenaltyApplied = true;
             reputation.change('settlements', REPUTATION.ATTACK_NEUTRAL_PENALTY);
@@ -104,6 +104,7 @@ export class CollisionSystem {
             } else {
               target._machineRelation = 'hostile';
             }
+            target._relationOverride = true;
             target.ai._aggro = true;
           }
           if (proj.isRocket || proj.detonatesOnContact) {

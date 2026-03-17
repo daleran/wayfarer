@@ -7,7 +7,6 @@ const SHIP = {
   name: 'Snatcher Drone',
   unmanned: true,
   faction: 'concord',
-  relation: 'hostile',
   aiBehavior: 'latch',
   entityClass: 'snatcher-drone',
   flavorText:

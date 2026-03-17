@@ -3,8 +3,8 @@ import { registerData, CHARACTERS, registerContent } from '@data/dataRegistry.js
 const CHARS = {
   'convoy-hauler': {
     name: 'Convoy Hauler',
-    faction: 'neutral',
-    relation: 'neutral',
+    faction: 'settlements',
+
     behavior: 'trader',
     shipId: 'trader-convoy',
     flavorText:
@@ -15,8 +15,8 @@ const CHARS = {
   },
   'militia-officer': {
     name: 'Militia Officer',
-    faction: 'neutral',
-    relation: 'neutral',
+    faction: 'settlements',
+
     behavior: 'militia',
     shipId: 'militia-patrol',
     flavorText:

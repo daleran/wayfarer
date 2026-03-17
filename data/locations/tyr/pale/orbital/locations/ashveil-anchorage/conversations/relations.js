@@ -1,6 +1,6 @@
 // ashveilRelations — faction standings at Ashveil Anchorage.
 
-import { FACTIONS, FACTION_LABELS } from '@data/index.js';
+import { getRootFactions, getFactionName } from '@data/factionHelpers.js';
 import { registerContent } from '@data/dataRegistry.js';
 
 export async function ashveilRelations(ctx) {
@@ -8,8 +8,8 @@ export async function ashveilRelations(ctx) {
 
   log.narrate('A public terminal near the ops tower shows current faction standings.', 'flavor');
 
-  for (const faction of FACTIONS) {
-    const label = FACTION_LABELS[faction];
+  for (const faction of getRootFactions()) {
+    const label = getFactionName(faction);
     const standing = game.reputation.getStanding(faction);
     const level = game.reputation.getLevel(faction);
     const sign = standing >= 0 ? '+' : '';

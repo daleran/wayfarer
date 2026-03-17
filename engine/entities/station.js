@@ -2,7 +2,7 @@ import { Entity } from '@/entities/entity.js';
 import { ENTITY } from '@data/enums.js';
 import { CYAN, AMBER, RED, GREEN, WHITE, DIM_TEXT } from '@/rendering/colors.js';
 import { text, SUBTITLE, FLAVOR } from '@/rendering/draw.js';
-import { FACTION_MAP } from '@data/index.js';
+import { getRootFaction } from '@data/factionHelpers.js';
 
 export class Station extends Entity {
   constructor(x, y, data) {
@@ -12,7 +12,7 @@ export class Station extends Entity {
     this.name = data.name;
     this.faction = data.faction ?? 'neutral';
     this.relation = data.relation ?? 'neutral';
-    this.reputationFaction = FACTION_MAP[this.faction] ?? 'settlements';
+    this.reputationFaction = getRootFaction(this.faction);
     this.services = data.services ?? [];
     this.commodities = data.commodities ?? {};
     this.lore = data.lore ?? null;
@@ -23,7 +23,7 @@ export class Station extends Entity {
     this.flavorText = data.flavorText ?? null;
     this.dockingRadius = 150;
     this._navPulse = 0;
-    this._zoneFadeAlphas = {};  // zone.id → alpha (0–1) for flavor text proximity fade
+    this._sectionFadeAlphas = {};  // section.id → alpha (0–1) for flavor text proximity fade
   }
 
   // Accent color for nav lights, docking arms, labels.
@@ -48,30 +48,30 @@ export class Station extends Entity {
     this._navPulse += dt;
   }
 
-  /** Update per-zone flavor text fade based on player proximity. */
-  updateZoneFade(dt, playerX, playerY) {
-    const zones = this.layout?.zones;
-    if (!zones) return;
+  /** Update per-section flavor text fade based on player proximity. */
+  updateSectionFade(dt, playerX, playerY) {
+    const sections = this.layout?.sections;
+    if (!sections) return;
     const FADE_RADIUS = 400;
     const FADE_SPEED = 1.2;
-    for (const zone of zones) {
-      if (!zone.flavor?.length || !zone.labelOffset) continue;
-      const wx = this.x + (zone.worldOffset?.x ?? 0) + zone.labelOffset.x;
-      const wy = this.y + (zone.worldOffset?.y ?? 0) + zone.labelOffset.y;
+    for (const section of sections) {
+      if (!section.flavor?.length || !section.labelOffset) continue;
+      const wx = this.x + (section.worldOffset?.x ?? 0) + section.labelOffset.x;
+      const wy = this.y + (section.worldOffset?.y ?? 0) + section.labelOffset.y;
       const dx = wx - playerX;
       const dy = wy - playerY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const target = dist < FADE_RADIUS ? 1 : 0;
-      const cur = this._zoneFadeAlphas[zone.id] ?? 0;
-      this._zoneFadeAlphas[zone.id] = cur + (target - cur) * Math.min(1, FADE_SPEED * dt);
+      const cur = this._sectionFadeAlphas[section.id] ?? 0;
+      this._sectionFadeAlphas[section.id] = cur + (target - cur) * Math.min(1, FADE_SPEED * dt);
     }
   }
 
-  /** Render zone subtitle labels (always) and flavor text (proximity fade).
+  /** Render section subtitle labels (always) and flavor text (proximity fade).
    *  Drawn in world space so text scales with zoom like all other map labels. */
-  renderZoneLabels(ctx, camera) {
-    const zones = this.layout?.zones;
-    if (!zones) return;
+  renderSectionLabels(ctx, camera) {
+    const sections = this.layout?.sections;
+    if (!sections) return;
     const accent = this.accentColor;
     const z = camera.zoom;
     const screen = camera.worldToScreen(this.x, this.y);
@@ -80,20 +80,20 @@ export class Station extends Entity {
     ctx.translate(screen.x, screen.y);
     ctx.scale(z, z);
 
-    for (const zone of zones) {
-      if (!zone.labelOffset) continue;
-      const lx = (zone.worldOffset?.x ?? 0) + zone.labelOffset.x;
-      const ly = (zone.worldOffset?.y ?? 0) + zone.labelOffset.y;
+    for (const section of sections) {
+      if (!section.labelOffset) continue;
+      const lx = (section.worldOffset?.x ?? 0) + section.labelOffset.x;
+      const ly = (section.worldOffset?.y ?? 0) + section.labelOffset.y;
 
-      // Zone subtitle — always visible, left-aligned
-      text(ctx, zone.label.toUpperCase(), lx, ly, accent, {
+      // Section subtitle — always visible, left-aligned
+      text(ctx, section.label.toUpperCase(), lx, ly, accent, {
         style: SUBTITLE, align: 'left',
       });
 
       // Flavor text — fades in on proximity, word-wrapped, left-aligned below subtitle
-      const fadeAlpha = this._zoneFadeAlphas[zone.id] ?? 0;
-      if (fadeAlpha > 0.01 && zone.flavor?.length) {
-        const firstLine = zone.flavor.find(l => l !== '');
+      const fadeAlpha = this._sectionFadeAlphas[section.id] ?? 0;
+      if (fadeAlpha > 0.01 && section.flavor?.length) {
+        const firstLine = section.flavor.find(l => l !== '');
         if (firstLine) {
           ctx.save();
           ctx.font = `${FLAVOR.weight} ${FLAVOR.size}px monospace`;

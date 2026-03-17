@@ -7,20 +7,20 @@ export async function genericHub(ctx) {
 
   log.narrate(`Docking clamps engage. You're aboard ${station.name}.`, 'flavor');
 
-  // Hub loop — present zone choices, run zone conversations, loop back
+  // Hub loop — present section choices, run section conversations, loop back
   while (true) {
-    const zones = station.layout?.zones ?? [];
+    const sections = station.layout?.sections ?? [];
     const options = [];
-    const zoneMap = [];
+    const sectionMap = [];
 
-    for (const zone of zones) {
-      const locked = _isZoneLocked(zone, station, game);
+    for (const section of sections) {
+      const locked = _isSectionLocked(section, station, game);
       options.push({
-        text: `[${zone.label}]`,
+        text: `[${section.label}]`,
         disabled: locked,
         reason: locked ? 'LOCKED' : undefined,
       });
-      zoneMap.push(zone.id);
+      sectionMap.push(section.id);
     }
 
     options.push({ text: '[Undock]' });
@@ -32,14 +32,14 @@ export async function genericHub(ctx) {
       return;
     }
 
-    const zoneId = zoneMap[pick];
-    const zone = zones.find(z => z.id === zoneId);
-    if (zone) {
-      log.divider(zone.label.toUpperCase());
+    const sectionId = sectionMap[pick];
+    const section = sections.find(s => s.id === sectionId);
+    if (section) {
+      log.divider(section.label.toUpperCase());
 
       // Show flavor text
-      if (zone.flavor?.length > 0) {
-        for (const line of zone.flavor) {
+      if (section.flavor?.length > 0) {
+        for (const line of section.flavor) {
           if (line === '') continue;
           const isHeading = line.startsWith('[') ||
             (line === line.toUpperCase() && line.length > 2 && !line.includes("'"));
@@ -47,18 +47,18 @@ export async function genericHub(ctx) {
         }
       }
 
-      // Run zone conversation
-      await ctx.runZone(zoneId);
+      // Run section conversation
+      await ctx.runSection(sectionId);
     }
   }
 }
 
-function _isZoneLocked(zone, station, game) {
-  if (!zone.requiredStanding) return false;
-  const faction = zone.requiredFaction ?? station.reputationFaction;
+function _isSectionLocked(section, station, game) {
+  if (!section.requiredStanding) return false;
+  const faction = section.requiredFaction ?? station.reputationFaction;
   const level = game?.reputation?.getLevel(faction) ?? 'Neutral';
   const ORDER = ['Hostile', 'Wary', 'Neutral', 'Trusted', 'Allied'];
-  return ORDER.indexOf(level) < ORDER.indexOf(zone.requiredStanding);
+  return ORDER.indexOf(level) < ORDER.indexOf(section.requiredStanding);
 }
 
 registerContent('conversations', 'genericHub', genericHub);

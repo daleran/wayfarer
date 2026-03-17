@@ -1,6 +1,6 @@
 // Central registries. Add new ships/NPCs here only.
 // Consumers: game.js, designer.js, editor.js
-import { AI_TEMPLATES, CHARACTERS, CONTENT } from '@data/index.js';
+import { AI_TEMPLATES, CHARACTERS, CONTENT, RELATION } from '@data/index.js';
 import { Character } from '@/entities/character.js';
 import { createModuleById } from '@/modules/registry.js';
 
@@ -100,7 +100,7 @@ export function createShip(id, x, y) {
   // 4. Unmanned setup (Concord machines)
   if (data.unmanned) {
     ship._machineFaction = data.faction;
-    ship._machineRelation = data.relation;
+    ship._machineRelation = data.relation ?? RELATION.NEUTRAL;
     if (data.aiBehavior && AI_TEMPLATES[data.aiBehavior]) {
       ship._machineAi = { ...AI_TEMPLATES[data.aiBehavior] };
     }
@@ -124,7 +124,7 @@ export function createNPC(characterId, x, y) {
     id: characterId,
     name: charData.name,
     faction: charData.faction,
-    relation: charData.relation,
+    relation: charData.relation ?? RELATION.NEUTRAL,
     behavior: charData.behavior,
     flavorText: charData.flavorText,
   });

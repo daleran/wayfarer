@@ -1,9 +1,15 @@
-import { REPUTATION, FACTIONS, FACTION_LABELS, FACTION_MAP, RIVALS } from '@data/index.js';
-export { FACTIONS, FACTION_LABELS, FACTION_MAP };
+import { REPUTATION } from '@data/index.js';
+import { getRootFactions, getRootFaction, areFactionsHostile } from '@data/factionHelpers.js';
+import { CONTENT } from '@data/dataRegistry.js';
 
 export class ReputationSystem {
   constructor() {
-    this.standings = Object.fromEntries(FACTIONS.map(f => [f, 0]));
+    // Init standings from root factions with their default reputation
+    this.standings = {};
+    for (const id of getRootFactions()) {
+      const faction = CONTENT.factions[id];
+      this.standings[id] = faction?.defaultReputation ?? 0;
+    }
   }
 
   change(faction, delta) {
@@ -12,11 +18,16 @@ export class ReputationSystem {
   }
 
   onKill(faction) {
-    const key = FACTION_MAP[faction] ?? faction;
+    const key = getRootFaction(faction);
     if (!(key in this.standings)) return;
     this.change(key, REPUTATION.KILL_PENALTY);
-    const rival = RIVALS[key];
-    if (rival) this.change(rival, REPUTATION.RIVAL_BONUS);
+    // Rival bonus: factions hostile to the killed faction's root get a bonus
+    for (const otherId of getRootFactions()) {
+      if (otherId === key) continue;
+      if (areFactionsHostile(key, otherId)) {
+        this.change(otherId, REPUTATION.RIVAL_BONUS);
+      }
+    }
   }
 
   getStanding(faction) { return this.standings[faction] ?? 0; }

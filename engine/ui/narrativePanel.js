@@ -6,6 +6,7 @@ import { CONTENT } from '@data/index.js';
 
 const CONVERSATIONS = CONTENT.conversations;
 import { FACTION, standingColor } from '@/rendering/colors.js';
+import { getFactionName } from '@data/factionHelpers.js';
 
 export class NarrativePanel {
   constructor() {
@@ -131,7 +132,7 @@ export class NarrativePanel {
 
     if (station.faction) {
       factionEl.style.color = FACTION[station.faction] ?? FACTION.neutral;
-      factionEl.textContent = `[${station.faction.toUpperCase()}]`;
+      factionEl.textContent = `[${getFactionName(station.faction).toUpperCase()}]`;
     } else {
       factionEl.textContent = '';
     }
@@ -167,7 +168,7 @@ export class NarrativePanel {
       station: null,
       log: this._log,
       signal,
-      runZone: () => {},
+      runSection: () => {},
     };
 
     try {
@@ -199,7 +200,7 @@ export class NarrativePanel {
       station,
       log: this._log,
       signal,
-      runZone: (zoneId) => this._runZone(zoneId),
+      runSection: (sectionId) => this._runSection(sectionId),
     };
 
     try {
@@ -213,12 +214,12 @@ export class NarrativePanel {
   }
 
   /** @private */
-  async _runZone(zoneId) {
+  async _runSection(sectionId) {
     const station = this._station;
     if (!station) return;
 
     // Pan camera to zone's world position
-    const zone = station.layout?.zones?.find(z => z.id === zoneId);
+    const zone = station.layout?.sections?.find(z => z.id === sectionId);
     if (zone?.worldOffset && this._game?.camera) {
       this._game.camera.panTo(
         station.x + zone.worldOffset.x,
@@ -226,7 +227,7 @@ export class NarrativePanel {
       );
     }
 
-    const convId = station.conversations?.zones?.[zoneId] ?? `generic_${zoneId}`;
+    const convId = station.conversations?.sections?.[sectionId] ?? `generic_${sectionId}`;
     const fn = CONVERSATIONS[convId];
 
     if (!fn) {
@@ -238,7 +239,7 @@ export class NarrativePanel {
           station,
           log: this._log,
           signal: this._abortController?.signal,
-          zoneId,
+          sectionId,
         });
       } else {
         this._log.narrate(`[No conversation found: ${convId}]`, 'system');
@@ -253,7 +254,7 @@ export class NarrativePanel {
       station,
       log: this._log,
       signal: this._abortController?.signal,
-      zoneId,
+      sectionId,
     });
 
     // Pan back to station center

@@ -2,9 +2,9 @@
 // Load with: editor.html?map=arena
 // Pale at center (4000, 3000). Player spawns south. Six derelicts ring the planet.
 
-import { TheCoil } from '@data/zones/gravewake/locations/the-coil/station.js';
-import { KellsStop } from '@data/zones/gravewake/locations/kells-stop/station.js';
-import { PlanetPale } from '@data/zones/gravewake/terrain/planet-pale/index.js';
+import { TheCoil } from '@data/locations/tyr/pale/orbital/locations/the-coil/station.js';
+import { KellsStop } from '@data/locations/tyr/pale/orbital/locations/kells-stop/station.js';
+import { PlanetPale } from '@data/locations/tyr/pale/orbital/terrain/planet-pale/index.js';
 import { createDerelict, createShip } from '@/entities/registry.js';
 
 function spawnEnemy(x, y, shipType) {

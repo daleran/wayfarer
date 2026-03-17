@@ -64,16 +64,26 @@ export const BAR_TRACK = 'rgba(0,16,32,0.5)';
 
 // Faction accents (for stations/UI only, not ship hulls)
 export const FACTION = {
-  neutral:     CYAN,
-  independent: '#88ff44',
-  military:    '#ff8844',
+  // Root factions
+  settlements:  CYAN,
   scavengers:   RED,
+  concord:      CONCORD_BLUE,
   monastic:     MAGENTA,
   communes:     GREEN,
   zealots:      AMBER,
-  salvage_lords: '#ff6633',
-  concord:      CONCORD_BLUE,
+  casimir:      CYAN,
+  // Child factions
+  'kells-stop': CYAN,
+  'ashveil':    CYAN,
+  'the-coil':   '#ff6633',
+  'grave-clan': RED,
+  // Special
   player:       CYAN,
+  // Legacy aliases
+  neutral:      CYAN,
+  independent:  '#88ff44',
+  military:     '#ff8844',
+  salvage_lords: '#ff6633',
 };
 
 // Ship relation colors — color = relation to player, NOT faction/type

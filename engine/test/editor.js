@@ -5,7 +5,8 @@
 
 import { input } from '@/input.js';
 import { createNPC, createDerelict, getNamedShipRegistry, getCharacterRegistry } from '@/entities/registry.js';
-import { CONTENT } from '@data/index.js';
+import { CONTENT, LOCATION_TYPE } from '@data/index.js';
+import { getLocationsByType } from '@data/dataRegistry.js';
 import { createModuleById } from '@/modules/registry.js';
 import { COMMODITIES } from '@data/commodities.js';
 import {
@@ -178,12 +179,12 @@ export class EditorOverlay {
       },
       {
         label: 'STATIONS',
-        items: Object.entries(CONTENT.stations).map(([id, s]) => ({
+        items: Object.entries(getLocationsByType(LOCATION_TYPE.STATION)).map(([id, loc]) => ({
           id,
-          label: s.entity.name,
-          faction: s.entity.faction,
-          create: (x, y) => s.entity.instantiate(x, y),
-          stats: `services: ${(s.entity.services || []).join(', ') || '—'}`,
+          label: loc.entity.name,
+          faction: loc.entity.faction,
+          create: (x, y) => loc.entity.instantiate(x, y),
+          stats: `services: ${(loc.entity.services || []).join(', ') || '—'}`,
         })),
       },
       {

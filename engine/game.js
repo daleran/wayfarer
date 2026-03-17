@@ -18,6 +18,7 @@ import { ControlsPanel } from './ui/controlsPanel.js';
 import {
   DEFAULT_SCRAP, FUEL_RATES, SPAWN,
 } from '@data/index.js';
+import { getRelationToPlayer } from '@data/factionHelpers.js';
 import {
   SMOKE_DARK, SMOKE_MID, SMOKE_TINT,
   SPARK_YELLOW, AMBER, CYAN, WHITE,
@@ -132,6 +133,9 @@ export class GameManager {
 
     this.mapZones = this.map.zones || [];
 
+    // Derive initial relations from faction standings (avoids first-frame flash)
+    this._updateRelations();
+
     if (this.player) {
       this.camera.x = this.player.x;
       this.camera.y = this.player.y;
@@ -242,7 +246,7 @@ export class GameManager {
       if ((this.salvage.isSalvaging || this.repair.isRepairing) && entity === this.player) continue;
       entity.update(dt, this.entities);
       if (entity.entityType === ENTITY.STATION && this.player) {
-        entity.updateZoneFade(dt, this.player.x, this.player.y);
+        entity.updateSectionFade(dt, this.player.x, this.player.y);
       }
     }
 
@@ -260,6 +264,8 @@ export class GameManager {
         if (this.player) this.hud.addPickupText(msg.text, this.player.x, this.player.y, msg.colorHint ?? null);
       }
     }
+
+    this._updateRelations();
 
     for (const ship of this.ships) {
       if (!ship.active || ship.isDerelict) continue;
@@ -383,6 +389,29 @@ export class GameManager {
 
     this.camera.x = this.player.x;
     this.camera.y = this.player.y;
+  }
+
+  _updateRelations() {
+    for (const ship of this.ships) {
+      if (!ship.active || ship.isDerelict) continue;
+      if (ship._relationOverride) continue;
+      const faction = ship.faction;
+      if (!faction || faction === 'player') continue;
+      const derived = getRelationToPlayer(faction, this.reputation);
+      if (ship.captain) {
+        ship.captain.relation = derived;
+      } else {
+        ship._machineRelation = derived;
+      }
+    }
+    // Stations too
+    for (const entity of this.entities) {
+      if (entity.entityType !== ENTITY.STATION || !entity.active) continue;
+      if (entity._relationOverride) continue;
+      const faction = entity.faction;
+      if (!faction) continue;
+      entity.relation = getRelationToPlayer(faction, this.reputation);
+    }
   }
 
   _updateModules(dt) {

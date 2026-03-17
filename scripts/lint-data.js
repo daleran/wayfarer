@@ -19,6 +19,8 @@ async function main() {
     // Boot the data layer — triggers all self-registration
     const data = await vite.ssrLoadModule('/data/index.js');
     const { CONTENT, AI_TEMPLATES } = data;
+    const { LOCATION_TYPE } = await vite.ssrLoadModule('/data/enums.js');
+    const { getLocationsByType } = await vite.ssrLoadModule('/data/dataRegistry.js');
 
     // ── ship→hull ───────────────────────────────────────────────────────────
     for (const [shipId, ship] of Object.entries(CONTENT.ships)) {
@@ -57,15 +59,16 @@ async function main() {
     }
 
     // ── station→conv ────────────────────────────────────────────────────────
-    for (const [stationId, station] of Object.entries(CONTENT.stations)) {
-      const convs = station.entity?.conversations;
+    const stations = getLocationsByType(LOCATION_TYPE.STATION);
+    for (const [stationId, loc] of Object.entries(stations)) {
+      const convs = loc.entity?.conversations;
       if (!convs) continue; // not all stations have conversations yet
 
       if (convs.hub && !CONTENT.conversations[convs.hub]) {
         err('station→conv', `Station "${stationId}" hub conv "${convs.hub}" — not found in CONTENT.conversations`);
       }
-      if (convs.zones) {
-        for (const [zone, convId] of Object.entries(convs.zones)) {
+      if (convs.sections) {
+        for (const [zone, convId] of Object.entries(convs.sections)) {
           if (convId && !CONTENT.conversations[convId]) {
             err('station→conv', `Station "${stationId}" zone "${zone}" conv "${convId}" — not found in CONTENT.conversations`);
           }
@@ -74,8 +77,8 @@ async function main() {
     }
 
     // ── bounty→char, bounty→ship ────────────────────────────────────────────
-    for (const [stationId, station] of Object.entries(CONTENT.stations)) {
-      const bounties = station.entity?.bountyContracts;
+    for (const [stationId, loc] of Object.entries(stations)) {
+      const bounties = loc.entity?.bountyContracts;
       if (!bounties) continue;
 
       bounties.forEach((b, i) => {

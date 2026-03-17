@@ -26,18 +26,25 @@ export function registerData(table, entries) {
 export const CONTENT = {
   hulls: {},          // id → { label, create(x,y) }
   ships: {},          // id → { shipClass, modules, name, flavorText, unmanned?, faction?, ... }
-  stations: {},       // id → { entity, label, flavorText }
   conversations: {},  // id → async function(ctx)
   derelicts: {},      // id → { ...data, instantiate(x,y) }
   terrain: {},        // id → { ...data, instantiate(x,y) }
-  characters: {},     // id → { name, faction, relation, behavior, shipId, bounty?, flavorText? }
+  characters: {},     // id → { name, faction, behavior, shipId, bounty?, flavorText? }
   modules: {},        // id → { category, create() }
   weapons: {},        // id → { create(), slug, label, flavorText, projColor, ... }
-  planets: {},        // id → { backgroundData(), name, ... }
+  locations: {},      // id → { id, locationType, name, flavorText, entity?, backgroundData? }
   history: {},        // id → { date, text, related?, tags? }
+  factions: {},       // id → { name, parent?, relationships?, defaultReputation? }
 };
 
 /** Register a content entry into the appropriate CONTENT sub-table. */
 export function registerContent(type, id, entry) {
   CONTENT[type][id] = entry;
+}
+
+/** Return all location entries of a given locationType. */
+export function getLocationsByType(locationType) {
+  return Object.fromEntries(
+    Object.entries(CONTENT.locations).filter(([, loc]) => loc.locationType === locationType)
+  );
 }
