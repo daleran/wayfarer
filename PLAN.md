@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: DK**
+**Next available code: DT**
 
 ---
 
@@ -38,6 +38,14 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | DH | Khem & House Aridani (Breadbasket) | World / Map |
 | DI | Ferrum & House Ignis (Twilight Ring) | World / Map |
 | DJ | Non-Aligned Powers & System Geopolitics | World / Map |
+| DK | Lore System Overhaul | Systems |
+| DL | Gravewake Legacy Cleanup | World / Map |
+| DN | Origin Rework — Cocytus Adaptation | Narrative |
+| DO | Contract System | Gameplay |
+| DP | Advanced Salvaging | Gameplay |
+| DQ | Barter / Favor / Influence System | Economy |
+| DR | Small Item System | Gameplay |
+| DS | Commodities Expansion | Economy |
 
 ---
 
@@ -59,6 +67,58 @@ Stations have periodic resource "Needs" — scarce goods they want delivered. De
 - Provisioning screen: browse requestable items, see Favor cost and delivery delay
 - Transaction locking: cargo is "locked" during active trades; prevents accidental jettison mid-dock
 - Exotics (isomers/data-cores) as a third commodity — high-density portable wealth, small cargo footprint, used for large-favor transactions and high-tier provisioning
+
+---
+
+### DQ: Barter / Favor / Influence System
+
+Non-scrap economy layer. Each Captain Lord tracks **Influence** separately from faction reputation.
+
+- **Influence** — earned by completing contracts, delivering deficit goods, doing personal favors for a lord
+- **Influence unlocks:** better prices, exclusive contracts, restricted station areas, narrative branches, intel
+- **Favor tokens** — one-time-use rewards from lords (e.g., "Vance owes you a fuel fill" or "Kaelen will install one module free")
+- **Cross-lord influence:** spending influence with one lord can be perceived as taking sides — optional tension mechanic
+
+*Note: supersedes AP (Tribute & Favor System) with a Cocytus-specific implementation. AP's core concepts (station needs, dynamic desperation, provisioning) are absorbed here.*
+
+---
+
+### DR: Small Item System
+
+Non-cargo-hold inventory for trinkets with narrative, barter, and story value.
+
+- **Personal inventory** — separate from cargo hold, limited slots (5–10), zero mass
+- **Item types:** data ROMs, keepsakes, tools, credentials, curiosities
+- **Uses:** barter currency (some NPCs want specific items), conversation unlocks (show item to trigger dialogue), quest items, story flags made physical
+
+**Initial roster:**
+- Data ROM (various — nav data, encrypted logs, software fragments)
+- Three-string guitar (worthless to most, priceless to one NPC)
+- Drazel officer's insignia (old House badge — opens doors in some places, closes them in others)
+- Concord shard fragment (Zealots want it, Monastics want it destroyed)
+- Forged transit pass (lets you bluff past certain checkpoints)
+- Miner's lucky charm (Ptolomea keepsake — sentimental value)
+- Solis proxy mask (one of Solis's communication masks — very valuable, very suspicious)
+
+**Key files:** `data/enums.js` (add `ITEM_TYPE`), `engine/systems/playerInventory.js` (add `items[]`), `data/items/` (new directory, self-registering)
+
+---
+
+### DS: Commodities Expansion
+
+Split scrap into tiers and add commodity depth for the Cocytus Circuit economy.
+
+**Scrap tiers:**
+- **Junk scrap** — lowest value, most common (hull fragments, wiring). Current "scrap" becomes this.
+- **Salvage scrap** — medium value (intact components, usable parts). Drops from better derelicts.
+- **Refined scrap** — highest value, only from processing or high-tier salvage. Universal premium currency.
+
+**New commodities:**
+- **Coolant** — needed for forge operations (Antenora imports)
+- **Oxygen** — life support consumable (all stations need, Caina produces as byproduct)
+- **Spare parts** — generic repair material (distinct from machine_parts — more basic)
+
+**Changes:** `data/commodities.js` (add entries, split scrap), `engine/systems/playerInventory.js` (scrap becomes commodity tracked in cargo), loot tables, salvage yields, trade prices rebalanced for Cocytus Circuit.
 
 ---
 
@@ -135,9 +195,11 @@ The boundary between the inner system and the Kuiper-style asteroid belts. First
 
 ### DE: Cocytus & The Captain Lords (Ice Giant)
 
-A massive ice giant serving as the gateway to the outer system. Solar energy is non-existent — inhabitants rely on geothermal heat or chemical refining. Four Captain Lords — disgraced veterans of the Casimir Uprising — each control one moon from orbit aboard a rusting dreadnought too broken to leave.
+A massive ice giant in the outer Tyr system. Solar energy is non-existent — all power comes from geothermal taps, chemical refining, or salvaged reactor cores. Four Captain Lords — disgraced veterans of the Casimir Uprising — each control one moon from orbit aboard a rusting dreadnought too broken to leave. The Cocytus Circuit is a desperate survival economy enforced by mutual blockade — each lord controls one critical resource, ensuring none can be eliminated without collapsing the whole system.
 
-**The Four Moons** — self-sustained micro-states in a mutual-hostage economy (the Cocytus Circuit):
+The player starts here. Nobody chooses Cocytus. You end up here because everywhere else spit you out.
+
+**The Four Moons:**
 
 | Moon | Nickname | Captain Lord | Ship | Specialization |
 |---|---|---|---|---|
@@ -146,14 +208,106 @@ A massive ice giant serving as the gateway to the outer system. Solar energy is 
 | **Ptolomea** | The Slag Heap | Vorosh | World-Breaker | Rare earth mining — high-metallic core, mines nearly exhausted |
 | **Judecca** | The Algae Vats | Solis | Radiant Aegis | Farming — massive light-capture algae farms, only food source in orbit |
 
-**As Introductory Zone:**
-- **Theme:** "The Scrappy Frontier" — a fractured, balkanized subsystem where four Captain Lords enforce a desperate survival economy. Perfect starting point for an unknown freelancer to make a name without drawing the attention of Casimir or the inner system
-- **Mechanics Intro** — the four moons act as a microcosm of the entire game's core loop:
-  - Learn basic mining and resource extraction at Ptolomea
-  - Trade for essential survival supplies and food at Judecca
-  - Purchase fuel and chemical propellants at Caina
-  - Upgrade and repair the starter ship at Antenora
-- **The Escalation:** low-stakes warlord politics teach cross-planetary trade and localized combat; the ultimate goal is earning enough resources and hull upgrades to survive the dangerous journey inward
+**Zone Layout:**
+
+Scale: ~20,000 × 12,000 world units. Cocytus itself is a massive background element (like Pale) — the moons orbit it at varying distances.
+
+- **Cocytus (background):** Enormous ice giant rendered as CRT-style topographic sphere (adapt PlanetPale renderer). Banded atmosphere — methane blues, ammonia whites. Centered, parallax-scrolled. NOT collidable.
+- **Caina (NW):** ~4000, 2500 — volatile geysers, frozen chemical lakes, pipeline infrastructure
+- **Antenora (NE):** ~16000, 2500 — geothermal vents, forge glow, orbital scrap rings
+- **Ptolomea (SE):** ~16000, 9500 — cratered, dark, mine shaft openings visible from orbit
+- **Judecca (SW):** ~4000, 9500 — pale green algae bloom glow, light-capture arrays
+- **Trade lanes** between moons marked by beacon buoys — visible convoy routes
+- **Drift zones** between lanes — debris fields where independents lurk
+- **The Gap** — empty central space around Cocytus, dangerous to cross (no cover)
+
+---
+
+**CAINA — The Dirty Tap** (Lord Captain Vance)
+
+*Fuel refinery moon. Frozen volatiles tapped for liquid hydrogen/oxygen.*
+
+- **Station: Tap Station** — fuel depot bolted to a cracking refinery platform. Functional, minimal, smells like chemical burn. Services: fuel (cheapest in system), basic repair, trade.
+- **Dreadnought: Acheron** — visible in high orbit, running lights still blinking. Vance broadcasts price lists and threats from here.
+- **Vance:** Former Drazel quartermaster who embezzled fuel reserves during the collapse. Businesslike, transactional, sees everything as a ledger entry. Will deal with anyone who pays. The most "reasonable" of the four lords — which makes him the most dangerous, because he never acts without calculating the margin.
+- **Commodities:** Surplus: reactor_fuel. Deficit: machine_parts, ration_packs. Imports food and parts, exports fuel at extortionate markup.
+- **Terrain:** Chemical geyser vents (periodic hazard — visual + minor knockback), frozen pipeline infrastructure (cover/terrain), fuel storage tank clusters.
+- **Local threats:** Independents raid fuel convoys leaving Caina. Zealot missionaries sometimes approach broadcasting sermons.
+- **Narrative beats:**
+  - First dock: Vance's dock master explains the Circuit — prices, rules, who controls what
+  - Fuel debt: dock with no scrap, Vance offers fuel on credit — creating a debt he will collect on later (favor/influence hook)
+  - Intel: Vance knows everything about everyone's supply lines. Will sell information for scrap or favors.
+
+---
+
+**ANTENORA — The Scrap Forge** (Lord Captain Kaelen)
+
+*Heavy industry moon. Geothermal-powered fabrication hub.*
+
+- **Station: The Forge Floor** — built into a geothermal vent shaft. Hot, loud, crowded. Sparks and slag. Services: repair (best in system), module installation, trade.
+- **Dreadnought: Iron Sovereign** — in low orbit, listing badly, hull scored with old battle damage.
+- **Kaelen:** Mutineer who killed her commanding officer during the Fall of Drazel. Pragmatic, blunt, respects competence. Runs the fabricators and mechanics — nothing gets repaired in Cocytus without her cut. Knows every ship in the subsystem by the sound of its drive.
+- **Commodities:** Surplus: alloys, hull_plating. Deficit: raw_ore, reactor_fuel. Imports ore and fuel, exports finished goods.
+- **Terrain:** Orbital scrap rings (fabrication waste), geothermal vent plumes, work-light glow visible at distance.
+- **Local threats:** Independents steal finished goods from outbound convoys. Concord probes drawn to electromagnetic forge signatures.
+- **Narrative beats:**
+  - First dock: Kaelen's foreman assesses your ship and tells you what's wrong with it (tutorial for repair/modules)
+  - Reputation gate: higher-tier module work requires standing with Kaelen
+  - Kaelen's grudge: unfinished business with Vorosh (he supplies her ore but squeezes her on price). Player can be drawn into this tension.
+
+---
+
+**PTOLOMEA — The Slag Heap** (Lord Captain Vorosh)
+
+*Mining moon. High-metallic core, mines nearly exhausted.*
+
+- **Station: Pit Head** — mine head elevator platform converted into a station. Grim, spartan, workers move like ghosts. Services: trade (raw materials cheap), basic repair, salvage processing.
+- **Dreadnought: World-Breaker** — in high orbit, weapons still operational (the only lord who maintains armament). Uses the threat of orbital bombardment to keep miners in line.
+- **Vorosh:** Brutal taskmaster who worked prisoners to death in the Drazel ore mines, then kept working them when the House fell. His mines are nearly exhausted — he's desperate, which makes him volatile. The most openly dangerous lord. Will hire mercenaries for dirty work.
+- **Commodities:** Surplus: raw_ore. Deficit: ration_packs, medical_supplies. Imports everything his workers need to survive, exports the only thing he has.
+- **Terrain:** Cratered surface, mine shaft openings (dark voids), tailings piles, ore hauler debris. The darkest moon — minimal reflected light.
+- **Local threats:** Concord probes drawn to mineral signatures. Desperate miners sometimes steal ships and turn independent.
+- **Narrative beats:**
+  - First dock: the station is oppressive — workers barely speak, overseers watch everything
+  - Dirty work: Vorosh offers high-paying but morally ugly contracts (suppress a miner revolt, intercept a deserter ship, intimidate a trade partner)
+  - The exhaustion: Vorosh knows his mines are dying. He's looking for new mineral sources — mid-game quest hook
+  - Whispers: some miners have heard Concord transmissions coming from deep in the mines
+
+---
+
+**JUDECCA — The Algae Vats** (Lord Captain Solis)
+
+*Farming moon. Massive light-capture algae farms, only food source in orbit.*
+
+- **Station: The Green** — sterile, controlled, smells like wet metal and chlorophyll. Airlocked sections, UV decontamination. Services: trade (food commodities), medical, intel.
+- **Dreadnought: Radiant Aegis** — in distant orbit, barely visible. Solis has not been seen in person for years. Communicates through proxies.
+- **Solis:** Paranoid hermit who speaks through intermediaries. Controls the only food production in the subsystem. Rumors: she's not actually aboard the Radiant Aegis anymore. Or she's merged with something. Or she's dead and the proxies are running the show. Nobody knows. The algae tastes like copper and regret but it keeps you alive.
+- **Commodities:** Surplus: ration_packs, bio_cultures. Deficit: electronics, reactor_fuel. Imports power and tech to keep the vats running, exports food.
+- **Terrain:** Light-capture arrays (geometric panels reflecting dim starlight), algae bloom glow (faint green), sealed biodome structures on the surface.
+- **Local threats:** Zealot missionaries specifically target Judecca — food supply is leverage, and converting Solis's workers would give them control over the entire Circuit.
+- **Narrative beats:**
+  - First dock: you deal with a proxy. Everything is indirect, filtered, controlled.
+  - The mystery: what happened to Solis? Multiple competing rumors, no confirmation
+  - Food leverage: Solis's proxies trade information and favors for protecting food shipments from Zealots
+  - Late-game reveal potential: what's really going on aboard the Radiant Aegis
+
+---
+
+**Enemy Roster (3 threat types):**
+
+1. **Independents / Drifters** (most common) — failed settlers, mutineers, stranded travelers raiding supply runs. Fly cobbled-together Onyx Tugs and beat-up Couriers. AI: lurker (ambush from drift zones) and stalker (hit-and-run). Low threat individually, dangerous in packs. Some desperate enough to surrender. Faction: none (unaligned, no rep consequence).
+
+2. **Concord Probes** (rare, dangerous) — autonomous Concord fragments drawn to electromagnetic signatures. Fly drone-type ships (existing Concord entity subclasses). AI: patrol + aggressive when approached. High-value salvage (Concord tech modules, data cores). Faction: concord.
+
+3. **Zealot Missionaries** (uncommon, hostile) — Zealots of the Directive preaching conversion or elimination. Fly modified ships with broadcasting equipment. AI: kiter (stay at range, broadcast, engage if approached). Hostile to all non-aligned humans. Target Judecca food supply. Carry propaganda items and Concord-derived tech. Faction: zealots.
+
+**Factions:** Each Captain Lord is a root faction (vance, kaelen, vorosh, solis) with independent reputation tracking. Total roots after cleanup: concord, monastic, zealots, casimir, vance, kaelen, vorosh, solis (8).
+
+**Progression & Escape:**
+- **Early game:** survive the Circuit — earn scrap hauling between moons, take odd jobs, salvage drift-zone wrecks
+- **Mid game:** get drawn into Captain Lord politics — Kaelen vs Vorosh tension, Solis mystery, Vance's schemes
+- **Late game:** earn/build/steal enough to make the journey inward toward Gravewake and eventually the inner system
+- **The gate:** leaving Cocytus requires either enough fuel + hull integrity to survive the transit, OR a favor from Vance (fuel discount) + intel from Solis (safe route)
 
 ---
 
@@ -203,6 +357,63 @@ The innermost planet — a dense iron world tidally locked to the sun. House Ign
 - **The Uranium Monopoly:** controls the only viable uranium ore deposits in the system
 - **The Great Ring Road:** a massive underground highway connecting crater-citadels in the twilight band
 - Military specialty: advanced nuclear reactors and high-velocity railguns
+
+---
+
+### DK: Lore System Overhaul
+
+Standardize all flavor text under a unified lore format with tags and entity references. Currently `flavorText` is a bare string on ships, characters, stations, weapons, derelicts (and derelicts use a separate `lore` field). Standardize to a consistent shape.
+
+**Changes:**
+- Add `LORE_TAG` enum to `data/enums.js` — freeze all current free-form tag strings as enum values (e.g., `LORE_TAG.TYR`, `LORE_TAG.CONCORD`, `LORE_TAG.GROUNDING`, `LORE_TAG.CAPTAIN_LORDS`, etc.)
+- Rename `CONTENT.history` → `CONTENT.lore` in `data/dataRegistry.js`
+- Update `registerContent('history', ...)` → `registerContent('lore', ...)` in `globalHistory.js` and `tyrHistory.js`
+- Standardize all `flavorText` fields across content types to shape: `{ text: string, tags: LORE_TAG[], related?: string[] }` where `related` is an array of entity/content IDs
+- Derelict `lore` field → same standardized shape
+- Update designer History category → "Lore" category
+- Update all consumers: designer panel, narrative log, station sections, HUD pickup text
+
+**Key files:** `data/enums.js`, `data/dataRegistry.js`, `data/lore/*.js`, all content files with `flavorText`, `engine/test/designer.js`, `engine/ui/designerPanel.js`
+
+---
+
+### DL: Gravewake Legacy Cleanup
+
+Strip outdated Gravewake content. Keep reusable graphics and renderers. Delete legacy faction code.
+
+**Delete:**
+- `data/factions.js` (legacy wrappers: `FACTIONS`, `FACTION_LABELS`, `FACTION_MAP`, `RIVALS`)
+- `data/lore/factions/root.js` — remove `settlements`, `scavengers`, `communes` entries
+- `data/lore/factions/children.js` — remove `kells-stop`, `ashveil`, `the-coil`, `grave-clan`
+- `data/locations/tyr/pale/orbital/locations/kells-stop/` — entire directory
+- `data/locations/tyr/pale/orbital/locations/ashveil-anchorage/` — entire directory
+- `data/locations/tyr/pale/orbital/characters/` — all character files
+- `data/locations/tyr/pale/orbital/ships/` — all ship configs
+- `data/locations/tyr/pale/orbital/derelicts/` — all derelict files
+- `data/locations/tyr/pale/orbital/manifest.js`
+
+**Keep (relocate or preserve as templates):**
+- `the-coil/renderer.js` — CoilStation renderer (957 lines, most elaborate station visual)
+- `terrain/planet-pale/index.js` — PlanetPale background renderer (reusable CRT-style planet template)
+- `terrain/debris-clouds/index.js` — DebrisCloud class (reusable)
+- `terrain/arkship-spines/index.js` — ArkshipSpine class (reusable)
+- `planets/pale.js` — Planet entity pattern (template for Cocytus moons)
+
+**Update references:**
+- `engine/systems/collisionSystem.js` — change `'settlements'` to new faction
+- `engine/rendering/colors.js` — update faction color palette (add captain lord factions)
+- `engine/game.js` — remove debug `'scavengers'` reference
+- `data/index.js` — remove `data/factions.js` re-export
+- Skill files in `.claude/commands/wayfarer/` — update faction lists
+- `scripts/templates/setting.md` — update worldbuilding narrative
+
+**Add 4 new root factions** to `data/lore/factions/root.js`:
+- `vance` — "Lord Captain Vance" (Caina/fuel), defaultReputation: 0
+- `kaelen` — "Lord Captain Kaelen" (Antenora/fabrication), defaultReputation: 0
+- `vorosh` — "Lord Captain Vorosh" (Ptolomea/mining), defaultReputation: 0
+- `solis` — "Lord Captain Solis" (Judecca/food), defaultReputation: 0
+
+Remaining roots after cleanup: **concord, monastic, zealots, casimir, vance, kaelen, vorosh, solis** (8 total)
 
 ---
 
@@ -281,6 +492,34 @@ Specific crew roles unlock active, high-risk/high-reward combat maneuvers. Each 
 
 ## Narrative
 
+### DN: Origin Rework — Cocytus Adaptation
+
+Adapt the 3 existing Gravewake origins for Cocytus context. Same narrative structure (async conversation with sub-choices), same `game.applyOrigin()` API.
+
+**Origin 1: The Runaway** (adapt from current)
+- Was: stole a courier from a settlement foreman
+- Now: stole a courier from a Vance fuel depot worker. Fled into Cocytus space. Starting moon: Caina vicinity.
+- Ship: Maverick Courier (same). Starting goods: scrap or fuel (same sub-choice).
+
+**Origin 2: The Deserter** (adapt from current)
+- Was: Casimir scout who refused tribunal
+- Now: Kaelen's forge crew deserter — refused to work the dangerous deep-forge shifts, stole a patrol ship. Starting moon: Antenora vicinity.
+- Ship: Cutter Scout (same pattern). Starting goods: ammo or rep with Kaelen's rivals.
+
+**Origin 3: The Scavenger** (adapt from current)
+- Was: Gravewake native, father killed, inherits tug
+- Now: Ptolomea miner's kid, parent killed in a shaft collapse Vorosh ignored. Inherits a battered tug. Starting moon: Ptolomea vicinity.
+- Ship: Onyx Tug (same). Starting goods: module or scrap (same sub-choice).
+
+**Each origin gets a short starting quest** (new):
+- Runaway: first job — deliver fuel to Antenora to pay off a debt. Teaches trade lane navigation.
+- Deserter: first job — Vance offers work retrieving a lost fuel probe from a drift zone. Teaches salvaging.
+- Scavenger: first job — haul ore from Ptolomea to Antenora. Teaches commodity trading.
+
+**File:** rewrite `data/conversations/originSelection.js`
+
+---
+
 ### BA: Story Threads & Trigger System
 
 Three optional story threads discoverable through exploration. No forced storyline — each unfolds via found items, faction interactions, and player choices.
@@ -333,6 +572,37 @@ A framework for weaving handcrafted narrative threads into the systemic world. A
 ---
 
 ## Gameplay
+
+### DO: Contract System
+
+Formalize contracts as a game system beyond the current bounty board. Each Captain Lord's station offers contracts based on their needs and rivalries.
+
+**Contract types:**
+1. **Hauling** — deliver commodity X from moon A to moon B. Reward: scrap + reputation with destination lord. Risk: convoy interdiction by independents.
+2. **Mercenary: Kill** — eliminate a named target (independent raider, Zealot cell leader). Existing bounty system, expanded.
+3. **Mercenary: Escort** — protect a convoy between moons. Reward: scrap + rep. Failure: rep penalty.
+4. **Mercenary: Capture** — disable (not destroy) a target ship for salvage. Requires precision weapons. Higher reward.
+5. **Mercenary: Find** — locate a missing ship/person in drift zones. Exploration + potential combat.
+6. **Acquisition** — find and deliver a specific module, commodity, or small item. Scavenge or trade for it.
+
+**System architecture:**
+- `engine/systems/contractSystem.js` — manages active contracts, expiry, completion detection
+- Station conversation `contracts.js` — browse/accept available contracts (replaces per-station bounties.js)
+- Contracts generated from station data: each station defines contract templates based on its lord's needs
+- Active contract HUD indicator (destination marker, time remaining)
+
+---
+
+### DP: Advanced Salvaging
+
+Expand the current salvage system (which is just a timer → loot roll) into a more engaging loop.
+
+- **Salvage scanning:** before committing, scan the derelict to see potential loot (modules visible, cargo manifest, structural integrity)
+- **Salvage choices:** player chooses focus — strip modules (slow, high value), grab cargo (fast, medium value), or scrap the hull (fast, low value but guaranteed)
+- **Hazards:** some derelicts are trapped (Concord countermeasures, unstable reactors, ambush triggers)
+- **Salvage bay module tiers:** basic (cargo only) → advanced (modules + weapons) → experimental (Concord tech extraction)
+
+---
 
 ### BL: Core Combat Philosophy — Disabling vs. Destroying
 
@@ -449,4 +719,15 @@ All audio generated via Web Audio API — no asset files required.
 
 **Future ideas (unshipped):**
 - Wear & Tear: low-quality modules degrade during regular use, not just combat
+
+---
+
+## Build Order — Cocytus Pivot
+
+| Phase | Features | Dependency |
+|---|---|---|
+| **1. Foundation** | DK (lore overhaul), DL (legacy cleanup) | None — do first |
+| **2. World** | DE (Cocytus system), DN (origins) | Needs DK + DL done |
+| **3. Loops** | DO (contracts), DP (salvaging) | Needs DE world to exist |
+| **4. Economy** | DQ (barter/influence), DR (small items), DS (commodities) | Needs DO + DP loops |
 

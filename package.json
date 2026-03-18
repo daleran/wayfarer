@@ -13,7 +13,8 @@
     "lint:fix": "eslint engine/ data/ --fix",
     "check": "tsc --project jsconfig.json",
     "lint:data": "node scripts/lint-data.js",
-    "validate": "eslint engine/ data/ && tsc --project jsconfig.json && node scripts/lint-data.js"
+    "validate": "eslint engine/ data/ && tsc --project jsconfig.json && node scripts/lint-data.js",
+    "spec": "bash scripts/build-spec.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
