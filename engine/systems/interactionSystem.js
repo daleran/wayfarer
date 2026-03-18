@@ -43,7 +43,7 @@ export class InteractionSystem {
   checkDocking(entities, player, input, { reputation, hud, stationScreen, bounty, game }) {
     this.nearbyStation = null;
     for (const entity of entities) {
-      if (entity.entityType !== ENTITY.STATION) continue;
+      if (entity.entityType !== ENTITY.STATION && entity.entityType !== ENTITY.PLANET) continue;
       if (entity.isInDockingZone(player.x, player.y)) {
         this.nearbyStation = entity;
         break;
@@ -51,11 +51,15 @@ export class InteractionSystem {
     }
     if (this.nearbyStation && input.wasJustPressed('e') && player.throttleLevel === 0 && player.speed < 1) {
       if (reputation.isHostile(this.nearbyStation.reputationFaction)) {
-        hud.addPickupText('DOCKING REFUSED', this.nearbyStation.x, this.nearbyStation.y, 'hostile');
+        const refuseMsg = this.nearbyStation.entityType === ENTITY.PLANET ? 'LANDING REFUSED' : 'DOCKING REFUSED';
+        hud.addPickupText(refuseMsg, this.nearbyStation.x, this.nearbyStation.y, 'hostile');
         return { isDocked: false };
       }
-      const result = bounty.collectCompleted(this.nearbyStation, { scrap: game.scrap, reputation, hud, player });
-      game.scrap += result.scrapEarned;
+      // Planets don't issue bounties
+      if (this.nearbyStation.entityType !== ENTITY.PLANET) {
+        const result = bounty.collectCompleted(this.nearbyStation, { scrap: game.scrap, reputation, hud, player });
+        game.scrap += result.scrapEarned;
+      }
       stationScreen.open(this.nearbyStation, game);
       return { isDocked: true };
     }

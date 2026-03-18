@@ -11,6 +11,7 @@ import { ColdRemnant }       from './derelicts/coldRemnant.js';
 import { FracturedWake }     from './derelicts/fracturedWake.js';
 import { PaleWitness }       from './derelicts/paleWitness.js';
 import { PlanetPale }        from './terrain/planet-pale/index.js';
+import { PalePlanet }        from './planets/pale.js';
 import { ArkshipSpines }     from './terrain/arkship-spines/index.js';
 import { WallOfWrecks }      from './terrain/debris-clouds/index.js';
 
@@ -140,6 +141,9 @@ const GRAVEWAKE_ZONE = { id: 'gravewake', name: 'Gravewake', center: { x: 10000,
 
 export const GRAVEWAKE = {
   entities: [
+    // Planet
+    PalePlanet.instantiate(9000, 5000),
+
     // Stations
     TheCoil.instantiate(15000, 3000),
     KellsStop.instantiate(5500, 3800),

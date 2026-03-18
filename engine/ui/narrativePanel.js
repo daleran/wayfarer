@@ -3,6 +3,7 @@
 
 import { NarrativeLog } from './narrativeLog.js';
 import { CONTENT } from '@data/index.js';
+import { ENTITY } from '@data/enums.js';
 
 const CONVERSATIONS = CONTENT.conversations;
 import { FACTION, standingColor } from '@/rendering/colors.js';
@@ -53,7 +54,8 @@ export class NarrativePanel {
     this._el.classList.remove('hidden');
 
     if (game?.camera) {
-      game.camera.pushZoom(4.0);
+      const zoom = station.entityType === ENTITY.PLANET ? 2.0 : 4.0;
+      game.camera.pushZoom(zoom);
       game.camera.panTo(station.x, station.y);
     }
 

@@ -4,6 +4,7 @@ import {
   CONDITION_FAULTY,
 } from '@/rendering/colors.js';
 import { PROMPT } from '@/rendering/draw.js';
+import { ENTITY } from '@data/enums.js';
 
 export function renderPauseIcon(ctx, camera) {
   const flash = Math.sin(Date.now() * 0.006) > 0;
@@ -29,12 +30,14 @@ export function renderDockPrompt(ctx, game) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.globalAlpha = alpha;
+  const isPlanet = game.nearbyStation.entityType === ENTITY.PLANET;
   if (stopped) {
     ctx.fillStyle = GREEN;
-    ctx.fillText(`Press E to dock at ${game.nearbyStation.name}`, camera.width / 2, promptY);
+    const verb = isPlanet ? 'land on' : 'dock at';
+    ctx.fillText(`Press E to ${verb} ${game.nearbyStation.name}`, camera.width / 2, promptY);
   } else {
     ctx.fillStyle = RED;
-    ctx.fillText('STOP TO DOCK', camera.width / 2, promptY);
+    ctx.fillText(isPlanet ? 'STOP TO LAND' : 'STOP TO DOCK', camera.width / 2, promptY);
   }
   ctx.globalAlpha = 1;
   ctx.restore();

@@ -245,7 +245,7 @@ export class GameManager {
       if (!entity.active) continue;
       if ((this.salvage.isSalvaging || this.repair.isRepairing) && entity === this.player) continue;
       entity.update(dt, this.entities);
-      if (entity.entityType === ENTITY.STATION && this.player) {
+      if ((entity.entityType === ENTITY.STATION || entity.entityType === ENTITY.PLANET) && this.player) {
         entity.updateSectionFade(dt, this.player.x, this.player.y);
       }
     }
@@ -404,10 +404,10 @@ export class GameManager {
         ship._machineRelation = derived;
       }
     }
-    // Stations too
+    // Stations and planets too
     for (const entity of this.entities) {
-      if (entity.entityType !== ENTITY.STATION || !entity.active) continue;
-      if (entity._relationOverride) continue;
+      if (entity.entityType !== ENTITY.STATION && entity.entityType !== ENTITY.PLANET) continue;
+      if (!entity.active || entity._relationOverride) continue;
       const faction = entity.faction;
       if (!faction) continue;
       entity.relation = getRelationToPlayer(faction, this.reputation);
@@ -543,7 +543,7 @@ export class GameManager {
 
     for (const e of this.entities) {
       if (!e.active) continue;
-      if (e.entityType !== ENTITY.STATION && !e.isDerelict) continue;
+      if (e.entityType !== ENTITY.STATION && e.entityType !== ENTITY.PLANET && !e.isDerelict) continue;
       const dx = e.x - wx;
       const dy = e.y - wy;
       const dist = Math.sqrt(dx * dx + dy * dy);
