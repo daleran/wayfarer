@@ -51,7 +51,7 @@ Create a new module/weapon or edit an existing one. Modules are installable ship
 - `engine/rendering/colors.js` — projectile/beam color constants
 
 ### Always:
-- `UX.md` — visual conventions
+- `SPEC.md` (UX section) — visual conventions
 - `data/index.js` imports — `BASE_DAMAGE`, `BASE_HULL_DAMAGE`, `BASE_PROJECTILE_SPEED`, `BASE_WEAPON_RANGE`, `BASE_COOLDOWN`, `PROJECTILE_SPEED_FACTOR`
 
 ## Step 3 — Data stats
@@ -238,4 +238,4 @@ If the module/weapon should drop from derelicts, open `data/lootTables.js` and a
 
 ## Step 8 — Update docs
 
-- New projectile/beam colors → `UX.md` and `engine/rendering/colors.js`
+- New projectile/beam colors → `scripts/templates/ux-philosophy.md` and `engine/rendering/colors.js`

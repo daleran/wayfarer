@@ -30,8 +30,8 @@ Create a new station or edit an existing one. Stations are dockable entities wit
 - `data/locations/tyr/pale/orbital/locations/ashveil-anchorage/station.js` — another example
 - `engine/rendering/colors.js` — all color constants
 - `engine/rendering/draw.js` — Shape factories
-- `UX.md` — visual conventions
-- `LORE.md` — existing stations and world context
+- `SPEC.md` (UX section) — visual conventions
+- `SPEC.md` (Setting section) — existing stations and world context
 
 ## Step 3 — Create or edit station files
 
@@ -155,5 +155,5 @@ Add to `data/maps/arena.js`:
 
 ## Step 6 — Update docs
 
-- Station lore, name, faction → `LORE.md`
-- New renderer visual patterns → `UX.md`
+- Station lore, name, faction → `scripts/templates/setting.md`
+- New renderer visual patterns → `scripts/templates/ux-philosophy.md`

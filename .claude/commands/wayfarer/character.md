@@ -24,7 +24,7 @@ Create a new character or edit an existing one. Characters are **people** (or ro
 - `engine/entities/character.js` — `Character` class, `boardShip()`/`leaveShip()`
 - The character file where the character is currently defined (e.g. `data/locations/tyr/pale/orbital/characters/scavenger.js`)
 - `engine/entities/registry.js` — `getCharacterRegistry()` (reads from `CONTENT.characters`), `createNPC()`
-- `LORE.md` — faction descriptions and world tone
+- `SPEC.md` (Setting section) — faction descriptions and world tone
 
 ## Step 3 — Create or edit the character
 
@@ -86,5 +86,5 @@ registerContent('characters', '<character-id>', CHARACTERS['<character-id>']);
 
 ## Step 6 — Update docs
 
-- Characters with lore significance → `LORE.md`
-- New faction member → `LORE.md` faction section
+- Characters with lore significance → `scripts/templates/setting.md`
+- New faction member → `scripts/templates/setting.md` faction section

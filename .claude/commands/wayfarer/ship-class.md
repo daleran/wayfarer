@@ -24,7 +24,7 @@ Before writing any code:
 - `engine/rendering/colors.js` — all color constants
 - `engine/rendering/draw.js` — Shape factories and Draw API
 - `data/shipClasses.js` — existing class stat multipliers
-- `UX.md` — visual conventions and color palette
+- `SPEC.md` (UX section) — visual conventions and color palette
 - Existing ship hull classes in `data/hulls/*/hull.js` for pattern reference
 
 ## Step 3 — Data stats
@@ -93,5 +93,5 @@ The designer auto-discovers from `CONTENT.hulls` — no separate designer entry 
 
 ## Step 7 — Update docs
 
-- New visual patterns → `UX.md`
-- Lore significance → `LORE.md`
+- New visual patterns → `scripts/templates/ux-philosophy.md`
+- Lore significance → `scripts/templates/setting.md`

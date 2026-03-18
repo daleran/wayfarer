@@ -1,6 +1,6 @@
 # Lore — Create or Edit Lore & Factions
 
-Create new lore content (history events, faction definitions) or edit existing entries. Handles both the data files and LORE.md synchronization.
+Create new lore content (history events, faction definitions) or edit existing entries. Handles both the data files and setting template synchronization.
 
 ## Step 1 — Identify scope
 
@@ -28,7 +28,7 @@ Create new lore content (history events, faction definitions) or edit existing e
 - `data/lore/globalHistory.js` — global timeline events
 - `data/factionHelpers.js` — helper functions (`getFaction()`, `getRootFaction()`, `areFactionsHostile()`, etc.)
 - `data/dataRegistry.js` — `registerContent()` API
-- `LORE.md` — full worldbuilding document (must stay in sync)
+- `SPEC.md` (Setting section) — full worldbuilding reference (auto-generated from templates)
 
 ## Step 3 — Create or edit the data
 
@@ -108,12 +108,12 @@ If adjusting default reputation:
    - Dock at a station — check faction standings display
    - Verify NPC relations reflect faction hostilities
 
-## Step 7 — Update LORE.md
+## Step 7 — Update setting template
 
-**MANDATORY:** Update `LORE.md` to reflect changes:
+**MANDATORY:** Update `scripts/templates/setting.md` to reflect changes:
 - New faction → add to faction section with description, territory, relationships
 - New history event → add to timeline section in chronological order
 - Changed relationships → update both factions' entries
-- Renamed faction → search-and-replace throughout LORE.md
+- Renamed faction → search-and-replace throughout `scripts/templates/setting.md`
 
-Read `LORE.md` in full before editing to maintain consistency with existing tone and structure.
+Read `SPEC.md` (Setting section) for current worldbuilding context, then edit `scripts/templates/setting.md` to maintain consistency with existing tone and structure.

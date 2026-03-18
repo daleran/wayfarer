@@ -27,7 +27,7 @@ Create a new location tree node (system, planet, orbital zone, surface zone) or 
 - `data/maps/tyr.js` — how maps consume manifests
 - `data/maps/arena.js` — test map pattern
 - `engine/rendering/colors.js` — colors for background layers
-- `LORE.md` — existing locations and world context
+- `SPEC.md` (Setting section) — existing locations and world context
 
 ## Step 3 — Create directory structure
 
@@ -264,6 +264,6 @@ For the production map (`data/maps/tyr.js`), spread the new zone alongside exist
 
 ## Step 7 — Update docs
 
-- New system/planet/zone → `LORE.md`
-- Zone visual identity → `UX.md`
+- New system/planet/zone → `scripts/templates/setting.md`
+- Zone visual identity → `scripts/templates/ux-philosophy.md`
 - Major new location → append to `DEVLOG.md`

@@ -151,5 +151,5 @@ export const MAP = {
 
 ## Step 8 — Update docs
 
-- New zone with content → `LORE.md`
-- Significant entity placement changes → `LORE.md` zone description
+- New zone with content → `scripts/templates/setting.md`
+- Significant entity placement changes → `scripts/templates/setting.md` zone description

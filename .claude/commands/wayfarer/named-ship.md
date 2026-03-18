@@ -123,5 +123,5 @@ Add spawn entries to `data/maps/arena.js` (testing) and the relevant zone manife
 
 ## Step 8 — Update docs
 
-- Named vessel with lore → `LORE.md`
-- New faction member → `LORE.md` faction section
+- Named vessel with lore → `scripts/templates/setting.md`
+- New faction member → `scripts/templates/setting.md` faction section

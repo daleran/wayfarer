@@ -4,9 +4,9 @@ Compare recent code changes against documentation files to find likely gaps wher
 
 ## What to Check
 
-### 1. LORE.md drift
+### 1. Setting template drift
 
-**Triggers that require LORE.md update:**
+**Triggers that require `scripts/templates/setting.md` update:**
 - New station added to `CONTENT.locations`
 - New faction added to `CONTENT.factions`
 - New named character added to `CONTENT.characters`
@@ -21,12 +21,12 @@ Compare recent code changes against documentation files to find likely gaps wher
   - `data/lore/factions/*.js` — new factions
   - `data/locations/**/characters/*.js` — new named characters
   - `data/locations/**/derelicts/*.js` — new derelicts
-- Cross-reference against LORE.md content
-- Flag entities present in code but missing from LORE.md
+- Cross-reference against `SPEC.md` (Setting section) content
+- Flag entities present in code but missing from `scripts/templates/setting.md`
 
-### 2. UX.md drift
+### 2. UX template drift
 
-**Triggers that require UX.md update:**
+**Triggers that require `scripts/templates/ux-philosophy.md` update:**
 - New color constant in `engine/rendering/colors.js`
 - New CSS custom property in `css/panel.css`
 - New UI component or panel
@@ -39,7 +39,7 @@ Compare recent code changes against documentation files to find likely gaps wher
   - `css/*.css` — new custom properties or component classes
   - `engine/ui/*.js` — new UI classes
   - `engine/hud/*.js` — HUD changes
-- Cross-reference against UX.md content
+- Cross-reference against `SPEC.md` (UX section) content
 
 ### 3. DEVLOG.md completeness
 
@@ -85,20 +85,20 @@ Compare recent code changes against documentation files to find likely gaps wher
 3. Read each documentation file and check for coverage
 4. Report gaps
 
-Use parallel agents: one for LORE.md, one for UX.md, one for DEVLOG/PLAN/FIXES, one for CLAUDE.md.
+Use parallel agents: one for setting template, one for UX template, one for DEVLOG/PLAN/FIXES, one for CLAUDE.md.
 
 ## Report Format
 
 ```
 === DOCUMENTATION DRIFT REPORT ===
 
-[LORE.md Gaps]
-  NEW: Station 'ironveil-outpost' added in data/locations/... but not in LORE.md
-  RENAMED: Faction 'salvage_lords' → 'scavengers' but LORE.md still uses old name
+[Setting Gaps]
+  NEW: Station 'ironveil-outpost' added in data/locations/... but not in scripts/templates/setting.md
+  RENAMED: Faction 'salvage_lords' → 'scavengers' but scripts/templates/setting.md still uses old name
 
-[UX.md Gaps]
-  NEW: Color 'PALE_HAZE' added to colors.js but not documented in UX.md
-  NEW: CSS property '--p-module-bg' added to panel.css but not in UX.md
+[UX Gaps]
+  NEW: Color 'PALE_HAZE' added to colors.js but not documented in scripts/templates/ux-philosophy.md
+  NEW: CSS property '--p-module-bg' added to panel.css but not in scripts/templates/ux-philosophy.md
 
 [DEVLOG.md Gaps]
   MISSING: Faction system refactor (2026-03-17) — no DEVLOG entry
@@ -113,7 +113,7 @@ Use parallel agents: one for LORE.md, one for UX.md, one for DEVLOG/PLAN/FIXES, 
   STALE: '/location' skill listed but file doesn't exist
   MISSING: '/conversation' skill exists but not in CLAUDE.md skill table
 
-TOTAL: X lore gaps, Y ux gaps, Z devlog gaps, W stale plan items, V claude.md issues
+TOTAL: X setting gaps, Y ux gaps, Z devlog gaps, W stale plan items, V claude.md issues
 ```
 
 ## After Reporting
@@ -122,7 +122,7 @@ Ask the user: "Which documentation gaps would you like me to fill?" Then update 
 
 **Priority order:**
 1. CLAUDE.md — keeps the AI assistant accurate
-2. LORE.md — prevents worldbuilding drift
-3. UX.md — prevents visual inconsistency
+2. `scripts/templates/setting.md` — prevents worldbuilding drift
+3. `scripts/templates/ux-philosophy.md` — prevents visual inconsistency
 4. DEVLOG.md — historical record
 5. PLAN.md/FIXES.md — cleanup

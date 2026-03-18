@@ -27,8 +27,8 @@ Create a new terrain feature or edit an existing one. Terrain features are non-i
 - `engine/entities/entity.js` — Entity base class (for foreground terrain)
 - `engine/rendering/colors.js` — all color constants
 - `engine/rendering/draw.js` — Shape factories and Draw API
-- `UX.md` — visual conventions
-- `LORE.md` — world context
+- `SPEC.md` (UX section) — visual conventions
+- `SPEC.md` (Setting section) — world context
 
 ### Existing terrain examples:
 - `data/locations/tyr/pale/orbital/terrain/arkship-spines/index.js` — structural wreckage (Entity subclass)
@@ -230,5 +230,5 @@ import { <PlanetName> } from './terrain/<terrain-id>/index.js';
 
 ## Step 6 — Update docs
 
-- New named terrain feature → `LORE.md`
-- New visual patterns → `UX.md`
+- New named terrain feature → `scripts/templates/setting.md`
+- New visual patterns → `scripts/templates/ux-philosophy.md`

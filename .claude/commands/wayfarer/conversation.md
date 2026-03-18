@@ -30,8 +30,8 @@ Create a new conversation script or edit an existing one. Conversations are asyn
 - `engine/ui/narrativeLog.js` — `NarrativeLog` class: the full Log API
 - `engine/ui/narrativePanel.js` — `NarrativePanel`: how conversations are launched, `ctx` shape
 - `engine/rendering/colors.js` — color constants for NPC context colors
-- `LORE.md` — world tone, faction descriptions
-- `UX.md` — visual conventions
+- `SPEC.md` (Setting section) — world tone, faction descriptions
+- `SPEC.md` (UX section) — visual conventions
 
 ### For the specific conversation type:
 - **Hub**: `data/locations/tyr/pale/orbital/locations/kells-stop/conversations/hub.js`
@@ -369,6 +369,6 @@ Section IDs in `conversations.sections` must match the `sectionId` strings used 
 
 ## Step 7 — Update docs
 
-- New NPC characters → `LORE.md`
-- New station zones → `LORE.md` station section
-- New visual patterns (if any) → `UX.md`
+- New NPC characters → `scripts/templates/setting.md`
+- New station zones → `scripts/templates/setting.md` station section
+- New visual patterns (if any) → `scripts/templates/ux-philosophy.md`
