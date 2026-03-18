@@ -51,7 +51,6 @@ export class WeaponSystem {
   }
 
   updateGuidance(entities, ships, mouseWorld) {
-    const enemies = ships.filter(s => s.active && s.relation === 'hostile');
     for (const entity of entities) {
       if (entity.entityType !== ENTITY.PROJECTILE || !entity.active || !entity.isGuided) continue;
       if (entity.guidedType === 'wire') {
@@ -60,18 +59,12 @@ export class WeaponSystem {
           entity.guidanceTargetY = mouseWorld.y;
         }
       } else if (entity.guidedType === 'heat') {
-        let nearest = null;
-        let nearestDist = Infinity;
-        for (const e of enemies) {
-          const dx = e.x - entity.x;
-          const dy = e.y - entity.y;
-          const d = dx * dx + dy * dy;
-          if (d < nearestDist) { nearestDist = d; nearest = e; }
+        const t = entity.guidanceTarget;
+        if (t && t.active) {
+          entity.guidanceTargetX = t.x;
+          entity.guidanceTargetY = t.y;
         }
-        if (nearest) {
-          entity.guidanceTargetX = nearest.x;
-          entity.guidanceTargetY = nearest.y;
-        }
+        // Target dead/inactive — missile goes dumb (keeps last heading)
       }
     }
   }

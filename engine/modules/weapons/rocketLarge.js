@@ -2,6 +2,7 @@ import { Projectile } from '@/entities/projectile.js';
 import { BASE_DAMAGE, BASE_HULL_DAMAGE, BASE_PROJECTILE_SPEED,
          PROJECTILE_SPEED_FACTOR, BASE_COOLDOWN,
          AMMO } from '@data/index.js';
+import { ENTITY } from '@data/enums.js';
 import { normalizeToTarget } from '@/utils/math.js';
 
 const DAMAGE_MULT      = 5.3;   // ~90 armor damage per rocket
@@ -74,6 +75,17 @@ export class RocketPodLarge {
       proj.isGuided         = true;
       proj.guidedType       = ammoData.guidedType;
       proj.guidanceStrength = ammoData.guidanceStrength;
+      // Heat missiles lock nearest hostile to click point at launch
+      if (ammoData.guidedType === 'heat') {
+        let best = null, bestD = Infinity;
+        for (const e of entities) {
+          if (e.entityType !== ENTITY.SHIP || !e.active || e.relation !== 'hostile') continue;
+          const ddx = e.x - tx, ddy = e.y - ty;
+          const d = ddx * ddx + ddy * ddy;
+          if (d < bestD) { bestD = d; best = e; }
+        }
+        proj.guidanceTarget = best;
+      }
     } else {
       proj.isRocket      = true;
       proj.rocketTargetX = tx;

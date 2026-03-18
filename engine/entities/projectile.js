@@ -48,6 +48,7 @@ export class Projectile extends Entity {
     this.guidanceStrength = 3.0;
     this.guidanceTargetX = null;
     this.guidanceTargetY = null;
+    this.guidanceTarget = null;  // locked entity ref (heat missiles)
     this._guideSelfDestructTimer = null;
 
     // Interception
