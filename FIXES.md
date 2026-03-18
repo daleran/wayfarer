@@ -1,5 +1,34 @@
 # FIXES.md — Small Tweaks & Fixes
 
-- Grave-Clan Ambusher: confirm heat missile target-lock behavior when multiple enemies are present
-- Universal ship slots need to be small and large variants
-- Tune damage and health of small ships
+- Rename history as lore
+    - Lore can be define in lots of places. It can be dates, or just flavor text.
+    - All flavor text shares a unified system with lore where it can have tags or related entities
+    - Tags are now enums for type safety
+    - Replace all flavor text with new more robust lore entries and register them
+- Remove or clean up most gravewake legacy
+    - Delete factions.js and any other legacy code
+    - Keep the coil graphics, pale graphics, debris field, etc but remove most other contet
+- scetch out the cocytus system
+    - place and design main plan
+    - place and design the 4 moons
+    - determine stations
+    - sketch out factions and sub factions
+    - flesh out major characters
+    - prototype all the major station and character interactive narrative sequences
+    - determine primary threats
+- introduction
+    - redo and elaborate the 3 starting scenarions and ship loadouts based on the cocytus system
+    - Provide a unique starting quest sequence base on the starting scenarios to familiarize players
+- Game loops
+    - implement more advanced salvaging
+    - implement
+    - Hualing contracts or other contracts
+    - Mercenary contracts: Capture, kill, escort, find
+    - Aqusition contracts: find certain modules or things
+    - Barter / favor / influence system
+- Small item system
+    - Small item system for non cargo hold small trinkets that have barter, narrative, and story value. Think things like a 3 string guitar. Data ROMs etc.
+    - Build initial roster of items
+- Commodities expansion
+    - Split scrap into different tiers
+    - Add additional commodities

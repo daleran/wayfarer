@@ -34,16 +34,12 @@ registerContent('factions', 'monastic', {
   relationships: [],
 });
 
-registerContent('factions', 'communes', {
-  name: 'Communes',
-  defaultReputation: 0,
-  relationships: [],
-});
-
 registerContent('factions', 'zealots', {
-  name: 'Zealots',
-  defaultReputation: 0,
-  relationships: [],
+  name: 'Zealots of the Directive',
+  defaultReputation: -60,
+  relationships: [
+    { target: 'monastic', type: 'hostile' },
+  ],
 });
 
 registerContent('factions', 'casimir', {

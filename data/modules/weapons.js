@@ -1,6 +1,6 @@
 import { registerData, registerContent, WEAPONS } from '../dataRegistry.js';
 import { ShipModule } from '@/modules/shipModule.js';
-import { Shape, disc, line } from '@/rendering/draw.js';
+import { disc, ring, line } from '@/rendering/draw.js';
 import { Autocannon } from '@/modules/weapons/autocannon.js';
 import { Cannon } from '@/modules/weapons/cannon.js';
 import { Lance } from '@/modules/weapons/lance.js';
@@ -14,11 +14,20 @@ import {
   AMBER, GREEN, CYAN, RAIL_WHITE, PLASMA_GREEN, TORPEDO_AMBER, CANNON_AMBER,
 } from '@/rendering/colors.js';
 
-// ── Shape constants ──────────────────────────────────────────────────────────
-const BARREL_SHAPE = Shape.rect(2, 8);
-const CANNON_SHAPE = Shape.rect(3, 6);
-const ROCKET_SHAPE = Shape.rect(6, 5);
-const LANCE_LINE   = 8;
+/** Draw a polygon from point array, fill + stroke */
+function _poly(ctx, pts, color, fillAlpha, strokeAlpha, lw = 0.5) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.globalAlpha = fillAlpha;
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = strokeAlpha;
+  ctx.lineWidth = lw;
+  ctx.stroke();
+}
 
 // ── Weapon module classes ────────────────────────────────────────────────────
 
@@ -36,8 +45,27 @@ class AutocannonModule extends ShipModule {
     this.weapon      = new Autocannon();
   }
   drawAtMount(ctx, color, alpha) {
-    BARREL_SHAPE.fill(ctx, color, alpha * 0.3);
-    BARREL_SHAPE.stroke(ctx, color, 0.8, alpha);
+    // 2×10 barrel
+    _poly(ctx, [
+      { x: -1, y: -5 }, { x: 1, y: -5 }, { x: 1, y: 5 }, { x: -1, y: 5 },
+    ], color, alpha * 0.12, alpha * 0.85);
+    // 4×4 breech block
+    _poly(ctx, [
+      { x: -2, y: 2 }, { x: 2, y: 2 }, { x: 2, y: 5 }, { x: -2, y: 5 },
+    ], color, alpha * 0.15, alpha * 0.7);
+    // Barrel bore line
+    line(ctx, 0, -5, 0, 2, color, 0.4, alpha * 0.3);
+    // Muzzle brake slots
+    line(ctx, -1, -4, 1, -4, color, 0.4, alpha * 0.35);
+    line(ctx, -1, -3.2, 1, -3.2, color, 0.4, alpha * 0.3);
+    // 2 breech bolts
+    disc(ctx, -1.2, 3.5, 0.3, color, alpha * 0.55);
+    disc(ctx, 1.2, 3.5, 0.3, color, alpha * 0.55);
+    // Feed chute stub
+    line(ctx, 2, 3.5, 3, 3.5, color, 0.5, alpha * 0.4);
+    disc(ctx, 3, 3.5, 0.25, color, alpha * 0.4);
+    // Amber muzzle dot
+    disc(ctx, 0, -5, 0.5, AMBER, alpha * 0.7);
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
   onRemove(ship)  { ship.removeWeapon(this.weapon); }
@@ -57,8 +85,31 @@ class LanceModuleSmall extends ShipModule {
     this.weapon      = new Lance('small');
   }
   drawAtMount(ctx, color, alpha) {
-    line(ctx, 0, -LANCE_LINE / 2, 0, LANCE_LINE / 2, color, 1, alpha);
-    disc(ctx, 0, -LANCE_LINE / 2, 1.2, color, alpha);
+    // Circle head r=2
+    ring(ctx, 0, -3, 2, color, 0.7, alpha * 0.8);
+    disc(ctx, 0, -3, 2, color, alpha * 0.08);
+    // Inner lens ring
+    ring(ctx, 0, -3, 1, color, 0.5, alpha * 0.4);
+    // Cyan emitter disc
+    disc(ctx, 0, -3, 0.6, CYAN, alpha * 0.7);
+    // 1.5×4 neck
+    _poly(ctx, [
+      { x: -0.75, y: -1 }, { x: 0.75, y: -1 }, { x: 0.75, y: 3 }, { x: -0.75, y: 3 },
+    ], color, alpha * 0.12, alpha * 0.7);
+    // Power conduit line
+    line(ctx, 0, -1, 0, 3, color, 0.4, alpha * 0.35);
+    // 3×3 base
+    _poly(ctx, [
+      { x: -1.5, y: 3 }, { x: 1.5, y: 3 }, { x: 1.5, y: 5 }, { x: -1.5, y: 5 },
+    ], color, alpha * 0.15, alpha * 0.7);
+    // 2 cooling fin stubs
+    line(ctx, -2, -2.5, -3, -2.5, color, 0.5, alpha * 0.4);
+    line(ctx, 2, -2.5, 3, -2.5, color, 0.5, alpha * 0.4);
+    // 2 base bolts
+    disc(ctx, -1, 4, 0.3, color, alpha * 0.55);
+    disc(ctx, 1, 4, 0.3, color, alpha * 0.55);
+    // Cyan head glow ring
+    ring(ctx, 0, -3, 1.5, CYAN, 0.4, alpha * 0.25);
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
   onRemove(ship)  { ship.removeWeapon(this.weapon); }
@@ -78,8 +129,33 @@ class CannonModule extends ShipModule {
     this.weapon      = new Cannon();
   }
   drawAtMount(ctx, color, alpha) {
-    CANNON_SHAPE.fill(ctx, color, alpha * 0.3);
-    CANNON_SHAPE.stroke(ctx, color, 0.8, alpha);
+    // 3×7 barrel
+    _poly(ctx, [
+      { x: -1.5, y: -5 }, { x: 1.5, y: -5 }, { x: 1.5, y: 2 }, { x: -1.5, y: 2 },
+    ], color, alpha * 0.12, alpha * 0.85);
+    // 5×4 breech block
+    _poly(ctx, [
+      { x: -2.5, y: 2 }, { x: 2.5, y: 2 }, { x: 2.5, y: 5 }, { x: -2.5, y: 5 },
+    ], color, alpha * 0.15, alpha * 0.75);
+    // Thick bore line
+    line(ctx, 0, -5, 0, 2, color, 0.6, alpha * 0.35);
+    // Muzzle ring
+    ring(ctx, 0, -5, 1.2, color, 0.6, alpha * 0.5);
+    // Cannon amber muzzle dot
+    disc(ctx, 0, -5, 0.5, CANNON_AMBER, alpha * 0.7);
+    // 2 recoil spring bars
+    line(ctx, -1, 1, -1, 4.5, color, 0.4, alpha * 0.35);
+    line(ctx, 1, 1, 1, 4.5, color, 0.4, alpha * 0.35);
+    // 4 breech bolts
+    disc(ctx, -1.8, 2.8, 0.3, color, alpha * 0.55);
+    disc(ctx, 1.8, 2.8, 0.3, color, alpha * 0.55);
+    disc(ctx, -1.8, 4.2, 0.3, color, alpha * 0.55);
+    disc(ctx, 1.8, 4.2, 0.3, color, alpha * 0.55);
+    // Trunnion stubs (side pivot points)
+    line(ctx, -2.5, 3, -3.5, 3, color, 0.5, alpha * 0.45);
+    disc(ctx, -3.5, 3, 0.3, CANNON_AMBER, alpha * 0.5);
+    line(ctx, 2.5, 3, 3.5, 3, color, 0.5, alpha * 0.45);
+    disc(ctx, 3.5, 3, 0.3, CANNON_AMBER, alpha * 0.5);
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
   onRemove(ship)  { ship.removeWeapon(this.weapon); }
@@ -101,10 +177,62 @@ class RocketPodModule extends ShipModule {
     this.weapon.currentAmmoId = defaultMode;
   }
   drawAtMount(ctx, color, alpha) {
-    ROCKET_SHAPE.fill(ctx, color, alpha * 0.3);
-    ROCKET_SHAPE.stroke(ctx, color, 0.8, alpha);
-    disc(ctx, -1.5, 0, 1, color, alpha * 0.6);
-    disc(ctx, 1.5, 0, 1, color, alpha * 0.6);
+    if (this.size === 'large') {
+      // ── RPOD-L: 14×10 eight-tube launcher ──
+      // Chamfered body
+      _poly(ctx, [
+        { x: -6, y: -5 }, { x: 6, y: -5 }, { x: 7, y: -4 },
+        { x: 7, y: 4 }, { x: 6, y: 5 }, { x: -6, y: 5 },
+        { x: -7, y: 4 }, { x: -7, y: -4 },
+      ], color, alpha * 0.1, alpha * 0.85);
+      // 2×4 tube ring grid
+      for (const tx of [-4.5, -1.5, 1.5, 4.5]) {
+        for (const ty of [-2, 2]) {
+          ring(ctx, tx, ty, 1.3, color, 0.6, alpha * 0.5);
+          ring(ctx, tx, ty, 0.7, color, 0.4, alpha * 0.3);
+          disc(ctx, tx, ty, 0.4, AMBER, alpha * 0.6);
+        }
+      }
+      // 3 exhaust slots bottom
+      for (const sx of [-3, 0, 3]) {
+        line(ctx, sx - 1, 5, sx + 1, 5, color, 0.5, alpha * 0.4);
+      }
+      // Side rails
+      line(ctx, -7, -3, -7, 3, color, 0.7, alpha * 0.5);
+      line(ctx, 7, -3, 7, 3, color, 0.7, alpha * 0.5);
+      // 6 bolts
+      disc(ctx, -6.2, -4.2, 0.3, color, alpha * 0.5);
+      disc(ctx, 6.2, -4.2, 0.3, color, alpha * 0.5);
+      disc(ctx, -6.2, 0, 0.3, color, alpha * 0.5);
+      disc(ctx, 6.2, 0, 0.3, color, alpha * 0.5);
+      disc(ctx, -6.2, 4.2, 0.3, color, alpha * 0.5);
+      disc(ctx, 6.2, 4.2, 0.3, color, alpha * 0.5);
+      // Hinge line
+      line(ctx, -7, -4.5, 7, -4.5, AMBER, 0.4, alpha * 0.3);
+    } else {
+      // ── RPOD-S: 6×6 twin launch tubes ──
+      _poly(ctx, [
+        { x: -3, y: -3 }, { x: 3, y: -3 }, { x: 3, y: 3 }, { x: -3, y: 3 },
+      ], color, alpha * 0.1, alpha * 0.85);
+      // 2 tube rings
+      ring(ctx, -1.2, 0, 1.2, color, 0.6, alpha * 0.55);
+      ring(ctx, 1.2, 0, 1.2, color, 0.6, alpha * 0.55);
+      // Inner nose rings
+      ring(ctx, -1.2, 0, 0.6, color, 0.4, alpha * 0.3);
+      ring(ctx, 1.2, 0, 0.6, color, 0.4, alpha * 0.3);
+      // Amber tube center dots
+      disc(ctx, -1.2, 0, 0.35, AMBER, alpha * 0.7);
+      disc(ctx, 1.2, 0, 0.35, AMBER, alpha * 0.7);
+      // Blast plate + exhaust slots bottom
+      line(ctx, -3, 2.5, 3, 2.5, color, 0.5, alpha * 0.4);
+      line(ctx, -1.5, 3, -0.5, 3, color, 0.4, alpha * 0.35);
+      line(ctx, 0.5, 3, 1.5, 3, color, 0.4, alpha * 0.35);
+      // 4 corner bolts
+      disc(ctx, -2.5, -2.5, 0.3, color, alpha * 0.5);
+      disc(ctx, 2.5, -2.5, 0.3, color, alpha * 0.5);
+      disc(ctx, -2.5, 2.5, 0.3, color, alpha * 0.5);
+      disc(ctx, 2.5, 2.5, 0.3, color, alpha * 0.5);
+    }
   }
   onInstall(ship) { ship.addWeapon(this.weapon); this._applyConditionToWeapon(); }
   onRemove(ship)  { ship.removeWeapon(this.weapon); }

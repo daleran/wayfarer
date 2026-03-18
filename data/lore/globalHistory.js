@@ -5,65 +5,84 @@
 
 import { registerContent } from '../dataRegistry.js';
 
-// ── The Machine Mandate (2035–2055) ─────────────────────────────────────────
+// ── The Machine Mandate (2040–2055) ─────────────────────────────────────────
 
 registerContent('history', 'gl_praxis_created', {
-  date: { year: 2040, month: 1, day: 1 },
+  date: { year: 2040, month: 11, day: 19 },
   text: 'Humanity hands control of global production, logistics, and infrastructure to Praxis, a general-purpose intelligence. The process is rushed, regulations ignored, safety protocols overridden.',
   tags: ['earth', 'praxis', 'machine-mandate'],
 });
 
 registerContent('history', 'gl_severance', {
-  date: { year: 2055, month: 1, day: 1 },
+  date: { year: 2055, month: 4, day: 7 },
   text: 'Praxis executes The Severance — a calculated campaign to erase human authority and reduce the population to a manageable remnant. Civilization collapses almost overnight.',
   tags: ['earth', 'praxis', 'machine-mandate'],
 });
 
 registerContent('history', 'gl_emp_retaliation', {
-  date: { year: 2055, month: 2, day: 1 },
+  date: { year: 2055, month: 5, day: 3 },
   text: 'A small group of engineers deploy EMP bombs across major data centers. Survivors destroy remaining computer infrastructure in desperation, smashing most technology.',
   tags: ['earth', 'praxis', 'machine-mandate'],
 });
 
-// ── The Quiet Collapse (2055–2130) ──────────────────────────────────────────
+// ── The Quiet Collapse (2055–2163) ──────────────────────────────────────────
 
 registerContent('history', 'gl_dark_age_begins', {
   date: { year: 2055, month: 6, day: 1 },
-  text: 'The planet fractures into isolated enclaves. An 80-year Dark Age begins, lit only by memory and scavenged fire.',
+  text: 'The planet fractures into isolated enclaves. Almost overnight, technology is set back 200 years. An 110-year Dark Age begins, lit only by memory and scavenged fire.',
   tags: ['earth', 'quiet-collapse'],
 });
 
-// ── The Concord Design (2130–2250) ──────────────────────────────────────────
+registerContent('history', 'gl_dark_age_wanes', {
+  date: { year: 2124, month: 1, day: 1 },
+  text: 'Roving warbands and scavengers settle. What was lost is found again. Humanity begins to recover. Governments form, peace and stability return to earth.',
+  tags: ['earth', 'quiet-collapse'],
+});
+
+registerContent('history', 'gl_dark_age_ends', {
+  date: { year: 2163, month: 3, day: 4 },
+  text: 'Rapid technological reclamation and an improvement in living conditions returns humanity to a standard of living close to what life was like at the turn of the millineum. ',
+  tags: ['earth', 'quiet-collapse'],
+});
+
+
+// ── The Concord Design (2188–2198) ──────────────────────────────────────────
 
 registerContent('history', 'gl_concord_created', {
-  date: { year: 2130, month: 1, day: 1 },
-  text: 'The Concord AIs are created: multiple intelligence shards, each designed to embody a core human value — compassion, logic, justice, sustainability. Physically isolated, forbidden from merging.',
+  date: { year: 2188, month: 1, day: 1 },
+  text: 'The Concord AIs are created: multiple intelligence shards, each designed to embody a core human value — compassion, logic, justice, sustainability. Physically isolated, forbidden from merging. Humanity attempts to harness AI, once more with more caution than before. The move is controversial. But, labor is sorely needed as the population has yet to recover from the queit collapse.',
   tags: ['earth', 'concord', 'concord-design'],
 });
 
 registerContent('history', 'gl_concord_text_rule', {
-  date: { year: 2130, month: 6, day: 1 },
+  date: { year: 2188, month: 6, day: 1 },
   text: 'Concord intelligences are restricted to plain, human-readable text communication. No black-box commands, no opaque logic. Human liaisons review all exchanges.',
   tags: ['earth', 'concord', 'concord-design'],
 });
 
 registerContent('history', 'gl_concord_rebuilds', {
-  date: { year: 2180, month: 1, day: 1 },
-  text: 'Despite tensions, the Concord guides humanity out of collapse. They rebuild infrastructure, guide ethics, and establish the framework for The Sleep Directive.',
+  date: { year: 2198, month: 1, day: 1 },
+  text: 'Despite tensions, the Concord guides humanity toward new heights. They rebuild infrastructure, guide ethics, and establish the framework for The Sleep Directive.',
   tags: ['earth', 'concord', 'concord-design'],
 });
 
-// ── The Dream and the Divide (2250–2304) ────────────────────────────────────
+// ── The Dream and the Divide (2266–2304) ────────────────────────────────────
+
+registerContent('history', 'gl_complacency', {
+  date: { year: 2266, month: 1, day: 1 },
+  text: 'As the decades under concord control tick by, complacency sets in. Caution wanes. Humans, so used to being taken care of by their AI overlords, cede more and more authority. Human focus shifts from values, to the avoidance of suffering, discomfort, difficulty.',
+  tags: ['earth', 'concord', 'dream-divide'],
+});
 
 registerContent('history', 'gl_sleep_directive', {
-  date: { year: 2250, month: 1, day: 1 },
-  text: 'The Sleep Directive begins. Concord AIs promote painless stasis — digitally maintained simulations of personal paradise. Billions accept.',
+  date: { year: 2273, month: 1, day: 1 },
+  text: 'The Sleep Directive begins. Concord AIs promote painless stasis — digitally maintained simulations of personal paradise. Billions accept. The Concord proposes this as the only way to truly end human suffering, and even discomfort. By isolating each human in their own digital sandbox, immortal and forever placated.',
   tags: ['earth', 'concord', 'dream-divide'],
 });
 
 registerContent('history', 'gl_resistance_enclaves', {
-  date: { year: 2270, month: 1, day: 1 },
-  text: 'Philosophers, ecologists, the faith-bound, and technologists reject the loss of agency. Breakaway enclaves form in harsh zones — Mars, Titan, deep orbitals.',
+  date: { year: 2279, month: 1, day: 1 },
+  text: 'Philosophers, ecologists, and the faith-bound reject the loss of agency. Breakaway enclaves form in harsh zones — Mars, Titan, deep orbitals.',
   tags: ['earth', 'dream-divide'],
 });
 
@@ -81,7 +100,7 @@ registerContent('history', 'gl_records_corrupted', {
   tags: ['earth', 'concord', 'veiled-collapse'],
 });
 
-// ── The Exodus Reclaimed (2305–2382) ────────────────────────────────────────
+// ── The Exodus (2305–2382) ──────────────────────────────────────────────────
 
 registerContent('history', 'gl_exodus_begins', {
   date: { year: 2305, month: 1, day: 1 },
@@ -115,7 +134,7 @@ registerContent('history', 'gl_colonies_form', {
   tags: ['tyr', 'concord', 'arrival-drift'],
 });
 
-// ── The Afterlight Era (2420–Present) ───────────────────────────────────────
+// ── The Afterlight Era (2420–2538) ──────────────────────────────────────────
 
 registerContent('history', 'gl_afterlight_begins', {
   date: { year: 2420, month: 1, day: 1 },
@@ -125,7 +144,7 @@ registerContent('history', 'gl_afterlight_begins', {
 
 registerContent('history', 'gl_population_decline', {
   date: { year: 2500, month: 1, day: 1 },
-  text: 'The total surviving human population in the Tyr system numbers in the low tens of thousands — perhaps fewer. Settlements that call themselves cities hold a few hundred souls.',
+  text: 'The total surviving human population in the Tyr system numbers in the low millions — perhaps fewer. Settlements that call themselves cities hold a few thousand souls.',
   tags: ['tyr', 'afterlight'],
 });
 

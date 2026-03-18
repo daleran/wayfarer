@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: DD**
+**Next available code: DK**
 
 ---
 
@@ -26,14 +26,18 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | BO | Data Extraction — Computer Salvage | Scavenging |
 | BQ | Crew Active Abilities | Ship Systems |
 | BR | Electronic Warfare | Modules / Equipment |
-| BS | Gravity Wells & Pale (Ice Moon) | World / Map |
-| BT | Inner System Locations | World / Map |
 | BU | Skiff & Planetary Landing | Gameplay |
 | BV | Rogue Salvage Lord Fleet | AI / Enemies |
 | BW | Player Housing & Personal Stash | Gameplay |
 | BX | Monastic Order Expeditionary Ship | AI / World |
 | BZ | Systemic Narrative Engine | Narrative |
-| CX | Tyr System Geography & Great Houses | World / Map |
+| DD | Pale & Gravewake (Outer Fringe) | World / Map |
+| DE | Cocytus & The Captain Lords (Ice Giant) | World / Map |
+| DF | Boreas & House Casimir (Gas Giant) | World / Map |
+| DG | Aethelgard & House Valerius (Super-Earth) | World / Map |
+| DH | Khem & House Aridani (Breadbasket) | World / Map |
+| DI | Ferrum & House Ignis (Twilight Ring) | World / Map |
+| DJ | Non-Aligned Powers & System Geopolitics | World / Map |
 
 ---
 
@@ -118,177 +122,112 @@ The Gravewake orbital zone is dense with history. The Coil is its central hub �
 
 ---
 
-### BS: Gravity Wells & Pale (Ice Moon)
+### DD: Pale & Gravewake (Outer Fringe)
 
-Planets and large celestial bodies possess gravity wells. Flying too close pulls the ship in; failing to escape results in crashing and instant destruction.
+The boundary between the inner system and the Kuiper-style asteroid belts. First landing point of all humans exiled from Earth; a massive, frozen archaeological site.
 
-**Pale (Ice Moon):** A small, icy celestial body at the center of the Gravewake zone. Pale is reachable but requires a Skiff (see BU) — the player's main ship cannot land directly. Pale's surface holds pre-Exile ruins, frozen derelicts, and potential story content.
-
-*Gravity well navigation is currently on hold — risk of making combat feel too overwhelming and hectic to manage alongside everything else. Revisit once core combat systems are stable.*
-
----
-
-### BT: Inner System Locations
-
-The inner system sits on the exact opposite side of the system from Gravewake, close to the central star. Heavily illuminated; the primary agricultural and leisure hub of the system.
-
-**The Venus-like Planet (Tourism Hub):**
-- Medium-sized planet with hostile Venus-like atmospheric makeup: corrosive/sulfuric elements, ~75% Earth atmospheric pressure; surface completely uninhabitable
-- All habitation on **aerostats** — massive domed cities floating high in the atmosphere
-- No industrial or economic purpose — exists entirely as a high-end tourism destination
-- Features luxury floating resorts and casinos; the system's leisure and excess concentrated here
-
-**The Farming Moon (The Breadbasket):**
-- Small moon orbiting the Venus-like planet; no atmosphere, entirely solid ground
-- Hazards: lacks atmosphere + very close to the star → surface bathed in lethal radiation and UV light
-- Population lives inside massive domed cities built to filter deadly UV radiation
-- Thanks to ideal day-night cycle and proximity to the star, this moon is the **agricultural heart of the entire system** — the vast majority of crops, fruits, and vegetables grown and exported from here
-- Peaceful zone; no active combat expected; economic and narrative significance
-
----
-
-### CX: Tyr System Geography & Great Houses
-
-Full star system survey of Tyr — the human core. This region is the primary seat of human civilization following the exile from Earth. Organized from outer fringe inward toward the central star.
-
-*Note: supersedes BT (Inner System Locations) with a comprehensive system-wide geography. BT's Venus-like planet and Farming Moon concepts are absorbed and refined here.*
-
-**1. The Outer Fringe: The Icy Reach**
-
-The boundary between the inner system and the Kuiper-style asteroid belts. Primary theater of conflict — battles for ancient resources and defensive citadels.
-
-**1.1 Pale & Gravewake**
-- First landing point of all humans exiled from Earth; a massive, frozen archaeological site
 - Landscape is a graveyard of ancient ships and orbital debris
-- Primary territory of the Salvage Lords — independent factions scrapping "Old World" wrecks for pre-Exile electronics and hull plating
-- Geopolitics: an "Outer Wild West" existing just beyond the formal authority of the Great Houses
+- Primary territory of the Salvage Lords — independent clans scrapping "Old World" wrecks for pre-Exile electronics and hull plating
+- Geopolitics: an "Outer Wild West" existing just beyond the formal authority of House Casimir
 - See AS for The Coil and zone features
 
-**2. The Ice Giant: Cocytus & The Warlord Moons**
+---
 
-A massive ice giant serving as the gateway to the outer system. Solar energy is non-existent — inhabitants rely on geothermal heat or chemical refining.
+### DE: Cocytus & The Captain Lords (Ice Giant)
 
-**2.1 The Four Independent Moons** — self-sustained micro-states administered by petty warlords in a constant cycle of local dominance:
+A massive ice giant serving as the gateway to the outer system. Solar energy is non-existent — inhabitants rely on geothermal heat or chemical refining. Four Captain Lords — disgraced veterans of the Casimir Uprising — each control one moon from orbit aboard a rusting dreadnought too broken to leave.
 
-| Moon | Specialization | Description |
-|---|---|---|
-| **Acheron** | Fuel & Chemicals | Taps frozen volatiles for liquid hydrogen/oxygen. The lifeblood of all deep-space transit |
-| **Phlegethon** | Heavy Industry | Taps geothermal geysers for power. Volatile manufacturing hub reliant on raw ore imports |
-| **Styx** | Rare Earth Mining | High-metallic core moon providing raw iron and rare earth elements for the Forge |
-| **Lethe** | Farming | Barren, airless rock used for massive "Light-Capture" farms; the only fresh nutrients in this orbit |
+**The Four Moons** — self-sustained micro-states in a mutual-hostage economy (the Cocytus Circuit):
 
-**3. The Gas Giant: Boreas & The Cascare Domain**
+| Moon | Nickname | Captain Lord | Ship | Specialization |
+|---|---|---|---|---|
+| **Caina** | The Dirty Tap | Vance | Acheron | Fuel & chemicals — taps frozen volatiles for liquid hydrogen/oxygen |
+| **Antenora** | The Scrap Forge | Kaelen | Iron Sovereign | Heavy industry — geothermal-powered fabrication, reliant on ore imports |
+| **Ptolomea** | The Slag Heap | Vorosh | World-Breaker | Rare earth mining — high-metallic core, mines nearly exhausted |
+| **Judecca** | The Algae Vats | Solis | Radiant Aegis | Farming — massive light-capture algae farms, only food source in orbit |
 
-A massive gas giant with a prominent ring system. Recently the site of a major political shift.
+**As Introductory Zone:**
+- **Theme:** "The Scrappy Frontier" — a fractured, balkanized subsystem where four Captain Lords enforce a desperate survival economy. Perfect starting point for an unknown freelancer to make a name without drawing the attention of Casimir or the inner system
+- **Mechanics Intro** — the four moons act as a microcosm of the entire game's core loop:
+  - Learn basic mining and resource extraction at Ptolomea
+  - Trade for essential survival supplies and food at Judecca
+  - Purchase fuel and chemical propellants at Caina
+  - Upgrade and repair the starter ship at Antenora
+- **The Escalation:** low-stakes warlord politics teach cross-planetary trade and localized combat; the ultimate goal is earning enough resources and hull upgrades to survive the dangerous journey inward
 
-**3.1 The Fall of House Drazel:**
-- For generations, Boreas was the seat of House Drazel — a cruel power that held a stranglehold on the system's raw minerals
-- House Cascare, originally a minor vassal house, led a successful uprising covertly backed by House Valerius and House Aridani
-- House Cascare now manages the planet; culturally perceived as "New Blood," still in debt to the inner houses
+---
 
-**3.2 The Order of the Static (Monastic Tech Order):**
-- Independent monastic order located on the moon **Vesper**
+### DF: Boreas & House Casimir (Gas Giant)
+
+A massive gas giant with a prominent ring system. Formerly the seat of House Drazel; now the power base of House Casimir following the uprising (2487–2491). Casimir absorbed the other three Houses — Valerius, Aridani, and Ignis retain regional identity but operate under Casimir authority.
+
+- Casimir is culturally perceived as "New Blood" — their legitimacy is still questioned in some quarters
+- The Boreas Ring debris field is a monument to the decisive battle that broke Drazel's fleet
+
+**The Order of the Static (Moon: Vesper):**
+- Independent monastic order on a moon of Boreas
 - Fanatically anti-Concord — believe Concord's technology led to humanity's downfall and exile
 - Hoard and tweak pre-Exile technology; the only entity capable of producing "modern" electronics, though stalled at roughly 1980s-level technology (analog circuits, early digital systems)
 
-**4. The Super-Earth: Aethelgard & The Valerius Heartland**
+---
 
-The administrative and economic capital of Tyr, ruled by the prestigious House Valerius.
+### DG: Aethelgard & House Valerius (Super-Earth)
 
-**4.1 The Primary (The Veiled World):**
+The administrative and economic capital of Tyr. House Valerius retains significant influence as Casimir's diplomatic arm — they merged their trade networks into the Casimir apparatus but kept their bureaucratic machinery intact.
+
+**The Primary (The Veiled World):**
 - 4–6× Earth's mass with a crushing, thick atmosphere
 - Surface conditions are an impenetrable mystery
 
-**4.2 The Twin Industrial Moons — The Cosmopolis:**
+**The Twin Industrial Moons — The Cosmopolis:**
 - **Oros** and **Thalassa** (0.7 and 0.8 Earth masses)
-- **The Shipwright Guild (Independent):** Based in massive orbital drydocks of Oros. Monopolizes the skills and tech needed to integrate components (Cascare steel, Ignis reactors, Static electronics) into functional starships. No Great House can build a ship without their blessing
+- **The Shipwright Guild (Independent):** Based in massive orbital drydocks of Oros. Monopolizes the skills and tech needed to integrate components (Casimir steel, Ignis reactors, Static electronics) into functional starships. No House can build a ship without their blessing
 
-**5. The Rust-Basket: Khem & The Aridani Breadbasket**
+---
 
-A rocky planet positioned between Aethelgard and the inner sun — a planetary desert and the primary agricultural world.
+### DH: Khem & House Aridani (Breadbasket)
 
-**5.1 House Aridani:**
+A rocky planet positioned between Aethelgard and the inner sun — a planetary desert and the primary agricultural world. House Aridani became "Casimir's breadbasket" after the absorption — they grow the food, Casimir sets the prices.
+
 - Focused on large-scale terraforming and agricultural logistics
-- Khem provides the bulk calories that feed the billions in Tyr
+- Khem provides the bulk calories that feed the population of Tyr
+- **The Water Road:** Khem is entirely reliant on constant ice shipments from Cocytus and Boreas to maintain its vast farming complexes
 
-**5.2 The Water Road:**
-- Khem is entirely reliant on constant ice shipments from Cocytus and Boreas to maintain its vast farming complexes
+---
 
-**6. The Twilight Ring: Ferrum & The Ignis Bastion**
+### DI: Ferrum & House Ignis (Twilight Ring)
 
-The innermost planet — a dense iron world tidally locked to the sun.
+The innermost planet — a dense iron world tidally locked to the sun. House Ignis negotiated favorable terms during the Casimir absorption — their smelters and reactors are too valuable to punish.
 
-**6.1 House Ignis:**
-- The smallest and most heavily armed Great House
+- The smallest and most heavily armed former Great House
 - **The Uranium Monopoly:** controls the only viable uranium ore deposits in the system
 - **The Great Ring Road:** a massive underground highway connecting crater-citadels in the twilight band
 - Military specialty: advanced nuclear reactors and high-velocity railguns
 
-**7. System Geopolitics: The Great Houses**
+---
+
+### DJ: Non-Aligned Powers & System Geopolitics
+
+The Casimir consolidation left three entities outside House authority:
 
 | Entity | Base | Role |
 |---|---|---|
-| **House Valerius** | Aethelgard | The Diplomatic Masterminds |
-| **House Cascare** | Boreas | The Mineral Backbone |
-| **House Aridani** | Khem | The Caloric Breadbasket |
-| **House Ignis** | Ferrum | The Nuclear Powerhouse |
+| **The Order of the Static** | Vesper (Boreas) | Controls all electronic logic and computer systems |
+| **The Shipwright Guild** | Oros (Aethelgard) | Controls all high-end manufacturing and naval construction |
+| **The Salvage Lords** | The Coil (Gravewake) | Control the flow of ancient "high-tech" scrap |
 
-**Non-Aligned Entities:**
-- **The Order of the Static** — controls all electronic logic and computer systems
-- **The Shipwright Guild** — controls all high-end manufacturing and naval construction
-- **The Salvage Lords** — control the flow of ancient "high-tech" scrap from Gravewake
+**House Casimir** holds the inner system through trade and the absorbed strength of three former Houses:
 
-**8. Game Integration: The Introductory Zone**
-
-- **Starting Location:** Cocytus (The Warlord Moons)
-- **Theme:** "The Scrappy Frontier" — a fractured, balkanized system where four petty warlords constantly squabble over dominance of the Ice Giant's moons. Perfect excuse for an unknown freelancer to make a name without drawing the ire of system-spanning Great Houses
-- **Mechanics Intro** — the four moons act as a microcosm of the entire game's core loop:
-  - Learn basic mining and resource extraction at Styx
-  - Trade for essential survival supplies and food at Lethe
-  - Purchase fuel and chemical propellants at Acheron
-  - Upgrade and repair the starter ship at Phlegethon
-- **The Escalation:** low-stakes warlord politics teach cross-planetary trade and localized combat; the ultimate goal is earning enough resources and hull upgrades to survive the dangerous journey inward toward formal Great House territory
+| Former House | Base | Current Role Under Casimir |
+|---|---|---|
+| **Valerius** | Aethelgard | Diplomatic apparatus, trade networks |
+| **Aridani** | Khem | Agricultural production |
+| **Ignis** | Ferrum | Nuclear industry, military hardware |
 
 ---
 
 ## AI / Enemies
 
-### AV: Specialized Enemy Factions
-
-Distinct enemy/neutral faction AI types not yet implemented.
-
-**Grave-Clans (Scavenger Specialty):** Specialized Gravewake scavengers adapted to dense debris. Use Lurker behavior — hide behind Arkship Spines, ambush with grapple lines and harpoons. Prefer targeting convoys. Asymmetric salvage-rigged ship designs.
-
-**Zealot Pilgrims:** Cultist convoys seeking the oldest Concord wrecks. Neutral by default. Offer large payouts for safe escort or recovered artifacts. Shield-heavy; willing to travel through dangerous debris fields.
-
-**Concord Ghosts:** Dormant, half-broken Concord sentinels that mindlessly repeat century-old patrol routes. Not actively hostile — unpredictable hazards to anyone who interrupts their route or tampers with Ark-Modules they guard.
-
-**Monastic Order (Techno-Priests):** See BX for the full encounter design. In Gravewake they field a single large expeditionary capital ship — initially inaccessible to the player. Diabolically opposed to the Concord AI; scavenging the graveyard for artifacts or a super-weapon to defeat it. Not aggressive unless provoked.
-
-**General AI Improvement — Enemy Retreat & Repair:** Human enemies (scavengers, cultists) should flee at ~30% hull rather than fight to the death. They return to their mothership or base to repair, then re-engage. Makes factions feel persistent and dangerous. See also BE for named captains who remember the player.
-
----
-
-### AX: Named Bosses
-
-Three unique one-time boss encounters tied to story threads (see BA). Each has major loot and narrative consequences.
-
-**Dread Captain Voss** *(Scavenger Boss)*: Warlord attempting to unify scavenger clans under one flag. Commands a powerful flagship with escort fleet. Drops his flagship (capturable) and a large scrap bounty. Tied to "The Warlord's Compact."
-
-**The Nexus Core** *(Concord Boss)*: Dormant cognition array deep in Concord territory. Continuously spawns drones — must be destroyed to stop the waves. Extremely high HP, powerful beam weapons. Destroying it cripples local Concord presence. Tied to "The Sleep Directive."
-
-**The Hollow Mind** *(Void Fauna Boss)*: Ancient creature at the deepest nebula edge, older than the arkships. Multi-phase: spawns Crystal Swarm minions, fires devastating area attacks. Drops exotic biological materials and a unique ship component. Revelation: void fauna may be Concord-engineered quarantine measures. Tied to "The First Inhabitants."
-
----
-
-### BV: Rogue Salvage Lord Fleet
-
-A large pirate capital ship flanked by a fleet of smaller escort ships roaming Gravewake. Commanded by a former Salvage Lord exiled from The Coil — kicked out for disagreeing with the current "order" imposed by the ruling lords. Their goal: return the sector to its true, chaotic criminal past.
-
-- Generally neutral to the player; does not attack on sight
-- **Opportunistic cargo scan:** if they scan the player and detect highly valuable cargo, they will attack to take it
-- Functions as a rebel faction — enemy of the current Salvage Lord establishment, potential uneasy ally against them
-- Fleet composition: one capital ship + 2–4 escort fighters
 
 ---
 
@@ -456,8 +395,6 @@ Affixes are constrained by module type — not every affix applies to every modu
 
 ---
 
----
-
 ### BR: Electronic Warfare
 
 Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-lethal combat options for disabling rather than destroying.
@@ -478,18 +415,6 @@ With a Computer/Electronics Expert crew member (see BQ), the player can interfac
 - Requires the Data Siphon crew ability to bypass derelict security safely
 - High-value targets (Concord derelicts, pre-Exile ships) carry the most interesting data
 
----
-
-## World / Persistence
-
-### BE: Named NPC Ships & Persistent World Characters
-
-All ships in the world have names. All ships have named captains. These are pre-generated at world load — a finite roster of real people with real histories, crimes, grudges, and loyalties.
-
-- Ships you fight remember you. If you kill someone's crewmate, that captain hates you and will pursue you specifically.
-- Once a captain is dead, they are gone permanently — no respawn, no replacement. The faction is weaker for it.
-- Named captains can be the targets of Elimination bounties (see BB) or the subjects of Blood-Debts (see AQ).
-- Rosters should be small enough to feel finite — you'll recognize names, see the same ships again, notice when someone is gone.
 
 ---
 
