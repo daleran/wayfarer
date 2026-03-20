@@ -2,7 +2,7 @@
 
 Feature concepts and plans. Coded items are ready to build directly from this file. Ideas start rough and get refined here before implementation.
 
-**Next available code: DT**
+**Next available code: ED**
 
 ---
 
@@ -35,17 +35,27 @@ Feature concepts and plans. Coded items are ready to build directly from this fi
 | DE | Cocytus & The Captain Lords (Ice Giant) | World / Map |
 | DF | Boreas & House Casimir (Gas Giant) | World / Map |
 | DG | Aethelgard & House Valerius (Super-Earth) | World / Map |
-| DH | Khem & House Aridani (Breadbasket) | World / Map |
+| DH | Khem & House Aridani (Starting Zone) | World / Map |
 | DI | Ferrum & House Ignis (Twilight Ring) | World / Map |
 | DJ | Non-Aligned Powers & System Geopolitics | World / Map |
 | DK | Lore System Overhaul | Systems |
 | DL | Gravewake Legacy Cleanup | World / Map |
-| DN | Origin Rework — Cocytus Adaptation | Narrative |
+| DN | Origin Stories — The Shared Incident | Narrative |
 | DO | Contract System | Gameplay |
 | DP | Advanced Salvaging | Gameplay |
 | DQ | Barter / Favor / Influence System | Economy |
 | DR | Small Item System | Gameplay |
 | DS | Commodities Expansion | Economy |
+| DT | The Kesra Belt (Asteroid Zone) | World / Map |
+| DU | The Corra Family | World / Factions |
+| DV | Great Houses — Culture & Character | World / Factions |
+| DW | Mining — Asteroid Towing & Discovery | Gameplay |
+| DX | Hauling Contracts — Procurement & Transportation | Economy |
+| DY | Investigation & Informant Network | Gameplay |
+| DZ | Salvage System Overhaul | Scavenging |
+| EA | Crew System | Ship Systems |
+| EB | Captain Skills | Ship Systems |
+| EC | Experience Pools & Progression | Ship Systems |
 
 ---
 
@@ -122,6 +132,30 @@ Split scrap into tiers and add commodity depth for the Cocytus Circuit economy.
 
 ---
 
+### DX: Hauling Contracts — Procurement & Transportation
+
+*Note: This replaces and supersedes the hauling/acquisition components of DO (Contract System). DO's mercenary contracts remain unchanged.*
+
+Trading is not buy-low-sell-high speculation. The player is a hauler — someone trusted to move important goods between people who need them. This is an identity, not just a mechanic.
+
+**Two Contract Types**
+
+**Transportation:** A client needs goods moved from location A to location B. The player picks up the cargo and delivers it. Reward scales with distance, cargo value, and time sensitivity. Reliability matters — a hauler who consistently delivers on time builds reputation; one who fails loses contracts.
+
+**Procurement:** A client needs a specific item or quantity of material sourced and delivered. The client doesn't care *how* the player gets it — mine it, buy it from surplus stock at another station, pull it from a salvaged wreck, or find it some other way entirely. This creates emergent multi-system play: a rare engine part procurement might be solved through salvage (DZ), mining (DW), or following an informant lead (DY).
+
+**Relationship-Based, Not Market-Based**
+
+Contracts come from relationships, not an open exchange. Clients trust haulers they know. Players build a roster of repeat clients through good work, and those clients offer better contracts over time — higher value, more interesting cargo, more flexibility on method.
+
+There is no galactic commodity ticker. Players do not arbitrage price differences between stations. The economy is personal and relational.
+
+**Cargo Risk**
+
+Hauled cargo can be lost to combat, tether failure (if being towed), or failed salvage. Some cargo is regulated or contraband in certain jurisdictions — carrying it through inspected space has its own risks. Clients who lose their shipment are not happy.
+
+---
+
 ### AR: Black Market & Under-Barter
 
 Every command economy has a shadow. Hidden fence dealers at Scrapper hubs allow direct scrap-for-goods swaps — no Favor required, but at a 50% premium. Risk of reputation damage if scanned carrying restricted goods.
@@ -184,6 +218,8 @@ The Gravewake orbital zone is dense with history. The Coil is its central hub �
 
 ### DD: Pale & Gravewake (Outer Fringe)
 
+**Progression tier: Endgame.** The true frontier — the deep unknown.
+
 The boundary between the inner system and the Kuiper-style asteroid belts. First landing point of all humans exiled from Earth; a massive, frozen archaeological site.
 
 - Landscape is a graveyard of ancient ships and orbital debris
@@ -197,7 +233,7 @@ The boundary between the inner system and the Kuiper-style asteroid belts. First
 
 A massive ice giant in the outer Tyr system. Solar energy is non-existent — all power comes from geothermal taps, chemical refining, or salvaged reactor cores. Four Captain Lords — disgraced veterans of the Casimir Uprising — each control one moon from orbit aboard a rusting dreadnought too broken to leave. The Cocytus Circuit is a desperate survival economy enforced by mutual blockade — each lord controls one critical resource, ensuring none can be eliminated without collapsing the whole system.
 
-The player starts here. Nobody chooses Cocytus. You end up here because everywhere else spit you out.
+**Progression tier: Late Mid-game.** The player reaches Cocytus after escaping inner system politics. Nobody chooses Cocytus. You end up here because everywhere else spit you out.
 
 **The Four Moons:**
 
@@ -301,17 +337,20 @@ Scale: ~20,000 × 12,000 world units. Cocytus itself is a massive background ele
 
 3. **Zealot Missionaries** (uncommon, hostile) — Zealots of the Directive preaching conversion or elimination. Fly modified ships with broadcasting equipment. AI: kiter (stay at range, broadcast, engage if approached). Hostile to all non-aligned humans. Target Judecca food supply. Carry propaganda items and Concord-derived tech. Faction: zealots.
 
-**Factions:** Each Captain Lord is a root faction (vance, kaelen, vorosh, solis) with independent reputation tracking. Total roots after cleanup: concord, monastic, zealots, casimir, vance, kaelen, vorosh, solis (8).
+**Factions:** Each Captain Lord is a root faction (vance, kaelen, vorosh, solis) with independent reputation tracking.
 
-**Progression & Escape:**
-- **Early game:** survive the Circuit — earn scrap hauling between moons, take odd jobs, salvage drift-zone wrecks
-- **Mid game:** get drawn into Captain Lord politics — Kaelen vs Vorosh tension, Solis mystery, Vance's schemes
-- **Late game:** earn/build/steal enough to make the journey inward toward Gravewake and eventually the inner system
+**Cocytus Progression (mid-game arc):**
+- **Arrival:** player reaches Cocytus fleeing inner system entanglements — underpowered, underequipped
+- **Survive the Circuit:** earn scrap hauling between moons, take odd jobs, salvage drift-zone wrecks
+- **Captain Lord politics:** Kaelen vs Vorosh tension, Solis mystery, Vance's schemes
+- **Escape outward:** earn/build/steal enough to make the journey toward Gravewake and the outer fringe
 - **The gate:** leaving Cocytus requires either enough fuel + hull integrity to survive the transit, OR a favor from Vance (fuel discount) + intel from Solis (safe route)
 
 ---
 
 ### DF: Boreas & House Casimir (Gas Giant)
+
+**Progression tier: Mid-game.** Casimir heartland.
 
 A massive gas giant with a prominent ring system. Formerly the seat of House Drazel; now the power base of House Casimir following the uprising (2487–2491). Casimir absorbed the other three Houses — Valerius, Aridani, and Ignis retain regional identity but operate under Casimir authority.
 
@@ -327,6 +366,8 @@ A massive gas giant with a prominent ring system. Formerly the seat of House Dra
 
 ### DG: Aethelgard & House Valerius (Super-Earth)
 
+**Progression tier: Early Mid-game.** The political capital.
+
 The administrative and economic capital of Tyr. House Valerius retains significant influence as Casimir's diplomatic arm — they merged their trade networks into the Casimir apparatus but kept their bureaucratic machinery intact.
 
 **The Primary (The Veiled World):**
@@ -339,13 +380,67 @@ The administrative and economic capital of Tyr. House Valerius retains significa
 
 ---
 
-### DH: Khem & House Aridani (Breadbasket)
+### DH: Khem & House Aridani (Starting Zone)
 
-A rocky planet positioned between Aethelgard and the inner sun — a planetary desert and the primary agricultural world. House Aridani became "Casimir's breadbasket" after the absorption — they grow the food, Casimir sets the prices.
+**Progression tier: Starting area.** The player begins here. All three origins converge on Khem / the Kesra Belt.
+
+A rocky planet positioned between Aethelgard and the inner sun — hotter than Mars, thin atmosphere. House Aridani became "Casimir's breadbasket" after the absorption — they grow the food, Casimir sets the prices. Quietly resentful, deeply proud, obsessed with self-sufficiency.
 
 - Focused on large-scale terraforming and agricultural logistics
 - Khem provides the bulk calories that feed the population of Tyr
-- **The Water Road:** Khem is entirely reliant on constant ice shipments from Cocytus and Boreas to maintain its vast farming complexes
+- **The Water Road:** Khem is entirely reliant on constant ice shipments from Cocytus and Boreas to maintain its vast farming complexes. One interrupted ice shipment from catastrophe.
+- **Gravity:** 0.7g
+
+**Visual Design:**
+
+*Surface:*
+- Baked, bleached rock. Not red — pale yellows, washed-out oranges, bone-white where rock has been cooked over millions of years
+- No evidence of water. No canyons, no riverbeds. Everything shaped by wind: rolling dunes, jagged rocky mountain ranges with sharp angular edges (no water erosion to soften them)
+- Constant dust storms — slow-moving, horizon-blotting events
+
+*Sky:*
+- Thin atmosphere means almost no light scattering
+- Deep dark purple-black at zenith during the day
+- Fades to pale yellowish-white haze near the horizon
+- The sun looks visibly larger and more brutal than from Earth
+- Harsh, unforgiving shadows with almost no diffusion
+
+**Settlements — Crater Architecture:**
+
+Khem's settlers use craters as the foundation for habitation. Crater rims act as natural windbreaks against dust storms. The bowl shape reduces dome structural load. Depth below the rim lowers the height the dome must span.
+
+- From orbit: craters with glittering transparent membrane stretched across the top
+- Larger ancient impact craters = larger settlements. Small craters = single farming operations or remote outposts
+- **The Domes:** Transparent — capturing intense direct sunlight is the whole point. UV-filtered glass, structurally low-profile, heavily anchored against wind. From orbit they catch light and glitter against the pale hostile landscape. Inside: lush, carefully managed crops. The contrast between the brutal alien sky above and the green below is a defining visual of Khem.
+
+**Infrastructure — The Water Road:**
+
+Khem has no natural water. All water arrives as ice from Cocytus and Boreas via orbital ice haulers. This is Khem's fundamental vulnerability and the source of enormous political tension.
+
+- **The Main Hub (capital crater — NAME TBD):** The largest ancient impact crater on the planet. Has a dedicated orbital station above it. Ice haulers descend from orbit, offload water, load food, and take back off. The crater city below is a logistics hub — warehouses, Aridani administrative buildings, Corra Family legitimate business fronts.
+- **The Train Corridors:** From the hub, pressurized trains run along fixed corridors across the surface, carrying water out to the farming plantations and food back. Trains have large fans on the front that blow sand clear of the tracks. Tracks are slightly raised / reinforced to resist dune encroachment.
+- **Trucks:** The smallest and most remote settlements get by with pressurized surface trucks. Slow, dangerous in storms, but cheaper than train infrastructure.
+- **Flight is difficult:** 0.7g helps but the thin atmosphere gives aircraft almost nothing to work with — enormous inefficient engines needed for even short hops. Not viable for cargo. Trains and trucks win.
+
+**Items pending development:**
+- Khem capital crater — name TBD
+- Khem orbital station — name and character TBD
+- Khem governor — specific Aridani character TBD
+
+---
+
+### DT: The Kesra Belt (Asteroid Zone)
+
+A new asteroid belt zone between Khem and Aethelgard. The connective tissue between the farming world and the capital — busy with trade traffic, loosely policed, and full of independent operators trying to stay off everyone's radar.
+
+- Dense enough to provide cover and ambush points
+- Mining operations, some legitimate, some fronts
+- Corra Family has depots and contacts embedded here
+- Casimir patrols the edges but doesn't venture deep
+- Natural home turf for the Salvage Kid origin
+- Independents and pirates here are unaligned (no faction, no rep consequence) — similar to Cocytus Drifters
+
+**Narrative role:** This is where the shared origin incident happens — a Corra Family raid on a salvage craft. The Combat Pilot's first job. The Salvage Kid's father killed. The PI's quarry fled from here.
 
 ---
 
@@ -357,6 +452,43 @@ The innermost planet — a dense iron world tidally locked to the sun. House Ign
 - **The Uranium Monopoly:** controls the only viable uranium ore deposits in the system
 - **The Great Ring Road:** a massive underground highway connecting crater-citadels in the twilight band
 - Military specialty: advanced nuclear reactors and high-velocity railguns
+
+---
+
+### DU: The Corra Family
+
+The dominant organized crime syndicate of the inner system. Not a pirate clan — a **crime family** with legitimate business fronts, political contacts, and three centuries of leverage. Think mafia, not pirates. Embedded in the Kesra Belt between Khem and Aethelgard, with tendrils into both planets.
+
+**Origin:** The Corra Family did not become criminals after humanity arrived at Tyr. They were **essential during the Exodus fleet itself.** When official supply chains collapsed on the generation ships — and they did, constantly — the Corras were the people who found food when there was no food, medicine when the dispensaries ran dry, parts when the engineers said the ship was unfixable. They saved lives. They also charged everything they could, and built a network of favors and debts that survived the landing intact. By the time the fleet reached Tyr, the Corra family had three generations of leverage over half the people in the inner system. They didn't claw their way up — they were grandfathered in before civilization started.
+
+**Structure:**
+- **Matriarch-led.** The current head is a woman old enough to have heard the fleet stories firsthand from her grandmother. She sees herself as a steward of something ancient and necessary, not a criminal. *The system needs us. It always has.*
+- Mix of legitimate business (shipping, logistics, import/export) and criminal operations (smuggling, extortion, contract violence, black market goods)
+- Operates primarily in the Kesra Belt and on Khem, with contacts on Aethelgard
+- Everyone knows about the Corra Family. Authorities sometimes crack down. Sometimes they turn a blind eye — especially when Casimir needs something moved quietly.
+
+**Faction:** `corra` — "The Corra Family", defaultReputation: 0 (neutral until triggered)
+
+**Items pending development:**
+- Matriarch — name and personality TBD. Key traits: old, sharp, believes in the family's historical legitimacy, personally dangerous, capable of genuine warmth and genuine cruelty.
+
+---
+
+### DV: Great Houses — Culture & Character
+
+Each house has been shaped by the world they inhabit. Not just political factions — distinct cultures.
+
+**House Aridani — Khem (The Farmers):**
+Quietly resentful, deeply proud, obsessed with self-sufficiency. They grow everything everyone eats and Casimir sets the prices — a fundamentally humiliating position. Think in seasons and harvests, not quick deals. Patient, long-memoried, slow to trust outsiders. Feudally feel like landed gentry — governors managing crater estates for generations. Outwardly gracious and hospitable (you don't turn away visitors on a world this unforgiving). Inwardly calculating what they can extract. Governor type: old family estates, formal titles, inherited positions, obsessive record-keeping.
+
+**House Casimir — Boreas (The Bureaucrats):**
+New money pretending it's old. Won the Uprising through supply chain manipulation and a carefully sprung ambush, not martial glory. Compensate with rigid bureaucracy, elaborate protocol, and manufactured legitimacy. Rules, ranks, titles, documentation. Disciplined, administratively ruthless, quietly paranoid about legitimacy challenges. Governor type: appointed administrators, not hereditary lords. Formal to the point of coldness.
+
+**House Valerius — Aethelgard (The Diplomats):**
+Old network, old money, genuinely old bloodline. Survived every political upheaval by being useful to whoever was winning. Cultured, cosmopolitan, elegant — they run the capital world and they know it. Speak in careful language, never say anything directly, never make an enemy when they can make a complicated friend. The most dangerous house to negotiate with because you'll leave the table thinking you won. Governor type: hereditary but worn lightly — power from relationships and trade networks. More dinner invitation than formal audience.
+
+**House Ignis — Ferrum (The Pragmatists):**
+Hardened by their world. Everything on Ferrum is difficult. Compact, practical, no-nonsense. No time for ceremony. They have uranium and railguns — that is enough. The most blunt and direct of all the houses. Respected but not particularly liked. Negotiated favorable terms because everyone knew their smelters were too valuable to touch. They know exactly what their leverage is and never let anyone forget it. Governor type: military-adjacent, titles tied to industrial output and technical expertise.
 
 ---
 
@@ -407,13 +539,15 @@ Strip outdated Gravewake content. Keep reusable graphics and renderers. Delete l
 - Skill files in `.claude/commands/wayfarer/` — update faction lists
 - `scripts/templates/setting.md` — update worldbuilding narrative
 
-**Add 4 new root factions** to `data/lore/factions/root.js`:
+**Add 6 new root factions** to `data/lore/factions/root.js`:
 - `vance` — "Lord Captain Vance" (Caina/fuel), defaultReputation: 0
 - `kaelen` — "Lord Captain Kaelen" (Antenora/fabrication), defaultReputation: 0
 - `vorosh` — "Lord Captain Vorosh" (Ptolomea/mining), defaultReputation: 0
 - `solis` — "Lord Captain Solis" (Judecca/food), defaultReputation: 0
+- `corra` — "The Corra Family" (Kesra Belt/Khem), defaultReputation: 0
+- `aridani` — "House Aridani" (Khem), defaultReputation: 10
 
-Remaining roots after cleanup: **concord, monastic, zealots, casimir, vance, kaelen, vorosh, solis** (8 total)
+Remaining roots after cleanup: **concord, monastic, zealots, casimir, vance, kaelen, vorosh, solis, corra, aridani** (10 total)
 
 ---
 
@@ -490,31 +624,160 @@ Specific crew roles unlock active, high-risk/high-reward combat maneuvers. Each 
 
 ---
 
+### EA: Crew System
+
+*Note: Expands and replaces BM (Crew System — Named Crew, Health & Performance). BM's health/performance concepts remain valid; this document adds the four-role taxonomy, skill trees, and hiring system.*
+
+Crew are NPCs hired to fill specialist roles aboard the player's ship. The player is the captain — they are never simply another crewmember. The crew handles technical execution; the captain handles command, diplomacy, and personal action.
+
+**The Four Crew Roles**
+
+**Piloting:** Navigation, maneuvering, and flight operations. Two specialization branches:
+- *Combat Pilot* — evasion, tactical maneuvering, pursuit, combat approach angles
+- *Navigator* — long-haul routing, fuel efficiency, hazard avoidance, chart reading
+
+**Combat:** Weapons operation, targeting, and tactical response.
+- *Gunner* — weapon accuracy, reload speed, target prioritization
+- *Boarding Specialist* — personal combat, ship boarding, close-quarters action (used when boarding derelicts or enemy ships on foot)
+
+**Engineering:** All technical ship systems. Broadest role with the most branches:
+- *Salvage Tech* — extraction speed, module recovery quality, hull assessment
+- *Mechanic* — hull repair speed, module repair, damage control
+- *Systems Engineer* — power management, electronic systems, hacking, electronic warfare
+
+**Science:** Research, analysis, and life support adjacent roles.
+- *Medic* — crew health, injury treatment, drug synthesis
+- *Analyst* — data recovery from derelict computers, scanner interpretation, log decryption
+- *Botanist/Biologist* — ship-grown food, organic material processing, biological skill checks
+
+**Skill Trees & Specialization**
+
+Each role has a shared skill tree with branches. A hired crew member arrives with some skills already developed and a natural *learning affinity* — they advance faster in their specialty branch but can cross-train into adjacent skills over time. An engineer hired as a salvage specialist can eventually pick up repair skills; they just progress more slowly there.
+
+**Hiring**
+
+Crew are found at stations — not universally available everywhere. Some specialists are rare in certain regions. A hire's existing skills and affinities are visible at hire time. Traits (see EB) may also be visible.
+
+**Crew Loss**
+
+Losing a crew member is a setback, not a catastrophe. Their accumulated experience is gone, but the player can retrain a new hire using the same experience pools (EC). Captain skills can reduce crew loss risk and speed up new crew development.
+
+---
+
+### EB: Captain Skills
+
+The player-character's personal progression. Captain skills are distinct from crew skills in two ways: some apply global modifiers that help both the captain and matching crew, and some are exclusive to the captain as the ship's sole diplomat and commander.
+
+**Four Technical Branches (Mirror Crew Roles)**
+
+The captain has their own piloting, combat, engineering, and science skill trees. These represent the captain's personal competence — useful when acting alone, and also applied as global modifiers that slightly boost the equivalent crew member's performance. However, captain skills in these areas will *never* match a dedicated specialist. The modifier is meaningful but the ceiling is lower.
+
+**Two Captain-Exclusive Branches**
+
+*Diplomacy:* The captain is always the face of the ship. Trading negotiation (better contract rates, procurement options), faction persuasion, bribery effectiveness, interrogation, and reading people (see DY). No crew member replaces the captain here.
+
+*Leadership:* Crew morale and performance management. Skills here boost experience gain rates for crew (EC), reduce the chance of crew defection or poor morale, and provide active abilities like rallying crew during a crisis. Leadership is the multiplier on everything else.
+
+**Traits**
+
+Traits are permanent modifiers acquired at character creation (via origin selection) and potentially through major in-game events. They are not skills — they cannot be trained. Examples:
+- *Salvager Origin:* +15% salvage extraction speed; crew gain salvage-branch experience 25% faster
+- *PI Origin:* Bribery attempts cost less; informant network contacts start at higher trust
+- *Combat Origin:* Personal combat skills start with one tier unlocked; combat pilot crew gain experience faster
+
+Traits give origin starts flavor and a head start without locking players into a path. Starting as a PI but pivoting to salvage? Your PI traits don't hurt salvage — they just don't help it either.
+
+---
+
+### EC: Experience Pools & Progression
+
+Skills are not purchased with generic points. Experience is earned by doing, categorized by type, and spent specifically.
+
+**Five Experience Pools**
+
+- **Combat Experience** — earned through successful weapon hits, kills, surviving combat, completing combat contracts
+- **Piloting Experience** — earned through navigation, hazard avoidance, docking maneuvers, long-haul travel
+- **Engineering Experience** — earned through salvage operations, repairs, module extraction, mining
+- **Science Experience** — earned through scanning, data recovery, medical treatment, botanical yields
+- **Diplomacy Experience** — earned through successful negotiations, bribery, interrogation, completed investigation contracts
+
+Each pool has its own bar that fills through relevant gameplay. Pools fill faster or slower depending on what the player actually does — a session of pure combat builds combat experience rapidly, negligibly advances science.
+
+**Spending Experience**
+
+Accumulated experience points in each pool are spent to unlock or upgrade skills in the matching tree — for both the player captain and crew members. A crew member's skill unlock costs experience from the relevant pool; the player captain draws from the same shared pools.
+
+This creates interesting allocation decisions: spend engineering experience on the captain's own engineering skills, or use it to advance the crew's salvage tech branch? A hybrid crew skill (e.g. an engineer ability that also requires combat experience) draws from multiple pools simultaneously.
+
+**Hybrid Skills**
+
+Some advanced skills at the intersection of two disciplines require two pool types to unlock. This creates meaningful choices: you may have abundant combat experience but insufficient engineering experience to unlock a cross-discipline ability. Pursuing hybrid skills incentivizes varied play.
+
+**Captain Leadership Multiplier**
+
+High leadership skills (EB) increase the rate at which experience pools fill — both for the captain and for crew operating in their specialty. This makes leadership investment feel impactful across the entire progression system without making it mandatory.
+
+**Crew Loss & Retraining**
+
+When a crew member is lost, their personal skill development is gone. However, the experience *pools* are unaffected — the player still has all the accumulated engineering experience they spent developing that crew member. Hiring and re-developing a replacement costs experience, but the pools exist to absorb that cost if the player has been active in the relevant gameplay.
+
+---
+
 ## Narrative
 
-### DN: Origin Rework — Cocytus Adaptation
+### DN: Origin Stories — The Shared Incident
 
-Adapt the 3 existing Gravewake origins for Cocytus context. Same narrative structure (async conversation with sub-choices), same `game.applyOrigin()` API.
+Three origins built around **one shared inciting incident** seen from three different positions. No player will know this on their first run. On a second playthrough as a different origin, everything recontextualizes.
 
-**Origin 1: The Runaway** (adapt from current)
-- Was: stole a courier from a settlement foreman
-- Now: stole a courier from a Vance fuel depot worker. Fled into Cocytus space. Starting moon: Caina vicinity.
-- Ship: Maverick Courier (same). Starting goods: scrap or fuel (same sub-choice).
+**The incident:** A Corra Family raid on a salvage craft in the Kesra Belt. A father is killed. His son is left for dead. The young raider who pulled the trigger flees.
 
-**Origin 2: The Deserter** (adapt from current)
-- Was: Casimir scout who refused tribunal
-- Now: Kaelen's forge crew deserter — refused to work the dangerous deep-forge shifts, stole a patrol ship. Starting moon: Antenora vicinity.
-- Ship: Cutter Scout (same pattern). Starting goods: ammo or rep with Kaelen's rivals.
+All three start broke. All three start in the Khem / Kesra Belt region. All three are entangled in the same incident without knowing it. Same narrative structure (async conversation with sub-choices), same `game.applyOrigin()` API.
 
-**Origin 3: The Scavenger** (adapt from current)
-- Was: Gravewake native, father killed, inherits tug
-- Now: Ptolomea miner's kid, parent killed in a shaft collapse Vorosh ignored. Inherits a battered tug. Starting moon: Ptolomea vicinity.
-- Ship: Onyx Tug (same). Starting goods: module or scrap (same sub-choice).
+---
 
-**Each origin gets a short starting quest** (new):
-- Runaway: first job — deliver fuel to Antenora to pay off a debt. Teaches trade lane navigation.
-- Deserter: first job — Vance offers work retrieving a lost fuel probe from a drift zone. Teaches salvaging.
-- Scavenger: first job — haul ore from Ptolomea to Antenora. Teaches commodity trading.
+**Origin 1: The Combat Pilot**
+*Gameplay focus: Fighting, mercenary work, aggressive play*
+
+- **Ship:** Old rusty scout ship — barely armed, minimal fuel, fragile. Hard start.
+- **Starting location:** Khem orbital station / Kesra Belt vicinity
+- **Background:** Grew up in the Kesra Belt, raised by the Corra Family. Obsessed as a kid with stories of chivalrous space knights — mythologized figures from before the Exile. At sixteen, the family gave you your first ship — an old rusty scout. Your first job was a raid on a salvage craft. A father and his son. The father was killed. The son was left alive. You sat in the cockpit and realized: in every story you loved, you were the bandit. Not the knight. You fled instead of returning home.
+- **Corra relationship:** They consider you a liability. You know names, routes, contacts. They will eventually want to deal with that.
+- **Mechanical implications:** Starts with combat skills, minimal everything else. Driven to take risky, underpaid jobs helping people — trying to become the knight. The son is out there somewhere. That thread emerges in late game.
+
+---
+
+**Origin 2: The Salvage Kid**
+*Gameplay focus: Trading, salvaging, economic survival*
+
+- **Ship:** Father's stripped salvage hauler — barely flying, cargo hold picked clean, damaged
+- **Starting location:** Limps to Khem — the nearest planet
+- **Background:** Your father ran a small salvage operation in the Kesra Belt. Just the two of you. A raid hit your ship. You don't know who ordered it. Pirates boarded, your father was killed, they stripped everything of value and left you drifting. You limped to Khem on fumes.
+- **Corra relationship:** Has no idea it was the Corra Family specifically. Just knows it was raiders. As they work the belt and build contacts, the Corra Family name starts appearing. The slow realization is one of the best narrative threads in the game.
+- **Mechanical implications:** Driven by economic survival first, then grief, then eventually justice — or the choice to let it go. The question of whether the Combat Pilot ever confesses — if they meet — is a major late-game moment.
+
+---
+
+**Origin 3: The Private Investigator**
+*Gameplay focus: Questing, information gathering, faction navigation*
+
+- **Ship:** Small, fast, fragile — minimal cargo, no weapons worth mentioning
+- **Starting location:** Khem — the last known location of the target
+- **Player defined:** Name and gender are player-defined.
+- **Background:** You're a small-time private eye. The Corra Family hired you to track down a young raider who fled the family. A kid, by all accounts. Last seen heading toward Khem. The family pays well. You didn't ask why.
+- **Corra relationship:** On their payroll. They know your face. You're useful to them — which means they'll keep pulling you back in.
+- **Mechanical implications:** Immediately embedded in a morally complex situation. The further you dig into *why* this kid ran, the harder it becomes to complete the job. Gameplay is entirely about talking, gathering intel, spending favors, following leads. Cannot fight or haul your way through problems. Hard/diplomatic mode. At some point must decide: complete the job, bury it, or burn the contract and make an enemy of the Corra Family.
+
+---
+
+| Origin | Ship | Gameplay | Emotional Hook | Corra Relationship |
+|---|---|---|---|---|
+| **Combat Pilot** | Rusty scout, barely armed | Fighting, mercenary work | Guilt, redemption | Fled the family. They want you quiet. |
+| **Salvage Kid** | Stripped hauler, barely flying | Trading, salvaging | Grief, survival, unknowing justice | Doesn't know it was them. Yet. |
+| **PI** | Small fast ship, no weapons | Questing, intel, faction nav | Moral ambiguity, the family's leash | On their payroll. For now. |
+
+**Items pending development:**
+- Space knights mythology — what are the chivalrous figures the Combat Pilot idolized? Real historical faction? Myth? Still-existing group in the outer system? Should connect to late-game lore.
+- The son / combat pilot reunion — late-game narrative thread, mechanics TBD
 
 **File:** rewrite `data/conversations/originSelection.js`
 
@@ -604,6 +867,80 @@ Expand the current salvage system (which is just a timer → loot roll) into a m
 
 ---
 
+### DW: Mining — Asteroid Towing & Discovery
+
+Mining is not a grinding or clicking loop — it is a discovery and logistics loop. The interesting part is the *hunt*, not the extraction.
+
+**Discovery — The Hunt**
+
+Asteroids are not all equal or obvious. Players scan asteroid fields looking for valuable signatures. Rare or high-value asteroids have distinct scanner readings that reward attention and skill. Dense fields require careful navigation to even reach candidates. Discovery itself is the primary skill expression.
+
+**Core Sampling**
+
+Once a promising asteroid is identified, the player must dock with it to core sample — drilling in to analyze what is actually inside. This creates a risk window: the player is stopped, exposed, and vulnerable while determining whether the find is worth towing. The decision — is this worth the risk of extraction? — is the central tension of the activity.
+
+**Towing**
+
+Small-to-medium asteroids are attached via tether and towed back to port. The tether has a rated weight limit but can be overloaded if the find is valuable enough. Risks of overloading scale with how far over capacity the load is:
+- At recommended capacity: tether holds reliably
+- Over capacity: increasing chance of tether snap mid-transit, losing the asteroid entirely
+- Players cannot chase and recover a lost asteroid — it is gone
+
+**Large Asteroid Splitting**
+
+Asteroids too large to tow intact must be broken apart with explosives first. This creates a debris cloud of chunks. The player then selectively jettisons worthless rock while keeping ore-rich pieces — a quick spatial/physics puzzle managed through the tether and ship positioning. Not a minigame; just managing momentum and mass.
+
+**Combat Interruption**
+
+If attacked while towing, the player must decide:
+- Disconnect tether, fight or flee, return for the asteroid later (it drifts free)
+- Attempt to fight while towing (severely hampered maneuverability)
+
+The asteroid drifting free is not instant loss — a skilled player can return and re-attach if the area is cleared quickly.
+
+**Interconnection**
+
+Mining ties into procurement contracts (DX): a client who needs rare ore may tip the player toward a known asteroid field. Informant network contacts (DY) may know where a particularly rich deposit was recently spotted.
+
+---
+
+### DY: Investigation & Informant Network
+
+Core mechanic for the Private Investigator origin (and available to all players as a playstyle). Investigation is not a menu system or quest marker — it is a social and spatial puzzle built from the game's existing world.
+
+**No Quest Markers**
+
+The game has no waypoint markers. Players must remember, take notes, and act on information gathered through play. Investigation makes this explicit: you are given a *name* or *problem*, not a destination.
+
+**Finding People**
+
+A primary activity is locating a specific person — to question them, deliver a message, or apprehend them. Finding someone is dynamic, not scripted:
+- Contacts at stations have observed people coming and going
+- Bartenders, vendors, and residents remember faces
+- The target moves through the world on their own schedule; your information may be stale
+
+**The Informant Network**
+
+Over time, players build a personal network of paid contacts across stations, settlements, and factions. Network members are NPC individuals with their own personalities, loyalties, and reliability. Building the network requires investment: paying for information, doing favors, earning trust. A larger and more diverse network means faster and more reliable leads.
+
+Informant contacts also serve as connectors — "I don't know, but I know someone who might." The network has depth, not just breadth.
+
+**Reading People & Bribery**
+
+Bribery is not a universal tool. Offering money to the wrong person causes offense and damages or destroys that contact permanently. Before attempting a bribe, players should read the contact through dialogue — do they seem motivated by money? Do they hint at financial trouble? Does their faction suggest corruption? Offering a bribe is a risk/read decision, not a default option.
+
+The same logic applies to intimidation and flattery — different approaches work on different people, and misreading someone has consequences.
+
+**Dialogue & Stat Checks**
+
+Standard dialogue trees with randomized stat checks and skill-influenced outcomes. Nothing unusual here — the novelty is in *what* information you're seeking and *why it matters* rather than the mechanical structure of conversations.
+
+**Interconnection**
+
+The informant network ties into all other systems. A contact may point toward a derelict worth salvaging (DZ). A procurement contract client (DX) may confide that the item they need was last seen on a specific ship. Informant leads replace quest markers throughout the game.
+
+---
+
 ### BL: Core Combat Philosophy — Disabling vs. Destroying
 
 Combat is designed to feel weighty and strategic — positioning, timing, and resource management over arcade action. The key tension: **how** you defeat an enemy determines what you get from it.
@@ -676,6 +1013,59 @@ Managed by a "Computer/Electronics Expert" crew member (see BQ). Provides non-le
 
 ## Scavenging
 
+### DZ: Salvage System Overhaul
+
+*Note: Supersedes and expands DP (Advanced Salvaging). Retain DP's scanning and hazard concepts; this document adds equipment tiers, visual reading, ship towing, and log discovery.*
+
+Salvage is tiered by equipment, skill-gated, and discovery-driven. The loop begins with finding something worth salvaging — which is itself the first challenge.
+
+**Finding Derelicts**
+
+Derelicts are rare and not marked. Players find them through:
+- Distress signal echoes (scanner contact, direction only — no distance)
+- Debris field trails leading back to a wreck
+- Informant network tips (DY) — contacts who know about recent losses
+- Log entries recovered from previously salvaged ships pointing to others
+
+**Visual Reading**
+
+Before committing to a salvage approach, experienced players can read a derelict's exterior to estimate its value:
+- Visible module types on exterior hardpoints suggest what's inside
+- Hull condition, visible damage, and construction quality signal likely loot
+- Ship class and faction markings indicate probable cargo
+- A cobbled-together scavenger skiff with scrap armor is probably not worth the time; a Concord frigate is
+
+This rewards learning the game's ship visual language. It is not a guaranteed assessment — surprises exist in both directions.
+
+**Equipment Tiers**
+
+Three tiers of salvage capability, determined by modules installed:
+
+*No salvage equipment (baseline):* Strip scrap metal from hull plating. Drain fuel tanks. Take ammo. Nothing else.
+
+*Salvage Bay (medium module slot):* Extract intact modules from derelict racks. Recover cargo. Still cannot repair or assess module condition reliably.
+
+*Engineering Bay (large module slot):* Repair damaged modules using materials. Repair other ships. Assess module condition accurately. The engineering bay does not help with extraction speed — it helps with what you do with what you've extracted.
+
+**Skill & Risk in Repair**
+
+Attempting to repair a module beyond your skill level risks destroying it. The check factors in the player's engineering skill and any engineering crew (EA). A damaged but potentially valuable module presents a genuine decision: repair now at risk, or sell it damaged?
+
+**Ship Towing**
+
+Intact enough derelicts can be towed back to port whole (using the same tether system as asteroid mining, DW). A ship in good condition is worth significantly more sold intact than parted out. However:
+- Heavily damaged ships may break apart during the tow
+- Mid-tow combat requires dropping the tow (lose it) or fighting at severe disadvantage
+- The player must assess hull integrity before committing to a tow
+
+**Log Discovery**
+
+Derelicts contain recoverable data: ship logs, crew records, navigational history. These serve dual purposes:
+- Lore — flavor text that expands the game world and specific story threads
+- Actionable leads — logs may reference other derelicts, stash locations, or people worth finding (feeding back into DY)
+
+---
+
 ### BO: Data Extraction — Computer Salvage
 
 With a Computer/Electronics Expert crew member (see BQ), the player can interface with a derelict's mainframe before scrapping.
@@ -722,12 +1112,27 @@ All audio generated via Web Audio API — no asset files required.
 
 ---
 
-## Build Order — Cocytus Pivot
+## System Progression (Inner → Outer)
+
+| Zone | Body | Progression Tier |
+|---|---|---|
+| **Starting Zone** | Khem + The Kesra Belt (DH, DT) | Starting area |
+| **Early Mid** | Aethelgard + Oros/Thalassa moons (DG) | Political capital |
+| **Mid** | Boreas + Vesper moon (DF) | Casimir heartland |
+| **Late Mid** | Cocytus + four moons (DE) | The Captain Lords |
+| **Endgame** | Gravewake / Pale (DD, AS) | The outer frontier |
+
+Inner system is tight, controlled, watched. Moving outward feels like genuine escape — less law, more freedom, more emptiness. Cocytus becomes a mid-game hub (the escape hatch from inner system politics). Gravewake becomes the true endgame frontier.
+
+---
+
+## Build Order
 
 | Phase | Features | Dependency |
 |---|---|---|
 | **1. Foundation** | DK (lore overhaul), DL (legacy cleanup) | None — do first |
-| **2. World** | DE (Cocytus system), DN (origins) | Needs DK + DL done |
-| **3. Loops** | DO (contracts), DP (salvaging) | Needs DE world to exist |
+| **2. Starting World** | DH (Khem), DT (Kesra Belt), DU (Corra Family), DN (origins) | Needs DK + DL done |
+| **3. Loops** | DO (contracts), DP (salvaging) | Needs DH/DT world to exist |
 | **4. Economy** | DQ (barter/influence), DR (small items), DS (commodities) | Needs DO + DP loops |
+| **5. Expansion** | DE (Cocytus), DG (Aethelgard), DF (Boreas), DD (Gravewake) | Needs core loops working |
 
