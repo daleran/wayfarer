@@ -15,7 +15,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        index: path.resolve(__dirname, 'designer.html'),
+        designer: path.resolve(__dirname, 'designer.html'),
       },
     },
   },
