@@ -9,6 +9,15 @@ export default defineConfig({
       '@data': path.resolve(__dirname, 'data'),
     },
   },
+  build: {
+    outDir: 'dist/designer',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        index: path.resolve(__dirname, 'designer.html'),
+      },
+    },
+  },
   server: {
     port: 5176,
     open: '/designer.html?designer&category=ships&id=scrap-ship',
