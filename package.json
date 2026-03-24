@@ -8,6 +8,7 @@
     "dev:designer": "vite --config vite.designer.config.js",
     "dev:editor": "vite --config vite.editor.config.js",
     "build": "vite build",
+    "build:designer": "vite build --config vite.designer.config.js",
     "preview": "vite preview",
     "lint": "eslint engine/ data/",
     "lint:fix": "eslint engine/ data/ --fix",
