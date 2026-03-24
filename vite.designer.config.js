@@ -3,6 +3,7 @@ import path from 'path';
 
 export default defineConfig({
   root: './',
+  base: '/designer/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'engine'),
